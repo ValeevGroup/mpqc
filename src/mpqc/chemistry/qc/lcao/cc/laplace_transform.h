@@ -302,6 +302,92 @@ TA::Array<double, 2, Tile, Policy> t1_laplace_transform(
   return result;
 }
 
+// re-scaling of g_Xab integral with the exponents of orbital energies.
+// One unoccupied orbitals is re-scaled (b).
+template <typename Tile, typename Policy>
+TA::Array<double, 3, Tile, Policy> Xab_laplace_transform(
+    const TA::Array<double, 3, Tile, Policy> &Xab, const Eigen::VectorXd &ens,
+    std::size_t n_occ, std::size_t n_frozen, double x) {
+  const double alpha = 3.0 * (ens(n_occ) - ens(n_occ - 1));
+
+  auto convert = [&ens, n_occ, n_frozen, alpha, x](Tile &result_tile,
+                                                   const Tile &arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto X0 = result_tile.range().lobound()[0];
+    const auto Xn = result_tile.range().upbound()[0];
+    const auto a0 = result_tile.range().lobound()[1];
+    const auto an = result_tile.range().upbound()[1];
+    const auto b0 = result_tile.range().lobound()[2];
+    const auto bn = result_tile.range().upbound()[2];
+
+    auto tile_idx = 0;
+    typename Tile::value_type norm = 0.0;
+    for (auto X = X0; X < Xn; ++X) {
+      for (auto a = a0; a < an; ++a) {
+        for (auto b = b0; b < bn; ++b, ++tile_idx) {
+          const double exp_b = pow(x, 0.5 * (ens[b + n_occ] / alpha - 1.0 / 6.0));
+          const double exponent = exp_b;
+          const double result = arg_tile[tile_idx] * exponent;
+          result_tile[tile_idx] = result;
+          norm += result * result;
+        }
+      }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach (Xab, convert);
+  Xab.world().gop.fence();
+  return result;
+}
+
+// re-scaling of g_Xai integral with the exponents of orbital energies.
+// One unoccupied orbital and one occupied are re-scaled (a,i).
+template <typename Tile, typename Policy>
+TA::Array<double, 3, Tile, Policy> Xai_laplace_transform(
+    const TA::Array<double, 3, Tile, Policy> &Xai, const Eigen::VectorXd &ens,
+    std::size_t n_occ, std::size_t n_frozen, double x) {
+  const double alpha = 3.0 * (ens(n_occ) - ens(n_occ - 1));
+
+  auto convert = [&ens, n_occ, n_frozen, alpha, x](Tile &result_tile,
+                                                   const Tile &arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto X0 = result_tile.range().lobound()[0];
+    const auto Xn = result_tile.range().upbound()[0];
+    const auto a0 = result_tile.range().lobound()[1];
+    const auto an = result_tile.range().upbound()[1];
+    const auto i0 = result_tile.range().lobound()[2];
+    const auto in = result_tile.range().upbound()[2];
+
+    auto tile_idx = 0;
+    typename Tile::value_type norm = 0.0;
+    for (auto X = X0; X < Xn; ++X) {
+      for (auto a = a0; a < an; ++a) {
+        const double exp_a = pow(x, 0.5 * (ens[a + n_occ] / alpha - 1.0 / 6.0));
+        for (auto i = i0; i < in; ++i, ++tile_idx) {
+          const double exp_i =
+              pow(x, 0.5 * (-ens[i + n_frozen] / alpha - 1.0 / 6.0));
+          const double exponent = exp_a * exp_i;
+          const double result = arg_tile[tile_idx] * exponent;
+          result_tile[tile_idx] = result;
+          norm += result * result;
+        }
+      }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach (Xai, convert);
+  Xai.world().gop.fence();
+  return result;
+}
+
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_LAPLACE_TRANSFORM_H_

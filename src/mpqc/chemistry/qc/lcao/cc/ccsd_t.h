@@ -1118,6 +1118,25 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray g_dabi = get_abci();
     TArray g_abij = get_abij();
 
+
+    //obtaining DF-integrals
+    TArray Xab;
+    TArray Xai;
+    if (this->is_df()) {
+      std::cout << "DF calculation" << std::endl;
+      /// get three center integral (X|ab)
+      //TArray Xab;
+      TArray sqrt =
+          this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+      TArray Kab = this->lcao_factory().compute(L"(Κ|G|a b)");
+      Xab("K,a,b") = sqrt("K,Q") * Kab("Q,a,b");
+
+      //TArray Xai;
+      TArray Kai = this->lcao_factory().compute(L"(Κ|G|a i)");
+      Xai("K,a,i") = sqrt("K,Q") * Kai("Q,a,i");
+    }
+
+
     // definition of orbital spaces
     auto n_occ = this->trange1_engine()->get_occ();
     auto n_frozen = this->trange1_engine()->get_nfrozen();
@@ -1201,15 +1220,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
 
     // get trange1
-    auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
-    auto tr_vir = this->trange1_engine_->get_vir_tr1();
-
     auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
-
-    // TiledRange1 for occ, unocc and inner contraction space
-    auto n_tr_occ_inner = n_tr_occ;
-    auto n_tr_vir_inner = n_tr_vir;
 
 
     auto& global_world = this->wfn_world()->world();
@@ -1260,6 +1272,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time11 = mpqc::now(world, accurate_time);
       int_transform3 += mpqc::duration_in_s(time10, time11);
 
+      TArray Xab_lt;
+      TArray Xai_lt;
+      if (this->is_df()) {
+        Xab_lt = Xab_laplace_transform(
+            Xab, *this->orbital_energy(), n_occ, n_frozen, x(m));
+
+        Xai_lt = Xai_laplace_transform(
+            Xai, *this->orbital_energy(), n_occ, n_frozen, x(m));
+
+      }
 
       this->wfn_world()->world().gop.fence();
       double energy_m = 0.0;
@@ -1273,7 +1295,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //computation of the OV5 terms
       double E_O2V4_vo = 0;
-      /*{
+      /*double E_OV5 = 0;
+      {
         TArray T1;
         TArray T2;
 
@@ -1284,8 +1307,34 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           TArray g_tmp;
           g_tmp("e,c,b,i") = g_dabi_lt("e,c,b,i") - g_dabi_lt("e,b,c,i");
           G("e,b,a,f") = g_tmp("e,c,b,i")*g_dabi_lt("f,c,a,i");
+
           E_OV5 = TA::dot(G("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
         }
+        //with DF
+        {
+          TArray gg;
+          gg("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+
+          TArray ggg;
+          ggg("e,b,Y") = gg("X,Y") * Xab_lt("X,e,b");
+
+          TArray G1;
+          G1("e,b,a,f") = ggg("e,b,Y") * Xab_lt("Y,f,a");
+
+          E_OV5 = TA::dot(G1("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+
+          TArray gg1;
+          gg1("e,Y,i,X") = Xab_lt("X,e,c") * Xai_lt("Y,c,i");
+
+          TArray ggg1;
+          ggg1("e,b,Y") = gg1("e,Y,i,X") * Xai_lt("X,b,i");
+
+          TArray G2;
+          G2("e,b,a,f") = ggg1("e,b,Y") * Xab_lt("Y,f,a");
+
+          E_OV5 -= TA::dot(G2("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+        }
+
         {
           TArray G;
           G("e,b,a,f") = g_dabi_lt("e,b,c,i")*g_dabi_lt("f,a,c,i");
@@ -1295,12 +1344,115 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         std::cout << "E_OV5 = " << E_OV5 << std::endl;
       }*/
 
+      //double E_OV5_block = 0.0;
       double E_OV5 = 0;
-      double E_O2V4_2 = 0;
-      double E_O2V4_S = 0.0;
-      double E_O3V3_S2 = 0.0;
       TA::set_default_world(this_world);
       std::size_t global_iter = 0;
+      for (auto e = 0; e < n_tr_vir; ++e) {
+        for (auto f = 0; f < n_tr_vir; ++f) {
+
+          ++ global_iter;
+
+          if( global_iter % size != rank) continue;
+
+          std::size_t e_low = e;
+          std::size_t e_up = e + 1;
+          std::size_t f_low = f;
+          std::size_t f_up = f + 1;
+
+          typedef std::vector<std::size_t> block;
+
+          //blocking g_dabi over e
+          block g_dabi_low_e{e_low, 0, 0, 0};
+          block g_dabi_up_e{e_up, n_tr_vir, n_tr_vir, n_tr_occ};
+
+          auto block_g_dabi_lt_e = g_dabi_lt("e,b,c,i").block(g_dabi_low_e, g_dabi_up_e);
+
+          //blocking g_dabi over f
+          block g_dabi_low_f{f_low, 0, 0, 0};
+          block g_dabi_up_f{f_up, n_tr_vir, n_tr_vir, n_tr_occ};
+
+
+          //blocking t2 over e (required for both T1 and T2 intermediates)
+          block t2_oou_lt_low_e{e_low, 0, 0, 0};
+          block t2_oou_lt_up_e{e_up, n_tr_vir, n_tr_occ, n_tr_occ};
+
+          auto block_t2_oou_lt_e_T12 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+
+          //blocking t2 over e (required for T2 intermediate)
+          block t2_oou_lt_low_f{f_low, 0, 0, 0};
+          block t2_oou_lt_up_f{f_up, n_tr_vir, n_tr_occ, n_tr_occ};
+
+          auto block_t2_oou_lt_f_T2 = t2_oou_lt("f,b,j,i").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
+
+          //blocking t2 over e (required for T1 intermediate)
+          auto block_t2_oou_lt_f_T1 = t2_oou_lt("f,b,i,j").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
+
+          TArray T1;
+          TArray T2;
+
+          T1("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T1;
+          T2("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T2;
+
+          {
+            TArray G;
+
+            auto block_g_dabi_lt_f = g_dabi_lt("f,a,c,i").block(g_dabi_low_f, g_dabi_up_f);
+
+            G("e,b,a,f") = block_g_dabi_lt_e*block_g_dabi_lt_f;
+            E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+          }
+          {
+            if (this->is_df()) {
+
+              auto n_tr_aux = Xab.range().upbound()[0];
+
+              block Xab_low_e{0, e_low, 0};
+              block Xab_up_e{n_tr_aux, e_up, n_tr_vir};
+              auto block_Xab_lt_e = Xab_lt("X,e,b").block(Xab_low_e, Xab_up_e);
+
+              block Xab_low_f{0, f_low, 0};
+              block Xab_up_f{n_tr_aux, f_up, n_tr_vir};
+              auto block_Xab_lt_f = Xab_lt("Y,f,a").block(Xab_low_f, Xab_up_f);
+
+              TArray gg1;
+              gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+              TArray ggg1;
+              ggg1("e,Y,b") = gg1("X,Y") * block_Xab_lt_e;
+
+              auto block_Xab_lt_ec = Xab_lt("X,e,c").block(Xab_low_e, Xab_up_e);
+
+              TArray gg2;
+              gg2("e,Y,i,X") = block_Xab_lt_ec * Xai_lt("Y,c,i");
+              TArray ggg2;
+              ggg2("e,Y,b") = gg2("e,Y,i,X") * Xai_lt("X,b,i");
+
+              TArray G;
+              G("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f - ggg2("e,Y,b") * block_Xab_lt_f;
+              E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+
+
+            } else {
+              TArray G;
+
+              auto block_g_dabi_lt_f = g_dabi_lt("f,c,a,i").block(g_dabi_low_f, g_dabi_up_f);
+              auto block_g_dabi_lt_e1 = g_dabi_lt("e,c,b,i").block(g_dabi_low_e, g_dabi_up_e);
+
+              G("e,b,a,f") = block_g_dabi_lt_e1*block_g_dabi_lt_f - block_g_dabi_lt_e*block_g_dabi_lt_f;
+              E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+            }
+          }
+        }
+      }
+      TA::set_default_world(global_world);
+      global_world.gop.sum(E_OV5);
+
+      //double E_OV5 = 0;
+      double E_O2V4_2 = 0;
+      //double E_O2V4_S = 0.0;
+      double E_O3V3_S2 = 0.0;
+      TA::set_default_world(this_world);
+      global_iter = 0;
       for (auto a = 0; a < n_tr_vir; ++a) {
         for (auto b = 0; b < n_tr_vir; ++b) {
           ++ global_iter;
@@ -1316,24 +1468,24 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           //blocking g_dabi over b
           block g_dabi_low_b{0, b_low, 0, 0};
-          block g_dabi_up_b{n_tr_vir_inner, b_up, n_tr_vir_inner, n_tr_occ};
+          block g_dabi_up_b{n_tr_vir, b_up, n_tr_vir, n_tr_occ};
 
           auto block_g_dabi_lt_b = g_dabi_lt("e,b,c,i").block(g_dabi_low_b, g_dabi_up_b);
 
           //blocking g_dabi over a
           block g_dabi_low_a{0, a_low, 0, 0};
-          block g_dabi_up_a{n_tr_vir_inner, a_up, n_tr_vir_inner, n_tr_occ};
+          block g_dabi_up_a{n_tr_vir, a_up, n_tr_vir, n_tr_occ};
           auto block_g_dabi_lt_a = g_dabi_lt("f,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
 
           //blocking t2 over a (required for both T1 and T2 intermediates)
           block t2_oou_lt_low_a{0, a_low, 0, 0};
-          block t2_oou_lt_up_a{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
+          block t2_oou_lt_up_a{n_tr_vir, a_up, n_tr_occ, n_tr_occ};
 
           auto block_t2_oou_lt_a_T12 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
 
           //blocking t2 over b (required for T2 intermediate)
           block t2_oou_lt_low_b{0, b_low, 0, 0};
-          block t2_oou_lt_up_b{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
+          block t2_oou_lt_up_b{n_tr_vir, b_up, n_tr_occ, n_tr_occ};
 
           auto block_t2_oou_lt_b_T2 = t2_oou_lt("f,b,j,i").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
@@ -1343,7 +1495,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           TArray T1;
           TArray T2;
 
-          time20 = mpqc::now(world, accurate_time);
+          /*time20 = mpqc::now(world, accurate_time);
+
 
           T1("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T1;
           T2("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T2;
@@ -1369,11 +1522,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
             time22 = mpqc::now(world, accurate_time);
             block g_dabi_low_ca{0, 0, a_low, 0};
-            block g_dabi_up_ca{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
+            block g_dabi_up_ca{n_tr_vir, n_tr_vir, a_up, n_tr_occ};
             auto block_g_dabi_lt_ca = g_dabi_lt("f,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
 
             block g_dabi_low_cb{0, 0, b_low, 0};
-            block g_dabi_up_cb{n_tr_vir_inner, n_tr_vir_inner, b_up, n_tr_occ};
+            block g_dabi_up_cb{n_tr_vir, n_tr_vir, b_up, n_tr_occ};
             auto block_g_dabi_lt_cb = g_dabi_lt("e,c,b,i").block(g_dabi_low_cb, g_dabi_up_cb);
 
             G("e,b,a,f") = block_g_dabi_lt_cb*block_g_dabi_lt_ca - block_g_dabi_lt_b*block_g_dabi_lt_ca;
@@ -1384,7 +1537,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
-          }
+          }*/
 
           //Mixed term contributions
           {
@@ -1401,7 +1554,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
             T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
             T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
-            {
+
+            if (this->is_df()) {
+
+              auto n_tr_aux = Xab.range().upbound()[0];
+
               TArray G1;
               TArray G2;
               TArray G3;
@@ -1409,13 +1566,45 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               auto block_t2_ouu_lt_cb = t2_ouu_lt("c,b,i,n").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
               block t2_oou_lt_low_bc{b_low, 0, 0, 0};
-              block t2_oou_lt_up_bc{b_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+              block t2_oou_lt_up_bc{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
+              auto block_t2_ouu_lt_bc = t2_ouu_lt("b,c,i,n").block(t2_oou_lt_low_bc, t2_oou_lt_up_bc);
+
+              auto block_g_dabi_lt_ac = g_dabi_lt("e,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
+
+              block Xab_low{0, 0, a_low};
+              block Xab_up{n_tr_aux, n_tr_vir, a_up};
+              auto block_Xab_lt = Xab_lt("X,e,a").block(Xab_low, Xab_up);
+
+              TArray gt1;
+              gt1("b,X,n") = Xai_lt("X,c,i") * block_t2_ouu_lt_cb;
+              TArray gt2;
+              gt2("b,X,n") = Xai_lt("X,c,i") * block_t2_ouu_lt_bc;
+
+              G1("e,a,b,n") = block_Xab_lt * gt1("b,X,n");
+              G2("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_cb;
+              G3("e,a,b,n") = block_Xab_lt * gt2("b,X,n");
+              E_O2V4_2 += TA::dot(2.0*G1("e,c,a,i") - G2("e,c,a,i") - G3("e,c,a,i"),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
+
+              TArray G;
+              G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
+              E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
+
+            } else {
+
+              TArray G1;
+              TArray G2;
+              TArray G3;
+
+              auto block_t2_ouu_lt_cb = t2_ouu_lt("c,b,i,n").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
+
+              block t2_oou_lt_low_bc{b_low, 0, 0, 0};
+              block t2_oou_lt_up_bc{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
               auto block_t2_ouu_lt_bc = t2_ouu_lt("b,c,i,n").block(t2_oou_lt_low_bc, t2_oou_lt_up_bc);
 
               auto block_g_dabi_lt_ac = g_dabi_lt("e,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
 
               block g_dabi_low_ca{0, 0, a_low, 0};
-              block g_dabi_up_ca{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
+              block g_dabi_up_ca{n_tr_vir, n_tr_vir, a_up, n_tr_occ};
               auto block_g_dabi_lt_ca = g_dabi_lt("e,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
 
               G1("e,a,b,n") = block_g_dabi_lt_ca * block_t2_ouu_lt_cb;
@@ -1431,42 +1620,101 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           {
 
-            block t1_lt_low_b{b_low, 0};
-            block t1_lt_up_b{b_up, n_tr_occ};
-            auto block_t1_lt_b = t1_lt("b,j").block(t1_lt_low_b, t1_lt_up_b);
+            //if (this->is_df()) {
+              /*
+              auto n_tr_aux = Xab.range().upbound()[0];
 
-            auto block_t2_oou_lt_faij = t2_oou_lt("f,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
-            auto block_t2_oou_lt_faji = t2_oou_lt("f,a,j,i").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
-            TArray T1;
-            TArray T2;
-            T1("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faij;
-            T2("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faji;
+              block t1_lt_low_b{b_low, 0};
+              block t1_lt_up_b{b_up, n_tr_occ};
+              auto block_t1_lt_b = t1_lt("b,j").block(t1_lt_low_b, t1_lt_up_b);
 
-            block g_dabi_low_cb{0, 0, b_low, 0};
-            block g_dabi_up_cb{n_tr_vir_inner, n_tr_vir_inner, b_up, n_tr_occ};
-            auto block_g_dabi_lt_cb = g_dabi_lt("f,c,b,j").block(g_dabi_low_cb, g_dabi_up_cb);
+              auto block_t2_oou_lt_faij = t2_oou_lt("f,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+              auto block_t2_oou_lt_faji = t2_oou_lt("f,a,j,i").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+              TArray T1;
+              TArray T2;
+              T1("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faij;
+              T2("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faji;
 
-            auto block_g_dabi_lt_bc = g_dabi_lt("f,b,c,j").block(g_dabi_low_b, g_dabi_up_b);
+              block g_dabi_low_cb{0, 0, b_low, 0};
+              block g_dabi_up_cb{n_tr_vir, n_tr_vir, b_up, n_tr_occ};
+              auto block_g_dabi_lt_cb = g_dabi_lt("f,c,b,j").block(g_dabi_low_cb, g_dabi_up_cb);
 
-            block g_abij_lt_low_ac{a_low, 0, 0, 0};
-            block g_abij_lt_up_ac{a_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
-            auto block_g_abij_lt_ac = g_abij_lt("a,c,j,i").block(g_abij_lt_low_ac, g_abij_lt_up_ac);
+              auto block_g_dabi_lt_bc = g_dabi_lt("f,b,c,j").block(g_dabi_low_b, g_dabi_up_b);
 
-            block g_abij_lt_low_ca{0, a_low, 0, 0};
-            block g_abij_lt_up_ca{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
-            auto block_g_abij_lt_ca = g_abij_lt("c,a,j,i").block(g_abij_lt_low_ca, g_abij_lt_up_ca);
+              block g_abij_lt_low_ac{a_low, 0, 0, 0};
+              block g_abij_lt_up_ac{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
+              auto block_g_abij_lt_ac = g_abij_lt("a,c,j,i").block(g_abij_lt_low_ac, g_abij_lt_up_ac);
 
-            TArray G1;
-            G1("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_cb;
+              block g_abij_lt_low_ca{0, a_low, 0, 0};
+              block g_abij_lt_up_ca{n_tr_vir, a_up, n_tr_occ, n_tr_occ};
+              auto block_g_abij_lt_ca = g_abij_lt("c,a,j,i").block(g_abij_lt_low_ca, g_abij_lt_up_ca);
 
-            TArray G3;
-            G3("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_bc;
-            E_O2V4_S += TA::dot((2.0*G1("i,a,b,f") - 4.0*G3("i,a,b,f")),T1("i,a,b,f"));
+              TArray gg1;
+              gg1("j,X,i,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,j");
+              block Xai_low{0, a_low, 0};
+              block Xai_up{n_tr_aux, a_up, n_tr_occ};
+              auto block_Xai_lt = Xab_lt("X,a,j").block(Xai_low, Xai_up);
+              TArray ggg1;
+              ggg1("a,i,Y") = gg1("j,X,i,Y") * block_Xai_lt;
 
 
-            TArray G2;
-            G2("i,a,b,f") = block_g_abij_lt_ca * block_g_dabi_lt_bc;
-            E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
+              block Xab_low{0, 0, b_low};
+              block Xab_up{n_tr_aux, n_tr_vir, b_up};
+              auto block_Xab_lt = Xab_lt("Y,f,b").block(Xab_low, Xab_up);
+
+              TArray G1;
+              G1("i,a,b,f") = ggg1("a,i,Y") * block_Xab_lt;
+
+
+              TArray G3;
+              G3("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_bc;
+              E_O2V4_S += TA::dot((2.0*G1("i,a,b,f") - 4.0*G3("i,a,b,f")),T1("i,a,b,f"));
+
+
+              TArray G2;
+              G2("i,a,b,f") = block_g_abij_lt_ca * block_g_dabi_lt_bc;
+              E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
+*/
+            //} else {
+
+            /*
+              block t1_lt_low_b{b_low, 0};
+              block t1_lt_up_b{b_up, n_tr_occ};
+              auto block_t1_lt_b = t1_lt("b,j").block(t1_lt_low_b, t1_lt_up_b);
+
+              auto block_t2_oou_lt_faij = t2_oou_lt("f,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+              auto block_t2_oou_lt_faji = t2_oou_lt("f,a,j,i").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+              TArray T1;
+              TArray T2;
+              T1("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faij;
+              T2("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faji;
+
+              block g_dabi_low_cb{0, 0, b_low, 0};
+              block g_dabi_up_cb{n_tr_vir, n_tr_vir, b_up, n_tr_occ};
+              auto block_g_dabi_lt_cb = g_dabi_lt("f,c,b,j").block(g_dabi_low_cb, g_dabi_up_cb);
+
+              auto block_g_dabi_lt_bc = g_dabi_lt("f,b,c,j").block(g_dabi_low_b, g_dabi_up_b);
+
+              block g_abij_lt_low_ac{a_low, 0, 0, 0};
+              block g_abij_lt_up_ac{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
+              auto block_g_abij_lt_ac = g_abij_lt("a,c,j,i").block(g_abij_lt_low_ac, g_abij_lt_up_ac);
+
+              block g_abij_lt_low_ca{0, a_low, 0, 0};
+              block g_abij_lt_up_ca{n_tr_vir, a_up, n_tr_occ, n_tr_occ};
+              auto block_g_abij_lt_ca = g_abij_lt("c,a,j,i").block(g_abij_lt_low_ca, g_abij_lt_up_ca);
+
+              TArray G1;
+              G1("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_cb;
+
+              TArray G3;
+              G3("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_bc;
+              E_O2V4_S += TA::dot((2.0*G1("i,a,b,f") - 4.0*G3("i,a,b,f")),T1("i,a,b,f"));
+
+
+              TArray G2;
+              G2("i,a,b,f") = block_g_abij_lt_ca * block_g_dabi_lt_bc;
+              E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));*/
+            //}
 
             {
               block g_abij_lt_low_ab{a_low, b_low, 0, 0};
@@ -1484,9 +1732,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
       TA::set_default_world(global_world);
-      global_world.gop.sum(E_OV5);
+      //global_world.gop.sum(E_OV5);
       global_world.gop.sum(E_O2V4_2);
-      global_world.gop.sum(E_O2V4_S);
+      //global_world.gop.sum(E_O2V4_S);
       global_world.gop.sum(E_O3V3_S2);
       global_world.gop.sum(time_G_OV5);
       global_world.gop.sum(time_T_OV5);
@@ -1508,7 +1756,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         {
           //blocking g_dabi over a & b
           block g_dabi_low_ab{0, a_low, 0, 0};
-          block g_dabi_up_ab{n_tr_vir_inner, a_up, n_tr_vir_inner, n_tr_occ};
+          block g_dabi_up_ab{n_tr_vir, a_up, n_tr_vir, n_tr_occ};
           auto block_g_dabi_lt_ab = g_dabi_lt("e,a,b,j").block(g_dabi_low_ab, g_dabi_up_ab);
 
           TArray G2;
@@ -1517,17 +1765,42 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G3("e,a,i,f") = block_g_dabi_lt_ab*t2_oou_lt("f,b,i,j");
           E_O2V4_vo += TA::dot(G2("e,a,i,f"),G2("f,a,i,e") - 4.0*G3("f,a,i,e"));
           {
-            block g_dabi_low_ba{0, 0, a_low, 0};
-            block g_dabi_up_ba{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
-            auto block_g_dabi_lt_ba = g_dabi_lt("e,b,a,j").block(g_dabi_low_ba, g_dabi_up_ba);
-            TArray G4;
-            G4("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,j,i");
-            E_O2V4_vo += TA::dot(G4("e,a,i,f"),G4("f,a,i,e") - 4.0*G2("f,a,i,e"));
-            E_O2V4_vo += TA::dot(G3("e,a,i,f"),2.0*G4("f,a,i,e") + G3("f,a,i,e"));
-            {
+            if (this->is_df()) {
+
+              auto n_tr_aux = Xab.range().upbound()[0];
+
+              block Xab_low{0, 0, a_low};
+              block Xab_up{n_tr_aux, n_tr_vir, a_up};
+              auto block_Xab_lt_ba = Xab_lt("X,e,a").block(Xab_low, Xab_up);
+
+              TArray gt1;
+              gt1("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,j,i");
+              TArray G4;
+              G4("e,a,i,f") = block_Xab_lt_ba*gt1("f,X,i");
+              E_O2V4_vo += TA::dot(G4("e,a,i,f"),G4("f,a,i,e") - 4.0*G2("f,a,i,e"));
+              E_O2V4_vo += TA::dot(G3("e,a,i,f"),2.0*G4("f,a,i,e") + G3("f,a,i,e"));
+
+              TArray gt2;
+              gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
               TArray G1;
-              G1("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,i,j");
+              G1("e,a,i,f") = block_Xab_lt_ba*gt2("f,X,i");
               E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
+
+            } else {
+
+              block g_dabi_low_ba{0, 0, a_low, 0};
+              block g_dabi_up_ba{n_tr_vir, n_tr_vir, a_up, n_tr_occ};
+              auto block_g_dabi_lt_ba = g_dabi_lt("e,b,a,j").block(g_dabi_low_ba, g_dabi_up_ba);
+              TArray G4;
+              G4("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,j,i");
+              E_O2V4_vo += TA::dot(G4("e,a,i,f"),G4("f,a,i,e") - 4.0*G2("f,a,i,e"));
+              E_O2V4_vo += TA::dot(G3("e,a,i,f"),2.0*G4("f,a,i,e") + G3("f,a,i,e"));
+              {
+                TArray G1;
+                G1("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,i,j");
+                E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
+              }
+
             }
           }
         }
@@ -1729,13 +2002,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
         //blocking g_dabi over e
         block g_dabi_low_e{e_low, 0, 0, 0};
-        block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+        block g_dabi_up_e{e_up, n_tr_vir, n_tr_vir, n_tr_occ};
 
         auto block_g_dabi_lt_e = g_dabi_lt("e,b,c,i").block(g_dabi_low_e, g_dabi_up_e);
 
         //blocking t2 over e (required for both T1 and T2 intermediates)
         block t2_oou_lt_low_e{e_low, 0, 0, 0};
-        block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+        block t2_oou_lt_up_e{e_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
         auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,b,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
 
@@ -1871,48 +2144,107 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time12 = mpqc::now(world, accurate_time);
 
-      //double E_O2V4_S = 0.0;
-      /*for (auto e = 0; e < n_tr_vir; ++e) {
+      double E_O2V4_S = 0.0;
+      TA::set_default_world(this_world);
+      global_iter = 0;
+      for (auto e = 0; e < n_tr_vir; ++e) {
+
+        ++ global_iter;
+        if( global_iter % size != rank) continue;
 
         std::size_t e_low = e;
         std::size_t e_up = e + 1;
 
         typedef std::vector<std::size_t> block;
 
-        //blocking g_dabi over e
-        block g_dabi_low_e{e_low, 0, 0, 0};
-        block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+        if (this->is_df()) {
 
-        auto block_g_dabi_lt_e = g_dabi_lt("e,c,b,j").block(g_dabi_low_e, g_dabi_up_e);
+          auto n_tr_aux = Xab.range().upbound()[0];
 
-        //blocking t2 over e (required for both T1 and T2 intermediates)
-        block t2_oou_lt_low_e{e_low, 0, 0, 0};
-        block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+          //blocking g_dabi over e
+          block g_dabi_low_e{e_low, 0, 0, 0};
+          block g_dabi_up_e{e_up, n_tr_vir, n_tr_vir, n_tr_occ};
 
-        auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
-        auto block_t2_oou_lt_e_T2 = t2_oou_lt("e,a,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+          //blocking t2 over e (required for both T1 and T2 intermediates)
+          block t2_oou_lt_low_e{e_low, 0, 0, 0};
+          block t2_oou_lt_up_e{e_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
-        TArray T1;
-        TArray T2;
-        T1("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T1;
-        T2("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T2;
+          auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+          auto block_t2_oou_lt_e_T2 = t2_oou_lt("e,a,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
 
-        TArray G1;
-        G1("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e;
+          TArray T1;
+          TArray T2;
+          T1("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T1;
+          T2("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T2;
 
-        {
-          TArray G3;
-          auto block_g_dabi_lt_e3 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
-          G3("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e3;
-          E_O2V4_S += TA::dot((2.0*G1("i,a,b,e") - 4.0*G3("i,a,b,e")),T1("i,a,b,e"));
-        }
-        {
+          TArray gg1;
+          gg1("i,j,X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,j");
+          TArray ggg1;
+          ggg1("i,a,Y") = gg1("i,j,X,Y") * Xai_lt("X,a,j");
+
+          block Xab_low{0,e_low,0};
+          block Xab_up{n_tr_aux,e_up,n_tr_vir};
+          auto block_Xab_lt = Xab_lt("Y,e,b").block(Xab_low, Xab_up);
+
+          TArray G1;
+          G1("i,a,b,e") = ggg1("i,a,Y") * block_Xab_lt;
+
+          auto block_Xab_lt_c = Xab_lt("Y,e,c").block(Xab_low, Xab_up);
+          TArray gg2;
+          gg2("e,X,j,Y") = Xai_lt("X,c,j") * block_Xab_lt_c;
+          TArray ggg2;
+          ggg2("e,X,b") = gg2("e,X,j,Y") * Xai_lt("Y,b,j");
+
           TArray G2;
-          auto block_g_dabi_lt_e2 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
-          G2("i,a,b,e") = g_abij_lt("c,a,j,i") * block_g_dabi_lt_e2;
+          G2("i,a,b,e") = ggg2("e,X,b") * Xai_lt("X,a,i");
+
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,e") - 4.0*G1("i,a,b,e")),T2("i,a,b,e"));
+
+          {
+            TArray G3;
+            auto block_g_dabi_lt_e3 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
+            G3("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e3;
+            E_O2V4_S += TA::dot((2.0*G1("i,a,b,e") - 4.0*G3("i,a,b,e")),T1("i,a,b,e"));
+          }
+
+        } else {
+          //blocking g_dabi over e
+          block g_dabi_low_e{e_low, 0, 0, 0};
+          block g_dabi_up_e{e_up, n_tr_vir, n_tr_vir, n_tr_occ};
+
+          auto block_g_dabi_lt_e = g_dabi_lt("e,c,b,j").block(g_dabi_low_e, g_dabi_up_e);
+
+          //blocking t2 over e (required for both T1 and T2 intermediates)
+          block t2_oou_lt_low_e{e_low, 0, 0, 0};
+          block t2_oou_lt_up_e{e_up, n_tr_vir, n_tr_occ, n_tr_occ};
+
+          auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+          auto block_t2_oou_lt_e_T2 = t2_oou_lt("e,a,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+
+          TArray T1;
+          TArray T2;
+          T1("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T1;
+          T2("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T2;
+
+          TArray G1;
+          G1("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e;
+
+          {
+            TArray G3;
+            auto block_g_dabi_lt_e3 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
+            G3("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e3;
+            E_O2V4_S += TA::dot((2.0*G1("i,a,b,e") - 4.0*G3("i,a,b,e")),T1("i,a,b,e"));
+          }
+          {
+            TArray G2;
+            auto block_g_dabi_lt_e2 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
+            G2("i,a,b,e") = g_abij_lt("c,a,j,i") * block_g_dabi_lt_e2;
+            E_O2V4_S += TA::dot((-4.0*G2("i,a,b,e") - 4.0*G1("i,a,b,e")),T2("i,a,b,e"));
+          }
         }
-      }*/
+      }
+      TA::set_default_world(global_world);
+      global_world.gop.sum(E_O2V4_S);
       /*{
         TArray T1;
         TArray T2;

@@ -1,10 +1,7 @@
 set(sources
 builder.h
 cadf_builder.h
-cadf_builder_forced_shape.h
-cadf_builder_print_only.h
-cadf_fitting_coeffs.h
-cadf_helper_functions.h
+nrcadf_builder.h
 clr_cadf_builder.h
 clusterd_coeffs.h
 density_builder.h

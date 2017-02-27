@@ -24,7 +24,7 @@ const std::map<Operator::Type, std::wstring> Operator::oper_to_string = {
     {Type::hJ, L"hJ"},         {Type::K, L"K"},
     {Type::KAlpha, L"K(α)"},   {Type::KBeta, L"K(β)"},
     {Type::Fock, L"F"},        {Type::FockAlpha, L"F(α)"},
-    {Type::FockBeta, L"F(β)"}, {Type::Cadf, L"C"},
+    {Type::FockBeta, L"F(β)"}, {Type::Cadf, L"Cadf"},
     {Type::Identity, L"I"}};
 
 const std::map<Operator::Option, std::wstring> Operator::option_to_string = {

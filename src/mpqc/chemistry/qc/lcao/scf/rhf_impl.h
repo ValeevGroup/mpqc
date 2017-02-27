@@ -15,6 +15,9 @@
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/nrcadf_builder.h"
 #include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
@@ -361,27 +364,51 @@ void DirectRIRHF<Tile, Policy>::init_fock_builder() {
 template <typename Tile, typename Policy>
 CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
-  tcutc_ = kv.value<double>("tcutc", 0.0);
+  auto user_tcutc = kv.exists("tcutc");
+  if (user_tcutc) {
+    tcutc_ = kv.value<double>("tcutc");
+  } else if (force_shape_threshold_ > 0) {
+    tcutc_ = 1e-4;
+  } else {
+    tcutc_ = 0.0;
+  }
+
+  secadf_ = kv.value<bool>("secadf", false);
+  aaab_ = kv.value<bool>("secadf_aaab", false);
 }
 
 template <typename Tile, typename Policy>
 void CadfRHF<Tile, Policy>::init_fock_builder() {
-  auto& ao_factory = this->ao_factory();
+  using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
+  scf::CADFFockBuilder<Tile, Policy, DirectArray> builder(
+      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
+  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+}
 
-  auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto C = ao_factory.compute(L"( Κ | Cadf|κ λ)");
-  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
+/**
+ * nrCadfRHF member functions
+ */
+template <typename Tile, typename Policy>
+nrCadfRHF<Tile, Policy>::nrCadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  auto user_tcutc = kv.exists("tcutc");
+  if (user_tcutc) {
+    tcutc_ = kv.value<double>("tcutc");
+  } else if (force_shape_threshold_ > 0) {
+    tcutc_ = 1e-4;
+  } else {
+    tcutc_ = 0.0;
+  }
 
-  double error =
-      (eri4("p,q,r,s") - C("X, p, q") * inv("X,Y") * C("Y,r,s")).norm();
-  ExEnv::out0() << "Error norm from non-robust fit: " << error
-                << ", avg error per element "
-                << error /
-                       double(eri4.array().trange().elements_range().volume())
-                << std::endl;
+  secadf_ = kv.value<bool>("secadf", false);
+  aaab_ = kv.value<bool>("secadf_aaab", false);
+}
 
-  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
-  scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
+template <typename Tile, typename Policy>
+void nrCadfRHF<Tile, Policy>::init_fock_builder() {
+  using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
+  scf::nrCADFFockBuilder<Tile, Policy, DirectArray> builder(
+      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -396,6 +423,25 @@ void DirectRHF<Tile, Policy>::init_fock_builder() {
   auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
   auto builder =
       scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
+  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+}
+
+/**
+ * DirectRIRHF member functions
+ */
+template <typename Tile, typename Policy>
+RIJEXACTKRHF<Tile, Policy>::RIJEXACTKRHF(const KeyVal& kv)
+    : RHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void RIJEXACTKRHF<Tile, Policy>::init_fock_builder() {
+  auto& ao_factory = this->ao_factory();
+
+  auto inv = ao_factory.compute(L"( Κ | G| Λ )");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
+  auto eri4 = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
+
+  scf::RIJEXACTKBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3, eri4);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 

@@ -1,6 +1,6 @@
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_NRCADF_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_NRCADF_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/util.h"
@@ -19,7 +19,7 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename DirectArray>
-class CADFFockBuilder : public FockBuilder<Tile, Policy> {
+class nrCADFFockBuilder : public FockBuilder<Tile, Policy> {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
 
@@ -58,8 +58,9 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   using BasisFactory = lcao::gaussian::Basis::Factory;
 
   template <typename Factory>
-  CADFFockBuilder(Factory &ao_factory, double force_threshold,
-                  double lmo_chop_threshold, bool do_secadf, bool aaab = false)
+  nrCADFFockBuilder(Factory &ao_factory, double force_threshold,
+                    double lmo_chop_threshold, bool do_secadf,
+                    bool aaab = false)
       : force_threshold_(force_threshold),
         LMO_chop_threshold_(lmo_chop_threshold),
         secadf_(do_secadf) {
@@ -76,8 +77,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
       auto &world = C_.world();
       auto t0 = mpqc::fenced_now(world);
-      seC_ =
-          lcao::secadf_by_atom_correction<Tile, Policy>(world, obs, dfbs, aaab);
+      seC_ = lcao::nrsecadf_by_atom_correction<Tile, Policy>(world, obs, dfbs,
+                                                             aaab);
       auto t1 = mpqc::fenced_now(world);
       auto time = mpqc::duration_in_s(t0, t1);
 
@@ -104,7 +105,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
                                                          trange1_M, trange1_M);
   }
 
-  ~CADFFockBuilder() = default;
+  ~nrCADFFockBuilder() = default;
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {
@@ -228,14 +229,9 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     // Construct F
     auto f0 = mpqc::fenced_now(world);
     if (force_threshold_ == 0.0) {
-      F("X, i, mu") =
-          E_("X, mu, nu") * LMO("nu, i") - 0.5 * M_("X,Y") * Z("Y, i, mu");
+      F("X, i, mu") = M_("X,Y") * Z("Y, i, mu");
     } else {
-      F("X, i, mu") = (E_("X, mu, nu") * LMO("nu, i")).set_shape(forced_shape);
-      F.truncate();
-
-      F("X, i, mu") +=
-          (-0.5 * M_("X, Y") * Z("Y, i, mu")).set_shape(forced_shape);
+      F("X, i, mu") = (M_("X, Y") * Z("Y, i, mu")).set_shape(forced_shape);
     }
     F.truncate();
     auto f1 = mpqc::fenced_now(world);
@@ -277,4 +273,4 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_NRCADF_BUILDER_H_

@@ -24,6 +24,10 @@ template class mpqc::lcao::CadfRHF<TA::TensorD, TA::DensePolicy>;
 MPQC_CLASS_EXPORT2("Cadf-RHF",
                    mpqc::lcao::CadfRHF<TA::TensorD, TA::DensePolicy>);
 
+template class mpqc::lcao::nrCadfRHF<TA::TensorD, TA::DensePolicy>;
+MPQC_CLASS_EXPORT2("nrCadf-RHF",
+                   mpqc::lcao::nrCadfRHF<TA::TensorD, TA::DensePolicy>);
+
 #elif TA_DEFAULT_POLICY == 1
 
 template class mpqc::lcao::RHF<TA::TensorD, TA::SparsePolicy>;
@@ -43,4 +47,12 @@ MPQC_CLASS_EXPORT2("Direct-RI-RHF",
 template class mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("Cadf-RHF",
                    mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>);
+
+template class mpqc::lcao::nrCadfRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("nrCadf-RHF",
+                   mpqc::lcao::nrCadfRHF<TA::TensorD, TA::SparsePolicy>);
+
+template class mpqc::lcao::RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("RIJ-ExactK-RHF",
+                   mpqc::lcao::RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>);
 #endif

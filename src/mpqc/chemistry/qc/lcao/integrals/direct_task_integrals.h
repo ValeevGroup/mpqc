@@ -83,6 +83,60 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
 template <typename Tile = TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
+    TA::Tensor<float> const &use_these_norms, 
+    std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+  const auto trange = detail::create_trange(bases);
+  const auto tvolume = trange.tiles_range().volume();
+  TA::TensorF tile_norms = use_these_norms.clone();
+
+  // Copy the Bases for the Integral Builder
+  auto shr_bases = std::make_shared<BasisVector>(bases);
+
+  auto builder = make_direct_integral_builder(world, std::move(shr_pool),
+                                              std::move(shr_bases),
+                                              std::move(screen), std::move(op));
+
+  auto dir_array =
+      DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
+
+  auto builder_ptr = dir_array.builder();
+
+  using DirectTileType = DirectTile<Tile, Engine>;
+
+  auto task_f = [=](int64_t ord, detail::IdxVec const &idx, TA::Range rng) {
+    auto &builder = *builder_ptr;
+    return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
+  };
+
+  TA::DistArray<TA::TensorD, TA::SparsePolicy> ta_array;
+  // Don't need world because provided norms should be replicated
+  TA::SparseShape<float> shape(tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape);
+
+  auto pmap = out.pmap();
+
+  for (auto const &ord : *pmap) {
+    if (!out.is_zero(ord)) {
+      detail::IdxVec idx = trange.tiles_range().idx(ord);
+      auto range = trange.make_tile_range(ord);
+      auto tile_fut = world.taskq.add(task_f, ord, idx, range);
+      out.set(ord, tile_fut);
+    }
+  }
+  world.gop.fence();
+
+  dir_array.set_array(std::move(out));
+  return dir_array;
+}
+
+/*! \brief Construct direct integral tensors in parallel with screening.
+ *
+ * Same requirements on Op as those in Integral Builder
+ */
+template <typename Tile = TA::TensorD, typename Engine>
+DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
+    madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   const auto trange = detail::create_trange(bases);
@@ -109,7 +163,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
   };
 
   TA::DistArray<TA::TensorD, TA::SparsePolicy> ta_array;
-  TA::SparseShape<float> shape(world, tile_norms, trange);
+  // Don't need world because screen->norm_estimate() is replicated
+  TA::SparseShape<float> shape(tile_norms, trange);
   TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape);
 
   auto pmap = out.pmap();

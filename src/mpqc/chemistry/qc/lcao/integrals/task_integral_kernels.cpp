@@ -72,6 +72,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
             }
           }
         }
+        lb[1] = ub[1];
       }
     }
 

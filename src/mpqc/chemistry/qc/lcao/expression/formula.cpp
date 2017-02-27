@@ -10,6 +10,8 @@
 #include <TiledArray/error.h>
 #include <boost/algorithm/string.hpp>
 
+#include "mpqc/util/misc/exception.h"
+
 namespace mpqc {
 
 const std::map<Formula::Option, std::wstring> Formula::option_to_string = {

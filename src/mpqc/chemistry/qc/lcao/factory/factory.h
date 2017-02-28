@@ -12,7 +12,7 @@
 namespace mpqc {
 namespace lcao {
 
-template <typename Array, typename DirectArray = Array>
+template <typename Array, typename DirectArray=Array>
 class Factory : virtual public DescribedClass {
  public:
   Factory() = default;

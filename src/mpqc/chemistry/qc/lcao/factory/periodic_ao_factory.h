@@ -111,6 +111,8 @@ namespace gaussian {
 template <typename Tile, typename Policy>
 class PeriodicAOFactory;
 
+template <typename Tile, typename Policy>
+using PeriodicAOFactoryBase = Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile,Policy>>;
 /*!
  * \brief This constructs a PeriodicAOFactory object
  *
@@ -165,7 +167,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
+class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
@@ -179,7 +181,7 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \param kv the KeyVal object
    */
   PeriodicAOFactory(const KeyVal &kv)
-      : Factory<TArray>(kv) {
+      : PeriodicAOFactoryBase<Tile,Policy>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -736,7 +738,9 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+#if TA_DEFAULT_POLICY == 1
 extern template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 }  // namespace lcao

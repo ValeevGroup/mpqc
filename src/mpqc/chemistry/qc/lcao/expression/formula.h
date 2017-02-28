@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include "mpqc/math/groups/petite_list.h"
+
 #include "greek_to_english_name.h"
 #include "operator.h"
 #include "orbital_index.h"
@@ -35,18 +37,8 @@ struct append_count {
 }
 
 /**
- * \brief Formula class that represent quantum mechanical expressions
- *
- * format for formula
- *
- *  - Physical Notation
- *  <index1 index2|operation|index3 index4>[option1,option2]
- *
- *  - Chemical Notation
- *  (index1 index2|operation|index3 index4)[option]
- *
- *  @sa OrbitalIndex for description of index
- *  @sa Operation for description of operation and option
+ * \brief Formula parses a string represnetation of quantum mechanical matrix elements and
+ *        related expressions.
  */
 class Formula {
  public:
@@ -55,21 +47,51 @@ class Formula {
   /// Position = Bra or Ket
   enum class Position { Invalid = -1, Bra = 0, Ket = 1 };
 
-  Formula() : notation_(Notation::Invalid) {}
+  /// Types of Options
+  enum class Option { DensityFitting = 0, Inverse = 1, InverseSquareRoot = 2 };
+
+  static const std::map<Option, std::wstring> option_to_string;
+
+  Formula() {}
   Formula(Formula const &) = default;
   Formula(Formula &&) = default;
   Formula &operator=(Formula const &) = default;
   Formula &operator=(Formula &&) = default;
 
   /**
-   *  Constructor
-   *  @param formula a properly formatted std::wstring
-   */
+ *  Constructor parses the string in one of the following formats:
+ *  - Physical Notation
+ *  <index1 index2|operator|index3 index4>[option1,option2]
+ *
+ *  - Chemical Notation
+ *  (index1 index2|operator|index3 index4)[option]
+ *
+ *  where the index keys \c index1 , \c \index2 , etc. are parsed by ::mpqc::lcao::OrbitalIndex,
+ *  the operator key \c operator
+ *  is parsed by Operator , and the option keys can be one of the following:
+ *  - \c df -> Option::DensityFitting
+ *  - \c inv -> Option::Inverse
+ *  - \c inv_sqr -> Option::InverseSquareRoot
+ *  - \c <symm> -> math::PetiteList::Symmetry
+ */
   Formula(std::wstring formula);
 
   /// reconstruct a std::wstring representation of the formula
   /// @sa Formula::to_ta_expression()
   std::wstring string() const;
+
+  /**
+   *  index functions
+   */
+
+  /// dimension of formula(2, 3 or 4)
+  std::size_t rank() const;
+
+  /// @return true if this contains \c index
+  bool has_index(const OrbitalIndex &index) const;
+
+  /// @return true if it only contains AO indices
+  bool is_ao() const;
 
   /// return bra_index
   const std::vector<OrbitalIndex> &bra_indices() const { return bra_indices_; }
@@ -93,26 +115,8 @@ class Formula {
     bra_indices_ = ket_idxs;
   }
 
-  /// set Operator
-  void set_operator(const Operator &oper) { oper_ = oper; }
-
-  /// set Notation
-  void set_notation(const Notation &notation) {
-    TA_USER_ASSERT(notation != Notation::Invalid, "invalid Notation")
-    notation_ = notation;
-  }
-
-  /// set Operator type @sa Operator::Type
-  void set_operator_type(const Operator::Type &oper_type) {
-    oper_.set_type(oper_type);
-  }
-
-  /// set Option in Operator
-  void set_operator_option(const std::vector<Operator::Option> & option){
-    oper_.set_option(option);
-  }
-  /// Operator accessor
-  const Operator &oper() const { return oper_; }
+  /// @name Notation functions
+  /// @{
 
   /// Notation accessor
   const Notation &notation() const {
@@ -120,18 +124,55 @@ class Formula {
     return notation_;
   }
 
-  /// @return true if this contains \c index
-  bool has_index(const OrbitalIndex &index) const;
+  /// set Notation
+  void set_notation(const Notation &notation) {
+    TA_USER_ASSERT(notation != Notation::Invalid, "invalid Notation")
+    notation_ = notation;
+  }
 
-  /// @return true if it only contains AO indices
-  bool is_ao() const;
+  /// @}
 
-  /// dimension of formula(2, 3 or 4)
-  std::size_t rank() const;
+  /// @name Operator functions
+  /// @{
+
+  /// set Operator
+  void set_operator(const Operator &oper) { oper_ = oper; }
+
+  /// set Operator type @sa Operator::Type
+  void set_operator_type(const Operator::Type &oper_type) {
+    oper_.set_type(oper_type);
+  }
+
+  /// Operator accessor
+  const Operator &oper() const { return oper_; }
+
+  /// @}
+
+  /// Symmetry accessor
+  math::PetiteList::Symmetry symmetry() const {
+    return symm_;
+  }
+
+  /// @name Formula options functions
+  /// @{
+
+  /// Calling this ensures that \c has_option(op) will return \c true
+  void set_option(Option op);
+
+  /// @param op a Formula::Option object
+  /// @return true if this formula has option \c op
+  bool has_option(Option op) const;
+
+  /// @}
+
+  /// @name Comparison operators
+  /// @{
 
   bool operator<(const Formula &other) const;
   bool operator==(const Formula &other) const;
   bool operator!=(const Formula &other) const { return !(*this == other); }
+
+  /// @}
 
   /// converts this to a TA expression annotation
   /// @tparam Transformer a unary functor class
@@ -146,7 +187,9 @@ class Formula {
 
  private:
   Operator oper_;
-  Notation notation_;
+  Notation notation_ = Notation::Invalid;
+  std::vector<Option> options_;
+  math::PetiteList::Symmetry symm_ = math::PetiteList::Symmetry::e;
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;
 };

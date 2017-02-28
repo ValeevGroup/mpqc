@@ -111,7 +111,7 @@ Exception::Exception(const char *description,
   detail::Exception(description, file, line),
   exception_type_(exception_type),
   elaboration_c_str_(0),
-  backtrace_("=scbacktrace=: ")
+  backtrace_("=mpqcbacktrace=: ")
 {
   try {
       elaboration_ = std::make_unique<std::ostringstream>();

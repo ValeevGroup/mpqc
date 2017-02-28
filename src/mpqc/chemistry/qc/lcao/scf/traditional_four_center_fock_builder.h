@@ -12,26 +12,45 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Integral>
-class FourCenterBuilder : public FockBuilder<Tile,Policy> {
+class FourCenterBuilder : public FockBuilder<Tile, Policy> {
  public:
-  using array_type = typename FockBuilder<Tile,Policy>::array_type;
-  Integral eri4_;
+  using array_type = typename FockBuilder<Tile, Policy>::array_type;
+  Integral eri4_J_;
+  Integral eri4_K_;
 
  public:
-  FourCenterBuilder(Integral const &eri4) : eri4_(eri4) {}
+  FourCenterBuilder(Integral const &eri4_J, Integral const &eri4_K)
+      : eri4_J_(eri4_J), eri4_K_(eri4_K) {}
 
   array_type operator()(array_type const &D, array_type const &C) override {
+    const auto make_J = eri4_J_.is_initialized();
+    const auto make_K = eri4_K_.is_initialized();
+    assert(make_J || make_K);
+
     // Make J
     array_type J;
-    J("mu, nu") = eri4_("mu, nu, rho, sig") * D("rho, sig");
+    if (make_J) {
+      J("mu, nu") = eri4_J_("mu, nu, rho, sig") * D("rho, sig");
+      // symmetrize to account for petite list
+      J("mu, nu") = 0.5 * (J("mu, nu") + J("nu, mu"));
+    }
 
     // Make K
     array_type K;
-    K("mu, nu") = eri4_("mu, rho, nu, sig") * D("rho, sig");
+    if (make_K) {
+      K("mu, nu") = eri4_K_("mu, rho, nu, sig") * D("rho, sig");
+      // symmetrize to account for petite list
+      K("mu, nu") = 0.5 * (K("mu, nu") + K("nu, mu"));
+    }
 
     // Make and return G
     array_type G;
-    G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");
+    if (make_J && make_K)
+      G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");
+    else if (make_J)
+      G("mu, nu") = 2 * J("mu, nu");
+    else if (make_K)
+      G("mu, nu") = -K("mu, nu");
 
     return G;
   }

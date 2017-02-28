@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
+#include "mpqc/math/groups/petite_list.h"
 
 namespace mpqc {
 namespace lcao {
@@ -45,15 +46,17 @@ class Screener {
   virtual bool skip(int64_t, int64_t, int64_t, int64_t);
   virtual bool skip(int64_t, int64_t, int64_t, int64_t) const;
 
-  /*! \brief returns an estimate of shape norms for the given basis vector.
-   * 
+  /*! \brief returns an estimate of shape norms for the given basis vector, in presence of
+   *         symmetry described by a math::PetiteList object.
+   *
    * The base class just returns the tensor full of
    * std::numeric_limits<float>::max() values, this may lead to
    * overflow issues if the tensor is never truncated.
    */
   virtual TA::Tensor<float> norm_estimate(
       madness::World &world,
-      std::vector<gaussian::Basis> const &bs_array) const;
+      std::vector<gaussian::Basis> const &bs_array,
+      const math::PetiteList& plist = math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const;
 };
 
 }  // namespace  lcao

@@ -1205,6 +1205,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time29;
     mpqc::time_point time30;
     mpqc::time_point time31;
+    mpqc::time_point time32;
+    mpqc::time_point time33;
+    mpqc::time_point time34;
+    mpqc::time_point time35;
+    mpqc::time_point time36;
+    mpqc::time_point time37;
 
     double int_transform1 = 0.0;
     double int_transform2 = 0.0;
@@ -1217,6 +1223,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_T_OV5 = 0.0;
     double time_G_OV5 = 0.0;
     double time_trace = 0.0;
+    double time_gg1 = 0.0;
+    double time_gg2 = 0.0;
+    double time_ggg1 = 0.0;
+    double time_ggg2 = 0.0;
+    double time_G1 = 0.0;
+    double time_G2 = 0.0;
 
 
     // get trange1
@@ -1422,26 +1434,48 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               block Xab_up_f{n_tr_aux, f_up, n_tr_vir};
               auto block_Xab_lt_f = Xab_lt("Y,f,a").block(Xab_low_f, Xab_up_f);
 
+              time25 = mpqc::now(world, accurate_time);
               TArray gg1;
               gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+              time26 = mpqc::now(world, accurate_time);
+              time_gg1 += mpqc::duration_in_s(time25, time26);
+
+              time27 = mpqc::now(world, accurate_time);
               TArray ggg1;
               ggg1("e,Y,b") = gg1("X,Y") * block_Xab_lt_e;
+              time28 = mpqc::now(world, accurate_time);
+              time_ggg1 += mpqc::duration_in_s(time27, time28);
 
               auto block_Xab_lt_ec = Xab_lt("X,e,c").block(Xab_low_e, Xab_up_e);
 
+              time29 = mpqc::now(world, accurate_time);
               TArray gg2;
               gg2("e,Y,i,X") = block_Xab_lt_ec * Xai_lt("Y,c,i");
+              time30 = mpqc::now(world, accurate_time);
+              time_gg2 += mpqc::duration_in_s(time29, time30);
+
+              time31 = mpqc::now(world, accurate_time);
               TArray ggg2;
               ggg2("e,Y,b") = gg2("e,Y,i,X") * Xai_lt("X,b,i");
+              time32 = mpqc::now(world, accurate_time);
+              time_ggg2 += mpqc::duration_in_s(time31, time32);
 
-              TArray G;
-              G("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f - ggg2("e,Y,b") * block_Xab_lt_f;
+              //TArray G;
+              //G("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f - ggg2("e,Y,b") * block_Xab_lt_f;
+              time33 = mpqc::now(world, accurate_time);
+              TArray G1;
+              G1("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f;
+              time34 = mpqc::now(world, accurate_time);
+              time_G1 += mpqc::duration_in_s(time33, time34);
 
-              time23 = mpqc::now(world, accurate_time);
-              time_G_OV5 += mpqc::duration_in_s(time22, time23);
+              time35 = mpqc::now(world, accurate_time);
+              TArray G2;
+              G2("e,b,a,f") = ggg2("e,Y,b") * block_Xab_lt_f;
+              time36 = mpqc::now(world, accurate_time);
+              time_G2 += mpqc::duration_in_s(time35, time36);
+              //E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
 
-              E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-
+              E_OV5 += TA::dot((G1("e,b,a,f") - G2("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
 
             /*} else {
               TArray G;
@@ -2467,6 +2501,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "time_G_OV5: " << time_G_OV5 << " S \n";
       std::cout << "time_T_OV5: " << time_T_OV5 << " S \n";
       std::cout << "time_trace: " << time_trace << " S \n";
+      std::cout << "time_gg1: " << time_gg1 << " S \n";
+      std::cout << "time_ggg1: " << time_ggg1 << " S \n";
+      std::cout << "time_G1: " << time_G1 << " S \n";
+      std::cout << "time_gg2: " << time_gg2 << " S \n";
+      std::cout << "time_ggg2: " << time_ggg2 << " S \n";
+      std::cout << "time_G2: " << time_G2 << " S \n";
+
     }
 
     triple_energy = -triple_energy / (3.0 * alpha);

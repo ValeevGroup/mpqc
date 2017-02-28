@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/util/misc/exception.h"
+#include "mpqc/math/groups/petite_list.h"
 
 #include <tiledarray.h>
 
@@ -309,7 +310,7 @@ class SchwarzScreen : public Screener {
   /*! \brief returns an estimate of shape norms for the given basis vector.
    *
    * This will use the outer product of Qab * Qcd to determine the
-   * shape.
+   * shape. Will replicate the result on ever node. 
    */
   TA::Tensor<float> norm_estimate(
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,

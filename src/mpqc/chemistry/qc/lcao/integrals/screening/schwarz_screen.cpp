@@ -86,7 +86,7 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
 
 TA::Tensor<float> SchwarzScreen::norm_estimate(
     madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-    const math::PetiteList& plist) const {
+    const math::PetiteList &plist) const {
   const auto ndims = bs_array.size();
   auto trange = gaussian::detail::create_trange(bs_array);
   auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
@@ -137,8 +137,9 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
             *out = scaling_factor * std::sqrt(norm);
           };
 
-          if (plist.is_canonical(c0,c1,c2)) {
-            const float multiplicity = static_cast<float>(plist.multiplicity(c0,c1,c2));
+          if (plist.is_canonical(c0, c1, c2)) {
+            const float multiplicity =
+                static_cast<float>(plist.multiplicity(c0, c1, c2));
             world.taskq.add(task_f, &norms(c0, c1, c2), multiplicity);
           }
 
@@ -147,7 +148,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         sh1 += nsh1;
       }
       sh0 += nsh0;
-    } // End estimate
+    }  // End estimate
   } else if (ndims == 4) {
     auto const &bs0 = bs_array[0];
     auto const &bs1 = bs_array[1];
@@ -207,8 +208,9 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
               *out = scaling_factor * std::sqrt(norm);
             };
 
-            if (plist.is_canonical(c0,c1,c2)) {
-              const float multiplicity = static_cast<float>(plist.multiplicity(c0,c1,c2,c3));
+            if (plist.is_canonical(c0, c1, c2)) {
+              const float multiplicity =
+                  static_cast<float>(plist.multiplicity(c0, c1, c2, c3));
               world.taskq.add(task_f, &norms(c0, c1, c2, c3), multiplicity);
             }
 
@@ -219,12 +221,11 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         sh1 += nsh1;
       }
       sh0 += nsh0;
-    } // End estimate
+    }  // End estimate
   } else {
     norms = Screener::norm_estimate(world, bs_array, plist);
   }
   world.gop.fence();
-
 
   return norms;
 }

@@ -10,7 +10,7 @@
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include "../../../../../utility/cc_utility.h"
-#include "mpqc/chemistry/qc/cc/diis_ccsd.h"
+#include "mpqc/chemistry/qc/cc/diis.h"
 
 namespace mpqc {
 namespace lcao {

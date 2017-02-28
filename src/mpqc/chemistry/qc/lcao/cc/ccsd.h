@@ -7,7 +7,9 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/cc/diis_ccsd.h"
+#include "mpqc/chemistry/qc/cc/diis.h"
+#include "mpqc/chemistry/qc/cc/solvers.h"
+#include "mpqc/chemistry/qc/lcao/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
@@ -67,7 +69,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
-   * | less_memory | bool | false | avoid store another abcd term in standard and df method |
+   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
    */
 
   // clang-format on
@@ -83,13 +85,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     df_ = false;
     auto default_method =
         this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
-    method_ = kv_.value<std::string>("method", default_method);
+    method_ = kv.value<std::string>("method", default_method);
     if (method_ != "df" && method_ != "direct" && method_ != "standard") {
       throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
     }
     if (method_ == "df" || method_ == "direct") {
       df_ = true;
     }
+
+    solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
+    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno")
+      throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
+
+    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
 
     max_iter_ = kv.value<int>("max_iter", 20);
     print_detail_ = kv.value<bool>("print_detail", false);
@@ -104,10 +112,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
   /// private members
  protected:
-  const KeyVal kv_;
+  const KeyVal kv_;  // the input keyval is kept to avoid heavy initialization in ctor
+  std::string solver_str_;
+  std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
   typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
+  bool reduced_abcd_memory_ = false;
   std::string method_;
   std::size_t max_iter_;
   double target_precision_;
@@ -115,7 +126,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   bool print_detail_;
   double ccsd_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
-  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
+  std::shared_ptr<const Eigen::VectorXd> f_pq_diagonal_;
 
  protected:
   std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
@@ -181,6 +192,21 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       f_pq_diagonal_ =
           make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+
+      // set up the solver
+      if (solver_str_ == "jacobi_diis") {
+        const auto n_occ = this->trange1_engine()->get_occ();
+        const auto n_frozen = this->trange1_engine()->get_nfrozen();
+        const auto n_act_occ = n_occ - n_frozen;
+        const auto n_uocc = f_pq_diagonal_->rows() - n_occ;
+        solver_ = std::make_shared<cc::JacobiDIISSolver<TArray>>(
+            kv_, f_pq_diagonal_->segment(n_frozen, n_act_occ),
+            f_pq_diagonal_->segment(n_occ, n_uocc));
+      }
+      else if (solver_str_ == "pno")
+        solver_ = std::make_shared<cc::PNOSolver<TArray>>(kv_, this->lcao_factory());
+      else
+        throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 
       // set the precision
       target_precision_ = energy->target_precision(0);
@@ -266,22 +292,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray r1;
     TArray r2;
 
-    bool less = kv_.value<bool>("less_memory", false);
-
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
       std::cout << "Target precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
-      if (less) {
-        std::cout << "Less Memory Approach: Yes" << std::endl;
-      } else {
-        std::cout << "Less Memory Approach: No" << std::endl;
-      }
+      std::cout << "Reduced ABCD Memory Approach: "
+                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
-
-    auto diis = get_diis(world);
 
     while (iter < max_iter_) {
       // start timer
@@ -336,10 +355,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
         r1("a,i") -=
             (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        r1("a,i") *= d1("a,i");
-
-        r1("a,i") -= t1("a,i");
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -476,7 +491,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       tmp_time0 = mpqc::now(world, accurate_time);
       {
         // compute b intermediate
-        if (less) {
+        if (reduced_abcd_memory_) {
           // avoid store b_abcd
           TArray b_abij;
           b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -510,14 +525,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
-
-      r2("a,b,i,j") -= t2("a,b,i,j");
-
-      t1("a,i") = t1("a,i") + r1("a,i");
-      t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
-      t1.truncate();
-      t2.truncate();
+      // error = residual norm per element
+      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+              (size(r1) + size(r2));
 
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
@@ -526,33 +536,29 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
       // recompute energy
       E0 = E1;
-      E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-           TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
-                   tau("a,b,i,j"));
+      E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+           TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
+                   2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
+      // update the amplitudes, if not converged
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray, TArray> t(t1, t2);
-        cc::T1T2<TArray, TArray> r(r1, r2);
-        error = r.norm() /
-                (size(t1) + size(t2));  // error = residual norm per element
-        diis.extrapolate(t, r);
 
-        // update t1 and t2
-        t1("a,i") = t.t1("a,i");
-        t2("a,b,i,j") = t.t2("a,b,i,j");
+        assert(solver_);
+        solver_->update(t1, t2, r1, r2);
 
         if (print_detail_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
 
+        // recompute tau as well
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
         if (print_detail_) {
-          mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
+          mpqc::utility::print_par(world, "solver time: ", tmp_time, "\n");
         }
 
         auto time1 = mpqc::fenced_now(world);
@@ -642,22 +648,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray r1;
     TArray r2;
 
-    bool less = kv_.value<bool>("less_memory", false);
-
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
       std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
-      if (less) {
-        std::cout << "Less Memory Approach: Yes" << std::endl;
-      } else {
-        std::cout << "Less Memory Approach: No" << std::endl;
-      }
+      std::cout << "Reduced ABCD Memory Approach: "
+                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
-
-    auto diis = get_diis(world);
 
     while (iter < max_iter_) {
       // start timer
@@ -712,10 +711,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
         r1("a,i") -=
             (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        r1("a,i") *= d1("a,i");
-
-        r1("a,i") -= t1("a,i");
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -852,7 +847,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       tmp_time0 = mpqc::now(world, accurate_time);
       {
         // compute b intermediate
-        if (less) {
+        if (reduced_abcd_memory_) {
           // avoid store b_abcd
           TArray b_abij;
           b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -886,44 +881,31 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
-
-      r2("a,b,i,j") -= t2("a,b,i,j");
-
-      t1("a,i") = t1("a,i") + r1("a,i");
-      t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
-      t1.truncate();
-      t2.truncate();
-
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
       if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
+
       // recompute energy
       E0 = E1;
-      E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-           TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
-                   tau("a,b,i,j"));
+      E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+           TA::dot(g_abij("a,b,i,j") + r2("b,a,i,j"),
+                   2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray, TArray> t(t1, t2);
-        cc::T1T2<TArray, TArray> r(r1, r2);
-        error = r.norm() /
-                (size(t1) + size(t2));  // error = residual norm per element
-        diis.extrapolate(t, r);
 
-        // update t1 and t2
-        t1("a,i") = t.t1("a,i");
-        t2("a,b,i,j") = t.t2("a,b,i,j");
+        assert(solver_);
+        solver_->update(t1, t2, r1, r2);
 
         if (print_detail_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
 
+        // recompute tau
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -1034,8 +1016,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
     };
 
-    auto diis = get_diis(world);
-
     while (iter < max_iter_) {
       // start timer
       auto time0 = mpqc::fenced_now(world);
@@ -1100,10 +1080,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
         r1("a,i") -=
             (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        r1("a,i") *= d1("a,i");
-
-        r1("a,i") -= t1("a,i");
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -1266,11 +1242,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         r2("a,b,i,j") -= t2("a,b,i,j");
       }
 
-      t1("a,i") = t1("a,i") + r1("a,i");
-      t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
-      t1.truncate();
-      t2.truncate();
-
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
       if (print_detail_) {
@@ -1279,28 +1250,23 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       // recompute energy
       E0 = E1;
-      E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-           TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
-                   tau("a,b,i,j"));
+      E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+           TA::dot(g_abij("a,b,i,j") + r2("b,a,i,j"),
+                   2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray, TArray> t(t1, t2);
-        cc::T1T2<TArray, TArray> r(r1, r2);
-        error = r.norm() /
-                (size(t1) + size(t2));  // error = residual norm per element
-        diis.extrapolate(t, r);
 
-        // update t1 and t2
-        t1("a,i") = t.t1("a,i");
-        t2("a,b,i,j") = t.t2("a,b,i,j");
+        assert(solver_);
+        solver_->update(t1, t2, r1, r2);
 
         if (print_detail_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
 
+        // recompute tau
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -1340,32 +1306,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
  protected:
-  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
-  get_diis(const madness::World &world) {
-    int n_diis, strt, ngr, ngrdiis;
-    double dmp, mf;
-
-    strt = kv_.value<int>("diis_strt", 1);
-    n_diis = kv_.value<int>("n_diis", 8);
-    ngr = kv_.value<int>("diis_ngr", 2);
-    ngrdiis = kv_.value<int>("ngrdiis", 1);
-    dmp = kv_.value<double>("diis_dmp", 0.0);
-    mf = kv_.value<double>("diis_mf", 0.0);
-
-    if (world.rank() == 0) {
-      std::cout << "DIIS Starting Iteration:  " << strt << std::endl;
-      std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
-      std::cout << "DIIS ngr:  " << ngr << std::endl;
-      std::cout << "DIIS ngrdiis:  " << ngrdiis << std::endl;
-      std::cout << "DIIS dmp:  " << dmp << std::endl;
-      std::cout << "DIIS mf:  " << mf << std::endl;
-    }
-    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
-        diis(strt, n_diis, 0.0, ngr, ngrdiis);
-
-    return diis;
-  };
-
   /// get mo coefficient
   /// occ part
   const TArray get_Ci() {

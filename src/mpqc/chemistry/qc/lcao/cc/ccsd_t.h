@@ -1122,7 +1122,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     //obtaining DF-integrals
     TArray Xab;
     TArray Xai;
-    /*if (this->is_df()) {
+    if (this->is_df()) {
       std::cout << "DF calculation" << std::endl;
       /// get three center integral (X|ab)
       //TArray Xab;
@@ -1134,7 +1134,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       //TArray Xai;
       TArray Kai = this->lcao_factory().compute(L"(Κ|G|a i)");
       Xai("K,a,i") = sqrt("K,Q") * Kai("Q,a,i");
-    }*/
+    }
 
 
     // definition of orbital spaces
@@ -1274,14 +1274,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       TArray Xab_lt;
       TArray Xai_lt;
-      /*if (this->is_df()) {
+      if (this->is_df()) {
         Xab_lt = Xab_laplace_transform(
             Xab, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
         Xai_lt = Xai_laplace_transform(
             Xai, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
-      }*/
+      }
 
       this->wfn_world()->world().gop.fence();
       double energy_m = 0.0;
@@ -1409,8 +1409,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
           {
-            /*if (this->is_df()) {
+            //if (this->is_df()) {
 
+              time22 = mpqc::now(world, accurate_time);
               auto n_tr_aux = Xab.range().upbound()[0];
 
               block Xab_low_e{0, e_low, 0};
@@ -1435,10 +1436,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
               TArray G;
               G("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f - ggg2("e,Y,b") * block_Xab_lt_f;
+
+              time23 = mpqc::now(world, accurate_time);
+              time_G_OV5 += mpqc::duration_in_s(time22, time23);
+
               E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
 
 
-            } else {*/
+            /*} else {
               TArray G;
 
               time22 = mpqc::now(world, accurate_time);
@@ -1449,7 +1454,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               time23 = mpqc::now(world, accurate_time);
               time_G_OV5 += mpqc::duration_in_s(time22, time23);
               E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-            //}
+            }*/
           }
         }
       }

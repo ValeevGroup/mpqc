@@ -22,7 +22,7 @@ namespace gaussian {
 namespace detail {
 // Helper function to allow F norm screening
 inline double l2Norm(Eigen::Map<const RowMatrixXd> const &map) {
-  return map.diagonal().norm();
+  return map.norm();
 }
 
 // Helper function to allow inf norm screening
@@ -37,7 +37,9 @@ class Qmatrix {
   using f2s_map = std::unordered_map<int64_t, int64_t>;
   std::array<f2s_map, 2> f2s_maps_;  // Function to shell maps for each basis
 
-  RowMatrixXd Q_;                    // Matrix to hold the integral estimates
+  RowMatrixXd Q_;  // Matrix to hold the integral estimates
+  RowMatrixXd
+      Q_cluster_;  // Matrix to hold the integral estimates for each tile
   Eigen::VectorXd max_elem_in_row_;  // Max element for each row of Q_
   double max_elem_in_Q_ = 0;  // Max val in Q_, should be set in constructor
   bool is_aux_;
@@ -55,7 +57,8 @@ class Qmatrix {
   Qmatrix &operator=(Qmatrix const &) = default;
   Qmatrix &operator=(Qmatrix &&) = default;
 
-  RowMatrixXd const &Q() const { return Q_; };
+  RowMatrixXd const &Q() const { return Q_; }
+  RowMatrixXd const &Qtile() const { return Q_cluster_; }
 
   /*! The basis constructor that takes a single argument is for the use case
    * where the Qmatrix is suppose to represent an Auxilary basisset.
@@ -114,6 +117,24 @@ class Qmatrix {
       const auto max_elem = Q_(i);
       max_elem_in_Q_ = std::max(max_elem_in_Q_, max_elem);
       max_elem_in_row_[i] = max_elem;
+    }
+
+    // Build Q_cluster_
+    auto const &cshells = bs.cluster_shells();
+    const auto nclusters = cshells.size();
+    Q_cluster_ = Eigen::VectorXd(nclusters);
+    Q_cluster_.setZero();
+
+    // Because we are using Qab * Qcd >= (ab|cd)^2 just sum these values into
+    // Q_cluster_
+    auto first_shell_in_cluster = 0;
+    for (auto c = 0; c < nclusters; ++c) {
+      const auto nshells = cshells[c].size();
+      const auto last = first_shell_in_cluster + nshells;
+      for (auto s = first_shell_in_cluster; s < last; ++s) {
+        Q_cluster_(c) += Q_(s);
+      }
+      first_shell_in_cluster += nshells;
     }
   }
 
@@ -198,6 +219,39 @@ class Qmatrix {
       const auto max_elem = Q_.row(i).cwiseAbs().maxCoeff();
       max_elem_in_Q_ = std::max(max_elem_in_Q_, max_elem);
       max_elem_in_row_[i] = max_elem;
+    }
+
+    // Make Q_cluster_
+    auto const &cshells0 = bs0.cluster_shells();
+    auto const &cshells1 = bs1.cluster_shells();
+
+    auto const &nclusters0 = cshells0.size();
+    auto const &nclusters1 = cshells1.size();
+
+    Q_cluster_ = RowMatrixXd(nclusters0, nclusters1);
+    Q_cluster_.setZero();
+
+    auto first_shell_in_cluster0 = 0;
+    for (auto c0 = 0; c0 < nclusters0; ++c0) {
+      const auto nshells0 = cshells0[c0].size();
+      const auto last0 = first_shell_in_cluster0 + nshells0;
+
+      auto first_shell_in_cluster1 = 0;
+      for (auto c1 = 0; c1 < nclusters1; ++c1) {
+        const auto nshells1 = cshells1[c1].size();
+        const auto last1 = first_shell_in_cluster1 + nshells1;
+
+        auto val = 0.0;
+        for (auto s0 = first_shell_in_cluster0; s0 < last0; ++s0) {
+          for (auto s1 = first_shell_in_cluster1; s1 < last1; ++s1) {
+            val += Q_(s0, s1);
+          }
+        }
+        Q_cluster_(c0, c1) = val;
+
+        first_shell_in_cluster1 += nshells1;
+      }
+      first_shell_in_cluster0 += nshells0;
     }
   }
 
@@ -319,8 +373,7 @@ class SchwarzScreen : public Screener {
       TA::Pmap const &pmap,
       const math::PetiteList &plist =
           math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
-          bool replicate = false
-          ) const override;
+      bool replicate = false) const override;
 };
 
 /*! \brief Creates a Schwarz Screener
@@ -344,7 +397,7 @@ class SchwarzScreen : public Screener {
 template <typename E>
 SchwarzScreen create_schwarz_screener(
     TA::World &world, ShrPool<E> const &eng, std::vector<Basis> const &bs_array,
-    double thresh, decltype(detail::inf_norm) norm_func = detail::inf_norm) {
+    double thresh, decltype(detail::inf_norm) norm_func = detail::l2Norm) {
   if (bs_array.size() == 3) {  // One index must be auxiliary assume first
     auto Q_ab =
         std::make_shared<Qmatrix>(Qmatrix(world, eng, bs_array[0], norm_func));

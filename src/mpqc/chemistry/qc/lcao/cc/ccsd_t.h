@@ -1343,7 +1343,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           time_G1 += mpqc::duration_in_s(time33, time34);
 
           E_OV5 = TA::dot(G1("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-
+        }
+        /*{
           time29 = mpqc::now(world, accurate_time);
           TArray gg1;
           gg1("e,Y,i,X") = Xab_lt("X,e,c") * Xai_lt("Y,c,i");
@@ -1363,7 +1364,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           time_G2 += mpqc::duration_in_s(time35, time36);
 
           E_OV5 -= TA::dot(G2("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-        }
+        }*/
 
         {
           TArray G;

@@ -146,29 +146,47 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
-   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density using. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv), factory_(factory),
       pno_method_(kv.value<std::string>("pno_method", "standard")),
       tpno_(kv.value<double>("tpno", 1.e-8)) {
+    // compute and store PNOs truncated with threshold tpno_
+    assert(false && "not yet implemented");
+    // for singles: store OSVs (PNOs for diagonal pairs) screened with threshold tosv_
+    assert(false && "not yet implemented");
+    // for every pair must compute diagonals of the Fock matrix in the PNO basis for the Jacobi update
+    assert(false && "not yet implemented");
+    // for singles: same, but in the OSV basis
     assert(false && "not yet implemented");
   }
   virtual ~PNOSolver() = default;
 
   /// @return PNO truncation threshold
-  double tcut() const { return tpno_; }
+  double tpno() const { return tpno_; }
+  /// @return OSV truncation threshold
+  double tosv() const { return tosv_; }
 
  private:
   // note: not update_only since DIIS is done in the PNO subspace, must be followed by
   //       backtransform updated amplitudes to full space
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
+    // transform r1 and r2 to OSV and PNO basis, respectively
+    assert(false && "not yet implemented");
+    // apply jacobi update
+    assert(false && "not yet implemented");
+    // DIIS extrapolate in OSV/PNO basis
+    assert(false && "not yet implemented");
+    // back-transform extrapolated t1 and t2 from OSV and PNO to full virtual space
     assert(false && "not yet implemented");
   }
   Factory<T>& factory_;
   std::string pno_method_;  //!< the PNO construction method
   double tpno_;  //!< the PNO truncation threshold
+  double tosv_;  //!< the OSV (diagonal PNO) truncation threshold
 };
 
 }  // namespace cc

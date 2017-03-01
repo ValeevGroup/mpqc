@@ -3,6 +3,7 @@
 
 #include "diis.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 namespace cc {
@@ -76,7 +77,10 @@ class DIISSolver : public Solver<T1, T2> {
 
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
-  virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
+  virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) {
+    throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
+                           __FILE__, __LINE__);
+  }
 
   TA::DIIS<T1T2<T1, T2>>& diis() { return diis_; }
 

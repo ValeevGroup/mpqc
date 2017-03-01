@@ -32,14 +32,21 @@ void gram_schmidt(std::vector<D>& V, std::size_t start=0) {
   }
 
   // test
-
+//#ifndef NDEBUG
+//  const auto tolerance = std::numeric_limits<typename D::element_type>::epsilon()*100;
 //  for(auto i = 0; i < k; ++i){
 //    for(auto j = i ; j < k; ++j ){
 //      const auto test = dot_product(V[i], V[j]);
 //      std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
+//      if(i==j){
+//        TA_ASSERT( test - 1.0 < tolerance);
+//      }
+//      else{
+//        TA_ASSERT( test < tolerance);
+//      }
 //    }
 //  }
-
+//#endif
 }
 
 #endif  // SRC_MPQC_MATH_LINALG_GRAM_SCHMIDT_H_

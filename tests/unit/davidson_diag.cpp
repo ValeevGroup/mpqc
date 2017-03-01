@@ -18,7 +18,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   const auto n_roots = 3;
   const auto n_guess = 3;
   const auto converge = 1.0e-6;
-  const auto max_iter = 20;
+  const auto max_iter = 40;
 
   // initialize matrix
   RowMatrix<double> A = RowMatrix<double>::Zero(n, n);
@@ -108,11 +108,11 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
 
   // matrix size
   const auto n = 100;
-  const auto sparse = 0.01;
+  const auto sparse = 0.1;
   const auto n_roots = 3;
   const auto n_guess = 3;
-  const auto converge = 1.0e-7;
-  const auto max_iter = 20;
+  const auto converge = 1.0e-6;
+  const auto max_iter = 30;
 
   // initialize matrix
   RowMatrix<double> A = RowMatrix<double>::Zero(n, n);

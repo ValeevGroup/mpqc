@@ -109,6 +109,10 @@ class DavidsonDiag {
       RowMatrix<element_type> v = es.eigenvectors();
       EigenVector<element_type> e = es.eigenvalues();
 
+      if(es.info() != Eigen::Success){
+        throw AlgorithmException("Eigen::SelfAdjointEigenSolver Failed!\n",__FILE__,__LINE__);
+      }
+
       //        std::cout << es.eigenvalues() << std::endl;
 
       E = e.segment(0, n_roots_);
@@ -123,6 +127,10 @@ class DavidsonDiag {
       RowMatrix<element_type> T = rs.matrixT();
       RowMatrix<element_type> U = rs.matrixU();
 
+      if(rs.info() != Eigen::Success){
+        throw AlgorithmException("Eigen::RealSchur Failed!\n",__FILE__,__LINE__);
+      }
+
       // do eigen solve on T
       Eigen::EigenSolver<RowMatrix<element_type>> es(T);
 
@@ -132,6 +140,10 @@ class DavidsonDiag {
       {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
+
+        if(rs.info() != Eigen::Success){
+          throw AlgorithmException("Eigen::EigenSolver Failed!\n",__FILE__,__LINE__);
+        }
 
         for (auto i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
@@ -182,6 +194,25 @@ class DavidsonDiag {
 
     // orthognolize new residual with original B
     gram_schmidt(B, n_v);
+    // call it twice
+//    gram_schmidt(B, n_v);
+
+#ifndef NDEBUG
+    const auto k = B.size();
+    const auto tolerance = std::numeric_limits<typename D::element_type>::epsilon()*100;
+    for(auto i = 0; i < k; ++i){
+      for(auto j = i ; j < k; ++j ){
+        const auto test = dot_product(B[i], B[j]);
+//        std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
+        if(i==j){
+          TA_ASSERT( test - 1.0 < tolerance);
+        }
+        else{
+          TA_ASSERT( test < tolerance);
+        }
+      }
+    }
+#endif
 
     return E.segment(0, n_roots_);
   }

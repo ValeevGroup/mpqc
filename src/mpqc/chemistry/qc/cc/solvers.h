@@ -16,6 +16,7 @@ class Solver {
  public:
   virtual ~Solver() = default;
 
+  /// Updates amplitudes \c t1 and \c t2 using the residuals \c r1 and \c r2 .
   /// @param t1 the 1-body amplitude set (current values on input, updated
   /// values on output)
   /// @param t2 the 2-body amplitude set (current values on input, updated
@@ -33,9 +34,24 @@ class Solver {
 template <typename T1, typename T2>
 class DIISSolver : public Solver<T1, T2> {
  public:
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor.
+   *
+   * @param kv the KeyVal object; it will be queried for the following keywords
+   *
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | diis_start | int | 1 | The DIIS extrapolation will begin on the iteration given by this integer. |
+   * | n_diis | int | 8 | This specifies maximum number of data sets to retain. |
+   * | diis_damp | double | 0.0 | This nonnegative floating point number is used to dampen the DIIS extrapolation. |
+   * | diis_ngroup | int | 1 | The number of iterations in a DIIS group. DIIS extrapolation is only used for the first \c diis_group_nstart of these iterations. If \c diis_ngroup is 1 and \c diis_group_nstart is greater than 0, then DIIS will be used on all iterations after and including the start iteration. |
+   * | diis_group_nstart | int | 1 | The number of DIIS extrapolations to do at the beginning of an iteration group.  See the documentation for \c diis_ngroup . |
+   */
+  // clang-format on
   DIISSolver(const KeyVal& kv)
-      : diis_(kv.value<int>("diis_strt", 1), kv.value<int>("n_diis", 8), 0.0,
-              kv.value<int>("diis_ngr", 2), kv.value<int>("ngrdiis", 1)) {}
+      : diis_(kv.value<int>("diis_start", 1), kv.value<int>("n_diis", 8), kv.value<double>("diis_damp", 0.0),
+              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)) {}
   virtual ~DIISSolver() = default;
 
   /// Update the amplitudes using update_only() and extrapolate using DIIS.
@@ -59,8 +75,10 @@ class DIISSolver : public Solver<T1, T2> {
   }
 
  protected:
-  /// this performs the amplitude update only, without
+  /// this performs the amplitude update only, to be followed up with DIIS
   virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
+
+  TA::DIIS<T1T2<T1, T2>>& diis() { return diis_; }
 
  private:
   TA::DIIS<T1T2<T1, T2>> diis_;

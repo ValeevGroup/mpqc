@@ -102,6 +102,14 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 template <typename T>
 class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor.
+   *
+   * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver<T,T> .
+   */
+  // clang-format on
+
   JacobiDIISSolver(const KeyVal& kv,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
@@ -117,13 +125,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
-    auto t1_update = detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_);
-    auto t2_update = detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_);
-    std::cout << "r1:" << r1 << std::endl;
-    std::cout << "t1 update:" << t1_update << std::endl;
-    std::cout << "t2 update:" << t2_update << std::endl;
-    t1("a,i") += t1_update("a,i");
-    t2("a,b,i,j") += t2_update("a,b,i,j");
+    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
     t1.truncate();
     t2.truncate();
   }
@@ -134,17 +136,39 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 template <typename T>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor.
+   *
+   * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver , as well
+   * as the following additional keywords:
+   *
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
+   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density using. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   */
+  // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T>& factory)
-      : ::mpqc::cc::DIISSolver<T, T>(kv), factory_(factory) {
+      : ::mpqc::cc::DIISSolver<T, T>(kv), factory_(factory),
+      pno_method_(kv.value<std::string>("pno_method", "standard")),
+      tpno_(kv.value<double>("tpno", 1.e-8)) {
     assert(false && "not yet implemented");
   }
   virtual ~PNOSolver() = default;
 
+  /// @return PNO truncation threshold
+  double tcut() const { return tpno_; }
+
  private:
-  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+  // note: not update_only since DIIS is done in the PNO subspace, must be followed by
+  //       backtransform updated amplitudes to full space
+  void update(T& t1, T& t2, const T& r1, const T& r2) override {
     assert(false && "not yet implemented");
   }
   Factory<T>& factory_;
+  std::string pno_method_;  //!< the PNO construction method
+  double tpno_;  //!< the PNO truncation threshold
 };
 
 }  // namespace cc

@@ -103,8 +103,9 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         for (auto c = 0ul; c < Tbc.rows(); ++c) {
           const auto ord =
               tile_range.ordinal(std::array<decltype(a), 3>{a, b, c});
-          if (pmap.is_local(ord) && plist.is_canonical(a, b, c)) {
-            const float multiplicity = plist.multiplicity(a, b, c);
+          if (pmap.is_local(ord)){ // && plist.is_canonical(a, b, c)) {
+            // const float multiplicity = plist.multiplicity(a, b, c);
+            const float multiplicity = 1.0;
             norms[ord] = multiplicity * std::sqrt(a_val * Tbc(b, c));
           }
         }
@@ -120,8 +121,9 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
           for (auto d = 0ul; d < Tcd.cols(); ++d) {
             const auto ord =
                 tile_range.ordinal(std::array<decltype(a), 4>{a, b, c, d});
-            if (pmap.is_local(ord) && plist.is_canonical(a, b, c, d)) {
-              const float multiplicity = plist.multiplicity(a, b, c, d);
+            if (pmap.is_local(ord)){ // && plist.is_canonical(a, b, c, d)) {
+              // const float multiplicity = plist.multiplicity(a, b, c, d);
+              const float multiplicity = 1.0;
               norms[ord] = multiplicity * std::sqrt(ab * Tcd(c, d));
             }
           }

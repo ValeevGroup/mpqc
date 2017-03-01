@@ -1374,7 +1374,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }*/
 
       TArray gg1;
-      gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+      if (this->is_df()) {
+        gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+      }
 
       /*double E_OV5 = 0;
       TA::set_default_world(this_world);
@@ -1731,6 +1733,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           {
 
+            //O2V4 singles contributions
             //if (this->is_df()) {
               /*
               auto n_tr_aux = Xab.range().upbound()[0];
@@ -1788,7 +1791,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 */
             //} else {
 
-
+/*
               block t1_lt_low_b{b_low, 0};
               block t1_lt_up_b{b_up, n_tr_occ};
               auto block_t1_lt_b = t1_lt("b,j").block(t1_lt_low_b, t1_lt_up_b);
@@ -1824,20 +1827,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
               TArray G2;
               G2("i,a,b,f") = block_g_abij_lt_ca * block_g_dabi_lt_bc;
-              E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
+              E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));*/
             //}
 
-            {
-              block g_abij_lt_low_ab{a_low, b_low, 0, 0};
-              block g_abij_lt_up_ab{a_up, b_up, n_tr_occ, n_tr_occ};
-              auto block_g_abij_lt_ab = g_abij_lt("a,b,i,j").block(g_abij_lt_low_ab, g_abij_lt_up_ab);
-              auto block_t2_ouu_lt_ab = t2_ouu_lt("a,b,k,n").block(g_abij_lt_low_ab, g_abij_lt_up_ab);
-              TArray G;
-              TArray T;
-              G("a,b,c,n") = block_g_abij_lt_ab * g_cjkl_lt("c,i,j,n");
-              T("a,b,c,n") = t1_lt("c,k") * block_t2_ouu_lt_ab;
-              E_O3V3_S2 += 2.0 * (TA::dot((G("a,b,c,n")),(T("a,b,c,n"))));
-            }
           }
 
         }
@@ -1845,8 +1837,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       TA::set_default_world(global_world);
       global_world.gop.sum(E_OV5);
       global_world.gop.sum(E_O2V4_2);
-      global_world.gop.sum(E_O2V4_S);
-      global_world.gop.sum(E_O3V3_S2);
+      //global_world.gop.sum(E_O2V4_S);
+      //global_world.gop.sum(E_O3V3_S2);
       global_world.gop.sum(time_G_OV5);
       global_world.gop.sum(time_T_OV5);
       global_world.gop.sum(time_trace);
@@ -2356,8 +2348,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       TA::set_default_world(global_world);
       global_world.gop.sum(E_O2V4_S);*/
-      /*{
-        TArray T1;
+      {
+        /*TArray T1;
         TArray T2;
         T1("i,a,b,f") = t1_lt("b,j") * t2_oou_lt("f,a,i,j");
         T2("i,a,b,f") = t1_lt("b,j") * t2_oou_lt("f,a,j,i");
@@ -2374,8 +2366,39 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           TArray G2;
           G2("i,a,b,f") = g_abij_lt("c,a,j,i") * g_dabi_lt("f,b,c,j");
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
+        }*/
+
+        //This implementation is at most O3V3 scaling
+        //2G1-4G3
+        {
+          TArray gt1;
+          gt1("f,c,j,k") = g_abij_lt("a,c,j,i") * t2_oou_lt("f,a,i,k");
+          TArray ggt1;
+          ggt1("k,b") = gt1("f,c,j,k") * g_dabi_lt("f,c,b,j");
+          E_O2V4_S += TA::dot((2.0*ggt1("k,b")),t1_lt("b,k"));
+
+          TArray ggt2;
+          ggt2("k,b") = gt1("f,c,j,k") * g_dabi_lt("f,b,c,j");
+          E_O2V4_S += TA::dot((-4.0*ggt2("k,b")),t1_lt("b,k"));
         }
-      }*/
+
+        {
+          TArray gt2;
+          gt2("c,f,j,k") = g_abij_lt("c,a,j,i") * t2_oou_lt("f,a,k,i");
+          TArray ggt3;
+          ggt3("k,b") = gt2("c,f,j,k") * g_dabi_lt("f,b,c,j");
+          E_O2V4_S += TA::dot((-4.0*ggt3("k,b")),t1_lt("b,k"));
+        }
+
+        {
+          TArray gt3;
+          gt3("f,c,j,k") = g_abij_lt("a,c,j,i") * t2_oou_lt("f,a,k,i");
+          TArray ggt4;
+          ggt4("k,b") = gt3("f,c,j,k") * g_dabi_lt("f,c,b,j");
+          E_O2V4_S += TA::dot((-4.0*ggt4("k,b")),t1_lt("b,k"));
+        }
+
+      }
 
       double E_O2V3_S = 0.0;
       {
@@ -2527,6 +2550,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G3("i,a,b,n") = g_abij_lt("a,c,i,j") * t2_ouu_lt("c,b,j,n");
           T2("i,a,b,n") = t1_lt("b,j") * g_cjkl_lt("a,i,j,n");
           E_O3V3_S2 += TA::dot((2.0*G2("i,a,b,n") - 4.0*G3("i,a,b,n")),(T2("i,a,b,n")));
+        }
+        {
+          TArray gt;
+          gt("i,j,k,n") = g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,k,n");
+          TArray ggt;
+          ggt("c,k") = gt("i,j,k,n") * g_cjkl_lt("c,i,j,n");
+
+          E_O3V3_S2 += 2.0 * (TA::dot((ggt("c,k")),(t1_lt("c,k"))));
         }
       }
 

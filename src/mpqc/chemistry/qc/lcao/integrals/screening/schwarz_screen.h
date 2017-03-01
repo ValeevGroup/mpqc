@@ -5,8 +5,8 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
-#include "mpqc/util/misc/exception.h"
 #include "mpqc/math/groups/petite_list.h"
+#include "mpqc/util/misc/exception.h"
 
 #include <tiledarray.h>
 
@@ -307,15 +307,20 @@ class SchwarzScreen : public Screener {
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 
-  /*! \brief returns an estimate of shape norms for the given basis vector.
+  /*! \brief returns an estimate of shape norms for the given basis vector, in
+   * presence of symmetry described by a math::PetiteList object.
    *
-   * This will use the outer product of Qab * Qcd to determine the
-   * shape. Will replicate the result on ever node. 
+   * This function will only compute the estimate for tiles which are
+   * considered local by the pmap, the user will be responsible for using the
+   * world based constructor for the TA::Shape.
    */
   TA::Tensor<float> norm_estimate(
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,
+      TA::Pmap const &pmap,
       const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const override;
+          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
+          bool replicate = false
+          ) const override;
 };
 
 /*! \brief Creates a Schwarz Screener

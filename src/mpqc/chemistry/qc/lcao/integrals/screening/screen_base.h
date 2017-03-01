@@ -51,18 +51,6 @@ class Screener {
   /*! \brief returns an estimate of shape norms for the given basis vector, in
    * presence of symmetry described by a math::PetiteList object.
    *
-   * This function will replicate the norm estimate on all nodes.
-   * 
-   * \warning The base class will error for all inputs.
-   */
-  virtual TA::Tensor<float> norm_estimate(
-      madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-      const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const;
-
-  /*! \brief returns an estimate of shape norms for the given basis vector, in
-   * presence of symmetry described by a math::PetiteList object.
-   *
    * This function will only compute the estimate for tiles which are
    * considered local by the pmap, the user will be responsible for using the
    * world based constructor for the TA::Shape.
@@ -73,7 +61,8 @@ class Screener {
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,
       TA::Pmap const &pmap,
       const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const;
+          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
+          bool replicate = false) const;
 };
 
 }  // namespace  lcao

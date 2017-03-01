@@ -1386,6 +1386,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
     U("i,j,rho,mu") = (t2("a,b,i,j") * Ca("sigma,a") * Ca("nu,b")) *
                       direct_array("rho, sigma, mu, nu");
 
+    U("i,j,rho,mu") = 0.5*(U("i,j,rho,mu") + U("j,i,mu,rho"));
+
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "VT2 UTerm Time: ", time, " S\n");

@@ -2,13 +2,15 @@
 // Created by Chong Peng on 10/15/15.
 //
 
-#include <algorithm>
-#include <iostream>
 
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
+#include "mpqc/util/misc/exception.h"
 
 #include <TiledArray/error.h>
 #include <boost/algorithm/string.hpp>
+
+#include <algorithm>
+#include <iostream>
 
 namespace mpqc {
 
@@ -89,19 +91,19 @@ Formula::Formula(std::wstring string) {
       // or math::PetiteList::Symmetry
       auto op_str = utility::to_string(op);
       auto symm_iter = std::find_if(
-          begin(math::PetiteList::symmetry_to_string), end(math::PetiteList::symmetry_to_string),
-          [=](const std::pair<math::PetiteList::Symmetry, std::string> item) -> bool {
-            return item.second == op_str;
-          });
-      const auto has_symm = (symm_iter != math::PetiteList::symmetry_to_string.end());
+          begin(math::PetiteList::symmetry_to_string),
+          end(math::PetiteList::symmetry_to_string),
+          [=](const std::pair<math::PetiteList::Symmetry, std::string> item)
+              -> bool { return item.second == op_str; });
+      const auto has_symm =
+          (symm_iter != math::PetiteList::symmetry_to_string.end());
 
       if (!has_opt && !has_symm)
-        throw ProgrammingError((utility::to_string(op) +
-                                 " Invalid Option! \n").c_str(), __FILE__, __LINE__);
-      if (has_opt)
-        result.push_back(opt_iter->first);
-      if (has_symm)
-        symm_ = symm_iter->first;
+        throw ProgrammingError(
+            (utility::to_string(op) + " Invalid Option! \n").c_str(), __FILE__,
+            __LINE__);
+      if (has_opt) result.push_back(opt_iter->first);
+      if (has_symm) symm_ = symm_iter->first;
     }
     std::sort(result.begin(), result.end());
     options_ = result;
@@ -240,8 +242,7 @@ std::wstring Formula::string() const {
       result += option_to_string.find(option)->second + L",";
     }
     // include symmetry, if not trivial
-    if (has_symm)
-      result += utility::to_wstring(to_string(symm_)) + L",";
+    if (has_symm) result += utility::to_wstring(to_string(symm_)) + L",";
     result.back() = L']';
     return result;
   };
@@ -282,8 +283,7 @@ bool Formula::is_ao() const {
 }
 
 void Formula::set_option(Option op) {
-  if (!has_option(op))
-    options_.push_back(op);
+  if (!has_option(op)) options_.push_back(op);
 }
 
 bool Formula::has_option(Formula::Option op) const {

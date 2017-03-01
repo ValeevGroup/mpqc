@@ -1223,12 +1223,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_T_OV5 = 0.0;
     double time_G_OV5 = 0.0;
     double time_trace = 0.0;
-    double time_gg1 = 0.0;
+    double time_gT1 = 0.0;
     double time_gg2 = 0.0;
-    double time_ggg1 = 0.0;
-    double time_ggg2 = 0.0;
-    double time_G1 = 0.0;
-    double time_G2 = 0.0;
+    double time_ggT1 = 0.0;
+    double time_ggT2 = 0.0;
+    double time_ggT2trace = 0.0;
 
 
     // get trange1
@@ -1307,8 +1306,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //computation of the OV5 terms
       double E_O2V4_vo = 0;
-      double E_OV5 = 0;
-      {
+      //double E_OV5 = 0;
+      /*{
         TArray T1;
         TArray T2;
 
@@ -1344,7 +1343,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           E_OV5 = TA::dot(G1("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
         }
-        /*{
+        {
           time29 = mpqc::now(world, accurate_time);
           TArray gg1;
           gg1("e,Y,i,X") = Xab_lt("X,e,c") * Xai_lt("Y,c,i");
@@ -1364,7 +1363,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           time_G2 += mpqc::duration_in_s(time35, time36);
 
           E_OV5 -= TA::dot(G2("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-        }*/
+        }
 
         {
           TArray G;
@@ -1372,13 +1371,15 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_OV5 += TA::dot(G("e,b,a,f"),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
 
         }
-      }
+      }*/
 
-      //double E_OV5_block = 0.0;
-      //double E_OV5 = 0;
-      //TA::set_default_world(this_world);
+      TArray gg1;
+      gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
+
+      double E_OV5 = 0;
+      TA::set_default_world(this_world);
       std::size_t global_iter = 0;
-      /*for (auto e = 0; e < n_tr_vir; ++e) {
+      for (auto e = 0; e < n_tr_vir; ++e) {
         for (auto f = 0; f < n_tr_vir; ++f) {
 
           ++ global_iter;
@@ -1439,7 +1440,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
           {
-            //if (this->is_df()) {
+            if (this->is_df()) {
 
               time22 = mpqc::now(world, accurate_time);
               auto n_tr_aux = Xab.range().upbound()[0];
@@ -1452,49 +1453,43 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               block Xab_up_f{n_tr_aux, f_up, n_tr_vir};
               auto block_Xab_lt_f = Xab_lt("Y,f,a").block(Xab_low_f, Xab_up_f);
 
-              time25 = mpqc::now(world, accurate_time);
-              TArray gg1;
-              gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
-              time26 = mpqc::now(world, accurate_time);
-              time_gg1 += mpqc::duration_in_s(time25, time26);
-
               time27 = mpqc::now(world, accurate_time);
-              TArray ggg1;
-              ggg1("e,Y,b") = gg1("X,Y") * block_Xab_lt_e;
+              TArray gT1;
+              gT1("a,f,X") = block_Xab_lt_e * (4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f"));
               time28 = mpqc::now(world, accurate_time);
-              time_ggg1 += mpqc::duration_in_s(time27, time28);
+              time_gT1 += mpqc::duration_in_s(time27, time28);
+
+              time33 = mpqc::now(world, accurate_time);
+              TArray ggT1;
+
+              ggT1("X,Y") = gT1("a,f,X") * block_Xab_lt_f;
+
+              time34 = mpqc::now(world, accurate_time);
+              time_ggT1 += mpqc::duration_in_s(time33, time34);
+
+              E_OV5 += TA::dot((ggT1("X,Y")),(gg1("X,Y")));
 
               auto block_Xab_lt_ec = Xab_lt("X,e,c").block(Xab_low_e, Xab_up_e);
 
               time29 = mpqc::now(world, accurate_time);
               TArray gg2;
-              gg2("e,Y,i,X") = block_Xab_lt_ec * Xai_lt("Y,c,i");
+              gg2("e,b,Y") = block_g_dabi_lt_e * Xai_lt("Y,c,i");
               time30 = mpqc::now(world, accurate_time);
               time_gg2 += mpqc::duration_in_s(time29, time30);
 
               time31 = mpqc::now(world, accurate_time);
-              TArray ggg2;
-              ggg2("e,Y,b") = gg2("e,Y,i,X") * Xai_lt("X,b,i");
+              TArray ggT2;
+              ggT2("a,f,Y") = gg2("e,b,Y") * (4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f"));
               time32 = mpqc::now(world, accurate_time);
-              time_ggg2 += mpqc::duration_in_s(time31, time32);
-
-              //TArray G;
-              //G("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f - ggg2("e,Y,b") * block_Xab_lt_f;
-              time33 = mpqc::now(world, accurate_time);
-              TArray G1;
-              G1("e,b,a,f") = ggg1("e,Y,b") * block_Xab_lt_f;
-              time34 = mpqc::now(world, accurate_time);
-              time_G1 += mpqc::duration_in_s(time33, time34);
+              time_ggT2 += mpqc::duration_in_s(time31, time32);
 
               time35 = mpqc::now(world, accurate_time);
-              TArray G2;
-              G2("e,b,a,f") = ggg2("e,Y,b") * block_Xab_lt_f;
+              E_OV5 -= TA::dot((ggT2("a,f,Y")),(block_Xab_lt_f));
               time36 = mpqc::now(world, accurate_time);
-              time_G2 += mpqc::duration_in_s(time35, time36);
+              time_ggT2trace += mpqc::duration_in_s(time35, time36);
 
-              E_OV5 += TA::dot((G1("e,b,a,f") - G2("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));*/
+            } else {
 
-              /*} else {
               TArray G;
 
               time22 = mpqc::now(world, accurate_time);
@@ -1505,12 +1500,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               time23 = mpqc::now(world, accurate_time);
               time_G_OV5 += mpqc::duration_in_s(time22, time23);
               E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
-              }*/
-          //}
-        //}
-      //}
-      //TA::set_default_world(global_world);
-      //global_world.gop.sum(E_OV5);
+            }
+          }
+        }
+      }
+      TA::set_default_world(global_world);
+      global_world.gop.sum(E_OV5);
 
       //double E_OV5 = 0;
       double E_O2V4_2 = 0;
@@ -1803,7 +1798,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       global_world.gop.sum(E_O3V3_S2);
       global_world.gop.sum(time_G_OV5);
       global_world.gop.sum(time_T_OV5);
-      global_world.gop.sum(time_trace);
+      //global_world.gop.sum(time_trace);
 
 
       E_O2V4_vo = 0.0;
@@ -2518,12 +2513,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "time_G_OV5: " << time_G_OV5 << " S \n";
       std::cout << "time_T_OV5: " << time_T_OV5 << " S \n";
       std::cout << "time_trace: " << time_trace << " S \n";
-      std::cout << "time_gg1: " << time_gg1 << " S \n";
-      std::cout << "time_ggg1: " << time_ggg1 << " S \n";
-      std::cout << "time_G1: " << time_G1 << " S \n";
+      std::cout << "time_gT1: " << time_gT1 << " S \n";
+      std::cout << "time_ggg1: " << time_ggT1 << " S \n";
       std::cout << "time_gg2: " << time_gg2 << " S \n";
-      std::cout << "time_ggg2: " << time_ggg2 << " S \n";
-      std::cout << "time_G2: " << time_G2 << " S \n";
+      std::cout << "time_ggT2: " << time_ggT2 << " S \n";
+      std::cout << "time_ggT2trace: " << time_ggT2trace << " S \n";
 
     }
 

@@ -71,14 +71,14 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
     // compute index
     const auto a0 = result_tile.range().lobound()[0];
     const auto an = result_tile.range().upbound()[0];
-    const auto i0 = result_tile.range().lobound()[2];
-    const auto in = result_tile.range().upbound()[2];
+    const auto i0 = result_tile.range().lobound()[1];
+    const auto in = result_tile.range().upbound()[1];
 
     auto tile_idx = 0;
     typename Tile::scalar_type norm = 0.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens_uocc[a];
-      for (auto i = i0; i < in; ++i) {
+      for (auto i = i0; i < in; ++i, ++tile_idx) {
         const auto e_i = ens_occ[i];
         const auto e_ia = e_i - e_a;
         const auto old = arg_tile[tile_idx];

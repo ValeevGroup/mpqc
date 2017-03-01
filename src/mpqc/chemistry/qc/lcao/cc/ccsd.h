@@ -527,15 +527,16 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      // error = residual norm per element
-      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
-              (size(r1) + size(r2));
-
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
       if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
+
+      // error = residual norm per element
+      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+              (size(r1) + size(r2));
+
       // recompute energy
       E0 = E1;
       E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
@@ -890,6 +891,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
+
+      // error = residual norm per element
+      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+              (size(r1) + size(r2));
 
       // recompute energy
       E0 = E1;
@@ -1254,6 +1259,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
+
+      // error = residual norm per element
+      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+              (size(r1) + size(r2));
 
       // recompute energy
       E0 = E1;

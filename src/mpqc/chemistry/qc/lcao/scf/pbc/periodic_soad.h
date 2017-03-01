@@ -29,6 +29,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
     madness::World &world, UnitCell const &unitcell,
     TA::DistArray<Tile, Policy> const &H, FactoryType &pao_factory) {
   ExEnv::out0() << "\nBuilding Fock Matrix from SOAD Guess ...\n";
+  auto t0 = mpqc::now(world, true);
 
   using TArray = typename FactoryType::TArray;
   using DirectTArray = typename FactoryType::DirectTArray;
@@ -108,6 +109,11 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
     }
     F("mu, nu") -= g_K("mu, lambda, nu, rho") * D("lambda, rho");
   }
+
+  auto t1 = mpqc::now(world, true);
+  double time = mpqc::duration_in_s(t0, t1);
+
+  ExEnv::out0() << " Time: " << time << " s" << std::endl;
 
   return F;
 }

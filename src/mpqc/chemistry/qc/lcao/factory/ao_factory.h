@@ -257,8 +257,11 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   bool iterative_inv_sqrt_;
 };
 
-extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 extern template class AOFactory<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 }  // namespace lcao

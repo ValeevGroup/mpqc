@@ -116,12 +116,8 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
 
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    std::cout << "t1 (before jacobi)" << t1 << std::endl;
-    std::cout << "t2 (before jacobi)" << t2 << std::endl;
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
-    std::cout << "t1 (after jacobi)" << t1 << std::endl;
-    std::cout << "t2 (after jacobi)" << t2 << std::endl;
     t1.truncate();
     t2.truncate();
   }

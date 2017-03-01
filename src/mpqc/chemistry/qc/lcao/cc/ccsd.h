@@ -264,6 +264,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     TArray f_ai = this->get_fock_ai();
+    TArray f_ij = this->get_fock_ij();
+    TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
@@ -280,7 +282,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     double E0 = 0.0;
     double E1 =
         2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
+        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double mp2 = E1;
     double dE = std::abs(E1 - E0);
 
@@ -316,19 +318,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // occ index i j k l
         TArray h_kc;
 
-        // compute residual r1(n) = t1(n+1) - t1(n)
+        // compute residual r1(n) (at convergence r1 = 0)
         // external index i and a
         tmp_time0 = mpqc::now(world, accurate_time);
-        r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
+        r1("a,i") = f_ai("a,i") - 2.0 * (f_ai("c,k") * t1("c,i")) * t1("a,k");
 
         {
-          h_ac("a,c") =
+          h_ac("a,c") = f_ab("a,c")
               -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 
         {
-          h_ki("k,i") =
+          h_ki("k,i") = f_ij("k,i") +
               (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
           r1("a,i") -= t1("a,k") * h_ki("k,i");
         }
@@ -373,7 +375,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       auto t2_time0 = mpqc::now(world, accurate_time);
 
-      // compute residual r2(n) = t2(n+1) - t2(n)
+      // compute residual r2(n) (at convergence r2 = 0)
 
       // permutation part
       tmp_time0 = mpqc::now(world, accurate_time);
@@ -620,6 +622,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     TArray f_ai = this->get_fock_ai();
+    TArray f_ij = this->get_fock_ij();
+    TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
@@ -636,7 +640,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     double E0 = 0.0;
     double E1 =
         2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
+        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double mp2 = E1;
     double dE = std::abs(E1 - E0);
 
@@ -672,19 +676,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // occ index i j k l
         TArray h_kc;
 
-        // compute residual r1(n) = t1(n+1) - t1(n)
+        // compute residual r1(n) (at convergence r1 = 0)
         // external index i and a
         tmp_time0 = mpqc::now(world, accurate_time);
         r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
 
         {
-          h_ac("a,c") =
+          h_ac("a,c") = f_ab("a,c")
               -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 
         {
-          h_ki("k,i") =
+          h_ki("k,i") = f_ij("k,i") +
               (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
           r1("a,i") -= t1("a,k") * h_ki("k,i");
         }
@@ -729,7 +733,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       auto t2_time0 = mpqc::now(world, accurate_time);
 
-      // compute residual r2(n) = t2(n+1) - t2(n)
+      // compute residual r2(n) (at convergence r2 = 0)
 
       // permutation part
       tmp_time0 = mpqc::now(world, accurate_time);
@@ -890,7 +894,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       // recompute energy
       E0 = E1;
       E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
-           TA::dot(g_abij("a,b,i,j") + r2("b,a,i,j"),
+           TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
@@ -965,6 +969,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray g_abij = this->get_abij();
 
     TArray f_ai = this->get_fock_ai();
+    TArray f_ij = this->get_fock_ij();
+    TArray f_ab = this->get_fock_ab();
 
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
@@ -996,7 +1002,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     double E0 = 0.0;
     double E1 =
         2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
+        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double dE = std::abs(E1 - E0);
     double mp2 = E1;
 
@@ -1042,13 +1048,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // external index i and a
 
         tmp_time0 = mpqc::now(world, accurate_time);
-        h_ac("a,c") =
+        h_ac("a,c") = f_ab("a,c")
             -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
-        h_ki("k,i") =
+        h_ki("k,i") = f_ij("k,i") +
             (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
 
-        // compute residual r1(n) = t1(n+1) - t1(n)
+        // compute residual r1(n) (at convergence r1 = 0)
         // external index i and a
 
         r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
@@ -1098,6 +1104,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       auto t2_time0 = mpqc::now(world, accurate_time);
       {
         tmp_time0 = mpqc::now(world, accurate_time);
+
         // permutation term
         {
           r2("a,b,i,j") = Xab("X,b,c") * t1("c,j") * Xai("X,a,i");
@@ -1251,7 +1258,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       // recompute energy
       E0 = E1;
       E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
-           TA::dot(g_abij("a,b,i,j") + r2("b,a,i,j"),
+           TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
@@ -1440,6 +1447,24 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       return this->lcao_factory().compute(L"<a|F|i>[df]");
     } else {
       return this->lcao_factory().compute(L"<a|F|i>");
+    }
+  }
+
+  /// <i|f|j>
+  const TArray get_fock_ij() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<i|F|j>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<i|F|j>");
+    }
+  }
+
+  /// <a|f|b>
+  const TArray get_fock_ab() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<a|F|b>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<a|F|b>");
     }
   }
 

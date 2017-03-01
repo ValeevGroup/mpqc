@@ -56,8 +56,6 @@ class DIISSolver : public Solver<T1, T2> {
     diis_.extrapolate(t, r);
     t1 = t.t1;
     t2 = t.t2;
-    std::cout << "t1 (after DIIS)" << t1 << std::endl;
-    std::cout << "t2 (after DIIS)" << t2 << std::endl;
   }
 
  protected:

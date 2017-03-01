@@ -1376,7 +1376,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       TArray gg1;
       gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
 
-      double E_OV5 = 0;
+      /*double E_OV5 = 0;
       TA::set_default_world(this_world);
       std::size_t global_iter = 0;
       for (auto e = 0; e < n_tr_vir; ++e) {
@@ -1505,14 +1505,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
       TA::set_default_world(global_world);
-      global_world.gop.sum(E_OV5);
+      global_world.gop.sum(E_OV5);*/
 
-      //double E_OV5 = 0;
+      double E_OV5 = 0;
       double E_O2V4_2 = 0;
       double E_O2V4_S = 0.0;
       double E_O3V3_S2 = 0.0;
       TA::set_default_world(this_world);
-      global_iter = 0;
+      std::size_t global_iter = 0;
       for (auto a = 0; a < n_tr_vir; ++a) {
         for (auto b = 0; b < n_tr_vir; ++b) {
           ++ global_iter;
@@ -1552,7 +1552,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           //blocking t2 over b (required for T1 intermediate)
           auto block_t2_oou_lt_b_T1 = t2_oou_lt("f,b,i,j").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
-          /*TArray T1;
+          TArray T1;
           TArray T2;
 
           time20 = mpqc::now(world, accurate_time);
@@ -1577,6 +1577,53 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
           }
+          if (this->is_df()) {
+
+            time22 = mpqc::now(world, accurate_time);
+            auto n_tr_aux = Xab.range().upbound()[0];
+
+            block Xab_low_e{0, 0, b_low};
+            block Xab_up_e{n_tr_aux, n_tr_vir, b_up};
+            auto block_Xab_lt_e = Xab_lt("X,e,b").block(Xab_low_e, Xab_up_e);
+
+            block Xab_low_f{0, 0, a_low};
+            block Xab_up_f{n_tr_aux, n_tr_vir, a_up};
+            auto block_Xab_lt_f = Xab_lt("Y,f,a").block(Xab_low_f, Xab_up_f);
+
+            time27 = mpqc::now(world, accurate_time);
+            TArray gT1;
+            gT1("a,f,X") = block_Xab_lt_e * (4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f"));
+            time28 = mpqc::now(world, accurate_time);
+            time_gT1 += mpqc::duration_in_s(time27, time28);
+
+            time33 = mpqc::now(world, accurate_time);
+            TArray ggT1;
+
+            ggT1("X,Y") = gT1("a,f,X") * block_Xab_lt_f;
+
+            time34 = mpqc::now(world, accurate_time);
+            time_ggT1 += mpqc::duration_in_s(time33, time34);
+
+            E_OV5 += TA::dot((ggT1("X,Y")),(gg1("X,Y")));
+
+            time29 = mpqc::now(world, accurate_time);
+            TArray gg2;
+            gg2("e,b,Y") = block_g_dabi_lt_b * Xai_lt("Y,c,i");
+            time30 = mpqc::now(world, accurate_time);
+            time_gg2 += mpqc::duration_in_s(time29, time30);
+
+            time31 = mpqc::now(world, accurate_time);
+            TArray ggT2;
+            ggT2("a,f,Y") = gg2("e,b,Y") * (4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f"));
+            time32 = mpqc::now(world, accurate_time);
+            time_ggT2 += mpqc::duration_in_s(time31, time32);
+
+            time35 = mpqc::now(world, accurate_time);
+            E_OV5 -= TA::dot((ggT2("a,f,Y")),(block_Xab_lt_f));
+            time36 = mpqc::now(world, accurate_time);
+            time_ggT2trace += mpqc::duration_in_s(time35, time36);
+
+          } else
           {
             TArray G;
 
@@ -1597,7 +1644,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
-          }*/
+          }
 
           //Mixed term contributions
           {
@@ -1792,13 +1839,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
       TA::set_default_world(global_world);
-      //global_world.gop.sum(E_OV5);
+      global_world.gop.sum(E_OV5);
       global_world.gop.sum(E_O2V4_2);
       global_world.gop.sum(E_O2V4_S);
       global_world.gop.sum(E_O3V3_S2);
       global_world.gop.sum(time_G_OV5);
       global_world.gop.sum(time_T_OV5);
-      //global_world.gop.sum(time_trace);
+      global_world.gop.sum(time_trace);
 
 
       E_O2V4_vo = 0.0;

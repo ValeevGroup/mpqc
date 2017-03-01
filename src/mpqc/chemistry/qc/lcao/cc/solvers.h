@@ -14,7 +14,7 @@ template <typename Tile, typename Policy,
           typename EigenVectorX =
               Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
-    const TA::DistArray<Tile, Policy>& t2_abij, const EigenVectorX& ens_occ,
+    const TA::DistArray<Tile, Policy>& r2_abij, const EigenVectorX& ens_occ,
     const EigenVectorX& ens_uocc) {
   auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
@@ -53,16 +53,16 @@ TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
     return std::sqrt(norm);
   };
 
-  auto result = TA::foreach (t2_abij, denom);
-  t2_abij.world().gop.fence();
-  return result;
+  auto delta_t2_abij = TA::foreach (r2_abij, denom);
+  delta_t2_abij.world().gop.fence();
+  return delta_t2_abij;
 }
 
 template <typename Tile, typename Policy,
           typename EigenVectorX =
               Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
-    const TA::DistArray<Tile, Policy>& t1_ai, const EigenVectorX& ens_occ,
+    const TA::DistArray<Tile, Policy>& r1_ai, const EigenVectorX& ens_occ,
     const EigenVectorX& ens_uocc) {
   auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
@@ -91,9 +91,9 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
     return std::sqrt(norm);
   };
 
-  auto result = TA::foreach (t1_ai, denom);
-  t1_ai.world().gop.fence();
-  return result;
+  auto delta_t1_ai = TA::foreach (r1_ai, denom);
+  delta_t1_ai.world().gop.fence();
+  return delta_t1_ai;
 }
 
 }  // namespace detail
@@ -117,7 +117,13 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
-    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
+    auto t1_update = detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_);
+    auto t2_update = detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_);
+    std::cout << "r1:" << r1 << std::endl;
+    std::cout << "t1 update:" << t1_update << std::endl;
+    std::cout << "t2 update:" << t2_update << std::endl;
+    t1("a,i") += t1_update("a,i");
+    t2("a,b,i,j") += t2_update("a,b,i,j");
     t1.truncate();
     t2.truncate();
   }

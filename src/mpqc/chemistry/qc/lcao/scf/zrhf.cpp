@@ -75,7 +75,7 @@ void zRHF::init(const KeyVal& kv) {
     }
     F_ = H_;
   } else {
-    F_ = periodic_fock_soad(world, unitcell, H_, ao_factory);
+    F_ = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
   }
 
   // transform Fock from real to reciprocal space

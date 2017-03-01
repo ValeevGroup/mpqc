@@ -1662,7 +1662,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
             T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
 
-            /*if (this->is_df()) {
+            if (this->is_df()) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1678,25 +1678,29 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
               auto block_g_dabi_lt_ac = g_dabi_lt("e,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
 
-              block Xab_low{0, 0, a_low};
-              block Xab_up{n_tr_aux, n_tr_vir, a_up};
-              auto block_Xab_lt = Xab_lt("X,e,a").block(Xab_low, Xab_up);
+              block g_dabi_low_ca{0, 0, a_low, 0};
+              block g_dabi_up_ca{n_tr_vir, n_tr_vir, a_up, n_tr_occ};
+              auto block_g_dabi_lt_ca = g_dabi_lt("e,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
 
-              TArray gt1;
-              gt1("b,X,n") = Xai_lt("X,c,i") * block_t2_ouu_lt_cb;
-              TArray gt2;
-              gt2("b,X,n") = Xai_lt("X,c,i") * block_t2_ouu_lt_bc;
-
-              G1("e,a,b,n") = block_Xab_lt * gt1("b,X,n");
               G2("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_cb;
-              G3("e,a,b,n") = block_Xab_lt * gt2("b,X,n");
-              E_O2V4_2 += TA::dot(2.0*G1("e,c,a,i") - G2("e,c,a,i") - G3("e,c,a,i"),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
+              E_O2V4_2 += TA::dot((-G2("e,c,a,i")),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
 
               TArray G;
               G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
               E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
 
-            } else {*/
+              TArray gt;
+              gt("b,n,X") = Xai_lt("X,c,i") * (2.0*block_t2_ouu_lt_cb - block_t2_ouu_lt_bc);
+
+              TArray gtT;
+              gtT("e,a,X") = gt("b,n,X") * (2.0*T1("e,a,b,n") - T2("e,a,b,n"));
+
+              block Xab_low{0, 0, a_low};
+              block Xab_up{n_tr_aux, n_tr_vir, a_up};
+              auto block_Xab_lt = Xab_lt("X,e,a").block(Xab_low, Xab_up);
+              E_O2V4_2 += TA::dot(gtT("e,a,X"),block_Xab_lt);
+
+            } else {
 
               TArray G1;
               TArray G2;
@@ -1722,7 +1726,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               TArray G;
               G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
               E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
-            //}
+            }
           }
 
           {

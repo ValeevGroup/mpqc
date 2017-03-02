@@ -17,7 +17,6 @@
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/nrcadf_builder.h"
 #include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
@@ -381,33 +380,6 @@ template <typename Tile, typename Policy>
 void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   scf::CADFFockBuilder<Tile, Policy, DirectArray> builder(
-      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
-}
-
-/**
- * nrCadfRHF member functions
- */
-template <typename Tile, typename Policy>
-nrCadfRHF<Tile, Policy>::nrCadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
-  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
-  auto user_tcutc = kv.exists("tcutc");
-  if (user_tcutc) {
-    tcutc_ = kv.value<double>("tcutc");
-  } else if (force_shape_threshold_ > 0) {
-    tcutc_ = 1e-4;
-  } else {
-    tcutc_ = 0.0;
-  }
-
-  secadf_ = kv.value<bool>("secadf", false);
-  aaab_ = kv.value<bool>("secadf_aaab", false);
-}
-
-template <typename Tile, typename Policy>
-void nrCadfRHF<Tile, Policy>::init_fock_builder() {
-  using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
-  scf::nrCADFFockBuilder<Tile, Policy, DirectArray> builder(
       this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }

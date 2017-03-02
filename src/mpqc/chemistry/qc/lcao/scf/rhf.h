@@ -186,36 +186,6 @@ class CadfRHF : public RHF<Tile, Policy> {
 };
 
 /**
- *
- * nrCadfRHF class, using direct traditional density fitting for J and the
- * non-robust Concentric Atomic Density Fitting Approach for K.
- *
- */
-template <typename Tile, typename Policy>
-class nrCadfRHF : public RHF<Tile, Policy> {
- public:
-  /*!
-   * Parameter tcutc can be set to truncate elements of the molecular orbitals,
-   * by default it is 0.0 ensuring no truncation
-   *
-   * A further approximation called force shape may be applied by including the
-   * force_shape_threshold keyword and assigning a value greater than 0 to it.
-   *
-   * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
-   * but will still be settable by the user.
-   */
-  nrCadfRHF(const KeyVal& kv);
-
- private:
-  void init_fock_builder() override;
-
-  double force_shape_threshold_ = 0.0;
-  double tcutc_ = 0.0;
-  bool secadf_ = false;
-  bool aaab_ = false;
-};
-
-/**
  * DirectRIRHF, fock_builder uses density fitting with 3-center integrals
  * computed on the fly
  */

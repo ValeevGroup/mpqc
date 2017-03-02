@@ -5,6 +5,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
+#include "mpqc/math/groups/petite_list.h"
 #include "mpqc/util/misc/exception.h"
 
 #include <tiledarray.h>
@@ -21,22 +22,30 @@ namespace gaussian {
 namespace detail {
 // Helper function to allow F norm screening
 inline double l2Norm(Eigen::Map<const RowMatrixXd> const &map) {
-  return map.diagonal().norm();
+  return map.norm();
 }
 
 // Helper function to allow inf norm screening
 inline double inf_norm(Eigen::Map<const RowMatrixXd> const &map) {
-  return map.diagonal().lpNorm<Eigen::Infinity>();
+  return map.lpNorm<Eigen::Infinity>();
 }
 }  // namespace detail
 
-/*! \brief Class which holds shell set information for screening.  */
+/// \brief Class which holds shell set information for screening.
 class Qmatrix {
  private:
   using f2s_map = std::unordered_map<int64_t, int64_t>;
   std::array<f2s_map, 2> f2s_maps_;  // Function to shell maps for each basis
 
-  RowMatrixXd Q_;                    // Matrix to hold the integral estimates
+  // Matrix to hold the {shell,shell-pair} Schwarz bound factors
+  // # of rows = # of shells in a basis
+  // # of cols = {1,# of shells} if screening integrals over {shells,shell-pairs}
+  RowMatrixXd Q_;
+  // Matrix to hold the cluster/cluster-pair Schwarz bound factors
+  // # of rows = # of clusters in a basis
+  // # of cols = {1,# of clusers} if screening integrals over {clusters,cluster-pairs}
+  RowMatrixXd
+      Q_cluster_;
   Eigen::VectorXd max_elem_in_row_;  // Max element for each row of Q_
   double max_elem_in_Q_ = 0;  // Max val in Q_, should be set in constructor
   bool is_aux_;
@@ -54,10 +63,10 @@ class Qmatrix {
   Qmatrix &operator=(Qmatrix const &) = default;
   Qmatrix &operator=(Qmatrix &&) = default;
 
-  RowMatrixXd const &Q() const { return Q_; };
+  RowMatrixXd const &Q() const { return Q_; }
+  RowMatrixXd const &Qtile() const { return Q_cluster_; }
 
-  /*! The basis constructor that takes a single argument is for the use case
-   * where the Qmatrix is suppose to represent an Auxilary basisset.
+  /*! Constructs Qmatrix for the case of screening integrals over shells, e.g. integrals of type \c (a|Op|b)
    *
    * \param world is a reference to the madness world to compute the Q matrix
    * construction tasks
@@ -65,8 +74,7 @@ class Qmatrix {
    * \param eng is an integral engine pool used to compute the integral
    * estimates
    *
-   * \param bs is a basis set which we will compute estimates via eng(shell,
-   * unit, shell, unit);
+   * \param bs is a Basis object
    *
    * \param norm_func is a function that computes the sqrt(norm(quartet)) of the
    * integrals with signature double (Eigen::Map<const RowMatrixXd> const &)
@@ -114,10 +122,27 @@ class Qmatrix {
       max_elem_in_Q_ = std::max(max_elem_in_Q_, max_elem);
       max_elem_in_row_[i] = max_elem;
     }
+
+    // Build Q_cluster_
+    auto const &cshells = bs.cluster_shells();
+    const auto nclusters = cshells.size();
+    Q_cluster_ = Eigen::VectorXd(nclusters);
+    Q_cluster_.setZero();
+
+    // Because we are using Qbra * Qket >= (bra|ket)^2 just sum these values into
+    // Q_cluster_
+    auto first_shell_in_cluster = 0;
+    for (auto c = 0; c < nclusters; ++c) {
+      const auto nshells = cshells[c].size();
+      const auto last = first_shell_in_cluster + nshells;
+      for (auto s = first_shell_in_cluster; s < last; ++s) {
+        Q_cluster_(c) += Q_(s);
+      }
+      first_shell_in_cluster += nshells;
+    }
   }
 
-  /*! The double basis constructor that takes two basis sets is for the use case
-   * where the Qmatrix is suppose to represent a basis with two center products
+  /*! Constructs Qmatrix for the case of screening integrals over shell-pairs, e.g. integrals of type \c (ab|Op|cd)
    *
    * \param world is a reference to the madness world to compute the Q matrix
    * construction tasks
@@ -125,9 +150,9 @@ class Qmatrix {
    * \param eng is an integral engine pool used to compute the integral
    * estimates
    *
-   * \param bs0 is a basis set for the left center
+   * \param bs0 is a Basis object composed of shells that appear first in shell pairs
    *
-   * \param bs1 is a basis set for the right center
+   * \param bs1 is a Basis object composed of shells that appear second in shell pairs
    *
    * \param norm_func is a function that computes the sqrt(norm(quartet)) of the
    * integrals with signature double (Eigen::Map<const RowMatrixXd> const &)
@@ -198,6 +223,39 @@ class Qmatrix {
       max_elem_in_Q_ = std::max(max_elem_in_Q_, max_elem);
       max_elem_in_row_[i] = max_elem;
     }
+
+    // Make Q_cluster_
+    auto const &cshells0 = bs0.cluster_shells();
+    auto const &cshells1 = bs1.cluster_shells();
+
+    auto const &nclusters0 = cshells0.size();
+    auto const &nclusters1 = cshells1.size();
+
+    Q_cluster_ = RowMatrixXd(nclusters0, nclusters1);
+    Q_cluster_.setZero();
+
+    auto first_shell_in_cluster0 = 0;
+    for (auto c0 = 0; c0 < nclusters0; ++c0) {
+      const auto nshells0 = cshells0[c0].size();
+      const auto last0 = first_shell_in_cluster0 + nshells0;
+
+      auto first_shell_in_cluster1 = 0;
+      for (auto c1 = 0; c1 < nclusters1; ++c1) {
+        const auto nshells1 = cshells1[c1].size();
+        const auto last1 = first_shell_in_cluster1 + nshells1;
+
+        auto val = 0.0;
+        for (auto s0 = first_shell_in_cluster0; s0 < last0; ++s0) {
+          for (auto s1 = first_shell_in_cluster1; s1 < last1; ++s1) {
+            val += Q_(s0, s1);
+          }
+        }
+        Q_cluster_(c0, c1) = val;
+
+        first_shell_in_cluster1 += nshells1;
+      }
+      first_shell_in_cluster0 += nshells0;
+    }
   }
 
   /// Will return the largest value in Q_
@@ -226,13 +284,13 @@ class Qmatrix {
  */
 class SchwarzScreen : public Screener {
  private:
-  std::shared_ptr<Qmatrix> Qab_;  // Screening mat for basis ab
-  std::shared_ptr<Qmatrix> Qcd_;  // Screening mat for basis cd
+  std::shared_ptr<Qmatrix> Qbra_;  // Screening matrix for the bra
+  std::shared_ptr<Qmatrix> Qket_;  // Screening matrix for the ket
   double thresh_;                 // Threshold used for screening
   double thresh2_;  // Threshold squared since estimates are not squared
 
-  inline Qmatrix const &Qab() const { return *Qab_; }
-  inline Qmatrix const &Qcd() const { return *Qcd_; }
+  inline Qmatrix const &Qbra() const { return *Qbra_; }
+  inline Qmatrix const &Qket() const { return *Qket_; }
 
   inline boost::optional<double> estimate(int64_t a) const;
 
@@ -275,19 +333,17 @@ class SchwarzScreen : public Screener {
 
   /*! \brief Constructor which requires two Q matrices
    *
-   * \param Qab is the Qmatrix needed for mu and nu in (mu nu | rho sigma) and
-   * also the vector needed for X in (X | rho sigma), a current limitation of
-   * Schwarz screening is that all auxillary basis Qs must be placed in Qab_.
+   * \param Qbra is the Qmatrix that describes the bra in screened integrals, e.g.
+   * it represents (cd| in (ab|cd), or (X| in (X|cd)
    *
-   * \param Qcd is the Qmatrix needed for rho and sigma in (mu nu | rho sigma)
-   * and (X | rho sigma)
+   * \param Qket is the Qmatrix that describes the ket in screened integrals, e.g.
+   * it represents |cd) in (ab|cd), or |X) in (ab|X)
    *
    * \param thresh is the screening threshold used when evaluating whether or
-   * not the skip function returns true for Qab(a,b) * Qcd(c,d) <= thresh_.
-   * How Qab and Qcd are determined (infinity norm of a shell set or F norm) is
-   * to be part of the Q matrix construction.
+   * not the skip function returns true for Qbra(a,b) * Qket(c,d) <= thresh_.
+   * The norm types of Qbra and Qket are defined by their constructors.
    */
-  SchwarzScreen(std::shared_ptr<Qmatrix> Qab, std::shared_ptr<Qmatrix> Qcd,
+  SchwarzScreen(std::shared_ptr<Qmatrix> Qbra, std::shared_ptr<Qmatrix> Qket,
                 double thresh);
 
   /// Reports the threshold being used for skipping integrals
@@ -306,15 +362,19 @@ class SchwarzScreen : public Screener {
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 
-  /*! \brief returns an estimate of shape norms for the given basis vector.
+  /*! \brief returns an estimate of shape norms for the given basis vector, in
+   * presence of symmetry described by a math::PetiteList object.
    *
-   * This will use the outer product of Qab * Qcd to determine the
-   * shape.
+   * This function will only compute the estimate for tiles which are
+   * considered local by the pmap, the user will be responsible for using the
+   * world based constructor for the TA::Shape.
    */
   TA::Tensor<float> norm_estimate(
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,
+      TA::Pmap const &pmap,
       const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const override;
+          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
+      bool replicate = false) const override;
 };
 
 /*! \brief Creates a Schwarz Screener
@@ -338,19 +398,19 @@ class SchwarzScreen : public Screener {
 template <typename E>
 SchwarzScreen create_schwarz_screener(
     TA::World &world, ShrPool<E> const &eng, std::vector<Basis> const &bs_array,
-    double thresh, decltype(detail::inf_norm) norm_func = detail::inf_norm) {
+    double thresh, decltype(detail::inf_norm) norm_func = detail::l2Norm) {
   if (bs_array.size() == 3) {  // One index must be auxiliary assume first
-    auto Q_ab =
+    auto Q_bra =
         std::make_shared<Qmatrix>(Qmatrix(world, eng, bs_array[0], norm_func));
-    auto Q_cd = std::make_shared<Qmatrix>(
+    auto Q_ket = std::make_shared<Qmatrix>(
         Qmatrix(world, eng, bs_array[1], bs_array[2], norm_func));
-    return SchwarzScreen(std::move(Q_ab), std::move(Q_cd), thresh);
+    return SchwarzScreen(std::move(Q_bra), std::move(Q_ket), thresh);
   } else if (bs_array.size() == 4) {  // Four center estimator
-    auto Q_ab = std::make_shared<Qmatrix>(
+    auto Q_bra = std::make_shared<Qmatrix>(
         Qmatrix(world, eng, bs_array[0], bs_array[1], norm_func));
-    auto Q_cd = std::make_shared<Qmatrix>(
+    auto Q_ket = std::make_shared<Qmatrix>(
         Qmatrix(world, eng, bs_array[2], bs_array[3], norm_func));
-    return SchwarzScreen(std::move(Q_ab), std::move(Q_cd), thresh);
+    return SchwarzScreen(std::move(Q_bra), std::move(Q_ket), thresh);
   } else {
     throw InputError(
         "The bs_array passed into create_schwarz_screener must be of length 3 "

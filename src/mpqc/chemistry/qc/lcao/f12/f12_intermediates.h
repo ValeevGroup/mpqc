@@ -1461,7 +1461,7 @@ template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
-    const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
+    const TA::SparseShape<float> &ijij_ijji_shape, bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1473,7 +1473,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
 
   // compute V_ijab
   TA::DistArray<Tile, TA::SparsePolicy> V_ijab =
-      compute_V_xyab_df(lcao_factory, couple);
+      compute_V_xyab_df(lcao_factory, cabs);
 
   auto vt2_time0 = mpqc::now(world, accurate_time);
   utility::print_par(world, "\nCompute VT2_ijij_ijji With DF\n");
@@ -1503,7 +1503,7 @@ template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
-    const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
+    const TA::SparseShape<float> &ijij_ijji_shape, bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1515,7 +1515,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
 
   // compute V_ijab
   TA::DistArray<Tile, TA::SparsePolicy> V_ijab =
-      compute_V_xyab(lcao_factory, couple);
+      compute_V_xyab(lcao_factory, cabs);
 
   auto vt2_time0 = mpqc::now(world, accurate_time);
   utility::print_par(world, "\nCompute VT2_ijij_ijji Without DF\n");
@@ -1557,14 +1557,14 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
-    const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
+    const TA::SparseShape<float> &ijij_ijji_shape, bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji;
 
   // skip the second term in V_iaxy
   TA::DistArray<Tile, TA::SparsePolicy> V_iaij =
-      compute_V_iaxy_df(lcao_factory, couple, false);
+      compute_V_iaxy_df(lcao_factory, cabs, false);
 
   auto vt1_time0 = mpqc::now(world, accurate_time);
   utility::print_par(world, "\nCompute VT1_ijij_ijji With DF\n");
@@ -1621,12 +1621,12 @@ template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
-    const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
+    const TA::SparseShape<float> &ijij_ijji_shape, bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji;
   TA::DistArray<Tile, TA::SparsePolicy> V_iaij =
-      compute_V_iaxy(lcao_factory, couple);
+      compute_V_iaxy(lcao_factory, cabs);
 
   auto vt2_time0 = mpqc::now(world, accurate_time);
   utility::print_par(world, "\nCompute VT1_ijij_ijji Without DF\n");

@@ -85,17 +85,20 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
-    std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
+    std::shared_ptr<const math::PetiteList> plist =
+        math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
-  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *plist);
+  auto pmap =
+      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *pmap, *plist);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);
 
-  auto builder = make_direct_integral_builder(world, std::move(shr_pool),
-                                              std::move(shr_bases),
-                                              std::move(screen), std::move(op),
-                                              std::move(plist));
+  auto builder = make_direct_integral_builder(
+      world, std::move(shr_pool), std::move(shr_bases), std::move(screen),
+      std::move(op), std::move(plist));
 
   auto dir_array =
       DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
@@ -109,11 +112,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
   };
 
-  TA::DistArray<TA::TensorD, TA::SparsePolicy> ta_array;
-  TA::SparseShape<float> shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape);
-
-  auto pmap = out.pmap();
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape,
+                                                      pmap);
 
   for (auto const &ord : *pmap) {
     if (!out.is_zero(ord)) {
@@ -140,7 +140,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
-    std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
+    std::shared_ptr<const math::PetiteList> plist =
+        math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
@@ -148,10 +149,9 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);
 
-  auto builder = make_direct_integral_builder(world, std::move(shr_pool),
-                                              std::move(shr_bases),
-                                              std::move(screen), std::move(op),
-                                              std::move(plist));
+  auto builder = make_direct_integral_builder(
+      world, std::move(shr_pool), std::move(shr_bases), std::move(screen),
+      std::move(op), std::move(plist));
 
   auto dir_array =
       DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
@@ -202,17 +202,17 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
-    std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
+    std::shared_ptr<const math::PetiteList> plist =
+        math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);
 
   // Make a pointer to an Integral builder.
-  auto builder = make_direct_integral_builder(world, std::move(shr_pool),
-                                              std::move(shr_bases),
-                                              std::move(screen), std::move(op),
-                                              std::move(plist));
+  auto builder = make_direct_integral_builder(
+      world, std::move(shr_pool), std::move(shr_bases), std::move(screen),
+      std::move(op), std::move(plist));
 
   auto dir_array =
       DirectArray<Tile, TA::DensePolicy, Engine>(std::move(builder));

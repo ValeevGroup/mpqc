@@ -1,6 +1,8 @@
 set(sources
     energy.cpp
     energy.h
+    excitation_energy.cpp
+    excitation_energy.h
     findif.cpp
     findif.h
     gfpole.cpp

@@ -16,7 +16,7 @@ public:
     virtual bool can_evaluate(GFRealPole* pole) = 0;
     /// Provider::evaluate computes the taylor expansion of the real pole
     /// with respect to the molecular coordinates
-    /// and uses set_value to assign the values to \c energy
+    /// and uses set_value to assign the values to \c pole
     virtual void evaluate(GFRealPole* pole) = 0;
   };
 

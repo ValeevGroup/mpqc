@@ -6,7 +6,7 @@ MPQC_CLASS_EXPORT2("GFRealPole", mpqc::GFRealPole);
 namespace mpqc {
 
 GFRealPole::GFRealPole(const KeyVal& kv)
-    : WavefunctionProperty(kv, 1e-4), target_(kv.value<int>("target", -1)) {
+    : WavefunctionProperty<double>(kv, 1e-4), target_(kv.value<int>("target", -1)) {
   if (target_ == 0)
     throw InputError(
         "GFRealPole: target must be positive (for particles) or negative (for "

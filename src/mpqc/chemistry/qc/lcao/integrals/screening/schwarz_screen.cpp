@@ -89,7 +89,7 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
 
 TA::Tensor<float> SchwarzScreen::norm_estimate(
     madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-    TA::Pmap const &pmap, const math::PetiteList &plist, bool replicate) const {
+    TA::Pmap const &pmap, bool replicate) const {
   const auto ndims = bs_array.size();
   auto trange = gaussian::detail::create_trange(bs_array);
   auto const &tile_range = trange.tiles_range();
@@ -134,7 +134,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
       }
     }
   } else {
-    norms = Screener::norm_estimate(world, bs_array, pmap, plist);
+    norms = Screener::norm_estimate(world, bs_array, pmap);
   }
   world.gop.fence();
 

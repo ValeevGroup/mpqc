@@ -60,30 +60,30 @@ bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) const {
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a) const {
-  return Qab()(a) * Qcd()();
+  return Qbra()(a) * Qket()();
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b) const {
   if (Qbra_->is_aux_Q()) {
-    return Qab()(a) * Qcd()(b);
+    return Qbra()(a) * Qket()(b);
   } else {
-    return Qab()(a, b) * Qcd()();
+    return Qbra()(a, b) * Qket()();
   }
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b,
                                                 int64_t c) const {
   if (Qbra_->is_aux_Q()) {
-    return Qab()(a) * Qcd()(b, c);
+    return Qbra()(a) * Qket()(b, c);
   } else {
-    return Qab()(a, b) * Qcd()(c);
+    return Qbra()(a, b) * Qket()(c);
   }
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
                                                 int64_t d) const {
   assert(!Qbra_->is_aux_Q());
-  return Qab()(a, b) * Qcd()(c, d);
+  return Qbra()(a, b) * Qket()(c, d);
 }
 
 TA::Tensor<float> SchwarzScreen::norm_estimate(

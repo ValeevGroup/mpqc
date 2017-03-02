@@ -129,7 +129,7 @@ class Qmatrix {
     Q_cluster_ = Eigen::VectorXd(nclusters);
     Q_cluster_.setZero();
 
-    // Because we are using Qab * Qcd >= (ab|cd)^2 just sum these values into
+    // Because we are using Qbra * Qket >= (bra|ket)^2 just sum these values into
     // Q_cluster_
     auto first_shell_in_cluster = 0;
     for (auto c = 0; c < nclusters; ++c) {
@@ -289,8 +289,8 @@ class SchwarzScreen : public Screener {
   double thresh_;                 // Threshold used for screening
   double thresh2_;  // Threshold squared since estimates are not squared
 
-  inline Qmatrix const &Qab() const { return *Qbra_; }
-  inline Qmatrix const &Qcd() const { return *Qket_; }
+  inline Qmatrix const &Qbra() const { return *Qbra_; }
+  inline Qmatrix const &Qket() const { return *Qket_; }
 
   inline boost::optional<double> estimate(int64_t a) const;
 

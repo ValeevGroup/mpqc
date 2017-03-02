@@ -1117,7 +1117,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     if (reblock_inner_) {
       auto &tr1 = this->local_trange1_engine();
-      using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
       // occ inner
       tr_occ_inner_ =

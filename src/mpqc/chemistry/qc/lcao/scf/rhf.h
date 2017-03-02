@@ -67,16 +67,16 @@ class RHF
   /// @return true if using eigen solver and orbitals are not localized
   bool can_evaluate(CanonicalOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all canonical orbitals, annotated with orbital energies
-  void evaluate(CanonicalOrbitalSpace<array_type>* result, double target_precision,
-                std::size_t target_blocksize) override;
+  void evaluate(CanonicalOrbitalSpace<array_type>* result,
+                double target_precision, std::size_t target_blocksize) override;
 
   // these implement PopulatedOrbitalSpace::Provider methods
 
   /// @return true if using eigen solver
   bool can_evaluate(PopulatedOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all or occupied orbitals, annotated with occupancies
-  void evaluate(PopulatedOrbitalSpace<array_type>* result, double target_precision,
-                std::size_t target_blocksize) override;
+  void evaluate(PopulatedOrbitalSpace<array_type>* result,
+                double target_precision, std::size_t target_blocksize) override;
 
  protected:
   double energy_;
@@ -157,23 +157,23 @@ class RIRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * CadfRHF class, using direct traditional density fitting for J and the 
- * Concentric Atomic Density Fitting Approach for K.  
- * 
+ * CadfRHF class, using direct traditional density fitting for J and the
+ * Concentric Atomic Density Fitting Approach for K.
+ *
  */
 template <typename Tile, typename Policy>
 class CadfRHF : public RHF<Tile, Policy> {
  public:
- /*!
-  * Parameter tcutc can be set to truncate elements of the molecular orbitals,
-  * by default it is 0.0 ensuring no truncation
-  * 
-  * A further approximation called force shape may be applied by including the
-  * force_shape_threshold keyword and assigning a value greater than 0 to it. 
-  * 
-  * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
-  * but will still be settable by the user. 
-  */
+  /*!
+   * Parameter tcutc can be set to truncate elements of the molecular orbitals,
+   * by default it is 0.0 ensuring no truncation
+   *
+   * A further approximation called force shape may be applied by including the
+   * force_shape_threshold keyword and assigning a value greater than 0 to it.
+   *
+   * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
+   * but will still be settable by the user.
+   */
   CadfRHF(const KeyVal& kv);
 
  private:
@@ -187,23 +187,23 @@ class CadfRHF : public RHF<Tile, Policy> {
 
 /**
  *
- * nrCadfRHF class, using direct traditional density fitting for J and the 
- * non-robust Concentric Atomic Density Fitting Approach for K.  
- * 
+ * nrCadfRHF class, using direct traditional density fitting for J and the
+ * non-robust Concentric Atomic Density Fitting Approach for K.
+ *
  */
 template <typename Tile, typename Policy>
 class nrCadfRHF : public RHF<Tile, Policy> {
  public:
- /*!
-  * Parameter tcutc can be set to truncate elements of the molecular orbitals,
-  * by default it is 0.0 ensuring no truncation
-  * 
-  * A further approximation called force shape may be applied by including the
-  * force_shape_threshold keyword and assigning a value greater than 0 to it. 
-  * 
-  * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
-  * but will still be settable by the user. 
-  */
+  /*!
+   * Parameter tcutc can be set to truncate elements of the molecular orbitals,
+   * by default it is 0.0 ensuring no truncation
+   *
+   * A further approximation called force shape may be applied by including the
+   * force_shape_threshold keyword and assigning a value greater than 0 to it.
+   *
+   * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
+   * but will still be settable by the user.
+   */
   nrCadfRHF(const KeyVal& kv);
 
  private:
@@ -216,7 +216,8 @@ class nrCadfRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * DirectRIRHF, fock_builder uses density fitting with 3-center integrals computed on the fly
+ * DirectRIRHF, fock_builder uses density fitting with 3-center integrals
+ * computed on the fly
  */
 template <typename Tile, typename Policy>
 class DirectRIRHF : public RHF<Tile, Policy> {

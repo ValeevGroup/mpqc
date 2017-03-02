@@ -85,7 +85,8 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
 }
 
 TA::Tensor<float> SchwarzScreen::norm_estimate(
-    madness::World &world, std::vector<gaussian::Basis> const &bs_array) const {
+    madness::World &world, std::vector<gaussian::Basis> const &bs_array,
+    const math::PetiteList& plist) const {
   const auto ndims = bs_array.size();
   auto trange = gaussian::detail::create_trange(bs_array);
   auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
@@ -116,7 +117,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         for (auto c2 = 0ul; c2 < csize2; ++c2) {
           const auto nsh2 = cs2[c2].size();
 
-          auto task_f = [=](float *out) {
+          auto task_f = [=](float *out, int64_t scaling_factor) {
             auto &Qab = Qab_->Q();
             auto &Qcd = Qcd_->Q();
 
@@ -133,10 +134,14 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
               }
             }
 
-            *out = std::sqrt(norm);
+            *out = scaling_factor * std::sqrt(norm);
           };
 
-          world.taskq.add(task_f, &norms(c0, c1, c2));
+          if (plist.is_canonical(c0,c1,c2)) {
+            const float multiplicity = static_cast<float>(plist.multiplicity(c0,c1,c2));
+            world.taskq.add(task_f, &norms(c0, c1, c2), multiplicity);
+          }
+
           sh2 += nsh2;
         }
         sh1 += nsh1;
@@ -176,7 +181,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
           for (auto c3 = 0ul; c3 < csize3; ++c3) {
             const auto nsh3 = cs3[c3].size();
 
-            auto task_f = [=](float *out) {
+            auto task_f = [=](float *out, float scaling_factor) {
               auto &Qab = Qab_->Q();
               auto &Qcd = Qcd_->Q();
 
@@ -199,10 +204,13 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
                 }
               }
 
-              *out = std::sqrt(norm);
+              *out = scaling_factor * std::sqrt(norm);
             };
 
-            world.taskq.add(task_f, &norms(c0, c1, c2, c3));
+            if (plist.is_canonical(c0,c1,c2)) {
+              const float multiplicity = static_cast<float>(plist.multiplicity(c0,c1,c2,c3));
+              world.taskq.add(task_f, &norms(c0, c1, c2, c3), multiplicity);
+            }
 
             sh3 += nsh3;
           }
@@ -213,7 +221,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
       sh0 += nsh0;
     } // End estimate
   } else {
-    norms = Screener::norm_estimate(world, bs_array);
+    norms = Screener::norm_estimate(world, bs_array, plist);
   }
   world.gop.fence();
 

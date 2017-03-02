@@ -107,6 +107,8 @@ class DirectArray {
 
   DirectArray(std::shared_ptr<Builder> b) : builder_(std::move(b)), array_() {}
 
+  bool is_initialized() const { return builder_ && array_.is_initialized(); }
+
   template <typename... Args>
   auto operator()(Args &&... args)
       -> decltype(array_(std::forward<Args>(args)...)) {

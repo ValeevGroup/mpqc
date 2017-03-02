@@ -312,8 +312,9 @@ class SchwarzScreen : public Screener {
    * shape.
    */
   TA::Tensor<float> norm_estimate(
-      madness::World &world,
-      std::vector<gaussian::Basis> const &bs_array) const override;
+      madness::World &world, std::vector<gaussian::Basis> const &bs_array,
+      const math::PetiteList &plist =
+          math::SymmPetiteList<math::PetiteList::Symmetry::e>()) const override;
 };
 
 /*! \brief Creates a Schwarz Screener

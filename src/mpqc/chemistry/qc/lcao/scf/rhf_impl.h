@@ -112,7 +112,7 @@ void RHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder =
-      scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
+      scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(eri4, eri4);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -420,9 +420,10 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
+  auto eri4_J = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[aa_bb]");
+  auto eri4_K = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
   auto builder =
-      scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
+      scf::FourCenterBuilder<Tile, Policy, decltype(eri4_J)>(std::move(eri4_J),std::move(eri4_K));
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 

@@ -350,6 +350,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double reduce_time = 0.0;
     // time spend in contraction
     double contraction_time = 0.0;
+    // time spend in outer product
+    double outer_product_time = 0.0;
     // time spend in permutation
     double permutation_time = 0.0;
 
@@ -464,7 +466,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           {
             compute_v3(a, b, c, v3);
             time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
+            outer_product_time += mpqc::duration_in_s(time00, time01);
           }
 
           // acbikj contribution
@@ -476,7 +478,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
             compute_v3(b, a, c, v3);
             time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
+            outer_product_time += mpqc::duration_in_s(time00, time01);
           }
 
           // abcijk contribution
@@ -488,7 +490,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
             compute_v3(c, a, b, v3);
             time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
+            outer_product_time += mpqc::duration_in_s(time00, time01);
           }
 
           v3("a,b,c,i,j,k") = v3("a,b,i,j,c,k");
@@ -561,6 +563,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                     << std::endl;
           std::cout << "Contraction Time: " << contraction_time << " S"
                     << std::endl;
+          std::cout << "Outer Product Time: " << outer_product_time << " S"
+                    << std::endl;
           std::cout << "Reduce Time: " << reduce_time << " S" << std::endl
                     << std::endl;
         }
@@ -571,6 +575,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     global_world.gop.sum(iter);
     global_world.gop.sum(permutation_time);
     global_world.gop.sum(contraction_time);
+    global_world.gop.sum(outer_product_time);
     global_world.gop.sum(reduce_time);
 
     ExEnv::out0() << "Process All Time: " << std::endl;
@@ -579,6 +584,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                   << std::endl;
     ExEnv::out0() << "Contraction Time: " << contraction_time << " S"
                   << std::endl;
+    std::cout << "Outer Product Time: " << outer_product_time << " S"
+              << std::endl;
     ExEnv::out0() << "Reduce Time: " << reduce_time << " S" << std::endl
                   << std::endl;
 

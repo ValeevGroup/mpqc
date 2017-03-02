@@ -145,7 +145,7 @@ class RHF
 
 /**
  *
- * RIRHF class, fock_builder uses traditional density fitting for J and K build.
+ * RIRHF class, fock_builder uses density fitting
  */
 template <typename Tile, typename Policy>
 class RIRHF : public RHF<Tile, Policy> {
@@ -157,7 +157,6 @@ class RIRHF : public RHF<Tile, Policy> {
 };
 
 /**
- *
  * CadfRHF class, using direct traditional density fitting for J and the 
  * Concentric Atomic Density Fitting Approach for K.  
  * 
@@ -217,7 +216,7 @@ class nrCadfRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * DirectRIRHF, fock_builder is overide to use direct three center integral
+ * DirectRIRHF, fock_builder uses density fitting with 3-center integrals computed on the fly
  */
 template <typename Tile, typename Policy>
 class DirectRIRHF : public RHF<Tile, Policy> {
@@ -229,7 +228,7 @@ class DirectRIRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * DirectRHF, fock_builder is overide to use direct four center integral
+ * DirectRHF, fock_builder uses 4-center integrals computed on the fly.
  */
 template <typename Tile, typename Policy>
 class DirectRHF : public RHF<Tile, Policy> {

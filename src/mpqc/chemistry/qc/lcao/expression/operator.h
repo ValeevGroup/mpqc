@@ -38,10 +38,6 @@ namespace mpqc {
  *  - F(β) -> FockBeta(Fock for Beta Spin)
  *  - Cadf -> CADF Fitting Coefficents
  *
- *  Dictionary of wstring to options
- *  - df -> DensityFitting
- *  - inv -> Inverse
- *  - inv_sqr -> InverseSquareRoot
  */
 
 class Operator {
@@ -79,15 +75,6 @@ class Operator {
   };
 
   /**
-   * Option types
-   */
-  enum class Option {
-    DensityFitting = 0,
-    Inverse = 1,
-    InverseSquareRoot = 2
-  };
-
-  /**
    * maps of string to operations and option
    * vice versa
    */
@@ -95,8 +82,6 @@ class Operator {
   static const std::unordered_map<std::wstring, Type> two_body_operation;
   static const std::unordered_map<std::wstring, Type> fock_operation;
   static const std::map<Type, std::wstring> oper_to_string;
-  static const std::map<Option, std::wstring> option_to_string;
-  static const std::unordered_map<std::wstring, Option> string_to_option;
 
   Operator() : type_(Type::Invalid) {}
   Operator(Operator const &) = default;
@@ -108,14 +93,8 @@ class Operator {
    * Constructor
    *
    * @param operation  string of operation
-   * @param option string of a list of option separated by ",", it will sort
-   * options so that they
-   * always come in the same order
    */
-  Operator(std::wstring operation, std::wstring option = L"");
-
-  /// return options options_
-  const std::vector<Option> option() const { return option_; }
+  Operator(std::wstring operation);
 
   /// return operation oper_
   const Type &type() const {
@@ -129,22 +108,8 @@ class Operator {
     Operator::type_ = type;
   }
 
-  /// set option option_
-  void set_option(const std::vector<Option> &option) {
-    Operator::option_ = option;
-  }
-
-  /// Print the operator type
-  friend std::ostream &operator<<(std::ostream &, Operator const&); 
-
   /// return string that correspond to oper_
   const std::wstring oper_string() const;
-
-  /// return string that correspond to options_ wraped in []
-  const std::wstring option_string() const;
-
-  /// return true if have Option op
-  bool has_option(Option op) const;
 
   /// check if oper_ is one body operation
   bool is_onebody() const;
@@ -172,7 +137,6 @@ class Operator {
 
  private:
   Type type_;
-  std::vector<Option> option_;
 };
 
 } // namespace mpqc

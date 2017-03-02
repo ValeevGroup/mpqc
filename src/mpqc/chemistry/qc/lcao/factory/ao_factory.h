@@ -218,8 +218,10 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                            ShrPool<libint2::Engine>& engine,
                            BasisVector const& bases,
                            std::shared_ptr<Screener> p_screen =
-                               std::make_shared<Screener>(Screener{})) {
-    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_);
+                               std::make_shared<Screener>(Screener{}),
+                           std::shared_ptr<const math::PetiteList> plist =
+                               math::PetiteList::make_trivial()) {
+    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 
@@ -232,8 +234,10 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                            ShrPool<libint2::Engine>& engine,
                            BasisVector const& bases,
                            std::shared_ptr<Screener> p_screen =
-                               std::make_shared<Screener>(Screener{})) {
-    auto result = direct_dense_integrals(world, engine, bases, p_screen, op_);
+                               std::make_shared<Screener>(Screener{}),
+                           std::shared_ptr<const math::PetiteList> plist =
+                               math::PetiteList::make_trivial()) {
+    auto result = direct_dense_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 
@@ -257,8 +261,11 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   bool iterative_inv_sqrt_;
 };
 
-extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 extern template class AOFactory<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 }  // namespace lcao

@@ -70,45 +70,70 @@ void create_ij_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
                     Tile M_tile_jj, unsigned long ord_iij,
                     unsigned long ord_jij);
 
+// Function to compute the by atom screener for cadf eri3 integrals
+std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
+    madness::World &world, gaussian::Basis const &obs,
+    gaussian::Basis const &dfbs, double threshold);
+
 }  // namespace detail
 
 /// Function to compute CADF fitting coefficients
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
-    madness::World &world, gaussian::Basis const &obs,
-    gaussian::Basis const &dfbs) {
-  auto by_atom_obs = detail::by_center_basis(obs);
-  auto by_atom_dfbs = detail::by_center_basis(dfbs);
+    madness::World &world, gaussian::Basis const &by_cluster_obs,
+    gaussian::Basis const &by_cluster_dfbs) {
+  auto obs = detail::by_center_basis(by_cluster_obs);
+  auto dfbs = detail::by_center_basis(by_cluster_dfbs);
 
-  const auto dfbs_ref_array =
-      utility::make_array_of_refs(by_atom_dfbs, by_atom_dfbs);
-  const auto dfbs_array = gaussian::BasisVector{{by_atom_dfbs, by_atom_dfbs}};
-
+  const auto dfbs_ref_array = utility::make_array_of_refs(dfbs, dfbs);
+  const auto dfbs_array = gaussian::BasisVector{{dfbs, dfbs}};
   auto eng2 = make_engine_pool(libint2::Operator::coulomb, dfbs_ref_array,
                                libint2::BraKet::xs_xs);
-
   auto M = gaussian::sparse_integrals(world, eng2, dfbs_array);
 
-  // Create a Screener for the three center integrals
-  const auto three_ref_array =
-      utility::make_array_of_refs(by_atom_dfbs, by_atom_obs, by_atom_obs);
-  const auto three_array =
-      gaussian::BasisVector{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
-  auto eng4 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
-                               libint2::BraKet::xx_xx);
-
-  auto screener = std::make_shared<gaussian::SchwarzScreen>(
-      gaussian::create_schwarz_screener(world, eng4, three_array, 1e-12));
-
-  auto eng3 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
+  auto screener = detail::cadf_by_atom_screener(world, obs, dfbs, 1e-12);
+  auto eng3 = make_engine_pool(libint2::Operator::coulomb,
+                               utility::make_array_of_refs(dfbs, obs, obs),
                                libint2::BraKet::xs_xx);
-  auto eri3 = untruncated_direct_sparse_integrals(world, eng3, three_array,
-                                                  std::move(screener));
 
-  auto by_atom_cadf = detail::cadf_by_atom_coeffs(
-      M, eri3, detail::cadf_trange(by_atom_obs, by_atom_dfbs));
+  auto eri3_norms = [&](TA::Tensor<float> const &in) {
+    const auto thresh = screener->skip_threshold();
 
-  return detail::reblock_atom_to_clusters(by_atom_cadf, obs, dfbs);
+    auto const &range = in.range();
+    auto ext = range.extent_data();
+
+    TA::Tensor<float> out(range, 0.0);
+
+    for (auto a = 0; a < ext[1]; ++a) {
+      for (auto b = 0; b < ext[2]; ++b) {
+        auto in_val = std::max(in(a, a, b), in(b, a, b));
+
+        if (in_val >= thresh) {
+          out(a, a, b) = std::numeric_limits<float>::max();
+          out(b, a, b) = std::numeric_limits<float>::max();
+        }
+      }
+    }
+
+    return out;
+  };
+
+  auto three_array = std::vector<gaussian::Basis>{dfbs, obs, obs};
+
+  auto trange = gaussian::detail::create_trange(three_array);
+  auto pmap =
+      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+  auto norms =
+      eri3_norms(screener->norm_estimate(world, three_array, *pmap, true));
+
+  auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
+                                      std::move(screener));
+
+  auto by_atom_cadf =
+      detail::cadf_by_atom_coeffs(M, eri3, detail::cadf_trange(obs, dfbs));
+
+  return detail::reblock_atom_to_clusters(by_atom_cadf, by_cluster_obs,
+                                          by_cluster_dfbs);
 }
 
 // Specialization for Dense Policy although this shouldn't be used
@@ -189,6 +214,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
 
   auto C = detail::cadf_by_atom_coeffs(
       M, eri3, detail::cadf_trange(by_atom_obs, by_atom_dfbs));
+
   auto C1 = mpqc::fenced_now(world);
   auto time_C = mpqc::duration_in_s(C0, C1);
   ExEnv::out0() << indent << "Time for all of makeing C: " << time_C << "\n";
@@ -199,9 +225,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
       gaussian::create_schwarz_screener(world, eng4, four_array, 1e-12));
 
   auto abab0 = mpqc::fenced_now(world);
-  // auto shape_est = screener->norm_estimate(world, four_array);
-  auto trange4 = gaussian::detail::create_trange(four_array);
-  TA::Tensor<float> big(trange4.tiles_range(), 0.0);
   auto abab_shape = [&](TA::Tensor<float> const &in) {
     auto &range = in.range();
     auto ext = range.extent_data();
@@ -212,29 +235,26 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
       out(a, a, a, a) = in(a, a, a, a);
       for (auto b = 0; b < ext[1]; ++b) {
         if (aaab) {
-          // out(a, a, a, b) = in(a, a, a, b);
-          // out(a, a, b, a) = in(a, a, b, a);
-          // out(a, b, a, a) = in(a, b, a, a);
-          // out(b, a, a, a) = in(b, a, a, a);
-          out(a, a, a, b) = std::numeric_limits<float>::max();
-          out(a, a, b, a) = std::numeric_limits<float>::max();
-          out(a, b, a, a) = std::numeric_limits<float>::max();
-          out(b, a, a, a) = std::numeric_limits<float>::max();
+          out(a, a, a, b) = in(a, a, a, b);
+          out(a, a, b, a) = in(a, a, b, a);
+          out(a, b, a, a) = in(a, b, a, a);
+          out(b, a, a, a) = in(b, a, a, a);
         }
-        // out(a, b, a, b) = in(a, b, a, b);
-        // out(b, a, a, b) = in(b, a, a, b);
-        // out(a, b, b, a) = in(a, b, b, a);
-        // out(b, a, b, a) = in(b, a, b, a);
-        out(a, b, a, b) = std::numeric_limits<float>::max();
-        out(b, a, a, b) = std::numeric_limits<float>::max();
-        out(a, b, b, a) = std::numeric_limits<float>::max();
-        out(b, a, b, a) = std::numeric_limits<float>::max();
+        out(a, b, a, b) = in(a, b, a, b);
+        out(b, a, a, b) = in(b, a, a, b);
+        out(a, b, b, a) = in(a, b, b, a);
+        out(b, a, b, a) = in(b, a, b, a);
       }
     }
 
     return out;
   };
-  auto abab_norms = abab_shape(big);
+
+  auto trange4 = gaussian::detail::create_trange(four_array);
+  auto pmap4 =
+      TA::SparsePolicy::default_pmap(world, trange4.tiles_range().volume());
+  auto abab_est = screener->norm_estimate(world, four_array, *pmap4, true);
+  auto abab_norms = abab_shape(abab_est);
 
   auto eri4 = direct_sparse_integrals(world, eng4, four_array, abab_norms,
                                       std::move(screener));
@@ -290,7 +310,7 @@ template <typename Array, typename DirectArray>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     Array const &M, DirectArray const &eri3, TA::TiledRange const &trange) {
   auto &world = M.world();
-  auto Cshape = cadf_shape(world, trange);
+  auto Cshape = eri3.array().shape();  // cadf_shape(world, trange);
 
   // Use same pmap to ensure some locality
   auto pmap = eri3.array().pmap();
@@ -310,7 +330,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     std::array<unsigned long, 3> idx_iii = {{i, i, i}};
     std::array<unsigned long, 2> idx_ii = {{i, i}};
 
-    if (C.is_local(idx_iii)) {
+    if (!C.is_zero(idx_iii) && C.is_local(idx_iii)) {
       auto eri3_iii = eri3.array().find(idx_iii);
       auto M_ii = M.find(idx_ii);
 
@@ -327,25 +347,27 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
       std::array<unsigned long, 3> idx_iij = {{i, i, j}};
       std::array<unsigned long, 3> idx_jij = {{j, i, j}};
 
-      if (C.is_local(idx_iij) || C.is_local(idx_jij)) {
-        auto ord_iij = eri3_tiles.ordinal(idx_iij);
-        auto ord_jij = eri3_tiles.ordinal(idx_jij);
+      if (!C.is_zero(idx_iij) && !C.is_zero(idx_jij)) {
+        if (C.is_local(idx_iij) || C.is_local(idx_jij)) {
+          auto ord_iij = eri3_tiles.ordinal(idx_iij);
+          auto ord_jij = eri3_tiles.ordinal(idx_jij);
 
-        std::array<unsigned long, 2> M_idx_ii = {{i, i}};
-        std::array<unsigned long, 2> M_idx_ij = {{i, j}};
-        std::array<unsigned long, 2> M_idx_ji = {{j, i}};
-        std::array<unsigned long, 2> M_idx_jj = {{j, j}};
+          std::array<unsigned long, 2> M_idx_ii = {{i, i}};
+          std::array<unsigned long, 2> M_idx_ij = {{i, j}};
+          std::array<unsigned long, 2> M_idx_ji = {{j, i}};
+          std::array<unsigned long, 2> M_idx_jj = {{j, j}};
 
-        auto eri3_iij = eri3.array().find(idx_iij);
-        auto eri3_jij = eri3.array().find(idx_jij);
+          auto eri3_iij = eri3.array().find(idx_iij);
+          auto eri3_jij = eri3.array().find(idx_jij);
 
-        auto M_ii = M.find(M_idx_ii);
-        auto M_ij = M.find(M_idx_ij);
-        auto M_ji = M.find(M_idx_ji);
-        auto M_jj = M.find(M_idx_jj);
+          auto M_ii = M.find(M_idx_ii);
+          auto M_ij = M.find(M_idx_ij);
+          auto M_ji = M.find(M_idx_ji);
+          auto M_jj = M.find(M_idx_jj);
 
-        world.taskq.add(create_ij_tile<DirectTile, Tile>, &C, eri3_iij,
-                        eri3_jij, M_ii, M_ij, M_ji, M_jj, ord_iij, ord_jij);
+          world.taskq.add(create_ij_tile<DirectTile, Tile>, &C, eri3_iij,
+                          eri3_jij, M_ii, M_ij, M_ji, M_jj, ord_iij, ord_jij);
+        }
       }
     }
   }

@@ -88,16 +88,23 @@ TA::SparseShape<float> cadf_shape_cluster(
     }
   }
 
-  // for (auto const &cluster : c2a) {
-  //   std::cout << "Tile: " << cluster.first << " has atom tiles:\n\t";
-  //   for (auto const &t : cluster.second) {
-  //     std::cout << t << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
-
   // No world needed every node computed entire shape
   return TA::SparseShape<float>(norms, trange);
+}
+//
+// Function to compute the by atom screener for cadf eri3 integrals
+std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
+    madness::World &world, gaussian::Basis const &obs,
+    gaussian::Basis const &dfbs, double threshold) {
+  const auto three_ref_array = utility::make_array_of_refs(dfbs, obs, obs);
+
+  const auto three_array = gaussian::BasisVector{{dfbs, obs, obs}};
+
+  auto eng4 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
+                               libint2::BraKet::xx_xx);
+
+  return std::make_shared<gaussian::SchwarzScreen>(
+      gaussian::create_schwarz_screener(world, eng4, three_array, threshold));
 }
 
 }  // namespace detail

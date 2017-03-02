@@ -24,10 +24,70 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
+
   auto pmap =
       TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
-  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *pmap, *plist);
+
+  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *pmap);
+
   TA::SparseShape<float> shape(world, tile_norms, trange);
+
+  // Copy the Bases for the Integral Builder
+  auto shr_bases = std::make_shared<BasisVector>(bases);
+
+  auto builder = make_direct_integral_builder(
+      world, std::move(shr_pool), std::move(shr_bases), std::move(screen),
+      std::move(op), std::move(plist));
+
+  auto dir_array =
+      DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
+
+  auto builder_ptr = dir_array.builder();
+
+  using DirectTileType = DirectTile<Tile, Engine>;
+
+  auto task_f = [=](int64_t ord, detail::IdxVec const &idx, TA::Range rng) {
+    auto &builder = *builder_ptr;
+    return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
+  };
+
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape,
+                                                      pmap);
+
+  for (auto const &ord : *pmap) {
+    if (!out.is_zero(ord)) {
+      detail::IdxVec idx = trange.tiles_range().idx(ord);
+      auto range = trange.make_tile_range(ord);
+      auto tile_fut = world.taskq.add(task_f, ord, idx, range);
+      out.set(ord, tile_fut);
+    }
+  }
+  world.gop.fence();
+
+  dir_array.set_array(std::move(out));
+  return dir_array;
+}
+
+/*! \brief Construct direct integral tensors in parallel with screening.
+ *
+ * \param user_provided_norms is a user supplied replicated tensor with the
+ * norm estimates for the array.
+ */
+template <typename Tile = TA::TensorD, typename Engine>
+DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
+    madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
+    TA::Tensor<float> user_provided_norms,
+    std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
+    std::shared_ptr<const math::PetiteList> plist =
+        math::PetiteList::make_trivial()) {
+  const auto trange = detail::create_trange(bases);
+
+  auto pmap =
+      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+
+  // Don't use world constructor since norms must be replicated
+  TA::SparseShape<float> shape(user_provided_norms, trange);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);

@@ -1332,7 +1332,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
-    const TA::SparseShape<float> &ijij_ijji_shape, DirectArray direct_array) {
+    const TA::SparseShape<float> &ijij_ijji_shape, DirectArray direct_array,
+    bool couple) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1378,17 +1379,15 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   {
     auto time0 = mpqc::now(world, accurate_time);
 
-    //    auto Cm =
-    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"m")).coefs();
-    //    auto Ca_prime =
-    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"a'")).coefs();
     // compuate intermediate U
     U("i,j,rho,mu") = (t2("a,b,i,j") * Ca("sigma,a") * Ca("nu,b")) *
                       direct_array("rho, sigma, mu, nu");
 
+    U("i,j,rho,mu") = 0.5 * (U("i,j,rho,mu") + U("j,i,mu,rho"));
+
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world, "VT2 UTerm Time: ", time, " S\n");
+    utility::print_par(world, "VT2 U1Term Time: ", time, " S\n");
   }
 
   {
@@ -1403,10 +1402,44 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "VT2 Term3 Time: ", time, " S\n");
   }
-  //    tmp("i1,j1,i2,j2") = ((lcao_factory(L"(i2 m|R|j2
-  //    a')[df]")*Cm("mu,m")*Ca_prime("nu,a'"))*U("i1,j1,mu,nu")).set_shape(ijij_ijji_shape);
-  //    V_ijji_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
-  //    V_ijji_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+
+  if (couple) {
+    auto Cm =
+        lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"m")).coefs();
+    auto Ca_prime =
+        lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a'")).coefs();
+
+    auto time0 = mpqc::now(world, accurate_time);
+
+    auto direct_array2 = ao_factory.compute_direct(L"(μ ν| G|κ ρ)");
+
+    U("i,j,nu,rho") = (t2("a,b,i,j") * Ca("mu,a") * Ca("sigma,b")) *
+                      direct_array2("mu,nu,sigma,rho");
+
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world, "VT2 U2Term Time: ", time, " S\n");
+
+    {
+      auto left = lcao_factory(L"<i2 j2|R|m a'>[df]");
+
+      TA::DistArray<Tile, TA::SparsePolicy> tmp;
+
+      auto time0 = mpqc::now(world, accurate_time);
+      tmp("i1,j1,i2,j2") =
+          ((left * Cm("mu,m") * Ca_prime("nu,a'")) * U("i1,j1,mu,nu"))
+              .set_shape(ijij_ijji_shape);
+      V_ijji_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+      V_ijji_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+      V_ijji_ijji.truncate();
+      auto time1 = mpqc::now(world, accurate_time);
+      auto time = mpqc::duration_in_s(time0, time1);
+      utility::print_par(world, "VT2 Term4 Time: ", time, " S\n");
+    }
+
+  } else {
+    utility::print_par(world, "Skip VT2 Term4 \n");
+  }
 
   auto vt2_time1 = mpqc::now(world, accurate_time);
   auto vt2_time = mpqc::duration_in_s(vt2_time0, vt2_time1);
@@ -1645,8 +1678,7 @@ template <typename Tile, typename Policy, typename String>
 std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
 VX_pqrs_pqsr(const std::string &target_str,
              LCAOFactoryBase<Tile, Policy> &lcao_factory,
-             gaussian::AOFactoryBase<Tile, Policy> &ao_factory,
-             const String &p,
+             gaussian::AOFactoryBase<Tile, Policy> &ao_factory, const String &p,
              const String &q, const String &r, const String &s, bool df = true,
              bool cabs = true) {
   using mpqc::utility::concat;

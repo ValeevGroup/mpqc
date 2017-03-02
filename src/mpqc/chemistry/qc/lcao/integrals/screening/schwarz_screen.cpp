@@ -1,7 +1,8 @@
-#include "mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h"
-#include <mpqc/util/misc/exenv.h>
+#include "schwarz_screen.h"
 
 #include "mpqc/math/groups/petite_list.h"
+#include "mpqc/util/misc/exenv.h"
+
 
 namespace mpqc {
 namespace lcao {

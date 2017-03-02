@@ -2,15 +2,15 @@
 // Created by Chong Peng on 10/15/15.
 //
 
+#include "formula.h"
 
-#include "mpqc/chemistry/qc/lcao/expression/formula.h"
-#include "mpqc/util/misc/exception.h"
+#include <algorithm>
+#include <iostream>
 
 #include <TiledArray/error.h>
 #include <boost/algorithm/string.hpp>
 
-#include <algorithm>
-#include <iostream>
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 

@@ -32,12 +32,11 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
+  // clang-format off
   /**
    * KeyVal constructor
    *
-   * @param kv
-   *
-   * keywords: takes all keywords from CCSD class
+   * @param kv the KeyVal object; all keywords from CCSD class will be queried, as well as the following additional keywords
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -46,6 +45,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
    * | vt_cabs | bool | true | if false, omit the CABS terms in  the V intermediate in VT2 and VT1 terms |
    *
    */
+  // clang-format on
   CCSD_F12(const KeyVal& kv) : CCSD<Tile, Policy>(kv) {
     vt_cabs_ = kv.value<bool>("vt_cabs", true);
     cabs_singles_ = kv.value<bool>("cabs_singles", true);
@@ -241,7 +241,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   // VT2 contribution
   if (darray.array().is_initialized()) {
     TArray tmp = f12::compute_VT2_ijij_ijji_df_direct(
-        lcao_factory, ao_factory, this->t2(), ijij_ijji_shape, darray, vt_couple_);
+        lcao_factory, ao_factory, this->t2(), ijij_ijji_shape, darray, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   } else {
     TArray tmp = f12::compute_VT2_ijij_ijji_df(lcao_factory, this->t2(),

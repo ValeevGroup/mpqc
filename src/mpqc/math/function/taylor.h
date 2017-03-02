@@ -88,7 +88,8 @@ class TaylorExpansionCoefficients {
   void write(KeyVal& kv) const {
     kv.assign("value", this->derivs(0).at(0));
     if (order() > 0) {
-        kv.assign("gradient", this->derivs(1));
+      //TODO this won't compile with vector<vector<T>>
+//        kv.assign("gradient", this->derivs(1));
     }
     assert(order() < 2);
   }

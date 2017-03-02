@@ -5,27 +5,9 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_PROPERTIES_EXCITATION_ENERGY_H_
 #define SRC_MPQC_CHEMISTRY_QC_PROPERTIES_EXCITATION_ENERGY_H_
 
-#include <iostream>
-
 #include "mpqc/chemistry/qc/properties/property.h"
 
-
 namespace mpqc {
-
-template <typename T>
-std::basic_ostream<char, std::char_traits<char> >& operator<<(
-    std::basic_ostream<char, std::char_traits<char>>& out,
-    const std::vector<T>& v) {
-  out << "[";
-  const auto len = v.size() - 1;
-  for (size_t i = 0; i < len; ++i) {
-    out << v[i] << ", ";
-  }
-  // last one
-  out << v[len];
-  out << "]";
-  return out;
-}
 
 /**
  * Property that computes Excitation Energy
@@ -56,7 +38,9 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
    * @note This constructor overrides the default target precision to 1e-4 \f$ \sim 3~{\rm meV} \f$.
    */
   // clang-format on
-  explicit ExcitationEnergy(const KeyVal& kv);
+  ExcitationEnergy(const KeyVal& kv);
+
+  ~ExcitationEnergy() = default;
 
   /// @return number of roots
   unsigned int n_roots() const;

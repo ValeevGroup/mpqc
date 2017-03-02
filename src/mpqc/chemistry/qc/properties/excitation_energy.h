@@ -33,7 +33,9 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
    * keywords:
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | n_roots | unsigned int | 1 | number of roots to compute |
+   * | n_roots | unsigned int | 1 | number of excitation energy to compute |
+   * | singlets | bool | true | compute singlet excitation energy, only apply to closed-shell system|
+   * | triplets | bool | false | compute triplet excitation energy, only apply to closed-shell system|
    *
    * @note This constructor overrides the default target precision to 1e-4 \f$ \sim 3~{\rm meV} \f$.
    */
@@ -45,10 +47,18 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
   /// @return number of roots
   unsigned int n_roots() const;
 
+  /// @return if do singlets
+  bool singlets() const;
+
+  /// @return if do triplets
+  bool triplets() const;
+
  private:
   void do_evaluate() override;
 
   unsigned int n_roots_;
+  bool singlets_;
+  bool triplets_;
 };
 
 }  // namespace mpqc

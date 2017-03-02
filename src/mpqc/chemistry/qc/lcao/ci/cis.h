@@ -48,8 +48,17 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
       auto n_roots = ex_energy->n_roots();
 
       std::vector<double> result;
-      for (auto i = 0; i < n_roots; i++) {
-        result.push_back(i);
+
+      if(ex_energy->singlets()){
+        for (auto i = 0; i < n_roots; i++) {
+          result.push_back(i);
+        }
+      }
+
+      if(ex_energy->triplets()){
+        for (auto i = 0; i < n_roots; i++) {
+          result.push_back(-i);
+        }
       }
 
       this->computed_ = true;

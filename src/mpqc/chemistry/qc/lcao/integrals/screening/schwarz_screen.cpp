@@ -29,11 +29,11 @@ double Qmatrix::operator()(int64_t a, int64_t b) const {
 
 bool Qmatrix::is_aux_Q() const { return is_aux_; }
 
-SchwarzScreen::SchwarzScreen(std::shared_ptr<Qmatrix> Qab,
-                             std::shared_ptr<Qmatrix> Qcd, double thresh)
+SchwarzScreen::SchwarzScreen(std::shared_ptr<Qmatrix> Qbra,
+                             std::shared_ptr<Qmatrix> Qket, double thresh)
     : Screener(),
-      Qab_(std::move(Qab)),
-      Qcd_(std::move(Qcd)),
+      Qbra_(std::move(Qbra)),
+      Qket_(std::move(Qket)),
       thresh_(thresh),
       thresh2_(thresh_ * thresh_) {}
 
@@ -64,7 +64,7 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a) const {
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b) const {
-  if (Qab_->is_aux_Q()) {
+  if (Qbra_->is_aux_Q()) {
     return Qab()(a) * Qcd()(b);
   } else {
     return Qab()(a, b) * Qcd()();
@@ -73,7 +73,7 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b) const {
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b,
                                                 int64_t c) const {
-  if (Qab_->is_aux_Q()) {
+  if (Qbra_->is_aux_Q()) {
     return Qab()(a) * Qcd()(b, c);
   } else {
     return Qab()(a, b) * Qcd()(c);
@@ -82,7 +82,7 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b,
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
                                                 int64_t d) const {
-  assert(!Qab_->is_aux_Q());
+  assert(!Qbra_->is_aux_Q());
   return Qab()(a, b) * Qcd()(c, d);
 }
 
@@ -95,8 +95,8 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
   auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
 
   if (ndims == 3) {
-    auto const &Ta = Qab_->Qtile();
-    auto const &Tbc = Qcd_->Qtile();
+    auto const &Ta = Qbra_->Qtile();
+    auto const &Tbc = Qket_->Qtile();
     for (auto a = 0ul; a < Ta.size(); ++a) {
       const float a_val = Ta(a);
       for (auto b = 0ul; b < Tbc.cols(); ++b) {
@@ -112,8 +112,8 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
       }
     }
   } else if (ndims == 4) {
-    auto const &Tab = Qab_->Qtile();
-    auto const &Tcd = Qcd_->Qtile();
+    auto const &Tab = Qbra_->Qtile();
+    auto const &Tcd = Qket_->Qtile();
     for (auto a = 0ul; a < Tab.rows(); ++a) {
       for (auto b = 0ul; b < Tab.cols(); ++b) {
         const float ab = Tab(a, b);

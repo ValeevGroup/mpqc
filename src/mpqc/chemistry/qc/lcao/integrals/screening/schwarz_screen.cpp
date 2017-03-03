@@ -98,13 +98,11 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
   if (ndims == 3) {
     auto const &Ta = Qbra_->Qtile();
     auto const &Tbc = Qket_->Qtile();
+    auto ord = 0ul;
     for (auto a = 0ul; a < Ta.size(); ++a) {
       const float a_val = Ta(a);
       for (auto b = 0ul; b < Tbc.cols(); ++b) {
-        for (auto c = 0ul; c < Tbc.rows(); ++c) {
-
-          const auto ord =
-              tile_range.ordinal(std::array<decltype(a), 3>{a, b, c});
+        for (auto c = 0ul; c < Tbc.rows(); ++c, ++ord) {
 
           if (pmap.is_local(ord)){ 
             norms[ord] = std::sqrt(a_val * Tbc(b, c));
@@ -116,14 +114,12 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
   } else if (ndims == 4) {
     auto const &Tab = Qbra_->Qtile();
     auto const &Tcd = Qket_->Qtile();
+    auto ord = 0ul;
     for (auto a = 0ul; a < Tab.rows(); ++a) {
       for (auto b = 0ul; b < Tab.cols(); ++b) {
         const float ab = Tab(a, b);
         for (auto c = 0ul; c < Tcd.rows(); ++c) {
-          for (auto d = 0ul; d < Tcd.cols(); ++d) {
-
-            const auto ord =
-                tile_range.ordinal(std::array<decltype(a), 4>{a, b, c, d});
+          for (auto d = 0ul; d < Tcd.cols(); ++d, ++ord) {
 
             if (pmap.is_local(ord)){ 
               norms[ord] = std::sqrt(ab * Tcd(c, d));

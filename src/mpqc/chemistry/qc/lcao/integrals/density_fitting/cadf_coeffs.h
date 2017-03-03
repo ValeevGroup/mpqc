@@ -45,12 +45,17 @@ TA::SparseShape<float> cadf_shape_cluster(
 
 // Function to compute the CADF coefficients in a by atom fashion
 template <typename Array, typename DirectArray>
-TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Array const &, DirectArray const &, TA::TiledRange const &);
 
 // Function to compute the CADF coefficients in a by atom fashion
-template <typename Array, typename DirectArray>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+    madness::World &world, gaussian::Basis const &by_cluster_obs,
+    gaussian::Basis const &by_cluster_dfbs);
+
+// Function to actually construct the cadf by atom array
+template <typename Array, typename DirectArray>
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Array const &, DirectArray const &, TA::TiledRange const &);
 
 template <typename Array>
@@ -82,55 +87,9 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
     madness::World &world, gaussian::Basis const &by_cluster_obs,
     gaussian::Basis const &by_cluster_dfbs) {
-  auto obs = detail::by_center_basis(by_cluster_obs);
-  auto dfbs = detail::by_center_basis(by_cluster_dfbs);
-
-  const auto dfbs_ref_array = utility::make_array_of_refs(dfbs, dfbs);
-  const auto dfbs_array = gaussian::BasisVector{{dfbs, dfbs}};
-  auto eng2 = make_engine_pool(libint2::Operator::coulomb, dfbs_ref_array,
-                               libint2::BraKet::xs_xs);
-  auto M = gaussian::sparse_integrals(world, eng2, dfbs_array);
-
-  auto screener = detail::cadf_by_atom_screener(world, obs, dfbs, 1e-12);
-  auto eng3 = make_engine_pool(libint2::Operator::coulomb,
-                               utility::make_array_of_refs(dfbs, obs, obs),
-                               libint2::BraKet::xs_xx);
-
-  auto eri3_norms = [&](TA::Tensor<float> const &in) {
-    const auto thresh = screener->skip_threshold();
-
-    auto const &range = in.range();
-    auto ext = range.extent_data();
-
-    TA::Tensor<float> out(range, 0.0);
-
-    for (auto a = 0; a < ext[1]; ++a) {
-      for (auto b = 0; b < ext[2]; ++b) {
-        auto in_val = std::max(in(a, a, b), in(b, a, b));
-
-        if (in_val >= thresh) {
-          out(a, a, b) = std::numeric_limits<float>::max();
-          out(b, a, b) = std::numeric_limits<float>::max();
-        }
-      }
-    }
-
-    return out;
-  };
-
-  auto three_array = std::vector<gaussian::Basis>{dfbs, obs, obs};
-
-  auto trange = gaussian::detail::create_trange(three_array);
-  auto pmap =
-      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
-  auto norms =
-      eri3_norms(screener->norm_estimate(world, three_array, *pmap, true));
-
-  auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
-                                      std::move(screener));
 
   auto by_atom_cadf =
-      detail::cadf_by_atom_coeffs(M, eri3, detail::cadf_trange(obs, dfbs));
+      detail::cadf_by_atom_coeffs(world, by_cluster_obs, by_cluster_dfbs);
 
   return detail::reblock_atom_to_clusters(by_atom_cadf, by_cluster_obs,
                                           by_cluster_dfbs);
@@ -153,147 +112,148 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> secadf_by_atom_correction(
     madness::World &world, gaussian::Basis const &obs,
     gaussian::Basis const &dfbs, bool aaab = false) {
-  ExEnv::out0() << indent << "Computing seCadf Correction" << std::endl;
-  auto by_atom_obs = detail::by_center_basis(obs);
-  auto by_atom_dfbs = detail::by_center_basis(dfbs);
-
-  const auto dfbs_ref_array =
-      utility::make_array_of_refs(by_atom_dfbs, by_atom_dfbs);
-  const auto dfbs_array = gaussian::BasisVector{{by_atom_dfbs, by_atom_dfbs}};
-
-  auto eng2 = make_engine_pool(libint2::Operator::coulomb, dfbs_ref_array,
-                               libint2::BraKet::xs_xs);
-
-  auto M = gaussian::sparse_integrals(world, eng2, dfbs_array);
-
-  auto C0 = mpqc::fenced_now(world);
-  const auto three_ref_array =
-      utility::make_array_of_refs(by_atom_dfbs, by_atom_obs, by_atom_obs);
-  const auto three_array =
-      gaussian::BasisVector{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
-  auto eng4 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
-                               libint2::BraKet::xx_xx);
-  auto screener3 = std::make_shared<gaussian::SchwarzScreen>(
-      gaussian::create_schwarz_screener(world, eng4, three_array, 1e-10));
-
-  auto eri3_shape = [&](TA::Tensor<float> const &in) {
-    auto &range = in.range();
-    auto ext = range.extent_data();
-
-    // TA::Tensor<float> out = in.clone();
-    TA::Tensor<float> out(range, 0.0);
-
-    for (auto a = 0; a < ext[0]; ++a) {
-      out(a, a, a) = std::numeric_limits<float>::max();
-
-      for (auto b = 0; b < ext[1]; ++b) {
-        out(a, a, b) = std::numeric_limits<float>::max();
-        out(b, a, b) = std::numeric_limits<float>::max();
-      }
-
-      if (aaab) {
-        for (auto X = 0; X < ext[0]; ++X) {
-          out(X, a, a) = std::numeric_limits<float>::max();
-        }
-      }
-    }
-
-    return out;
-  };
-
-  auto trange = gaussian::detail::create_trange(three_array);
-  auto pmap =
-      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
-  auto eri3_norms =
-      eri3_shape(screener3->norm_estimate(world, three_array, *pmap));
-
-  auto eng3 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
-                               libint2::BraKet::xs_xx);
-  auto eri3 = direct_sparse_integrals(world, eng3, three_array, eri3_norms,
-                                      std::move(screener3));
-
-  auto C = detail::cadf_by_atom_coeffs(
-      M, eri3, detail::cadf_trange(by_atom_obs, by_atom_dfbs));
-
-  auto C1 = mpqc::fenced_now(world);
-  auto time_C = mpqc::duration_in_s(C0, C1);
-  ExEnv::out0() << indent << "Time for all of makeing C: " << time_C << "\n";
-
-  const auto four_array = gaussian::BasisVector{
-      {by_atom_obs, by_atom_obs, by_atom_obs, by_atom_obs}};
-  auto screener = std::make_shared<gaussian::SchwarzScreen>(
-      gaussian::create_schwarz_screener(world, eng4, four_array, 1e-12));
-
-  auto abab0 = mpqc::fenced_now(world);
-  auto abab_shape = [&](TA::Tensor<float> const &in) {
-    auto &range = in.range();
-    auto ext = range.extent_data();
-
-    TA::Tensor<float> out(range, 0.0);
-
-    for (auto a = 0; a < ext[0]; ++a) {
-      out(a, a, a, a) = in(a, a, a, a);
-      for (auto b = 0; b < ext[1]; ++b) {
-        if (aaab) {
-          out(a, a, a, b) = in(a, a, a, b);
-          out(a, a, b, a) = in(a, a, b, a);
-          out(a, b, a, a) = in(a, b, a, a);
-          out(b, a, a, a) = in(b, a, a, a);
-        }
-        out(a, b, a, b) = in(a, b, a, b);
-        out(b, a, a, b) = in(b, a, a, b);
-        out(a, b, b, a) = in(a, b, b, a);
-        out(b, a, b, a) = in(b, a, b, a);
-      }
-    }
-
-    return out;
-  };
-
-  auto trange4 = gaussian::detail::create_trange(four_array);
-  auto pmap4 =
-      TA::SparsePolicy::default_pmap(world, trange4.tiles_range().volume());
-  auto abab_est = screener->norm_estimate(world, four_array, *pmap4, true);
-  auto abab_norms = abab_shape(abab_est);
-
-  auto eri4 = direct_sparse_integrals(world, eng4, four_array, abab_norms,
-                                      std::move(screener));
-
-  auto abab = eri4.array().shape().transform(abab_shape);
-  auto abab1 = mpqc::fenced_now(world);
-  auto time_abab = mpqc::duration_in_s(abab0, abab1);
-  ExEnv::out0() << indent << "Time for abab shape and integrals: " << time_abab
-                << "\n";
-
-  auto MC_shape = C.shape().transform(eri3_shape);
-
-  auto t0 = mpqc::fenced_now(world);
-  TA::DistArray<Tile, Policy> MC, EC, by_atom_correction;
-  MC("X, r, s") = (M("X, Y") * C("Y, r, s")).set_shape(MC_shape);
-  world.gop.fence();
-  EC("p,q,r,s") = (eri3("X, p, q") * C("X, r, s")).set_shape(abab);
-  EC.truncate();
-  MC.truncate();
-  auto t1 = mpqc::fenced_now(world);
-  auto time_inputs = mpqc::duration_in_s(t0, t1);
-  ExEnv::out0() << indent << "Time for inputs: " << time_inputs << "\n";
-
-  auto t2 = mpqc::fenced_now(world);
-  by_atom_correction("p,q,r,s") =
-      -EC("p,q,r,s") - EC("r,s,p,q") +
-      (C("X, p, q") * MC("X, r, s")).set_shape(abab);
-  auto t3 = mpqc::fenced_now(world);
-  auto time_approx = mpqc::duration_in_s(t2, t3);
-  ExEnv::out0() << indent << "Time for abab approx: " << time_approx << "\n";
-
-  auto t4 = mpqc::fenced_now(world);
-  by_atom_correction("p,q,r,s") += (eri4("p,q,r,s")).set_shape(abab);
-  by_atom_correction.truncate();
-  auto t5 = mpqc::fenced_now(world);
-  auto time_ints = mpqc::duration_in_s(t4, t5);
-  ExEnv::out0() << indent << "Time for exact ints: " << time_ints << "\n";
-
-  return by_atom_correction;
+//   ExEnv::out0() << indent << "Computing seCadf Correction" << std::endl;
+//   auto by_atom_obs = detail::by_center_basis(obs);
+//   auto by_atom_dfbs = detail::by_center_basis(dfbs);
+// 
+//   const auto dfbs_ref_array =
+//       utility::make_array_of_refs(by_atom_dfbs, by_atom_dfbs);
+//   const auto dfbs_array = gaussian::BasisVector{{by_atom_dfbs, by_atom_dfbs}};
+// 
+//   auto eng2 = make_engine_pool(libint2::Operator::coulomb, dfbs_ref_array,
+//                                libint2::BraKet::xs_xs);
+// 
+//   auto M = gaussian::sparse_integrals(world, eng2, dfbs_array);
+// 
+//   auto C0 = mpqc::fenced_now(world);
+//   const auto three_ref_array =
+//       utility::make_array_of_refs(by_atom_dfbs, by_atom_obs, by_atom_obs);
+//   const auto three_array =
+//       gaussian::BasisVector{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
+//   auto eng4 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
+//                                libint2::BraKet::xx_xx);
+//   auto screener3 = std::make_shared<gaussian::SchwarzScreen>(
+//       gaussian::create_schwarz_screener(world, eng4, three_array, 1e-10));
+// 
+//   auto eri3_shape = [&](TA::Tensor<float> const &in) {
+//     auto &range = in.range();
+//     auto ext = range.extent_data();
+// 
+//     // TA::Tensor<float> out = in.clone();
+//     TA::Tensor<float> out(range, 0.0);
+// 
+//     for (auto a = 0; a < ext[0]; ++a) {
+//       out(a, a, a) = std::numeric_limits<float>::max();
+// 
+//       for (auto b = 0; b < ext[1]; ++b) {
+//         out(a, a, b) = std::numeric_limits<float>::max();
+//         out(b, a, b) = std::numeric_limits<float>::max();
+//       }
+// 
+//       if (aaab) {
+//         for (auto X = 0; X < ext[0]; ++X) {
+//           out(X, a, a) = std::numeric_limits<float>::max();
+//         }
+//       }
+//     }
+// 
+//     return out;
+//   };
+// 
+//   auto trange = gaussian::detail::create_trange(three_array);
+//   auto pmap =
+//       TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+//   auto eri3_norms =
+//       eri3_shape(screener3->norm_estimate(world, three_array, *pmap));
+// 
+//   auto eng3 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
+//                                libint2::BraKet::xs_xx);
+//   auto eri3 = direct_sparse_integrals(world, eng3, three_array, eri3_norms,
+//                                       std::move(screener3));
+// 
+//   auto C = detail::cadf_by_atom_coeffs(
+//       M, eri3, detail::cadf_trange(by_atom_obs, by_atom_dfbs));
+// 
+//   auto C1 = mpqc::fenced_now(world);
+//   auto time_C = mpqc::duration_in_s(C0, C1);
+//   ExEnv::out0() << indent << "Time for all of makeing C: " << time_C << "\n";
+// 
+//   const auto four_array = gaussian::BasisVector{
+//       {by_atom_obs, by_atom_obs, by_atom_obs, by_atom_obs}};
+//   auto screener = std::make_shared<gaussian::SchwarzScreen>(
+//       gaussian::create_schwarz_screener(world, eng4, four_array, 1e-12));
+// 
+//   auto abab0 = mpqc::fenced_now(world);
+//   auto abab_shape = [&](TA::Tensor<float> const &in) {
+//     auto &range = in.range();
+//     auto ext = range.extent_data();
+// 
+//     TA::Tensor<float> out(range, 0.0);
+// 
+//     for (auto a = 0; a < ext[0]; ++a) {
+//       out(a, a, a, a) = in(a, a, a, a);
+//       for (auto b = 0; b < ext[1]; ++b) {
+//         if (aaab) {
+//           out(a, a, a, b) = in(a, a, a, b);
+//           out(a, a, b, a) = in(a, a, b, a);
+//           out(a, b, a, a) = in(a, b, a, a);
+//           out(b, a, a, a) = in(b, a, a, a);
+//         }
+//         out(a, b, a, b) = in(a, b, a, b);
+//         out(b, a, a, b) = in(b, a, a, b);
+//         out(a, b, b, a) = in(a, b, b, a);
+//         out(b, a, b, a) = in(b, a, b, a);
+//       }
+//     }
+// 
+//     return out;
+//   };
+// 
+//   auto trange4 = gaussian::detail::create_trange(four_array);
+//   auto pmap4 =
+//       TA::SparsePolicy::default_pmap(world, trange4.tiles_range().volume());
+//   auto abab_est = screener->norm_estimate(world, four_array, *pmap4, true);
+//   auto abab_norms = abab_shape(abab_est);
+// 
+//   auto eri4 = direct_sparse_integrals(world, eng4, four_array, abab_norms,
+//                                       std::move(screener));
+// 
+//   auto abab = eri4.array().shape().transform(abab_shape);
+//   auto abab1 = mpqc::fenced_now(world);
+//   auto time_abab = mpqc::duration_in_s(abab0, abab1);
+//   ExEnv::out0() << indent << "Time for abab shape and integrals: " << time_abab
+//                 << "\n";
+// 
+//   auto MC_shape = C.shape().transform(eri3_shape);
+// 
+//   auto t0 = mpqc::fenced_now(world);
+//   TA::DistArray<Tile, Policy> MC, EC, by_atom_correction;
+//   MC("X, r, s") = (M("X, Y") * C("Y, r, s")).set_shape(MC_shape);
+//   world.gop.fence();
+//   EC("p,q,r,s") = (eri3("X, p, q") * C("X, r, s")).set_shape(abab);
+//   EC.truncate();
+//   MC.truncate();
+//   auto t1 = mpqc::fenced_now(world);
+//   auto time_inputs = mpqc::duration_in_s(t0, t1);
+//   ExEnv::out0() << indent << "Time for inputs: " << time_inputs << "\n";
+// 
+//   auto t2 = mpqc::fenced_now(world);
+//   by_atom_correction("p,q,r,s") =
+//       -EC("p,q,r,s") - EC("r,s,p,q") +
+//       (C("X, p, q") * MC("X, r, s")).set_shape(abab);
+//   auto t3 = mpqc::fenced_now(world);
+//   auto time_approx = mpqc::duration_in_s(t2, t3);
+//   ExEnv::out0() << indent << "Time for abab approx: " << time_approx << "\n";
+// 
+//   auto t4 = mpqc::fenced_now(world);
+//   by_atom_correction("p,q,r,s") += (eri4("p,q,r,s")).set_shape(abab);
+//   by_atom_correction.truncate();
+//   auto t5 = mpqc::fenced_now(world);
+//   auto time_ints = mpqc::duration_in_s(t4, t5);
+//   ExEnv::out0() << indent << "Time for exact ints: " << time_ints << "\n";
+// 
+//   return by_atom_correction;
+return TA::DistArray<TA::Tensor<double>, TA::SparsePolicy>();
 }
 
 template <>
@@ -305,9 +265,10 @@ secadf_by_atom_correction<TA::Tensor<double>, TA::DensePolicy>(
   return TA::DistArray<TA::Tensor<double>, TA::DensePolicy>();
 }
 
+
 namespace detail {
 template <typename Array, typename DirectArray>
-TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Array const &M, DirectArray const &eri3, TA::TiledRange const &trange) {
   auto &world = M.world();
   auto Cshape = eri3.array().shape();  // cadf_shape(world, trange);

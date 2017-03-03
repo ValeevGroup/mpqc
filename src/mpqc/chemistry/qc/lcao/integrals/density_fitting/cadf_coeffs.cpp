@@ -107,6 +107,59 @@ std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
       gaussian::create_schwarz_screener(world, eng4, three_array, threshold));
 }
 
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+    madness::World &world, gaussian::Basis const &by_cluster_obs,
+    gaussian::Basis const &by_cluster_dfbs) {
+  auto obs = detail::by_center_basis(by_cluster_obs);
+  auto dfbs = detail::by_center_basis(by_cluster_dfbs);
+
+  const auto dfbs_ref_array = utility::make_array_of_refs(dfbs, dfbs);
+  const auto dfbs_array = gaussian::BasisVector{{dfbs, dfbs}};
+  auto eng2 = make_engine_pool(libint2::Operator::coulomb, dfbs_ref_array,
+                               libint2::BraKet::xs_xs);
+  auto M = gaussian::sparse_integrals(world, eng2, dfbs_array);
+
+  auto screener = detail::cadf_by_atom_screener(world, obs, dfbs, 1e-12);
+  auto eng3 = make_engine_pool(libint2::Operator::coulomb,
+                               utility::make_array_of_refs(dfbs, obs, obs),
+                               libint2::BraKet::xs_xx);
+
+  auto eri3_norms = [&](TA::Tensor<float> const &in) {
+    const auto thresh = screener->skip_threshold();
+
+    auto const &range = in.range();
+    auto ext = range.extent_data();
+
+    TA::Tensor<float> out(range, 0.0);
+
+    for (auto a = 0; a < ext[1]; ++a) {
+      for (auto b = 0; b < ext[2]; ++b) {
+        auto in_val = std::max(in(a, a, b), in(b, a, b));
+
+        if (in_val >= thresh) {
+          out(a, a, b) = std::numeric_limits<float>::max();
+          out(b, a, b) = std::numeric_limits<float>::max();
+        }
+      }
+    }
+
+    return out;
+  };
+
+  auto three_array = std::vector<gaussian::Basis>{dfbs, obs, obs};
+
+  auto trange = gaussian::detail::create_trange(three_array);
+  auto pmap =
+      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+  auto norms =
+      eri3_norms(screener->norm_estimate(world, three_array, *pmap, true));
+
+  auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
+                                      std::move(screener));
+
+  return cadf_by_atom_array(M, eri3, detail::cadf_trange(obs, dfbs));
+}
+
 }  // namespace detail
 }  // namespace lcao
 }  // namespace mpqc

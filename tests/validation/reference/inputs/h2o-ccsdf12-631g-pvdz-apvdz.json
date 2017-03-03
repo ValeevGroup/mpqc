@@ -23,7 +23,8 @@
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
     "aux_basis": "$:ribs",
-    "screen": "qqr"
+    "screen": "schwarz",
+    "f12_factor" : "stg-6g[1.2]"
   },
   "scf":{
     "type": "RI-RHF",
@@ -36,12 +37,10 @@
     "ref": "$:scf",
     "method" : "df",
     "occ_block_size" : 1,
-    "unocc_block_size" : 24,
-    "converge" : 1.0e-7
+    "unocc_block_size" : 24
   },
   "property" : {
     "type" : "Energy",
-    "wfn" : "$:wfn",
-    "precision" : 1.0e-11
+    "wfn" : "$:wfn"
   }
 }

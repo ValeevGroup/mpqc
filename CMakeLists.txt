@@ -15,7 +15,7 @@ if (MPQC_BUILDID)
   set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
 endif(MPQC_BUILDID)
 
-set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(TARGET_ARCH "${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}")
 
 ###############################################################################
 # Load up extra CMake packages
@@ -63,10 +63,10 @@ set(TA_POLICY sparse CACHE STRING "Set to TA::DensePolicy(dense) or TA::SparsePo
 set(TA_DEFAULT_POLICY 1)
 if(TA_POLICY STREQUAL sparse)
   set(TA_DEFAULT_POLICY 1)
-  MESSAGE("Sparse")
+  MESSAGE("Set to TA::SparsePolicy")
 elseif(TA_POLICY STREQUAL dense)
   set(TA_DEFAULT_POLICY 0)
-  MESSAGE("Dense")
+  MESSAGE("Set to TA::DensePolicy")
 endif()
 ##########################
 # Standard build variables
@@ -211,8 +211,13 @@ include(ValidateTiledArray)
 validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
-FIND_PACKAGE(TBB REQUIRED)
+# Treating boost the way suggested in https://rix0r.nl/blog/2015/08/13/cmake-guide/
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization)
+add_library(boost INTERFACE IMPORTED)
+set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES 
+  ${Boost_INCLUDE_DIRS})
+
+FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(LIBINT2 REQUIRED)
 

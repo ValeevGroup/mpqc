@@ -1,7 +1,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 namespace mpqc {
 namespace utility {
@@ -14,7 +14,8 @@ namespace utility {
  * \return
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int64_t k) {
+Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
+                   int64_t k) {
   double S_condition_num;
   Matrixz X;
   auto &world = S.world();
@@ -29,14 +30,14 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
-//  integrals::detail::sort_eigen(s, U);
+  //  integrals::detail::sort_eigen(s, U);
 
   auto s_max = s.maxCoeff();
   auto s_min = s.minCoeff();
 
-  S_condition_num = std::min(
-      s_max / std::max(s_min, std::numeric_limits<double>::min()),
-      1.0 / std::numeric_limits<double>::epsilon());
+  S_condition_num =
+      std::min(s_max / std::max(s_min, std::numeric_limits<double>::min()),
+               1.0 / std::numeric_limits<double>::epsilon());
 
   auto threshold = s_max / max_condition_num;
 
@@ -51,7 +52,8 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
 
   auto sigma = s.bottomRows(s_cond);
   auto result_condition_num = sigma.maxCoeff() / sigma.minCoeff();
-  auto sigma_invsqrt_real = Eigen::MatrixXd(sigma.array().sqrt().inverse().matrix().asDiagonal());
+  auto sigma_invsqrt_real =
+      Eigen::MatrixXd(sigma.array().sqrt().inverse().matrix().asDiagonal());
   auto sigma_invsqrt = sigma_invsqrt_real.cast<std::complex<double>>();
 
   // make canonical X
@@ -65,28 +67,27 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   auto nbf_omitted = s_rows - s_cond;
   if (nbf_omitted < 0) throw "Error: dropping negative number of functions!";
 
-  if (world.rank() == 0){
+  if (world.rank() == 0) {
     std::cout << "\n\toverlap condition number = " << S_condition_num
               << " at k = " << k;
   }
 
   if (nbf_omitted > 0) {
-      auto XtS = X.transpose().conjugate() * S_eig;
-      auto should_be_I = XtS * X;
+    auto XtS = X.transpose().conjugate() * S_eig;
+    auto should_be_I = XtS * X;
 
-      auto I_real =
-          Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
-      auto I_comp = I_real.template cast<std::complex<double>>();
-      auto should_be_zero = (should_be_I - I_comp).norm();
+    auto I_real =
+        Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
+    auto I_comp = I_real.template cast<std::complex<double>>();
+    auto should_be_zero = (should_be_I - I_comp).norm();
 
-      if (world.rank() == 0) {
-        std::cout << " (dropped " << nbf_omitted << " "
-                  << (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
-                  << result_condition_num << ")" << std::endl;
-        std::cout << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
-                  << " (should be zero)" << std::endl;
-      }
-
+    if (world.rank() == 0) {
+      std::cout << " (dropped " << nbf_omitted << " "
+                << (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
+                << result_condition_num << ")" << std::endl;
+      std::cout << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
+                << " (should be zero)" << std::endl;
+    }
   }
 
   return X;
@@ -124,7 +125,6 @@ std::vector<Matrixz> conditioned_orthogonalizer(
 
   return X;
 }
-
 
 }  // namespace utility
 }  // namespace mpqc

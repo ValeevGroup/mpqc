@@ -8,9 +8,9 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
-#include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/f12/cabs_singles.h"
+#include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
@@ -26,39 +26,40 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectArray =
-      typename CCSD<Tile, Policy>::DirectAOIntegral::DirectTArray;
+  using DirectArray = typename CCSD<Tile, Policy>::AOFactory::DirectTArray;
   using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
+  // clang-format off
   /**
    * KeyVal constructor
    *
-   * @param kv
+   * @param kv the KeyVal object; all keywords from CCSD class will be queried, as well as the following additional keywords
    *
-   * keywords: takes all keywords from CCSD class
-   *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | approx | char | C | approximation to compute F12 (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
-   * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
+   * | vt_cabs | bool | true | if false, omit the CABS terms in  the V intermediate in VT2 and VT1 terms |
    *
    */
+  // clang-format on
   CCSD_F12(const KeyVal& kv) : CCSD<Tile, Policy>(kv) {
-    vt_couple_ = kv.value<bool>("vt_couple", true);
+    vt_cabs_ = kv.value<bool>("vt_cabs", true);
     cabs_singles_ = kv.value<bool>("cabs_singles", true);
 
     approximation_ = kv.value<char>("approx", 'C');
     if (approximation_ != 'C' && approximation_ != 'D') {
-      throw InputError("Invalid CCSD_F12 Approximation! \n",__FILE__,__LINE__,"approx");
+      throw InputError("Invalid CCSD_F12 Approximation! \n", __FILE__, __LINE__,
+                       "approx");
     }
 
     method_ = kv.value<std::string>("method", "df");
     if (method_ != "standard" && method_ != "df" && method_ != "direct") {
-      throw InputError("Invalid Method For CCSD_F12! \n",__FILE__,__LINE__,"method");
+      throw InputError("Invalid Method For CCSD_F12! \n", __FILE__, __LINE__,
+                       "method");
     }
 
     f12_energy_ = 0.0;
@@ -79,10 +80,10 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
       // initialize CABS orbitals
       init_cabs();
 
-      utility::print_par(world, "VTCouple: ", vt_couple_, "\n");
+      utility::print_par(world, "VT_CABS: ", vt_cabs_, "\n");
 
       // clean LCAO Integrals
-      this->lcao_factory().registry().purge(world);
+      this->lcao_factory().registry().purge();
 
       // compute, this will set f12_energy_
       compute_f12();
@@ -112,7 +113,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
  private:
   virtual void init_cabs() {
-    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
+    closed_shell_cabs_mo_build_svd(this->ao_factory(), this->trange1_engine(),
                                    this->unocc_block());
   }
 
@@ -134,7 +135,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
   std::string method_;
 
  private:
-  bool vt_couple_;
+  bool vt_cabs_;
   char approximation_;
 };
 
@@ -149,10 +150,10 @@ void CCSD_F12<Tile>::compute_cabs_singles() {
   bool df = this->is_df();
 
   if (approximation_ == 'D') {
-    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
     singles_energy_ = cabs_singles.compute(df, true, true);
   } else {
-    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
     singles_energy_ = cabs_singles.compute(df, false, true);
   }
   utility::print_par(world, "E_S: ", singles_energy_, "\n");
@@ -181,6 +182,7 @@ template <typename Tile>
 typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     const DirectArray& darray, const char approach) {
   auto& lcao_factory = this->lcao_factory();
+  auto& ao_factory = this->ao_factory();
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
@@ -198,9 +200,11 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     TArray B_ijij_ijji;
 
     if (approach == 'C') {
-      B_ijij_ijji = f12::compute_B_ijij_ijji_C_df(lcao_factory, ijij_ijji_shape);
+      B_ijij_ijji = f12::compute_B_ijij_ijji_C_df(lcao_factory, ao_factory,
+                                                  ijij_ijji_shape);
     } else if (approach == 'D') {
-      B_ijij_ijji = f12::compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
+      B_ijij_ijji = f12::compute_B_ijij_ijji_D_df(lcao_factory, ao_factory,
+                                                  ijij_ijji_shape);
     }
 
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
@@ -210,12 +214,13 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     Eij_F12 = eij;
   }
 
-  lcao_factory.ao_factory().registry().purge_operator(world, L"R");
+  ao_factory.purge_operator(L"R");
 
   // compute X term
-  TArray X_ijij_ijji = f12::compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+  TArray X_ijij_ijji =
+      f12::compute_X_ijij_ijji_df(lcao_factory, ao_factory, ijij_ijji_shape);
 
-  lcao_factory.purge_operator(world, L"R2");
+  lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -230,30 +235,32 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   }
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = f12::compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+  TArray V_ijij_ijji =
+      f12::compute_V_ijij_ijji_df(lcao_factory, ao_factory, ijij_ijji_shape);
 
   // VT2 contribution
   if (darray.array().is_initialized()) {
-    TArray tmp = f12::compute_VT2_ijij_ijji_df_direct(lcao_factory, this->t2(),
-                                                 ijij_ijji_shape, darray);
+    TArray tmp = f12::compute_VT2_ijij_ijji_df_direct(
+        lcao_factory, ao_factory, this->t2(), ijij_ijji_shape, darray, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   } else {
     TArray tmp = f12::compute_VT2_ijij_ijji_df(lcao_factory, this->t2(),
-                                          ijij_ijji_shape, vt_couple_);
+                                               ijij_ijji_shape, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
-    TArray tmp = f12::compute_VT1_ijij_ijji_df(lcao_factory, this->t1(),
-                                          ijij_ijji_shape, vt_couple_);
+    TArray tmp = f12::compute_VT1_ijij_ijji_df(
+        lcao_factory, ao_factory, this->t1(), ijij_ijji_shape, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // V contribution to energy
-  Matrix e_ij = V_ijij_ijji("i1,j1,i2,j2")
-                    .reduce(f12::F12PairEnergyReductor<Tile>(
-                        2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
+  Matrix e_ij =
+      V_ijij_ijji("i1,j1,i2,j2")
+          .reduce(f12::F12PairEnergyReductor<Tile>(
+              2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
   Eij_F12 += e_ij;
   utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
 
@@ -263,7 +270,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
 template <typename Tile>
 typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
     const DirectArray& darray) {
-  auto& lcao_factory = this->lcao_factory();
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
@@ -278,7 +285,8 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
 
   {
     // compute B term
-    TArray B_ijij_ijji = f12::compute_B_ijij_ijji_C(lcao_factory, ijij_ijji_shape);
+    TArray B_ijij_ijji =
+        f12::compute_B_ijij_ijji_C(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
@@ -290,7 +298,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   TArray X_ijij_ijji = f12::compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
   //    std::cout << "X_ijij_ijji" << std::endl;
   //    std::cout << X_ijij_ijji << std::endl;
-  lcao_factory.purge_operator(world, L"R2");
+  lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -318,14 +326,14 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   //    }else
   {
     TArray tmp = f12::compute_VT2_ijij_ijji(lcao_factory, this->t2(),
-                                       ijij_ijji_shape, vt_couple_);
+                                            ijij_ijji_shape, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
     TArray tmp = f12::compute_VT1_ijij_ijji(lcao_factory, this->t1(),
-                                       ijij_ijji_shape, vt_couple_);
+                                            ijij_ijji_shape, vt_cabs_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 

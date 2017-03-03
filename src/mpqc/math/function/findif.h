@@ -9,8 +9,8 @@
 #define SRC_MPQC_MATH_FUNCTION_FINDIF_H_
 
 #include "mpqc/math/function/taylor.h"
-#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/external/c++/iterator"
+#include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
 namespace math {
@@ -25,10 +25,7 @@ class FiniteDifferenceDerivative
                 "Only 1st-order FiniteDifferenceDerivative implemented");
 
   FiniteDifferenceDerivative(const KeyVal& kv)
-      :   FiniteDifferenceDerivative(kv,
-                                     nullptr,
-                                     1e-6)
-  {}
+      : FiniteDifferenceDerivative(kv, nullptr, 1e-6) {}
 
  protected:
   // tuple of coordinate indices, in decreasing order, specifies each derivative
@@ -41,10 +38,24 @@ class FiniteDifferenceDerivative
   using LinearCombinationOfDisplacements =
       std::vector<std::pair<Displacement, double>>;
 
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor
+   * @param kv the KeyVal object to be queried
+   *
+   * The KeyVal object will be queried for all keywords of the protected KeyVal ctor of the TaylorExpansionFunction class,
+   * as well as the following keywords:
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | delta | real | 0.01 | the displacement size, in the internal units of Parameters  |
+   * | error_order | int | accuracy of the finite difference stencil | controls the stencil order to use: 0 = use the lowest order stensil (accurate to \f$ \mathcal{O}(\delta^2) \f$ ), 1 = next lowest order (accurate to \f$ \mathcal{O}(\delta^24) \f$ ), etc. |
+   */
+  // clang-format on
   FiniteDifferenceDerivative(const KeyVal& kv,
                              std::shared_ptr<Parameters> params,
                              double default_target_precision)
-      : TaylorExpansionFunction<Value, Parameters>(kv, params, default_target_precision),
+      : TaylorExpansionFunction<Value, Parameters>(kv, params,
+                                                   default_target_precision),
         delta_(kv.value<double>("delta", 1e-2)),
         error_order_(kv.value<size_t>("error_order", 0)) {
     function_ = kv.class_ptr<function_type, std::true_type>("function");
@@ -161,12 +172,8 @@ class FiniteDifferenceDerivative
     TaylorExpansionCoefficients<Value> value(energy_and_grad);
     this->set_value(value);
   }
-
 };
-
 }
 }
-
-
 
 #endif /* SRC_MPQC_MATH_FUNCTION_FINDIF_H_ */

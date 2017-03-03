@@ -24,11 +24,11 @@ struct Mp2Energy {
   using result_type = double;
   using argument_type = Tile;
 
-  std::shared_ptr<Eigen::VectorXd> vec_;
+  std::shared_ptr<const Eigen::VectorXd> vec_;
   std::size_t n_occ_;
   std::size_t n_frozen_;
 
-  Mp2Energy(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
+  Mp2Energy(std::shared_ptr<const Eigen::VectorXd> vec, std::size_t n_occ,
             std::size_t n_frozen)
       : vec_(vec), n_occ_(n_occ), n_frozen_(n_frozen) {}
 
@@ -76,11 +76,11 @@ struct Mp2Energy {
 
 template <typename Tile, typename Policy>
 double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
-                   std::shared_ptr<Eigen::VectorXd> orbital_energy,
-                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df);
+                   const std::shared_ptr<const Eigen::VectorXd>& orbital_energy,
+                   const std::shared_ptr<const ::mpqc::utility::TRange1Engine>& tr1_engine, bool df);
 
-}  // end of namespce detail
-}  // end of namespce mbpt
+}  // namespace detail
+}  // namespace mbpt
 
 /**
  *  \brief MP2 class for closed-shell system
@@ -89,7 +89,7 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
  */
 
 template<typename Tile, typename Policy>
-class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Energy> {
+class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy> {
  public:
 
   // clang-format off
@@ -98,7 +98,7 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Ener
    * @param kv
    *
    * keywords: takes all keywords from LCAOWavefunction
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */
@@ -120,11 +120,11 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Ener
   virtual double compute();
 
   /// initialize orbitals
-  virtual void init();
   std::shared_ptr<lcao::Wavefunction> ref_wfn_;
 
  private:
    double mp2_corr_energy_;
+   double computed_precision_ = std::numeric_limits<double>::max();
 };
 
 /**

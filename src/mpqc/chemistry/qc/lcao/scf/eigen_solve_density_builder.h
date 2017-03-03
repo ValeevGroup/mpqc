@@ -18,11 +18,15 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   array_type M_inv_;
   std::vector<array_type> r_xyz_ints_;
 
+  // these are provided if localize_ == false, may become optional in the future
+  array_type C_;  //!< canonical orbitals in AO basis
+  Eigen::VectorXd eps_;  //!< canonical orbital energies
+
   double TcutC_;
   bool localize_;
   int64_t n_coeff_clusters_;
   std::string metric_decomp_type_;
-  int64_t occ_;
+  int64_t nocc_;  //!< # of occupied orbitals
 
   double condition_num_thresh_ = 1e-10;
 
@@ -43,7 +47,7 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   ~ESolveDensityBuilder() noexcept = default;
 
   ESolveDensityBuilder(
-      array_type const &S, std::vector<array_type> r_xyz, int64_t occ,
+      array_type const &S, std::vector<array_type> r_xyz, int64_t nocc,
       int64_t nclusters, double TcutC = 0.0,
       std::string const &metric_decomp_type = "cholesky_inverse",
       bool localize = true);
@@ -60,6 +64,10 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   }
 
   inline double TcutC() const { return TcutC_; }
+
+  bool localize() const { return localize_; }
+  const Eigen::VectorXd& orbital_energies() const { return eps_; }
+  array_type C() const { return C_; }
 };
 
 }  // namespace scf

@@ -22,7 +22,6 @@ template <typename Tile>
 class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
                    public CCSD_F12<Tile> {
  public:
-
   // clang-format off
   /**
    * KeyVal constructor
@@ -39,14 +38,12 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
 
   virtual ~CCSD_T_F12() {}
 
-
   void obsolete() override {
     CCSD_F12<Tile>::obsolete();
     CCSD_T<Tile, TA::SparsePolicy>::obsolete();
   }
 
  protected:
-
   void evaluate(Energy* result) override {
     if (!this->computed()) {
       auto& world = this->wfn_world()->world();
@@ -57,26 +54,26 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
 
       auto t_time0 = mpqc::fenced_now(world);
       // compute (T) energy
-      this->lcao_factory().ao_factory().registry().purge(world);
+      this->lcao_factory().registry().purge();
+      this->ao_factory().registry().purge();
       CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
 
       auto t_time1 = mpqc::fenced_now(world);
       auto t_time = mpqc::duration_in_s(t_time0, t_time1);
-      mpqc::utility::print_par(world, "(T) Time in CCSD(T)F12:  ", t_time, "\n");
+      mpqc::utility::print_par(world, "(T) Time in CCSD(T)F12:  ", t_time,
+                               "\n");
 
       this->computed_ = true;
       this->set_value(result, ccsd_f12_energy + this->triples_energy());
     }
   }
-
 };
 
 #if TA_DEFAULT_POLICY == 1
 extern template class CCSD_T_F12<TA::TensorD>;
 #endif
 
-
-}  //namespace lcao
+}  // namespace lcao
 }  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_

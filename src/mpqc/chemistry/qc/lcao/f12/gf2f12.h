@@ -8,7 +8,9 @@
 #include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
+#include "mpqc/chemistry/qc/properties/gfpole.h"
 #include "mpqc/mpqc_config.h"
+#include <mpqc/chemistry/units/units.h>
 
 namespace mpqc {
 namespace lcao {
@@ -68,8 +70,15 @@ TA::Array<double, 4, Tile, Policy> d_pqrE(
 
 }  // namespace dyson
 
+/**
+ *  \brief GF2F12 class
+ *  keyval name for this class GF2F12
+ *
+ */
+
 template <typename Tile>
-class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
+class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
+               public Provides<GFRealPole> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
@@ -81,115 +90,161 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   GF2F12() = default;
   virtual ~GF2F12() = default;
 
+  // clang-format off
   /**
    * KeyVal constructor
    * @param kv
    *
    * keywords: all keywords for LCAOWavefuction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-   * | orbital | int | -1 | orbitals |
-   * | use_cabs | bool | true | if use cabs |
-   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or
-   * nondiagonal ) |
+   * | use_cabs | bool | true | if includes cabs in F12-V term |
+   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or nondiagonal ) |
    * | max_iter | int | 100 | maximum iteration |
    */
+  // clang-format on
 
   GF2F12(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
-      throw std::invalid_argument(
-          "Default Ref Wfn in GF2F12 is not support! \n");
+      throw InputError("Default Ref Wfn in GF2F12 is not support! \n", __FILE__,
+                       __LINE__, "ref");
     }
-    orbital_ = kv.value<int>("orbital", -1);
     use_cabs_ = kv.value<bool>("use_cabs", true);
     dyson_method_ = kv.value<std::string>("dyson_method", "diagonal");
     max_iter_ = kv.value<int>("max_iter", 100);
+
+    // check method
+    if (dyson_method_ != "diagonal" && dyson_method_ != "nondiagonal") {
+      throw InputError("GF2F12: unknown value for keyword \"dyson_method\"",
+                       __FILE__, __LINE__, "dyson_method");
+    }
   }
 
+  bool use_cabs() const { return use_cabs_; }
+  const std::string dyson_method() const { return dyson_method_; }
 
-  virtual real_t value() {
-    using mpqc::utility::print_par;
+ private:
+  bool can_evaluate(GFRealPole* pole) override {
+    // can only evaluate the pole (not its geometric derivatives)
+    return pole->order() == 0;
+  }
 
-    auto& world = this->lcao_factory().world();
+  void evaluate(GFRealPole* pole) override {
+    auto target_precision = pole->target_precision(0);
 
-//    this->energy_ = ref_wfn_->value();
+    if (!this->computed()) {
+      // init orbitals
+      auto target_ref_precision = target_precision / 100.;
+      init(target_ref_precision);
 
-    // init
-    init();
+      auto& world = this->lcao_factory().world();
+      auto time0 = mpqc::fenced_now(world);
 
-    auto time0 = mpqc::fenced_now(world);
+      auto orbital = pole->target();
+      if (orbital < 0 &&
+          (abs(orbital) - 1 >= this->trange1_engine()->get_active_occ()))
+        throw std::runtime_error(
+            "GFRealPole::target is invalid (the number of holes exceeded)");
+      if (orbital > 0 && (orbital - 1 >= this->trange1_engine()->get_vir()))
+        throw std::runtime_error(
+            "GFRealPole::target is invalid (the number of particles exceeded)");
 
-    if (orbital_ == 0)
-      throw std::runtime_error(
-          "GF2F12::Orbital must be positive (for particles) or negative (for "
-          "holes)");
-    if (orbital_ < 0 &&
-        (abs(orbital_) - 1 >= this->trange1_engine()->get_active_occ()))
-      throw std::runtime_error(
-          "GF2F12::orbital is invalid (the number of holes exceeded)");
-    if (orbital_ > 0 && (orbital_ - 1 >= this->trange1_engine()->get_vir()))
-      throw std::runtime_error(
-          "GF2F12::orbital is invalid (the number of particles exceeded)");
+      std::string method_str = dyson_method_;
+      enum class Method { diag, nondiag };
+      Method method;
+      if (method_str.find("diagonal") == 0)
+        method = Method::diag;
+      else if (method_str == "nondiagonal")
+        method = Method::nondiag;
 
-    std::string method_str = dyson_method_;
-    enum class Method { diag, nondiag };
-    Method method;
-    if (method_str.find("diagonal") == 0)
-      method = Method::diag;
-    else if (method_str == "nondiagonal")
-      method = Method::nondiag;
-    else
-      throw std::runtime_error("GF2F12: unknown value for keyword \"method\"");
+      ExEnv::out0() << "orbital = " << orbital << " method = " << method_str
+                    << " cabs = " << std::to_string(use_cabs_) << "\n";
 
-    print_par(world, "orbital = ", orbital_, " method = ", method_str,
-              " cabs = ", std::to_string(use_cabs_), "\n");
+      double result = 0.0;
+      if (method == Method::diag)
+        result = compute_diagonal(orbital, max_iter_);
+      else
+        result = compute_nondiagonal(orbital, max_iter_);
 
-    if (method == Method::diag)
-      compute_diagonal(max_iter_);
-    else
-      compute_nondiagonal(max_iter_);
+      this->computed_ = true;
+      this->set_value(pole, result);
+      auto time1 = mpqc::fenced_now(world);
+      auto time = mpqc::duration_in_s(time0, time1);
 
-    auto time1 = mpqc::fenced_now(world);
-    auto time = mpqc::duration_in_s(time0, time1);
-
-    print_par(world, "Total GF2F12 Time:  ", time, "\n");
-
+      ExEnv::out0() << "Total GF2F12 Time:  " << time << " S\n";
+    }
   }
 
  private:
-  void init() {
-    // init obs
-    auto mol = this->lcao_factory().ao_factory().molecule();
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-        this->occ_block(), this->unocc_block());
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  /// initialize obs and cabs orbitals
+  virtual void init(double ref_precision);
 
-    // compute cabs
-    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
-                                   this->unocc_block());
+  /// initialize target orbital in compute_diagonal function
+  virtual void init_target_orbital_diagonal(int target_orbital);
+
+  /// compute V_ixjy and V_ixyj term in compute_diagonal and compute_nondiagonal
+  virtual std::tuple<TArray, TArray> compute_V() {
+    return f12::VX_pqrs_pqsr("V", this->lcao_factory(), this->ao_factory(), "i",
+                             "x", "j", "y", true, use_cabs_);
   }
 
   /// use self-energy in diagonal representation
-  void compute_diagonal(int max_niter = 100);
+  /// @param orbital the target pole to shoot for
+  double compute_diagonal(int orbital, int max_niter = 100);
   /// use non-diagonal self-energy
-  void compute_nondiagonal(int max_niter = 100);
+  /// @param orbital the target pole to shoot for
+  double compute_nondiagonal(int orbital, int max_niter = 100);
 
  private:
   std::shared_ptr<Wavefunction> ref_wfn_;
-  int orbital_;
   bool use_cabs_;
   std::string dyson_method_;
   std::size_t max_iter_;
 };
 
 template <typename Tile>
-void GF2F12<Tile>::compute_diagonal(int max_niter) {
+void GF2F12<Tile>::init(double ref_precision) {
+  this->init_sdref(ref_wfn_, ref_precision);
+
+  if (use_cabs_) {
+    // compute cabs
+    closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()),
+                                   this->trange1_engine(), this->unocc_block());
+  }
+}
+
+template <typename Tile>
+void GF2F12<Tile>::init_target_orbital_diagonal(int target_orbital) {
+  auto nfzc = this->trange1_engine()->get_nfrozen();
+  auto nocc = this->trange1_engine()->get_active_occ();
+  const auto orbital =
+      nfzc + nocc +
+      ((target_orbital < 0) ? target_orbital : target_orbital - 1);
+
+  auto& world = this->wfn_world()->world();
+  auto& orbital_registry = this->lcao_factory().orbital_registry();
+  auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
+  auto C_p = array_ops::array_to_eigen(p_space.coefs());
+  auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
+  auto tr_obs = p_space.coefs().trange().data().front();
+  TA::TiledRange1 tr_x{0, 1};
+  auto C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
+                                                                  tr_obs, tr_x);
+
+  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
+  auto x_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"x"), OrbitalIndex(L"κ"), C_x_ta);
+  orbital_registry.add(x_space);
+}
+
+template <typename Tile>
+double GF2F12<Tile>::compute_diagonal(const int target_orbital,
+                                      const int max_niter) {
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
   auto& world = this->lcao_factory().world();
 
   auto nfzc = this->trange1_engine()->get_nfrozen();
@@ -197,41 +252,29 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   auto nuocc = this->trange1_engine()->get_vir();
   // map orbital_ (index relative to Fermi level) to orbital index in active
   // orbital space
-  const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
-  auto SE = this->orbital_energy()->operator()(orbital);
+  const auto orbital =
+      nfzc + nocc +
+      ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
-  Eigen::VectorXd occ_evals =
-      this->orbital_energy()->segment(nfzc, nocc + nfzc);
-  Eigen::VectorXd uocc_evals =
-      this->orbital_energy()->segment(nfzc + nocc, nuocc);
+  auto orbital_energy =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+
+  auto SE = orbital_energy->operator()(orbital);
+
+  Eigen::VectorXd occ_evals = orbital_energy->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals = orbital_energy->segment(nfzc + nocc, nuocc);
 
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
-  {
-    auto& world = this->lcao_factory().world();
-    auto& orbital_registry = this->lcao_factory().orbital_space();
-    auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
-    auto C_p = array_ops::array_to_eigen(p_space.coefs());
-    auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
-    auto tr_obs = p_space.coefs().trange().data().front();
-    TA::TiledRange1 tr_x{0, 1};
-    auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
+  { init_target_orbital_diagonal(target_orbital); }
 
-    using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
-    auto x_space =
-        OrbitalSpaceTArray(OrbitalIndex(L"x"), OrbitalIndex(L"κ"), C_x_ta);
-    orbital_registry.add(x_space);
-  }
-
-  this->lcao_factory().keep_partial_transforms(true);
+  lcao_factory.keep_partial_transforms(true);
 
   TArray g_vvog = this->lcao_factory().compute(L"<a b|G|i x>[df]");
   TArray g_oovg = this->lcao_factory().compute(L"<i j|G|a x>[df]");
 
-  if (world.rank() == 0) {
-    printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    printf("==== =========== =========== ===========\n");
-  }
+  ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  ExEnv::out0() << printf("==== =========== =========== ===========\n");
   size_t iter = 0;
   decltype(SE) SE_diff;
   do {
@@ -262,27 +305,27 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
     // std::cout << "Sigma = " << Sigma << std::endl;
 
-    auto SE_updated = Sigma(0, 0) + this->orbital_energy()->operator()(orbital);
+    auto SE_updated = Sigma(0, 0) + orbital_energy->operator()(orbital);
     SE_diff = SE_updated - SE;
 
-    if (world.rank() == 0)
-      printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
+    ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE,
+                            SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
 
   } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
 
-  this->lcao_factory().purge_formula(world, L"<a b|G|i x>[df]");
-  this->lcao_factory().purge_formula(world, L"<i j|G|a x>[df]");
+  this->lcao_factory().purge_formula(L"<a b|G|i x>[df]");
+  this->lcao_factory().purge_formula(L"<i j|G|a x>[df]");
 
   // for now the f12 contribution is energy-independent
   TArray Sigma_pph_f12;
   {
     TArray V_ixix, V_ixxi;
-    const bool df = true;  // always do DF
-    std::tie(V_ixix, V_ixxi) = f12::VX_pqrs_pqsr(
-        "V", this->lcao_factory(), "i", "x", "j", "y", df, use_cabs_);
+    // always do DF
+    std::tie(V_ixix, V_ixxi) = compute_V();
+
     Sigma_pph_f12("x,y") =
         0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) *
         this->lcao_factory()(L"<i|I|j>");
@@ -291,30 +334,35 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
 
   // done with F12 ... remove all geminal ints and CABS indices
-  this->lcao_factory().purge_operator(world, L"R");
-  this->lcao_factory().purge_index(world, L"a'");
-  this->lcao_factory().purge_index(world, L"ρ");
+  this->lcao_factory().purge_operator(L"R");
+  this->lcao_factory().purge_index(L"a'");
+  this->lcao_factory().purge_index(L"ρ");
 
-  this->lcao_factory().keep_partial_transforms(false);
+  lcao_factory.keep_partial_transforms(false);
 
   if (world.rank() == 0) {
     auto SE_F12 = SE + Sigma_f12(0, 0);
-    auto Hartree2eV = 27.21138602;
-    std::string orblabel =
-        std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
-    printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
-           orblabel.c_str(), SE * Hartree2eV, SE);
-    printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
-           orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
-    if (orbital_ > 0)
-      printf(
+    auto unit_factory = UnitFactory::get_default();
+    auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
+    std::string orblabel = std::string(target_orbital < 0 ? "IP" : "EA") +
+                           std::to_string(abs(target_orbital));
+    ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
+                            orblabel.c_str(), SE * Hartree2eV, SE);
+    ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
+                            orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+    if (target_orbital > 0)
+      ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
-          "correction to EA!!!");
+          "correction to EA!!! \n");
   }
+
+  return SE;
 }
 
 template <typename Tile>
-void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
+double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
+                                         const int max_niter) {
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
   auto& world = this->lcao_factory().world();
 
   auto nfzc = this->trange1_engine()->get_nfrozen();
@@ -322,15 +370,19 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   auto nuocc = this->trange1_engine()->get_vir();
   // map orbital_ (index relative to Fermi level) to orbital index in active
   // orbital space
-  const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
-  auto SE = this->orbital_energy()->operator()(orbital);
+  const auto orbital =
+      nfzc + nocc +
+      ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
-  Eigen::VectorXd occ_evals =
-      this->orbital_energy()->segment(nfzc, nocc + nfzc);
-  Eigen::VectorXd uocc_evals =
-      this->orbital_energy()->segment(nfzc + nocc, nuocc);
+  auto orbital_energy =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
-  this->lcao_factory().keep_partial_transforms(true);
+  auto SE = orbital_energy->operator()(orbital);
+
+  Eigen::VectorXd occ_evals = orbital_energy->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals = orbital_energy->segment(nfzc + nocc, nuocc);
+
+  lcao_factory.keep_partial_transforms(true);
 
   auto qp_str = L"p";
   // auto qp_str = (orbital_ < 0) ? L"i" : L"a";
@@ -340,10 +392,8 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   TArray g_oovg =
       this->lcao_factory().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
 
-  if (world.rank() == 0) {
-    printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    printf("==== =========== =========== ===========\n");
-  }
+  ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  ExEnv::out0() << printf("==== =========== =========== ===========\n");
   size_t iter = 0;
   decltype(SE) SE_diff;
   RowMatrixXd C_dyson;  // Dyson orbital coefficients
@@ -379,8 +429,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     // rest
     decltype(SE) SE_updated = 0.0;
     if (world.rank() == 0) {
-      RowMatrixXd F_dyson =
-          Sigma + RowMatrixXd(this->orbital_energy()->asDiagonal());
+      RowMatrixXd F_dyson = Sigma + RowMatrixXd(orbital_energy->asDiagonal());
       Eigen::SelfAdjointEigenSolver<RowMatrixXd> eig_solver(F_dyson);
       auto eps_dyson = eig_solver.eigenvalues();
       SE_updated = eps_dyson(orbital);
@@ -391,27 +440,29 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     SE_diff = SE_updated - SE;
 
     if (world.rank() == 0)
-      printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
+      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE,
+                              SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
 
   } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
 
-  this->lcao_factory().purge_index(world, qp_str);
+  this->lcao_factory().purge_index(qp_str);
 
-  // will use only the target orbital to transform ints
+  // will use only the target orbital(x) to transform ints
   // create an OrbitalSpace here
   {
     auto& world = this->lcao_factory().world();
-    auto& orbital_registry = this->lcao_factory().orbital_space();
+    auto& orbital_registry = this->lcao_factory().orbital_registry();
     auto qp_space = orbital_registry.retrieve(OrbitalIndex(qp_str));
     auto C_qp = array_ops::array_to_eigen(qp_space.coefs());
     auto C_qp_dyson = C_qp * C_dyson;
     auto C_x = C_qp_dyson.block(0, orbital, C_qp_dyson.rows(), 1);
     auto tr_obs = qp_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
-    auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
+    auto C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(
+        world, C_x, tr_obs, tr_x);
 
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
     auto x_space =
@@ -423,9 +474,9 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   TArray Sigma_pph_f12;
   {
     TArray V_ixix, V_ixxi;
-    const bool df = true;  // always do DF
-    std::tie(V_ixix, V_ixxi) = f12::VX_pqrs_pqsr(
-        "V", this->lcao_factory(), "i", "x", "j", "y", df, use_cabs_);
+    // always do DF
+    std::tie(V_ixix, V_ixxi) = compute_V();
+
     Sigma_pph_f12("x,y") =
         0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) *
         this->lcao_factory()(L"<i|I|j>");
@@ -434,26 +485,28 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
 
   // done with F12 ... remove all geminal ints and CABS indices
-  this->lcao_factory().purge_operator(world, L"R");
-  this->lcao_factory().purge_index(world, L"a'");
-  this->lcao_factory().purge_index(world, L"ρ");
+  this->lcao_factory().purge_operator(L"R");
+  this->lcao_factory().purge_index(L"a'");
+  this->lcao_factory().purge_index(L"ρ");
 
-  this->lcao_factory().keep_partial_transforms(false);
+  lcao_factory.keep_partial_transforms(false);
 
   if (world.rank() == 0) {
     auto SE_F12 = SE + Sigma_f12(0, 0);
-    auto Hartree2eV = 27.21138602;
-    std::string orblabel =
-        std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
-    printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
-           orblabel.c_str(), SE * Hartree2eV, SE);
-    printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
-           orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
-    if (orbital_ > 0)
-      printf(
+    auto unit_factory = UnitFactory::get_default();
+    auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
+    std::string orblabel = std::string(target_orbital < 0 ? "IP" : "EA") +
+                           std::to_string(abs(target_orbital));
+    ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
+                            orblabel.c_str(), SE * Hartree2eV, SE);
+    ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
+                            orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+    if (target_orbital > 0)
+      ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
-          "correction to EA!!!");
+          "correction to EA!!! \n");
   }
+  return SE;
 }
 
 #if TA_DEFAULT_POLICY == 1

@@ -7,15 +7,13 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
-#include "mpqc/chemistry/qc/lcao/integrals/direct_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/mpqc_config.h"
-
 
 namespace mpqc {
 namespace lcao {
@@ -28,18 +26,18 @@ inline void print_ccsd(int iter, double dE, double error, double E1,
     std::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
                 "residual", "energy", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error, E1,
-              time);
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE,
+              error, E1, time);
 }
 
 inline void print_ccsd_direct(int iter, double dE, double error, double E1,
                               double time1, double time2) {
   if (iter == 0) {
     std::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
-                "deltaE", "residual", "energy", "u time/s" ,"total time/s");
+                "deltaE", "residual", "energy", "u time/s", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter, dE, error, E1,
-              time1, time2);
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
+              dE, error, E1, time1, time2);
 }
 }
 
@@ -48,10 +46,10 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
+class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
+  using AOFactory = gaussian::AOFactory<Tile, Policy>;
 
   CCSD() = default;
 
@@ -63,11 +61,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
    *
    * keywords : all keywords for LCAOWavefunciton
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Evaluator RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, direct) |
-   * | converge | double | 0, it uses precision provided by Energy | overide default by provide a value|
+   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -76,25 +73,25 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
   // clang-format on
 
   CCSD(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
-
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
-      throw InputError("Default Ref in CCSD is not support! \n", __FILE__, __LINE__, "ref");
+      throw InputError("Default Ref in CCSD is not support! \n", __FILE__,
+                       __LINE__, "ref");
     }
 
     df_ = false;
-    method_ = kv_.value<std::string>("method", "df");
+    auto default_method =
+        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
+    method_ = kv_.value<std::string>("method", default_method);
+    if (method_ != "df" && method_ != "direct" && method_ != "standard") {
+      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
+    }
     if (method_ == "df" || method_ == "direct") {
       df_ = true;
     }
-    if(method_ != "df" && method_!="direct" && method_!="standard")
-    {
-      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
-    }
 
     max_iter_ = kv.value<int>("max_iter", 20);
-    converge_ = kv.value<double>("converge", 0);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
@@ -109,24 +106,28 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
  private:
   const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
-  typename DirectAOIntegral::DirectTArray direct_ao_array_;
+  typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
   std::string method_;
   std::size_t max_iter_;
-  double converge_;
+  double target_precision_;
+  double computed_precision_ = std::numeric_limits<double>::max();
   bool print_detail_;
   double ccsd_corr_energy_;
+  // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
+  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
 
- public:
-
-  void obsolete() override {
-    ccsd_corr_energy_ = 0.0;
-    LCAOWavefunction<Tile, Policy>::obsolete();
-    ref_wfn_->obsolete();
+ protected:
+  std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
+    return f_pq_diagonal_;
   }
 
-  void set_trange1_engine(const std::shared_ptr<TRange1Engine> &tr1) {
-    this->trange1_engine_ = tr1;
+ public:
+  void obsolete() override {
+    ccsd_corr_energy_ = 0.0;
+    f_pq_diagonal_.reset();
+    LCAOWavefunction<Tile, Policy>::obsolete();
+    ref_wfn_->obsolete();
   }
 
   // get T1 amplitudes
@@ -154,41 +155,35 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
 
   bool print_detail() const { return print_detail_; }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
-      const {
+  const typename AOFactory::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
   }
 
-protected:
-  bool can_evaluate(Energy* energy) override {
+ protected:
+  bool can_evaluate(Energy *energy) override {
     // can only evaluate the energy
     return energy->order() == 0;
   }
 
-  void evaluate(Energy* result) override {
-    if (!this->computed()){
+  void evaluate(Energy *energy) override {
+    auto target_precision = energy->target_precision(0);
+    // compute only if never computed, or requested with higher precision than
+    // before
+    if (!this->computed() || computed_precision_ > target_precision) {
+      // compute reference to higher precision than required of correlation
+      // energy
+      auto target_ref_precision = target_precision / 100.;
+      auto ref_energy =
+          std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
-      /// cast ref_wfn to Energy::Evaluator
-      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
-      if(ref_evaluator == nullptr) {
-        std::ostringstream oss;
-        oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
-            << " cannot compute Energy" << std::endl;
-        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-      }
+      this->init_sdref(ref_wfn_, target_ref_precision);
 
-      ref_evaluator->evaluate(result);
-
-      double ref_energy = this->get_value(result).derivs(0)[0];
-
-      // initialize
-      init();
+      f_pq_diagonal_ =
+          make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
       // set the precision
-      if(converge_ == 0.0){
-        // if no user provided converge limit, use the default one from Energy
-        converge_ = result->target_precision(0);
-      }
+      target_precision_ = energy->target_precision(0);
 
       TArray t1;
       TArray t2;
@@ -199,9 +194,7 @@ protected:
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        auto direct_ao_factory =
-            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
-        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
+        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -209,12 +202,11 @@ protected:
       T2_ = t2;
 
       this->computed_ = true;
-      this->set_value(result, ref_energy + ccsd_corr_energy_);
+      this->set_value(energy, ref_energy->energy() + ccsd_corr_energy_);
     }
   }
 
-
-private:
+ private:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -248,12 +240,13 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -278,7 +271,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -517,7 +510,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -538,11 +531,12 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -622,12 +616,13 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -652,7 +647,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -891,7 +886,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -912,11 +907,12 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -988,12 +984,13 @@ private:
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     //      std::cout << t1 << std::endl;
     //      std::cout << t2 << std::endl;
@@ -1032,7 +1029,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
     };
@@ -1264,7 +1261,7 @@ private:
           mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
         }
 
-        d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+        d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
         r2("a,b,i,j") -= t2("a,b,i,j");
       }
@@ -1287,11 +1284,12 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -1314,7 +1312,8 @@ private:
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
+                                    duration_t);
         }
 
         iter += 1ul;
@@ -1323,7 +1322,8 @@ private:
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
+                                    duration_t);
         }
 
         break;
@@ -1340,20 +1340,8 @@ private:
   }
 
  private:
-  virtual void init() {
-    if (this->orbital_energy() == nullptr ||
-        this->trange1_engine() == nullptr) {
-      auto mol = this->lcao_factory().ao_factory().molecule();
-      Eigen::VectorXd orbital_energy;
-      this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-          this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-          this->occ_block(), this->unocc_block());
-      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-    }
-  }
-
-  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> get_diis(
-      const madness::World &world) {
+  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+  get_diis(const madness::World &world) {
     int n_diis, strt, ngr, ngrdiis;
     double dmp, mf;
 
@@ -1372,8 +1360,8 @@ private:
       std::cout << "DIIS dmp:  " << dmp << std::endl;
       std::cout << "DIIS mf:  " << mf << std::endl;
     }
-    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> diis(strt, n_diis, 0.0, ngr,
-                                                                                     ngrdiis);
+    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+        diis(strt, n_diis, 0.0, ngr, ngrdiis);
 
     return diis;
   };
@@ -1382,7 +1370,7 @@ private:
   /// occ part
   const TArray get_Ci() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"i"))
         .coefs();
   }
@@ -1390,7 +1378,7 @@ private:
   /// vir part
   const TArray get_Ca() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"a"))
         .coefs();
   }
@@ -1398,8 +1386,7 @@ private:
   /// get three center integral (X|ab)
   const TArray get_Xab() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
     result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
     return result;
@@ -1408,8 +1395,7 @@ private:
   /// get three center integral (X|ij)
   const TArray get_Xij() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|i j)");
     result("K,i,j") = sqrt("K,Q") * three_center("Q,i,j");
     return result;
@@ -1418,8 +1404,7 @@ private:
   /// get three center integral (X|ai)
   const TArray get_Xai() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
     result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;
@@ -1493,7 +1478,7 @@ private:
 
   /// <ia|jb>
   const TArray get_iajb() {
-    if (df_){
+    if (df_) {
       return this->lcao_factory().compute(L"<i a|G|j b>[df]");
     } else {
       return this->lcao_factory().compute(L"<i a|G|j b>");
@@ -1518,8 +1503,17 @@ private:
     }
   }
 
+  /// <p|f|q>
+  const TArray get_fock_pq() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<p|F|q>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<p|F|q>");
+    }
+  }
+
   /// AO integral-direct computation of (ab|cd) ints contributions to the
-  /// doubles resudual
+  /// doubles residual
 
   /// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} +
   /// t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
@@ -1535,11 +1529,12 @@ private:
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
+      u2_u11("p, r, i, j") = 0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
-      throw std::runtime_error(
+      throw ProgrammingError(
           "CCSD: integral-direct implementation used, but direct integral not "
-          "initialized");
+          "initialized", __FILE__, __LINE__);
     }
   }
 };  // class CCSD

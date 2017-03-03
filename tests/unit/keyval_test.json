@@ -1,11 +1,13 @@
 {
   "molecule": {
-    "type": "Molecule",
-    "file_name": "h2o.xyz",
+    "atoms": [
+      { "element" : "O", "xyz" : [0.0,  0.0, 0.0] },
+      { "element" : "H", "xyz" : [0.0,  1.0, 1.0] },
+      { "element" : "H", "xyz" : [0.0, -1.0, 1.0] }
+     ],
     "sort_input": true
   },
   "basis": {
-    "type": "Basis",
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   }

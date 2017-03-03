@@ -14,7 +14,7 @@ namespace mpqc {
 * to add a wavefunction property class P:
 * - derive class P from WavefunctionProperty<T> and override
 * P::evaluate()
-* - define class P::EvaluatorBase to be used as a public base classes that
+* - define class P::Provider to be used as a public base classes that
 * can compute it
 */
 
@@ -25,18 +25,18 @@ public:
 
   /**
    *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
-   *  inherit from Energy::Evaluator
+   *  inherit from Energy::Provider
    *
-   *  @sa CanEvaluate
+   *  @sa Provides
    */
-  class Evaluator : public math::FunctionVisitorBase<function_base_type> {
+  class Provider : public math::FunctionVisitorBase<function_base_type> {
   public:
-    /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
+    /// @return true if \c energy can be computed.
     /// For example, if \c energy demands taylor expansion to 1st order
     /// but this wave function does not have analytic nuclear gradients,
     /// will return false.
     virtual bool can_evaluate(Energy* energy) = 0;
-    /// EvaluatorBase::evaluate computes the taylor expansion of the energy
+    /// Provider::evaluate computes the taylor expansion of the energy
     /// and uses set_value to assign the values to \c energy
     virtual void evaluate(Energy* energy) = 0;
   };
@@ -44,22 +44,34 @@ public:
   // clang-format off
   /**
    * @brief The KeyVal constructor
-   * @param kv the KeyVal object to be queried
+   * @param kv the KeyVal object, it will be queried for all
+   *        keywords of the WavefunctionProperty class. |
    *
-   * \c kv will be queried for all keywords of the WavefunctionProperty class,
-   * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
-   *
-   * This constructor overrides the default target precision to 1e-9 .
+   * @note This constructor overrides the default target precision to 1e-9 .
    */
   // clang-format on
-
   explicit Energy(const KeyVal& kv) : WavefunctionProperty(kv, 1e-9) {}
+
+  /// This constructor is provided for convenient programmatic construction
+  /// Request to compute energy value using Wavefunction.\c wfn to precision \c prec.
+  /// @param wfn the Wavefunction object that will compute the energy value
+  /// @param prec the targer precision of the energy
+  Energy(std::shared_ptr<Wavefunction> wfn, double prec) :
+    WavefunctionProperty(make_kv(wfn), prec) {}
+
+  double energy() { return this->value()->value(); }
+  const std::vector<double>& gradient() { return this->value()->gradient(); }
+  const std::vector<double>& hessian() { return this->value()->hessian(); }
 
 private:
   void do_evaluate() override;
+
+  static KeyVal make_kv(std::shared_ptr<Wavefunction> wfn) {
+    KeyVal kv;
+    kv.assign("wfn", wfn);
+    return kv;
+  }
+
 };
 
 #if 0

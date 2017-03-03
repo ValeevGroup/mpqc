@@ -141,7 +141,7 @@ inline void parallel_print_range_info(madness::World &world,
   if (world.rank() == 0) {
     auto minmax_block = minmax_blocksize(bs_range);
     auto average_block = average_blocksize(bs_range);
-    std::cout << name << " Trange " << std::endl;
+    std::cout << name << std::endl;
     std::cout << bs_range << std::endl;
     std::cout << "Min and Max block size: " << minmax_block.first << " "
               << minmax_block.second << std::endl;

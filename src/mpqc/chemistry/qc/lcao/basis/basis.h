@@ -42,7 +42,7 @@ class Basis : virtual public DescribedClass {
     Factory &operator=(Factory &&b) = default;
 
     /// The KeyVal ctor queries the following keywords:
-    /// | KeyWord | Type | Default| Description |
+    /// | Keyword | Type | Default| Description |
     /// |---------|------|--------|-------------|
     ///  |\c name |string|none    |The basis set name|
     ///
@@ -184,7 +184,7 @@ class AtomicBasis : public Basis, public utility::Observer {
    * The KeyVal constructor queries all keywords of Basis and Basis::Factory, as well
    * as the following additional keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * |atoms| Molecule or UnitCell | none | the Molecule object |
    * |reblock| int | 0 (i.e., no reblocking) | size to reblock basis |

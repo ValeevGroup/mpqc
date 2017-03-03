@@ -7,12 +7,12 @@
 
 #include <string>
 
-#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/lcao/f12/cabs_singles.h"
 #include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
-#include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
+#include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 
 namespace mpqc {
 namespace lcao {
@@ -22,9 +22,10 @@ namespace lcao {
  */
 
 template <typename Tile>
-class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvaluate<Energy> {
+class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
+                public Provides<Energy> {
  public:
-  using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
+  using TArray = TA::DistArray<Tile, TA::SparsePolicy>;
 
   // clang-format off
   /**
@@ -32,24 +33,27 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvalu
    * @param kv
    * keywords: takes all keywords from LCAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | approaximation | char | C | approaximation to use (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    *
    */
-   // clang-format on
+  // clang-format on
   RMP2F12(const KeyVal& kv);
   ~RMP2F12() = default;
 
   void obsolete() override;
 
-  const double mp2_corr_energy() const {return mp2_corr_energy_;}
-  const double f12_energy() const {return mp2_f12_energy_;}
-  const double cabs_singles_energy() const {return singles_energy_;}
- protected:
+  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
+    return f_pq_diagonal_;
+  }
+  const double mp2_corr_energy() const { return mp2_corr_energy_; }
+  const double f12_energy() const { return mp2_f12_energy_; }
+  const double cabs_singles_energy() const { return singles_energy_; }
 
+ protected:
   bool can_evaluate(Energy* energy) override;
 
   void evaluate(Energy* result) override;
@@ -59,9 +63,8 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvalu
   std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
 
  private:
-
   /// initialize mp2f12
-  virtual void init();
+  virtual void init(double ref_precision);
 
   /// function to compute B intermediate
   virtual TArray compute_B();
@@ -86,6 +89,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvalu
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
   std::shared_ptr<Wavefunction> ref_wfn_;
+  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
 
  private:
   /// MP2 correlation energy
@@ -94,9 +98,9 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvalu
   double mp2_f12_energy_ = 0.0;
   /// CABS singles energy
   double singles_energy_ = 0.0;
-
+  /// computed precision
+  double computed_precision_ = std::numeric_limits<double>::max();
 };
-
 
 /**
  *  \brief MP2F12 method for closed shell with RI
@@ -105,13 +109,13 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvalu
 template <typename Tile>
 class RIRMP2F12 : public RMP2F12<Tile> {
  public:
-  using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
+  using TArray = TA::DistArray<Tile, TA::SparsePolicy>;
   /**
  * KeyVal constructor
  * @param kv
  * keywords: takes all keywords from LCAOWavefunction
  *
- * | KeyWord | Type | Default| Description |
+ * | Keyword | Type | Default| Description |
  * |---------|------|--------|-------------|
  * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
  * | approaximation | char | C | approaximation to use (C or D) |
@@ -122,7 +126,6 @@ class RIRMP2F12 : public RMP2F12<Tile> {
   ~RIRMP2F12() = default;
 
  private:
-
   TArray compute_B() override;
   TArray compute_V() override;
   TArray compute_X() override;

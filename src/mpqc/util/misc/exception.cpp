@@ -111,7 +111,7 @@ Exception::Exception(const char *description,
   detail::Exception(description, file, line),
   exception_type_(exception_type),
   elaboration_c_str_(0),
-  backtrace_("=scbacktrace=: ")
+  backtrace_("=mpqcbacktrace=: ")
 {
   try {
       elaboration_ = std::make_unique<std::ostringstream>();
@@ -236,6 +236,26 @@ InputError::~InputError() MPQC__NOEXCEPT
   delete[] value_;
 }
 
+////////////////////////////////////////////////////////////////////////
+// Uncomputable
+
+Uncomputable::Uncomputable(
+    const char *description,
+    const char *file,
+    int line,
+    const char *exception_type) MPQC__NOEXCEPT:
+  Exception(description, file, line, exception_type)
+{
+}
+
+Uncomputable::Uncomputable(const Uncomputable& ref) MPQC__NOEXCEPT:
+  Exception(ref)
+{
+}
+
+Uncomputable::~Uncomputable() MPQC__NOEXCEPT
+{
+}
 ////////////////////////////////////////////////////////////////////////
 // ProgrammingError
 

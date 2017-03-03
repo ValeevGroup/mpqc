@@ -45,6 +45,16 @@ class TaylorExpansionCoefficients {
   const std::vector<Value>& derivs(size_t N) const { return derivs_.at(N); }
   std::vector<Value>& derivs(size_t N) { return derivs_.at(N); }
 
+  /// useful shorthand for derivs(0)[0]
+  /// @ return the function value
+  const Value& value() const { return derivs(0)[0]; }
+  /// useful shorthand for derivs(1)
+  /// @ return the function gradient
+  const std::vector<Value>& gradient() const { return derivs(1); }
+  /// useful shorthand for derivs(2)
+  /// @ return the function gradient
+  const std::vector<Value>& hessian() const { return derivs(2); }
+
   /// @return the order of the expansion, i.e. the maximum derivative order
   /// @throw ProgrammingError if this object is not initialized
   size_t order() const {
@@ -88,7 +98,7 @@ class TaylorExpansionCoefficients {
   size_t nvars_;
   /// values of unique derivatives of each order
   /// # of unique derivs of order \f$ O = n \times (n+1) \times (n+O-1) / (1
-  /// \times 2 \times O)
+  /// \times 2 \times O) \f$
   std::vector<std::vector<Value>> derivs_;
 };
 
@@ -124,7 +134,7 @@ class TaylorExpansionFunction
    * @brief auxiliary KeyVal constructor
    *
    * The KeyVal object will be query the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
    * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |

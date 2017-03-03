@@ -3,8 +3,8 @@ set(sources
         ccsd.cpp
         ccsd_t.h
         ccsd_t.cpp
-        dbccsd.h
-        dbccsd.cpp
+        gamma_point_ccsd.h
+        gamma_point_ccsd.cpp
         linkage.h
         )
 

@@ -45,15 +45,15 @@ TEST_CASE("Formula Expression", "[formula]") {
 
     Formula r2(L"<p q| R2 |r s>");
     REQUIRE(r2.oper().type() == Operator::Type::cGTG2);
-    Formula couloumb(L"<p_α q1|R|a' A'1>");
+    Formula coulomb(L"<p_α q1|R|a' A'1>");
 
-    REQUIRE(couloumb.bra_indices()[0].index() == OrbitalIndex::Type::any);
-    REQUIRE(couloumb.bra_indices()[0].spin() == OrbitalIndex::Spin::Alpha);
-    REQUIRE(couloumb.bra_indices()[1].index() == OrbitalIndex::Type::any);
-    REQUIRE(couloumb.ket_indices()[0].index() == OrbitalIndex::Type::othervirt);
-    REQUIRE(couloumb.ket_indices()[1].index() == OrbitalIndex::Type::allvirt);
-    REQUIRE(couloumb.oper().is_twobody() == true);
-    REQUIRE(couloumb.to_ta_expression() == "p_alpha, q1, a', A'1");
+    REQUIRE(coulomb.bra_indices()[0].index() == OrbitalIndex::Type::any);
+    REQUIRE(coulomb.bra_indices()[0].spin() == OrbitalIndex::Spin::Alpha);
+    REQUIRE(coulomb.bra_indices()[1].index() == OrbitalIndex::Type::any);
+    REQUIRE(coulomb.ket_indices()[0].index() == OrbitalIndex::Type::othervirt);
+    REQUIRE(coulomb.ket_indices()[1].index() == OrbitalIndex::Type::allvirt);
+    REQUIRE(coulomb.oper().is_twobody() == true);
+    REQUIRE(coulomb.to_ta_expression() == "p_alpha, q1, a', A'1");
 
     Formula two_center(L"( a'_β |R|A'1)");
     REQUIRE(two_center.bra_indices().size() == 1);
@@ -66,13 +66,18 @@ TEST_CASE("Formula Expression", "[formula]") {
   }
 
   SECTION("option test case") {
-    Formula couloumb(L"<p q1|R|a' A'1> [df]");
-    REQUIRE(couloumb.oper().has_option(Operator::Option::DensityFitting) ==
+    Formula coulomb(L"<p q1|R|a' A'1> [df]");
+    REQUIRE(coulomb.has_option(Formula::Option::DensityFitting) ==
             true);
 
-    Formula couloumb1(L"<p q1|R|a' A'1> [df, inv_sqr]");
-    Formula couloumb2(L"<p q1|R|a' A'1> [inv_sqr, df]");
-    REQUIRE(couloumb1.oper().option() == couloumb2.oper().option());
+    Formula coulomb1(L"<p q1|R|a' A'1> [df, inv_sqr]");
+    Formula coulomb2(L"<p q1|R|a' A'1> [inv_sqr, df]");
+    REQUIRE((coulomb1.has_option(Formula::Option::DensityFitting) &&
+             coulomb2.has_option(Formula::Option::DensityFitting)));
+    REQUIRE((coulomb1.has_option(Formula::Option::InverseSquareRoot) &&
+             coulomb2.has_option(Formula::Option::InverseSquareRoot)));
+    REQUIRE(coulomb1 == coulomb2);
+    REQUIRE(coulomb != coulomb1);
   }
 
   SECTION("equality test case") {

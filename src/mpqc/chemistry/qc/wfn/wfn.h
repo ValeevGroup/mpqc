@@ -23,7 +23,7 @@ class Wavefunction : virtual public DescribedClass, public utility::Observer {
    *  \brief The KeyVal constructor
    *
    * The KeyVal object will be queried for the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | atoms | Molecule or UnitCell | none | the collection of Atoms |
    *

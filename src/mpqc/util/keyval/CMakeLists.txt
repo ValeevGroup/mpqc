@@ -4,7 +4,7 @@ set(sources
   keyval.cpp
 )
 
-add_mpqc_library(util_keyval sources sources "util_c++" "mpqc/util/keyval")
+add_mpqc_library(util_keyval sources sources "util_c++;util_meta" "mpqc/util/keyval")
 
 target_include_directories(MPQCutil_keyval PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(MPQCutil_keyval PUBLIC ${Boost_LIBRARIES})

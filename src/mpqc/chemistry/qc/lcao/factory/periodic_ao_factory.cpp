@@ -1,4 +1,4 @@
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 namespace mpqc {
 namespace lcao {
@@ -119,8 +119,8 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
     for (auto shell : shell_vec) {
-      std::array<double, 3> new_origin = {
-          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)};
+      std::array<double, 3> new_origin = {{
+          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)}};
       shell.move(new_origin);
       shells.push_back(shell);
     }
@@ -148,9 +148,9 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
     for (auto shell_vec : basis.cluster_shells()) {
       ShellVec shells;
       for (auto shell : shell_vec) {
-        std::array<double, 3> new_origin = {shell.O[0] + shift(0),
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
                                             shell.O[1] + shift(1),
-                                            shell.O[2] + shift(2)};
+                                            shell.O[2] + shift(2)}};
         shell.move(new_origin);
         shells.push_back(shell);
       }
@@ -161,45 +161,6 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
   Basis result(vec_of_shells);
   auto result_ptr = std::make_shared<Basis>(result);
   return result_ptr;
-}
-
-libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
-                                        const AOFactoryBase &base,
-                                        const Molecule &mol) {
-  TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
-                  mpqc_oper <= Operator::Type::__last_1body_operator) ||
-                     (Operator::Type::__first_2body_operator <= mpqc_oper &&
-                      mpqc_oper <= Operator::Type::__last_2body_operator),
-                 "invalid Operator::Type");
-
-  libint2::any result;
-  switch (mpqc_oper) {
-    case Operator::Type::Nuclear: {
-      result = make_q(mol);
-    } break;
-    case Operator::Type::cGTG:
-    case Operator::Type::cGTGCoulomb:
-    case Operator::Type::DelcGTG2: {
-      result = base.gtg_params();
-    } break;
-    case Operator::Type::cGTG2: {
-      const auto &cgtg_params = base.gtg_params();
-      const auto ng = cgtg_params.size();
-      std::decay<decltype(cgtg_params)>::type cgtg2_params;
-      cgtg2_params.reserve(ng * (ng + 1) / 2);
-      for (auto b = 0; b < ng; ++b) {
-        for (auto k = 0; k <= b; ++k) {
-          const auto gexp = cgtg_params[b].first + cgtg_params[k].first;
-          const auto gcoeff = cgtg_params[b].second * cgtg_params[k].second *
-                              (b == k ? 1 : 2);  // if a != b include ab and ba
-          cgtg2_params.push_back(std::make_pair(gexp, gcoeff));
-        }
-      }
-      result = cgtg2_params;
-    } break;
-    default:;  // nothing to do
-  }
-  return result;
 }
 
 }  // namespace detail

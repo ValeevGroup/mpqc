@@ -10,6 +10,9 @@
 #include <algorithm>
 
 namespace mpqc {
+namespace utility {
+
+/// TODO document
 class TRange1Engine {
  public:
   TRange1Engine()
@@ -38,15 +41,18 @@ class TRange1Engine {
 
   void init();
 
-  TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
+  static TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
 
-  /// get TiledRange1 for active occuppied space
+  /// joins 2 ranges
+  static TA::TiledRange1 join(const TA::TiledRange1& a, const TA::TiledRange1& b);
+
+  /// get TiledRange1 for active occupied space
   TA::TiledRange1 get_active_occ_tr1() const { return tr_active_occupied_; }
 
-  /// get TiledRange1 for occuppied space
+  /// get TiledRange1 for occupied space
   TA::TiledRange1 get_occ_tr1() const { return tr_occupied_; }
 
-  /// get TiledRange1 for active virtual occuppied space
+  /// get TiledRange1 for active virtual occupied space
   TA::TiledRange1 get_vir_tr1() const { return tr_virtual_; }
 
   /// /// get TiledRange1 for all obs space
@@ -112,6 +118,8 @@ class TRange1Engine {
   /// number of virtual blocks
   std::size_t vir_blocks_;
 };
-}
+
+}  // namespace utility
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_TRANGE1_ENGINE_H_

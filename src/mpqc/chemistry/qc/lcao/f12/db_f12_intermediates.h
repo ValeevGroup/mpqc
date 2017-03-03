@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 
 /**
  * Dual Basis F12 Intermediates
@@ -20,7 +20,7 @@ namespace f12 {
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -120,8 +120,148 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 };
 
 template <typename Tile, typename Policy>
+std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
+compute_V_ixjy_ixyj_db_df(lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory,
+                          bool cabs = true) {
+  auto &world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto v_time0 = mpqc::now(world, accurate_time);
+
+  TA::DistArray<Tile, Policy> V_ixjy, V_ixyj;
+
+  {
+    auto left = lcao_factory(L"<i x|GR|j y>[df]");
+    auto right = lcao_factory(L"<i x|GR|y j>[df]");
+
+    auto time0 = mpqc::now(world, accurate_time);
+    V_ixjy("i,x,j,y") = left;
+    V_ixyj("i,x,y,j") = right;
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term1 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = lcao_factory(L"<i x|G|m n>[df]");
+    auto right1 = lcao_factory(L"<j y|R|m n>[df]");
+
+    auto time0 = mpqc::now(world, accurate_time);
+    V_ixjy("i,x,j,y") -= left * right1;
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+
+    auto right2 = lcao_factory(L"<y j|R|m n>[df]");
+
+    time0 = mpqc::now(world, accurate_time);
+    V_ixyj("i,x,y,j") -= left * right2;
+    time1 = mpqc::now(world, accurate_time);
+    time += mpqc::duration_in_s(time0, time1);
+
+    utility::print_par(world, "V Term2 Time: ", time, " S\n");
+  }
+
+  lcao_factory.purge_formula(world, L"<j y|R|m n>[df]");
+  lcao_factory.purge_formula(world, L"<y j|R|m n>[df]");
+
+  {
+    auto left = lcao_factory(L"<i x|G|m a>[df]");
+    auto right1 = lcao_factory(L"<j y|R|m a>[df]");
+    auto right2 = lcao_factory(L"<y j|R|m a>[df]");
+
+    auto time0 = mpqc::now(world, accurate_time);
+    V_ixjy("i,x,j,y") -= left * right1;
+    V_ixyj("i,x,y,j") -= left * right2;
+
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term3 Time: ", time, " S\n");
+  }
+
+  lcao_factory.purge_formula(world, L"<j y|R|m a>[df]");
+  lcao_factory.purge_formula(world, L"<y j|R|m a>[df]");
+
+  {
+    auto left = lcao_factory(L"<i x|G|a m>[df]");
+    auto right1 = lcao_factory(L"<j y|R|a m>[df]");
+    auto right2 = lcao_factory(L"<y j|R|a m>[df]");
+
+    auto time0 = mpqc::now(world, accurate_time);
+    V_ixjy("i,x,j,y") -= left * right1;
+    V_ixyj("i,x,y,j") -= left * right2;
+
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term4 Time: ", time, " S\n");
+  }
+
+  lcao_factory.purge_formula(world, L"<j y|R|a m>[df]");
+  lcao_factory.purge_formula(world, L"<y j|R|a m>[df]");
+
+  {
+    auto left = lcao_factory(L"<i x|G|a b>[df]");
+    auto right1 = lcao_factory(L"<j y|R|a b>[df]");
+
+    auto time0 = mpqc::now(world, accurate_time);
+    V_ixjy("i,x,j,y") -= left * right1;
+    auto time1 = mpqc::now(world, accurate_time);
+    auto time = mpqc::duration_in_s(time0, time1);
+
+    auto right2 = lcao_factory(L"<y j|R|a b>[df]");
+    time0 = mpqc::now(world, accurate_time);
+    V_ixyj("i,x,y,j") -= left * right2;
+    time1 = mpqc::now(world, accurate_time);
+    time += mpqc::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term5 Time: ", time, " S\n");
+  }
+
+  lcao_factory.purge_formula(world, L"<j y|R|a b>[df]");
+
+  if (cabs) {
+    {
+      auto left = lcao_factory(L"<i x|G|m a'>[df]");
+      auto right1 = lcao_factory(L"<j y|R|m a'>[df]");
+      auto right2 = lcao_factory(L"<y j|R|m a'>[df]");
+
+      auto time0 = mpqc::now(world, accurate_time);
+      TA::DistArray<Tile, Policy> tmp;
+      V_ixjy("i,x,j,y") -= left * right1;
+      V_ixyj("i,x,y,j") -= left * right2;
+
+      auto time1 = mpqc::now(world, accurate_time);
+      auto time = mpqc::duration_in_s(time0, time1);
+      utility::print_par(world, "V Term6 Time: ", time, " S\n");
+    }
+    lcao_factory.purge_formula(world, L"<j y|R|m a'>[df]");
+    lcao_factory.purge_formula(world, L"<y j|R|m a'>[df]");
+
+    {
+      auto left = lcao_factory(L"<i x|G|a' m>[df]");
+      auto right1 = lcao_factory(L"<j y|R|a' m>[df]");
+      auto right2 = lcao_factory(L"<y j|R|a' m>[df]");
+
+      auto time0 = mpqc::now(world, accurate_time);
+      TA::DistArray<Tile, Policy> tmp;
+      V_ixjy("i,x,j,y") -= left * right1;
+      V_ixyj("i,x,y,j") -= left * right2;
+
+      auto time1 = mpqc::now(world, accurate_time);
+      auto time = mpqc::duration_in_s(time0, time1);
+      utility::print_par(world, "V Term7 Time: ", time, " S\n");
+    }
+    lcao_factory.purge_formula(world, L"<j y|R|a' m>[df]");
+    lcao_factory.purge_formula(world, L"<y j|R|a' m>[df]");
+  }
+
+  auto v_time1 = mpqc::now(world, accurate_time);
+  auto v_time = mpqc::duration_in_s(v_time0, v_time1);
+  utility::print_par(world, "V Term Total Time: ", v_time, " S\n");
+
+  return std::make_tuple(V_ixjy, V_ixyj);
+}
+
+template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
-    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
@@ -202,7 +342,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
-    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   TA::DistArray<Tile, Policy> V_iaxy;
@@ -296,7 +436,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -384,7 +524,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -453,7 +593,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
     tmp.truncate();
-    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape); 
+    tmp("i1,j1,i2,j2") +=
+        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
@@ -484,7 +625,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
     tmp.truncate();
-    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") +=
+        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
@@ -510,7 +652,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
     tmp.truncate();
-    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") +=
+        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -539,7 +682,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
     tmp.truncate();
-    tmp("i1,j1,i2,j2") += (2 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") +=
+        (2 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
@@ -564,7 +708,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     tmp.truncate();
     tmp("i1,j1,i2,j2") += (left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
-    tmp("i1,j1,i2,j2") = 2.0*tmp("i1,j1,i2,j2");
+    tmp("i1,j1,i2,j2") = 2.0 * tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     auto time1 = mpqc::now(world, accurate_time);
@@ -583,7 +727,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();
@@ -615,7 +759,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();

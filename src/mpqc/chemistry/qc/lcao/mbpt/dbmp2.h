@@ -58,7 +58,7 @@ struct ScfCorrection {
 };
 
 template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
+std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dual_basis_mo_build_steele(
     lcao::LCAOFactory<Tile, Policy> &lcao_factory,
     Eigen::VectorXd &ens,
     const Molecule &mols,
@@ -103,7 +103,7 @@ protected:
   void evaluate(Energy* result) override;
 
   // override RMP2's init
-  void init() override;
+  void init();
 
 private:
   std::string method_;

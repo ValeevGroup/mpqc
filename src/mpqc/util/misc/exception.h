@@ -217,6 +217,31 @@ class InputError: public Exception {
     const char *value() const MPQC__NOEXCEPT { return value_; }
 };
 
+/** This is thrown when something cannot be computed, e.g., atomic mass of a non-existent isotope.
+ */
+class Uncomputable: public Exception {
+
+  public:
+    /** Create a Uncomputable exception.
+
+        @param description a description of the problem.
+        @param file the file name where the problem occured.
+        @param line the line number where the exception occured.
+        @param exception_type the classname of the Exception
+        specialization. The default is "Uncomputable".
+
+        It is suggested that the special macros __FILE__ and __LINE__ be
+        given as the \p file and \p line arguments, respectively.
+    */
+    Uncomputable(const char *description = 0,
+                 const char *file = 0,
+                 int line = 0,
+                 const char *exception_type = "Uncomputable")
+        MPQC__NOEXCEPT;
+    Uncomputable(const Uncomputable&) MPQC__NOEXCEPT;
+    ~Uncomputable() MPQC__NOEXCEPT;
+};
+
 // ///////////////////////////////////////////////////////////////////////
 // System Exceptions
 

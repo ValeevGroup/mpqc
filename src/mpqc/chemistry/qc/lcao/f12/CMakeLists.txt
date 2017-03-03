@@ -5,8 +5,6 @@ ccsd_f12.h
 ccsd_t_f12.cpp
 ccsd_t_f12.h
 db_f12_intermediates.h
-dbccsd_f12.cpp
-dbccsd_f12.h
 dbmp2f12.cpp
 dbmp2f12.h
 f12_intermediates.h

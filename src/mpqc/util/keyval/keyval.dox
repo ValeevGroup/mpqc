@@ -196,8 +196,10 @@ Then, given a KeyVal object constructed from JSON \ref KeyValPage_Example1 "Exam
 as in \ref KeyValPage_Example2 "Example 2" we can construct a \c Bird object representing a bald eagle as follows:
 @code
 Bird bald_eagle(kv.keyval("bird:bald eagle"));
+// or, alternative syntax:
+// auto bald_eagle = kv.value<Bird>("bird:bald eagle");
 @endcode
-Note the use of KeyVal::keyval method to construct a KeyVal object representing the subtree
+Note the use of the KeyVal::keyval method to construct a KeyVal object representing the subtree
 whose root is at "bird:bald eagle" of the base KeyVal object. The ability to refer
 to keyword sections in an existing KeyVal is crucial for constructing hierarchies of C++ objects easily.
 
@@ -391,8 +393,31 @@ auto names = kv.value<std::vector<std::string>>("names");
 auto legs = kv.value<std::vector<int>>("legs");
 auto extinct = kv.value<std::vector<bool>>("extinct");
 @endcode
-Unfortunately, it is not yet possible to specify an array of objects this way.
 
+It is also possible to specify an array of objects:
+@code
+{
+  "values" : [
+    { "value" : 0 },
+    { "value" : 1 },
+    { "value" : 2 }
+  ]
+}
+@endcode
+can be parsed as follows:
+@code
+class Value {
+ public:
+  Value() = default;  // need this to put it into a container
+  Value(const KeyVal& kv) : value_(kv.value<int>("value")) {}
+ private:
+  int value_;
+};
+
+kv.value<std::vector<Value>>("values");
+@endcode
+It is not yet possible to read in polymorphic objects this way.
+        
 @note Elements of an array specified in standard syntax all have same (empty) key,
 i.e. elements of an array corresponding to path \c path are located at path \c path: . This
 scheme for assigning keys is used by Boost.PropertyTree when reading JSON arrays.

@@ -36,9 +36,19 @@ class Molecule : virtual public DescribedClass,
   int64_t total_atomic_number_ = 0;  // sum of atomic numbers of all atoms
   double natoms_ = 0.0;
 
-  void init(std::istream &file, bool sort_input);
+  /// Initializes the molecule using a vector of atoms.
+  /// @note this does not recluster.
+  /// @param atoms an rvalue ref to a vector of Atom objects opaqued as AtomBasedClusterable objects
+  /// @param sort_input if true, will resort atoms in the order of increasing distance from
+  ///        a reference point.
+  /// @param ref_point the reference point to use for sorting. By default will use the center
+  ///        of mass.
+  void init_atoms(std::vector<AtomBasedClusterable> &&atoms, bool sort_input,
+            const Vector3d *const ref_point = nullptr);
 
-  void init(std::istream &file, Vector3d const &point);
+  /// @brief Reads atoms from an XYZ file.
+  /// @return the vector of Atom objects opaqued as AtomBasedClusterable objects
+  static std::vector<AtomBasedClusterable> read_xyz(std::istream &file);
 
  public:
   /// the only way to mutate coordinates is via MolecularCoordinates
@@ -52,12 +62,12 @@ class Molecule : virtual public DescribedClass,
   /** \brief The KeyVal constructor.
    *  \param kv the KeyVal object. The following keywords will be queried in \c kv :
    *
-   *  | KeyWord | Type | Default| Description |
+   *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
-   *  |\c file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
+   *  |\c file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>). Only rank 0 in the current madness::World will read the file.|
    *  |\c atoms|array|none|Will query this if \c file_name not given. Each element of the array must specify an Atom object (see the KeyVal ctor of Atom for more info).|
-   *  |\c sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
-   *  |\c sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |\c units|string|angstrom|If \c atoms given, will use this to determine the units in which the coordinates are given. Valid choices are \c "angstrom" and \c "bohr" See UnitFactory for more information.|
+   *  |\c sort_input|boolean|true|If true, sort atoms in the order of increasing distance from the center of mass |
    *  |\c n_cluster|int|0|If nonzero, divide the Molecule into \c n_cluster clusters|
    *  |\c attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when clustering|
    *
@@ -66,7 +76,6 @@ class Molecule : virtual public DescribedClass,
    * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "molecule": {
    *    "file_name": "water20.xyz",
-   *    "sort_input": true,
    *    "n_cluster": 20
    *  }
    *
@@ -76,9 +85,12 @@ class Molecule : virtual public DescribedClass,
    *
    * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "molecule": {
-   *    "file_name": "water20.xyz",
-   *    "sort_input": true,
-   *    "n_cluster": 20
+   *    "atoms" : [
+   *      { "element" : "O", "xyz" : [0.0,  0.0, 0.0] },
+   *      { "element" : "H", "xyz" : [0.0,  1.0, 1.0] }
+   *      { "element" : "H", "xyz" : [0.0, -1.0, 1.0] }
+   *    ]
+   *    "n_cluster": 1
    *  }
    *
    * ~~~~~~~~~~~~~~~~~~~~~
@@ -86,15 +98,13 @@ class Molecule : virtual public DescribedClass,
   // clang-format on
   Molecule(const KeyVal &kv);
 
-  /*! \brief Constructor to build Molecule from stream.
-   *
-   * This constructor has same parameters as the KeyVal constructor.
+  /*! \brief Constructor to build Molecule from an XYZ-format stream.
+   * \note This is a non-clustering ctor, i.e. produces a Molecule consisting of 1 cluster.
    */
   Molecule(std::istream &file_stream, bool sort_input = true);
 
   /*! \brief Constructor to build Molecule from stream.
-   *
-   * This constructor changes the point from which the molecule is sorted
+   * \note This is a non-clustering ctor, i.e. produces a Molecule consisting of 1 cluster.
    */
   Molecule(std::istream &file_stream, Vector3d const &point);
 
@@ -143,8 +153,8 @@ class Molecule : virtual public DescribedClass,
   /// Computes the number of core electrons in the Molecule.
   int64_t core_electrons() const;
 
-  /// Returns the nuclear repulsion energy of the Molecule.
-  double nuclear_repulsion() const;
+  /// @return the nuclear repulsion energy of the Molecule.
+  double nuclear_repulsion_energy() const;
 
   /*! \brief A vector of all atoms in the Molecule
    *

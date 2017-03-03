@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
 
 #include <cmath>
+#include <utility>
 
 namespace mpqc {
 namespace cc {
@@ -13,7 +14,8 @@ namespace cc {
 /// {T1,T2} amplitude pair
 template <typename T1, typename T2>
 struct T1T2 {
-  typedef decltype(norm2(std::declval<T1>())) element_type;
+  typedef typename T1::element_type element_type;
+  typedef decltype(norm2(std::declval<T1>())) scalar_type;
   T1T2(T1 &_t1, T2 &_t2) : t1(_t1), t2(_t2) {}
 
   T1 t1;

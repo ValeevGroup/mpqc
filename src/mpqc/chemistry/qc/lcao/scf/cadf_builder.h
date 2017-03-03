@@ -13,7 +13,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_fitting_coeffs.h"
@@ -233,7 +233,7 @@ class CADFFockBuilder : public FockBuilder {
                shape_time + cut_time;
     }
 
-    fock_builder.AddMember("Forced Sahpe", use_forced_shape_, d.GetAllocator());
+    fock_builder.AddMember("Forced Shape", use_forced_shape_, d.GetAllocator());
     if (use_forced_shape_) {
       fock_builder.AddMember("Forced Shape Threshold", force_threshold_,
                              d.GetAllocator());

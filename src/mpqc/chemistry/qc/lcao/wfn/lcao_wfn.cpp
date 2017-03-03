@@ -12,6 +12,7 @@ namespace lcao {
 template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 template class LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
+template class PeriodicLCAOWavefunction<TA::TensorZ, TA::SparsePolicy>;
 #endif
 
 }

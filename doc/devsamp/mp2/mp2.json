@@ -1,19 +1,35 @@
 {
   "property" : {
     "type" : "Energy",
-    "wfn" : "$:wfn"
+    "wfn" : "$:mp2"
   },
-  "wfn":{
+  "mp2":{
     "type": "MP2",
-    "molecule" : "$:molecule",
+    "frozen_core" : true,
+    "atoms" : "$:water",
+    "wfn_world" : "$:wfn_world",
+    "ref" : "$:rhf"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:water",
     "basis" : "$:basis"
   },
-  "molecule": {
-    "file_name": "water.xyz"
+  "rhf":{
+    "type": "RHF",
+    "atoms" : "$:water",
+    "wfn_world" : "$:wfn_world"
+  },
+  "water": {
+    "atoms": [
+      { "element": "O", "xyz":[ 0.00000, -0.07579,  0.00000] },
+      { "element": "H", "xyz":[ 0.86681,  0.60144,  0.00000] },
+      { "element": "H", "xyz":[-0.86681,  0.60144,  0.00000] }
+    ]
   },
   "basis": {
     "name": "6-31G",
-    "molecule": "$:molecule"
+    "molecule": "$:water"
   }
 }
 

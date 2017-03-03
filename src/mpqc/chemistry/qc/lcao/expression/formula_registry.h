@@ -5,10 +5,12 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_
 
+#include <map>
+
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
-#include <map>
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 
@@ -79,20 +81,24 @@ class Registry {
     return iter != registry_.end();
   }
 
-  /// find item, return iterator, if not found, throw
+  /// find item by key, return non-const reference to the value
+  /// @param key the item key
+  /// @throw ProgrammingError if \c key not found
   Value& retrieve(const Key& key) {
     auto iter = registry_.find(key);
     if (iter == registry_.end()) {
-      throw std::runtime_error("Key not found!");
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
     }
     return iter->second;
   }
 
-  /// find item, return const iterator, if not found, throw
+  /// find item by key, return const reference to the value
+  /// @param key the item key
+  /// @throw ProgrammingError if \c key not found
   const Value& retrieve(const Key& key) const {
     auto iter = registry_.find(key);
     if (iter == registry_.cend()) {
-      throw std::runtime_error("Key not found!");
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
     }
     return iter->second;
   }
@@ -162,14 +168,12 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges all objects if p(key) == true
   template <typename Pred>
-  void purge_if(madness::World& world, const Pred& p) {
-    //    world.gop.fence();
+  void purge_if(const Pred& p) {
     auto i = this->registry_.begin();
     for (; i != this->registry_.end();) {
       if (p(*i)) {
-        utility::print_par(world, "Removed from Registry: ");
-        utility::print_par(world, utility::to_string(i->first.string()));
-        utility::print_par(world, "\n");
+        ExEnv::out0() << indent << "Removed from Registry: ";
+        ExEnv::out0() << utility::to_string(i->first.string()) << "\n";
         this->registry_.erase(i++);
       } else {
         ++i;
@@ -178,50 +182,50 @@ class FormulaRegistry : public Registry<Formula, Value> {
   }
 
   /// purges formulae that contain Operator whose type matches \c optype
-  void purge_operator(madness::World& world, const Operator::Type& optype) {
+  void purge_operator(const Operator::Type& optype) {
     auto pred = [optype](const value_type& item) {
       return item.first.oper().type() == optype;
     };
 
-    this->purge_if(world, pred);
+    this->purge_if(pred);
   }
 
   /// purges formulae that contain Operator described by string \c opstr
-  void purge_operator(madness::World& world, const std::wstring& opstr) {
+  void purge_operator(const std::wstring& opstr) {
     Operator oper(opstr);
     Operator::Type oper_type = oper.type();
-    purge_operator(world, oper_type);
+    purge_operator(oper_type);
   }
 
   /// purges the Formula object that equals \c formula from the registry
-  void purge_formula(madness::World& world, const Formula& formula) {
+  void purge_formula(const Formula& formula) {
     auto pred = [&formula](const value_type& item) {
       return item.first == formula;
     };
 
-    this->purge_if(world, pred);
+    this->purge_if(pred);
   }
 
   /// purges the formula that that corresponds to string \c str
-  void purge_formula(madness::World& world, const std::wstring& str) {
+  void purge_formula(const std::wstring& str) {
     Formula formula(str);
-    purge_formula(world, formula);
+    purge_formula(formula);
   }
 
   /// purges formulae that contain index \c idx
-  void purge_index(madness::World& world, const OrbitalIndex& idx) {
+  void purge_index(const OrbitalIndex& idx) {
     auto pred = [&idx](const value_type& item) {
       return item.first.has_index(idx);
     };
 
-    this->purge_if(world, pred);
+    this->purge_if(pred);
   }
 
   /// purges all formula in registry
-  void purge(madness::World& world) {
+  void purge() {
     auto pred = [](const value_type& item) { return true; };
 
-    this->purge_if(world, pred);
+    this->purge_if(pred);
   }
 };
 }  // namespace mpqc

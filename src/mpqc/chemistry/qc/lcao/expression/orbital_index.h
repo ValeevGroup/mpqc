@@ -119,9 +119,9 @@ class OrbitalIndex {
   /**
    * \brief constructs from a label
    *
-   * Construct OrbitalIndex from a std::wstring
+   * Construct OrbitalIndex from a string object
+   * @tparam String a string type (std::basic_string or const char*)
    * @param symbol
-   * check description of class for mappings
    */
   template <typename String,
             typename = typename std::enable_if<not std::is_same<
@@ -156,7 +156,7 @@ class OrbitalIndex {
   bool is_ao() const;
 
   /// if molecular orbital index
-  bool is_mo() const;
+  bool is_lcao() const;
 
   /// return true if is mo in obs
   bool is_mo_in_obs() const;

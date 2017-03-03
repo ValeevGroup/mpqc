@@ -142,15 +142,15 @@ std::shared_ptr<mpqc::KeyVal>
 MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
   std::shared_ptr<mpqc::KeyVal> kv;
   try {
-    kv = __make_keyval(world, filename, InputFormat::xml);
-    input_format_ = InputFormat::xml;
+    kv = __make_keyval(world, filename, InputFormat::json);
+    input_format_ = InputFormat::json;
   }
   catch(...) {
   }
   if (input_format_ == InputFormat::invalid) {
     try {
-      kv = __make_keyval(world, filename, InputFormat::json);
-      input_format_ = InputFormat::json;
+      kv = __make_keyval(world, filename, InputFormat::xml);
+      input_format_ = InputFormat::xml;
     }
     catch(std::exception& e) {
     }

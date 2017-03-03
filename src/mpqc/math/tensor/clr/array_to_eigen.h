@@ -97,8 +97,8 @@ inline TA::TensorZ mat_to_tile<TA::TensorZ>(
  * @tparam Policy
  * @param world
  * @param M  Eigen matrix, must be replicated on all nodes
- * @param tr0
- * @param tr1
+ * @param tr0 the TiledArray::TiledRange1 object for the row dimension of the result
+ * @param tr1 the TiledArray::TiledRange1 object for the column dimension of the result
  * @param cut
  * @return
  */
@@ -107,6 +107,11 @@ TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolic
 eigen_to_array(
     madness::World &world, Matrix<typename Tile::numeric_type> const &M,
     TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
+
+  // make sure dimensions of M match the dimensions of tiled ranges
+  assert(M.rows() == tr0.extent() && "eigen_to_array(): row dimensions do not match");
+  assert(M.cols() == tr1.extent() && "eigen_to_array(): col dimensions do not match");
+
   TA::TiledRange trange{tr0, tr1};
   TA::Tensor<float> norms(
       trange.tiles_range(),
@@ -138,8 +143,8 @@ eigen_to_array(
  * @tparam Policy TA::DensePolicy
  * @param world
  * @param M  Eigen matrix, must be replicated on all nodes
- * @param tr0
- * @param tr1
+ * @param tr0 the TiledArray::TiledRange1 object for the row dimension of the result
+ * @param tr1 the TiledArray::TiledRange1 object for the column dimension of the result
  * @param cut
  * @return
  */
@@ -148,8 +153,12 @@ TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy
 eigen_to_array(
     madness::World &world, Matrix<typename Tile::numeric_type> const &M,
     TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
-  TA::TiledRange trange{tr0, tr1};
 
+  // make sure dimensions of M match the dimensions of tiled ranges
+  assert(M.rows() == tr0.extent() && "eigen_to_array(): row dimensions do not match");
+  assert(M.cols() == tr1.extent() && "eigen_to_array(): col dimensions do not match");
+
+  TA::TiledRange trange{tr0, tr1};
   TA::DistArray<Tile, TA::DensePolicy> array(world, trange);
 
   auto const &pmap = array.pmap();

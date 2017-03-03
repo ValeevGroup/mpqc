@@ -303,8 +303,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block g_dabi_low{0, a_low, b_low, 0};
         block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
 
-        std::cout << "a_low = " << a_low << std::endl;
-        std::cout << "g_dabi.trange() = " << g_dabi.trange() << std::endl;
         auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
 
         // block for t2_cdk
@@ -312,8 +310,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
 
         auto block_t2_dcjk = t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
-
-        std::cout << "t2_left.trange() = " << t2_left.trange() << std::endl;
 
         // block for g_cjkl
         block g_cjkl_low{c_low, 0, 0, 0};
@@ -338,7 +334,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                (block_t2_abil * block_g_cjkl).set_world(this_world))
                   .set_world(this_world);
         }
-        std::cout << "t3.trange() = " << t3.trange() << std::endl;
       }
     };
 
@@ -1131,16 +1126,17 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray g_dabi = get_abci();
     TArray g_abij = get_abij();
 
-
+    bool DF = this->is_df();
+    DF = false;
     //obtaining DF-integrals
     TArray Xab;
     TArray Xai;
-    if (this->is_df()) {
+    if (DF) {
       std::cout << "DF calculation" << std::endl;
       /// get three center integral (X|ab)
       //TArray Xab;
       TArray sqrt =
-          this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+          this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
       TArray Kab = this->lcao_factory().compute(L"(Κ|G|a b)");
       Xab("K,a,b") = sqrt("K,Q") * Kab("Q,a,b");
 
@@ -1149,13 +1145,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       Xai("K,a,i") = sqrt("K,Q") * Kai("Q,a,i");
     }
 
-
     // definition of orbital spaces
     auto n_occ = this->trange1_engine()->get_occ();
     auto n_frozen = this->trange1_engine()->get_nfrozen();
 
     // copying orbital energies into Eigen vector
-    Eigen::VectorXd &e_orb = *this->orbital_energy();
+    Eigen::VectorXd const &e_orb = *this->orbital_energy();
 
     // definition of alpha parameter required for the Gaussian quadrature
     // defined as in paper: Constans, Pere, Philippe Y. Ayala, and Gustavo E.
@@ -1261,8 +1256,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
 
     // get trange1
-    auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
-    auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    auto n_tr_occ = this->trange1_engine()->get_active_occ_blocks();
+    auto n_tr_vir = this->trange1_engine()->get_vir_blocks();
 
 
     auto& global_world = this->wfn_world()->world();
@@ -1315,7 +1310,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       TArray Xab_lt;
       TArray Xai_lt;
-      if (this->is_df()) {
+      if (DF) {
         Xab_lt = Xab_laplace_transform(
             Xab, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
@@ -1404,7 +1399,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }*/
 
       TArray gg1;
-      if (this->is_df()) {
+      if (DF) {
         gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
       }
 
@@ -1472,7 +1467,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
           {
-            if (this->is_df()) {
+            if (DF) {
 
               time22 = mpqc::now(world, accurate_time);
               auto n_tr_aux = Xab.range().upbound()[0];
@@ -1609,7 +1604,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
           }
-          if (this->is_df()) {
+          if (DF) {
 
             time22 = mpqc::now(world, accurate_time);
             auto n_tr_aux = Xab.range().upbound()[0];
@@ -1694,7 +1689,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
             T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
 
-            if (this->is_df()) {
+            if (DF) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1764,7 +1759,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           {
 
             //O2V4 singles contributions
-            //if (this->is_df()) {
+            //if (DF) {
               /*
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1873,18 +1868,19 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       global_world.gop.sum(time_T_OV5);
       global_world.gop.sum(time_trace);
 
-      time40 = mpqc::now(world, accurate_time);
       TArray gt1;
-      gt1("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,j,i");
-      time41 = mpqc::now(world, accurate_time);
-      time_gt1_G4_DF += mpqc::duration_in_s(time40, time41);
-
-      time44 = mpqc::now(world, accurate_time);
       TArray gt2;
-      gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
-      time45 = mpqc::now(world, accurate_time);
-      time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
+      if (DF) {
+        time40 = mpqc::now(world, accurate_time);
+        gt1("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,j,i");
+        time41 = mpqc::now(world, accurate_time);
+        time_gt1_G4_DF += mpqc::duration_in_s(time40, time41);
 
+        time44 = mpqc::now(world, accurate_time);
+        gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
+        time45 = mpqc::now(world, accurate_time);
+        time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
+      }
 
       E_O2V4_vo = 0.0;
       TA::set_default_world(this_world);
@@ -1918,7 +1914,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           E_O2V4_vo += TA::dot(G2("e,a,i,f"),G2("f,a,i,e") - 4.0*G3("f,a,i,e"));
           {
-            if (this->is_df()) {
+            if (DF) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -2319,7 +2315,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
         typedef std::vector<std::size_t> block;
 
-        if (this->is_df()) {
+        if (DF) {
 
           auto n_tr_aux = Xab.range().upbound()[0];
 

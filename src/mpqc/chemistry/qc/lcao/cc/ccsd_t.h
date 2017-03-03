@@ -1860,6 +1860,18 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       global_world.gop.sum(time_T_OV5);
       global_world.gop.sum(time_trace);
 
+      time40 = mpqc::now(world, accurate_time);
+      TArray gt1;
+      gt1("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,j,i");
+      time41 = mpqc::now(world, accurate_time);
+      time_gt1_G4_DF += mpqc::duration_in_s(time40, time41);
+
+      time44 = mpqc::now(world, accurate_time);
+      TArray gt2;
+      gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
+      time45 = mpqc::now(world, accurate_time);
+      time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
+
 
       E_O2V4_vo = 0.0;
       TA::set_default_world(this_world);
@@ -1897,15 +1909,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
-              time40 = mpqc::now(world, accurate_time);
               block Xab_low{0, 0, a_low};
               block Xab_up{n_tr_aux, n_tr_vir, a_up};
               auto block_Xab_lt_ba = Xab_lt("X,e,a").block(Xab_low, Xab_up);
-
-              TArray gt1;
-              gt1("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,j,i");
-              time41 = mpqc::now(world, accurate_time);
-              time_gt1_G4_DF += mpqc::duration_in_s(time40, time41);
 
               time42 = mpqc::now(world, accurate_time);
               TArray G4;
@@ -1914,12 +1920,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               E_O2V4_vo += TA::dot(G3("e,a,i,f"),2.0*G4("f,a,i,e") + G3("f,a,i,e"));
               time43 = mpqc::now(world, accurate_time);
               time_G4_DF += mpqc::duration_in_s(time42, time43);
-
-              time44 = mpqc::now(world, accurate_time);
-              TArray gt2;
-              gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
-              time45 = mpqc::now(world, accurate_time);
-              time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
 
               time46 = mpqc::now(world, accurate_time);
               time_G1_DF += mpqc::duration_in_s(time44, time45);

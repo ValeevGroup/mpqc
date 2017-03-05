@@ -1234,6 +1234,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time52;
     mpqc::time_point time53;
     mpqc::time_point time54;
+    mpqc::time_point time55;
+    mpqc::time_point time56;
+    mpqc::time_point time57;
+    mpqc::time_point time58;
+    mpqc::time_point time59;
+    mpqc::time_point time60;
 
     double int_transform1 = 0.0;
     double int_transform2 = 0.0;
@@ -1244,6 +1250,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_t1 = 0.0;
     double time_t1_v = 0.0;
     double time_t1_o = 0.0;
+    double time_t1_O2V4_S = 0.0;
+    double time_t1_O2V3_S = 0.0;
+    double time_t1_O3V3_S = 0.0;
 
 
     double time_T_OV5 = 0.0;
@@ -1697,7 +1706,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
             T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
 
-            /*if (DF) {
+            if (DF) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1735,7 +1744,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               auto block_Xab_lt = Xab_lt("X,e,a").block(Xab_low, Xab_up);
               E_O2V4_2 += TA::dot(gtT("e,a,X"),block_Xab_lt);
 
-            } else {*/
+            } else {
 
               TArray G1;
               TArray G2;
@@ -1761,7 +1770,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               TArray G;
               G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
               E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
-            //}
+            }
           }
 
           /*{
@@ -2411,6 +2420,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       TA::set_default_world(global_world);
       global_world.gop.sum(E_O2V4_S);*/
+
+      time55 = mpqc::now(world, accurate_time);
+
       {
         /*TArray T1;
         TArray T2;
@@ -2463,7 +2475,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
 
       }
+      time56 = mpqc::now(world, accurate_time);
+      time_t1_O2V4_S += mpqc::duration_in_s(time55, time56);
 
+      time57 = mpqc::now(world, accurate_time);
       double E_O2V3_S = 0.0;
       {
         {
@@ -2498,7 +2513,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
         E_O2V3_S += TA::dot((2.0*G1("f,a") - G2("f,a")),(4.0*T1("f,a") - 2.0*T2("f,a")));
       }
+      time58 = mpqc::now(world, accurate_time);
+      time_t1_O2V3_S += mpqc::duration_in_s(time57, time58);
 
+      time59 = mpqc::now(world, accurate_time);
       double E_O3V3_S = 0.0;
       {
         TArray T1;
@@ -2528,6 +2546,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_O3V3_S += TA::dot((2.0*G2("a,i,j,f") + 2.0*G3("a,i,j,f")),T2("a,i,j,f"));
         }
       }
+      time60 = mpqc::now(world, accurate_time);
+      time_t1_O3V3_S += mpqc::duration_in_s(time59, time60);
 
       time51 = mpqc::now(world, accurate_time);
       time_t1_v += mpqc::duration_in_s(time50, time51);
@@ -2665,6 +2685,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "time_t1: " << time_t1 << " S \n";
       std::cout << "time_t1_v: " << time_t1_v << " S \n";
       std::cout << "time_t1_o: " << time_t1_o << " S \n";
+      std::cout << "time_t1_O2V4_S: " << time_t1_O2V4_S << " S \n";
+      std::cout << "time_t1_O2V3_S: " << time_t1_O2V3_S << " S \n";
+      std::cout << "time_t1_O3V3_S: " << time_t1_O3V3_S << " S \n";
       std::cout << "time_G_OV5: " << time_G_OV5 << " S \n";
       std::cout << "time_T_OV5: " << time_T_OV5 << " S \n";
       std::cout << "time_trace: " << time_trace << " S \n";

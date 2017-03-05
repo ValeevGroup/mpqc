@@ -1876,7 +1876,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       //global_world.gop.sum(time_T_OV5);
       //global_world.gop.sum(time_trace);
 
-      /*TArray gt1;
+      TArray gt1;
       TArray gt2;
       if (DF) {
         time40 = mpqc::now(world, accurate_time);
@@ -1888,7 +1888,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
         time45 = mpqc::now(world, accurate_time);
         time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
-      }*/
+      }
 
 
       E_O2V4_vo = 0.0;
@@ -1923,7 +1923,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           E_O2V4_vo += TA::dot(G2("e,a,i,f"),G2("f,a,i,e") - 4.0*G3("f,a,i,e"));
           {
-            /*if (DF) {
+            if (DF) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1948,7 +1948,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
               E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
 
-            } else {*/
+            } else {
 
               block g_dabi_low_ba{0, 0, a_low, 0};
               block g_dabi_up_ba{n_tr_vir, n_tr_vir, a_up, n_tr_occ};
@@ -1966,7 +1966,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             }
           }
         }
-      //}
+      }
       TA::set_default_world(global_world);
       global_world.gop.sum(E_O2V4_vo);
       /*global_world.gop.sum(time_G2);

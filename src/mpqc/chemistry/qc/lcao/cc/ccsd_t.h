@@ -1127,7 +1127,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray g_abij = get_abij();
 
     bool DF = this->is_df();
-    DF = false;
+    DF = true;
     //obtaining DF-integrals
     TArray Xab;
     TArray Xai;
@@ -1229,6 +1229,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time45;
     mpqc::time_point time46;
     mpqc::time_point time47;
+    mpqc::time_point time50;
+    mpqc::time_point time51;
+    mpqc::time_point time52;
+    mpqc::time_point time53;
+    mpqc::time_point time54;
 
     double int_transform1 = 0.0;
     double int_transform2 = 0.0;
@@ -1237,6 +1242,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_t2_ov = 0.0;
     double time_t2_oo = 0.0;
     double time_t1 = 0.0;
+    double time_t1_v = 0.0;
+    double time_t1_o = 0.0;
+
 
     double time_T_OV5 = 0.0;
     double time_G_OV5 = 0.0;
@@ -1398,10 +1406,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }*/
 
-      /*TArray gg1;
+      TArray gg1;
       if (DF) {
         gg1("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
-      }*/
+      }
 
       /*double E_OV5 = 0;
       TA::set_default_world(this_world);
@@ -1604,7 +1612,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
           }
-          /*if (DF) {
+          if (DF) {
 
             time22 = mpqc::now(world, accurate_time);
             auto n_tr_aux = Xab.range().upbound()[0];
@@ -1650,7 +1658,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time36 = mpqc::now(world, accurate_time);
             time_ggT2trace += mpqc::duration_in_s(time35, time36);
 
-          } else*/
+          } else
           {
             TArray G;
 
@@ -1868,7 +1876,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       //global_world.gop.sum(time_T_OV5);
       //global_world.gop.sum(time_trace);
 
-      TArray gt1;
+      /*TArray gt1;
       TArray gt2;
       if (DF) {
         time40 = mpqc::now(world, accurate_time);
@@ -1880,7 +1888,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         gt2("f,X,i") = Xai_lt("X,b,j") * t2_oou_lt("f,b,i,j");
         time45 = mpqc::now(world, accurate_time);
         time_gt2_G1_DF += mpqc::duration_in_s(time44, time45);
-      }
+      }*/
 
 
       E_O2V4_vo = 0.0;
@@ -2423,6 +2431,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
         }*/
 
+        time50 = mpqc::now(world, accurate_time);
         //This implementation is at most O3V3 scaling
         //2G1-4G3
         {
@@ -2520,8 +2529,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
 
+      time51 = mpqc::now(world, accurate_time);
+      time_t1_v += mpqc::duration_in_s(time50, time51);
+
       energy_ms = E_O2V4_S + E_O2V3_S + E_O3V3_S;
 
+      time52 = mpqc::now(world, accurate_time);
       double E_O3V2_S = 0.0;
       {
         TArray T1;
@@ -2616,6 +2629,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
 
+      time53 = mpqc::now(world, accurate_time);
+      time_t1_o += mpqc::duration_in_s(time52, time53);
+
       time13 = mpqc::now(world, accurate_time);
       time_t1 += mpqc::duration_in_s(time12, time13);
 
@@ -2647,6 +2663,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
       std::cout << "time_t2_ov: " << time_t2_ov << " S \n";
       std::cout << "time_t1: " << time_t1 << " S \n";
+      std::cout << "time_t1_v: " << time_t1_v << " S \n";
+      std::cout << "time_t1_o: " << time_t1_o << " S \n";
       std::cout << "time_G_OV5: " << time_G_OV5 << " S \n";
       std::cout << "time_T_OV5: " << time_T_OV5 << " S \n";
       std::cout << "time_trace: " << time_trace << " S \n";

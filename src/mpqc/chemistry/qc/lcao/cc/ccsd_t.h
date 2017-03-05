@@ -1674,7 +1674,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           }
 
           //Mixed term contributions
-          /*{
+          {
             TArray T1;
             TArray T2;
 
@@ -1689,7 +1689,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
             T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
 
-            if (DF) {
+            /*if (DF) {
 
               auto n_tr_aux = Xab.range().upbound()[0];
 
@@ -1727,7 +1727,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               auto block_Xab_lt = Xab_lt("X,e,a").block(Xab_low, Xab_up);
               E_O2V4_2 += TA::dot(gtT("e,a,X"),block_Xab_lt);
 
-            } else {
+            } else {*/
 
               TArray G1;
               TArray G2;
@@ -1753,10 +1753,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               TArray G;
               G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
               E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
-            }
+            //}
           }
 
-          {
+          /*{
 
             //O2V4 singles contributions
             //if (DF) {
@@ -1861,7 +1861,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       TA::set_default_world(global_world);
       global_world.gop.sum(E_OV5);
-      //global_world.gop.sum(E_O2V4_2);
+      global_world.gop.sum(E_O2V4_2);
       //global_world.gop.sum(E_O2V4_S);
       //global_world.gop.sum(E_O3V3_S2);
       //global_world.gop.sum(time_G_OV5);
@@ -2198,7 +2198,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //computation of the O2V4 terms
       //double E_O2V4_2 = 0;
-      {
+      /*{
         TArray T1;
         TArray T2;
 
@@ -2218,7 +2218,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("b,c,i,n");
           E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
         }
-      }
+      }*/
 
       double E_O3V3_2 = 0;
       {

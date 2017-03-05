@@ -1332,7 +1332,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       //computation of the OV5 terms
       double E_O2V4_vo = 0;
       double E_OV5 = 0;
-      {
+      /*{
         TArray T1;
         TArray T2;
 
@@ -1347,7 +1347,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_OV5 = TA::dot(G("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
         }
         //with DF
-        /*{
+        {
           time25 = mpqc::now(world, accurate_time);
           TArray gg;
           gg("X,Y") = Xai_lt("X,c,i") * Xai_lt("Y,c,i");
@@ -1390,13 +1390,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_OV5 -= TA::dot(G2("e,b,a,f"),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
         }*/
 
-        {
+      /*  {
           TArray G;
           G("e,b,a,f") = g_dabi_lt("e,b,c,i")*g_dabi_lt("f,a,c,i");
           E_OV5 += TA::dot(G("e,b,a,f"),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
 
         }
-      }
+      }*/
 
       /*TArray gg1;
       if (DF) {
@@ -1538,7 +1538,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       double E_O2V4_2 = 0;
       double E_O2V4_S = 0.0;
       double E_O3V3_S2 = 0.0;
-      /*TA::set_default_world(this_world);
+      TA::set_default_world(this_world);
       std::size_t global_iter = 0;
       for (auto a = 0; a < n_tr_vir; ++a) {
         for (auto b = 0; b < n_tr_vir; ++b) {
@@ -1604,7 +1604,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
           }
-          if (DF) {
+          /*if (DF) {
 
             time22 = mpqc::now(world, accurate_time);
             auto n_tr_aux = Xab.range().upbound()[0];
@@ -1650,7 +1650,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time36 = mpqc::now(world, accurate_time);
             time_ggT2trace += mpqc::duration_in_s(time35, time36);
 
-          } else
+          } else*/
           {
             TArray G;
 
@@ -1671,7 +1671,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
             time25 = mpqc::now(world, accurate_time);
             time_trace += mpqc::duration_in_s(time24, time25);
-          }*/
+          }
 
           //Mixed term contributions
           /*{
@@ -1855,12 +1855,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
               E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));*/
             //}
 
-      //    }
+          //}
 
-      //  }
-      //}
-      //TA::set_default_world(global_world);
-      //global_world.gop.sum(E_OV5);
+        }
+      }
+      TA::set_default_world(global_world);
+      global_world.gop.sum(E_OV5);
       //global_world.gop.sum(E_O2V4_2);
       //global_world.gop.sum(E_O2V4_S);
       //global_world.gop.sum(E_O3V3_S2);

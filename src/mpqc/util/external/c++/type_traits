@@ -25,6 +25,12 @@ using enable_if_t = typename std::enable_if<B, U>::type;
 // C++17 features
 #if __cplusplus <= 201402L
 
+// GNU stdlibc++ provides void_t if -gnu++11 or -gnu++14 are given
+#if __GNUC__ && !__STRICT_ANSI__ && __cplusplus >= 201103L
+#define HAVE_VOID_T
+#endif
+
+#ifndef HAVE_VOID_T
 /*! \brief void_t typedef
  *
  * This is a standard C++ 17 feature, but we don't want to require C++ 17
@@ -37,6 +43,7 @@ struct make_void {
 
 template <typename... Ts>
 using void_t = typename make_void<Ts...>::type;
+#endif
 
 #endif  // C++17 features
 

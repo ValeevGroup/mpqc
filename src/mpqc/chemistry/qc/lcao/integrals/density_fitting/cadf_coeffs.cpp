@@ -130,20 +130,23 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     auto const &range = in.range();
     auto ext = range.extent_data();
 
-    TA::Tensor<float> out(range, 0.0);
+    std::vector<std::pair<std::array<int,3>, float>> norms;
+    norms.reserve(ext[1] * ext[2]);
 
+    using idx_type = std::array<int, 3>;
+    auto val_max = std::numeric_limits<float>::max();
     for (auto a = 0; a < ext[1]; ++a) {
       for (auto b = 0; b < ext[2]; ++b) {
         auto in_val = std::max(in(a, a, b), in(b, a, b));
 
         if (in_val >= thresh) {
-          out(a, a, b) = std::numeric_limits<float>::max();
-          out(b, a, b) = std::numeric_limits<float>::max();
+          norms.emplace_back(std::make_pair(idx_type{a,a,b}, val_max));
+          norms.emplace_back(std::make_pair(idx_type{b,a,b}, val_max));
         }
       }
     }
 
-    return out;
+    return norms;
   };
 
   auto three_array = std::vector<gaussian::Basis>{dfbs, obs, obs};
@@ -151,8 +154,10 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
   auto trange = gaussian::detail::create_trange(three_array);
   auto pmap =
       TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+
+  bool replicate = true;
   auto norms =
-      eri3_norms(screener->norm_estimate(world, three_array, *pmap, true));
+      eri3_norms(screener->norm_estimate(world, three_array, *pmap, replicate));
 
   auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
                                       std::move(screener));

@@ -285,12 +285,12 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
       make_integral_builder(std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
-  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
+  auto task_f = [=](int64_t ord, detail::IdxVec idx_task, TA::Range rng,
                     TA::TensorF *tile_norms_ptr, Tile *out_tile) {
 
     // This is why builder was made into a shared_ptr.
     auto &builder = *builder_ptr;
-    auto ta_tile = builder.integrals(idx, std::move(rng));
+    auto ta_tile = builder.integrals(idx_task, std::move(rng));
 
     const auto tile_volume = ta_tile.range().volume();
     const auto tile_norm = ta_tile.norm();
@@ -319,7 +319,9 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
+  world.gop.fence();
   out.truncate();
+  world.gop.fence();
 
   return out;
 }

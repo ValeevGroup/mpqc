@@ -202,6 +202,11 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
+    auto default_precision = std::numeric_limits<double>::epsilon();
+    precision_ = kv.value<double>(prefix + "precision", default_precision);
+    detail::integral_engine_precision = precision_;
+    ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
+
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
 
@@ -250,7 +255,6 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
                            BasisVector const &bases,
                            std::shared_ptr<Screener> p_screen =
                                std::make_shared<Screener>(Screener{})) {
-    detail::integral_engine_precision = 0.0;
     auto result = sparse_complex_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
@@ -378,6 +382,7 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
 
   bool print_detail_;  ///> if true, print a lot more details
   std::string screen_;
+  double precision_;
   double screen_threshold_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
@@ -430,7 +435,7 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   ExEnv::out0() << "\nComputing One Body Integral for Periodic System: "
                 << utility::to_string(formula.string()) << std::endl;
 
-  auto time0 = mpqc::now(this->world(), false);
+  auto time0 = mpqc::now(world, false);
   if (formula.oper().type() == Operator::Type::Kinetic ||
       formula.oper().type() == Operator::Type::Overlap) {
     parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
@@ -450,12 +455,12 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     }
   } else
     throw std::runtime_error("Rank-2 operator type not supported");
-  auto time1 = mpqc::now(this->world(), false);
+  auto time1 = mpqc::now(world, false);
   auto time = mpqc::duration_in_s(time0, time1);
 
   size = mpqc::detail::array_size(result);
-  utility::print_par(this->world(), " Size: ", size, " GB");
-  utility::print_par(this->world(), " Time: ", time, " s\n");
+  utility::print_par(world, " Size: ", size, " GB");
+  utility::print_par(world, " Time: ", time, " s\n");
 
   return result;
 }
@@ -835,7 +840,7 @@ typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen, Op op) {
-  auto time0 = mpqc::now(this->world(), true);
+  auto time0 = mpqc::now(world, true);
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -874,7 +879,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-  auto time_f0 = mpqc::now(this->world(), true);
+  auto time_f0 = mpqc::now(world, true);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -909,7 +914,6 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
     std::shared_ptr<Screener> screen, Op op) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms = screen->norm_estimate(world, bases);
 
   // Copy the Bases for the Integral Builder
@@ -934,9 +938,9 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange,
                                                       std::move(shape));
-  auto pmap = out.get_pmap();
+  auto pmap = out.pmap();
 
-  for (auto const ord : *pmap) {
+  for (auto const &ord : *pmap) {
     if (!out.is_zero(ord)) {
       detail::IdxVec idx = trange.tiles_range().idx(ord);
       auto range = trange.make_tile_range(ord);

@@ -143,10 +143,13 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
 template <typename Tile, typename Policy>
 void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   if (!this->computed()) {
+    auto& world = this->wfn_world()->world();
     auto target_precision = ex_energy->target_precision(0);
     auto target_ref_precision = target_precision / 100.0;
 
     this->init_sdref(ref_wfn_, target_ref_precision);
+
+    auto time0 = mpqc::fenced_now(world);
 
     auto n_roots = ex_energy->n_roots();
 
@@ -168,6 +171,10 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     this->computed_ = true;
     this->set_value(ex_energy, result);
+
+    auto time1 = mpqc::fenced_now(world);
+    ExEnv::out0() << "CIS Total Time: " << mpqc::duration_in_s(time0, time1)
+                  << " S\n";
   }
 }
 

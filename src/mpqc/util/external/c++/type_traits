@@ -31,16 +31,10 @@ using enable_if_t = typename std::enable_if<B, U>::type;
 #endif
 
 #ifndef HAVE_VOID_T
-/*! \brief void_t typedef
- *
- * This is a standard C++ 17 feature, but we don't want to require C++ 17
- * compilers yet
- */
 template <typename... Ts>
 struct make_void {
   using type = void;
 };
-
 template <typename... Ts>
 using void_t = typename make_void<Ts...>::type;
 #endif

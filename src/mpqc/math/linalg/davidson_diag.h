@@ -195,7 +195,7 @@ class DavidsonDiag {
     // orthognolize new residual with original B
     gram_schmidt(B, n_v);
     // call it twice
-//    gram_schmidt(B, n_v);
+    gram_schmidt(B, n_v);
 
 #ifndef NDEBUG
     const auto k = B.size();

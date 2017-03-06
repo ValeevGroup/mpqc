@@ -13,6 +13,29 @@
 namespace mpqc {
 namespace lcao {
 
+namespace detail {
+
+template <typename T>
+void print_cis_iteration(std::size_t iter, T norm, const EigenVector<T>& eig,
+                         double time1, double time2) {
+  ExEnv::out0() << indent << "iteration: " << iter << "\n";
+  ExEnv::out0() << indent << "norm: " << norm << "\n";
+  ExEnv::out0() << indent << "excitation energy: "
+                << "\n";
+
+  const auto size = eig.size();
+  for (auto i = 0; i < size - 1; i++) {
+    ExEnv::out0() << indent << indent << eig[i] << "\n";
+  }
+  ExEnv::out0() << indent << indent << eig[size - 1];
+
+  ExEnv::out0() << "\n";
+  ExEnv::out0() << indent << "total time: " << time1 + time2 << " S\n";
+  ExEnv::out0() << indent << indent << "product time: " << time1 << " S\n";
+  ExEnv::out0() << indent << indent << "davidson time: " << time2 << " S\n\n";
+}
+}
+
 /**
  * CIS for closed shell system
  *
@@ -37,12 +60,12 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
                    const EigenVector<numeric_type>& eps_V)
         : eps_o(eps_O), eps_v(eps_V) {}
 
-    void operator()(const numeric_type& e, TA::DistArray<Tile,Policy>& guess) const{
-
+    void operator()(const numeric_type& e,
+                    TA::DistArray<Tile, Policy>& guess) const {
       const auto& eps_v = this->eps_v;
       const auto& eps_o = this->eps_o;
 
-      auto task = [&eps_v,&eps_o, e](TA::TensorD& result_tile) {
+      auto task = [&eps_v, &eps_o, e](TA::TensorD& result_tile) {
         const auto& range = result_tile.range();
         float norm = 0.0;
         for (const auto& i : range) {
@@ -149,9 +172,18 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 }
 
 template <typename Tile, typename Policy>
-std::vector<typename CIS<Tile,Policy>::numeric_type> CIS<Tile, Policy>::compute_cis(
+std::vector<typename CIS<Tile, Policy>::numeric_type>
+CIS<Tile, Policy>::compute_cis(
     std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
     double converge, bool triplets) {
+  ExEnv::out0() << "\n";
+  ExEnv::out0() << indent << "CIS: " << (triplets ? "Triplets" : "Singlets")
+                << "\n";
+  ExEnv::out0() << "\n";
+
+  auto& world = this->wfn_world()->world();
+  auto time0 = mpqc::fenced_now(world);
+
   auto& factory = this->lcao_factory();
 
   // compute required integrals
@@ -187,6 +219,13 @@ std::vector<typename CIS<Tile,Policy>::numeric_type> CIS<Tile, Policy>::compute_
   factory.registry().purge_formula(L"<i j|G|a b>");
   factory.registry().purge_formula(L"<i a|G|j b>");
 
+  auto time1 = mpqc::fenced_now(world);
+  // used later
+  auto time2 = mpqc::fenced_now(world);
+  auto time = mpqc::duration_in_s(time0, time1);
+
+  ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
+
   // davidson object
   DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, n_roots);
 
@@ -196,6 +235,8 @@ std::vector<typename CIS<Tile,Policy>::numeric_type> CIS<Tile, Policy>::compute_
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
   auto i = 0;
   for (; i < max_iter_; i++) {
+    time0 = mpqc::fenced_now(world);
+
     const auto n_v = guess.size();
 
     std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
@@ -205,12 +246,17 @@ std::vector<typename CIS<Tile,Policy>::numeric_type> CIS<Tile, Policy>::compute_
       HB[i]("i,a") = H("i,j,a,b") * guess[i]("j,b");
     }
 
+    time1 = mpqc::fenced_now(world);
+
     EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
 
+    time2 = mpqc::fenced_now(world);
+
     auto norm = (eig - eig_new).norm();
-    ExEnv::out0() << "Iter: " << i << "\n";
-    ExEnv::out0() << "Norm: " << norm << "\n";
-    ExEnv::out0() << "Energy: " << eig_new << "\n";
+
+    detail::print_cis_iteration(i, norm, eig_new,
+                                mpqc::duration_in_s(time0, time1),
+                                mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -218,6 +264,8 @@ std::vector<typename CIS<Tile,Policy>::numeric_type> CIS<Tile, Policy>::compute_
 
     eig = eig_new;
   }
+
+  ExEnv::out0() << "\n";
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",

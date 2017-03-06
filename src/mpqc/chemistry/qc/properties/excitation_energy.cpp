@@ -10,7 +10,7 @@ MPQC_CLASS_EXPORT2("ExcitationEnergy", mpqc::ExcitationEnergy);
 namespace mpqc {
 
 ExcitationEnergy::ExcitationEnergy(const KeyVal &kv)
-    : WavefunctionProperty<std::vector<double>>(kv, 1.0e-4),
+    : WavefunctionProperty<std::vector<double>>(kv, 1.0e-6),
       n_roots_(kv.value<int>("n_roots", 1)),
       singlets_(kv.value<bool>("singlets", true)),
       triplets_(kv.value<bool>("triplets", false)) {

@@ -169,7 +169,6 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 
-    ExEnv::out0() << indent << "\n CIS Excitation Energy \n";
 
     auto target_precision = ex_energy->target_precision(0);
     auto target_ref_precision = target_precision / 100.0;
@@ -178,6 +177,7 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     auto time0 = mpqc::fenced_now(world);
 
+    ExEnv::out0() << indent << "\nCIS Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
 
     // get guess vector

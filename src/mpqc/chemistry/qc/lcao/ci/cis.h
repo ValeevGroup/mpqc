@@ -88,6 +88,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   * | Keyword | Type | Default| Description |
   * |---------|------|--------|-------------|
   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+  * | method | df | standard or df | method to compute CIS, standard or df |
   * | max_iter| int | 30 | max number of iteration in davidson diagonalization|
   */
   explicit CIS(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
@@ -98,6 +99,16 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
                        __LINE__, "ref");
     }
     max_iter_ = kv.value<int>("max_iter", 30);
+    auto default_method =  this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
+    method_ = kv.value<std::string>("method", default_method);
+
+    if (method_ != "df" && method_ != "standard") {
+      throw InputError("Invalid CIS method! \n", __FILE__, __LINE__, "method");
+    }
+    if (method_ == "df" ){
+      df_ = true;
+    }
+
   }
 
   ~CIS() = default;
@@ -125,11 +136,24 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
                                         double precision,
                                         bool triplets = false);
 
+  /// this approach uses density-fitting, it does not stores the H matrix
+  /// it compute the product of H with eigen vector
+  /// @return excitation energy
+  std::vector<numeric_type> compute_cis_df(std::size_t n_roots,
+                                        std::vector<TArray> guess_vector,
+                                        double precision,
+                                        bool triplets = false);
+
   /// @return guess vector of size n_roots as unit vector
   std::vector<TArray> init_guess_vector(std::size_t n_roots);
 
  private:
+  /// max number of iteration in davidson
   std::size_t max_iter_;
+  /// if has density fitting
+  bool df_;
+  /// CIS method string
+  std::string method_;
   /// reference wavefunction
   std::shared_ptr<Wavefunction> ref_wfn_;
   /// eigen vector
@@ -159,13 +183,23 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     std::vector<numeric_type> result;
 
     if (ex_energy->singlets()) {
-      result = compute_cis(n_roots, guess, target_precision);
+      if(method_=="standard"){
+        result = compute_cis(n_roots, guess, target_precision);
+      }
+      else if(method_=="df"){
+        result = compute_cis_df(n_roots, guess, target_precision);
+      }
     }
 
     // TODO separate singlets and triplets energy
     if (ex_energy->triplets()) {
-      decltype(result) triplet_result =
-          compute_cis(n_roots, guess, target_precision, true);
+      decltype(result) triplet_result;
+      if(method_=="standard"){
+        triplet_result=compute_cis(n_roots, guess, target_precision, true);
+      }
+      else if(method_=="df"){
+        triplet_result=compute_cis_df(n_roots, guess, target_precision, true);
+      }
       result.insert(result.end(), triplet_result.begin(), triplet_result.end());
     }
 
@@ -184,7 +218,7 @@ CIS<Tile, Policy>::compute_cis(
     std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
     double converge, bool triplets) {
   ExEnv::out0() << "\n";
-  ExEnv::out0() << indent << "CIS: " << (triplets ? "Triplets" : "Singlets")
+  ExEnv::out0() << indent << "CIS standard: " << (triplets ? "Triplets" : "Singlets")
                 << "\n";
   ExEnv::out0() << "\n";
 
@@ -258,6 +292,91 @@ CIS<Tile, Policy>::compute_cis(
     EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
 
     time2 = mpqc::fenced_now(world);
+
+    auto norm = (eig - eig_new).norm();
+
+    detail::print_cis_iteration(i, norm, eig_new,
+                                mpqc::duration_in_s(time0, time1),
+                                mpqc::duration_in_s(time1, time2));
+
+    if (norm < converge) {
+      break;
+    }
+
+    eig = eig_new;
+  }
+
+  ExEnv::out0() << "\n";
+
+  if (i == max_iter_) {
+    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
+                          __FILE__, __LINE__, max_iter_, "CIS");
+  }
+
+  eigen_vector_.insert(eigen_vector_.end(), guess.begin(), guess.end());
+
+  return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
+}
+
+template <typename Tile, typename Policy>
+std::vector<typename CIS<Tile, Policy>::numeric_type>
+CIS<Tile, Policy>::compute_cis_df(
+    std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
+    double converge, bool triplets) {
+  ExEnv::out0() << "\n";
+  ExEnv::out0() << indent << "CIS Density-fitting: " << (triplets ? "Triplets" : "Singlets")
+                << "\n";
+  ExEnv::out0() << "\n";
+
+  auto& world = this->wfn_world()->world();
+  auto& factory = this->lcao_factory();
+
+  // compute required integrals
+  auto F_ab = factory.compute(L"<a|F|b>[df]");
+  auto F_ij = factory.compute(L"<i|F|j>[df]");
+  auto I_ab = factory.compute(L"<a|I|b>");
+  auto I_ij = factory.compute(L"<i|I|j>");
+  auto X_ab = factory.compute(L"(Κ|G|a b)");
+  auto X_ij = factory.compute(L"(Κ|G|i j)");
+  auto X_ia = factory.compute(L"(Κ|G|i a)");
+  auto X = factory.compute(L"(Κ|G|Λ)[inv_sqr]");
+
+  // initialize diagonal
+  if (eps_o_.size() == 0) {
+    eps_o_ = array_ops::array_to_eigen(F_ij).diagonal();
+  }
+  if (eps_v_.size() == 0) {
+    eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
+  }
+
+  // davidson object
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, n_roots);
+
+  auto pred = Preconditioner(eps_o_, eps_v_);
+
+  // solve the lowest n_roots eigenvalues
+  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
+  auto i = 0;
+  for (; i < max_iter_; i++) {
+    auto time0 = mpqc::fenced_now(world);
+
+    const auto n_v = guess.size();
+
+    std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
+    // product of H with guess vector
+    for (auto i = 0; i < n_v; i++) {
+      //    std::cout << guess[i] << std::endl;
+      const auto & vec = guess[i];
+      HB[i]("j,b") = vec("i,a")*I_ij("i,j")*F_ab("a,b") - F_ij("i,j")*vec("i,a")*I_ab("a,b")
+        + 2.0*vec("i,a")*X_ia("x,i,a")*X("x,y")*X_ia("y,j,b")
+          - X_ab("x,a,b")*vec("i,a")*X("x,y")*X_ij("y,i,j");
+    }
+
+    auto time1 = mpqc::fenced_now(world);
+
+    EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
+
+    auto time2 = mpqc::fenced_now(world);
 
     auto norm = (eig - eig_new).norm();
 

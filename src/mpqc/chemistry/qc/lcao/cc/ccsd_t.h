@@ -91,10 +91,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | size of number of orbital | block size to reblock inner dimension, set to 0 to disable reblock inner |
-   * | approach | string | coarse | coarse grain, fine grain or straight approach |
+   * | approach | string | coarse | coarse grain, fine grain, straight or laplace approach |
    * | replicate | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
    * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
-   * | quadrature_points | int | 4(need to benchmark it) | number of quadrature points for the Laplace transform |
+   * | quadrature_points | int | 4 | number of quadrature points for the Laplace transform |
    */
   // clang-format on
 

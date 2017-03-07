@@ -328,7 +328,8 @@ TA::Array<double, 3, Tile, Policy> Xab_laplace_transform(
     for (auto X = X0; X < Xn; ++X) {
       for (auto a = a0; a < an; ++a) {
         for (auto b = b0; b < bn; ++b, ++tile_idx) {
-          const double exp_b = pow(x, 0.5 * (ens[b + n_occ] / alpha - 1.0 / 6.0));
+          const double exp_b =
+              pow(x, 0.5 * (ens[b + n_occ] / alpha - 1.0 / 6.0));
           const double exponent = exp_b;
           const double result = arg_tile[tile_idx] * exponent;
           result_tile[tile_idx] = result;

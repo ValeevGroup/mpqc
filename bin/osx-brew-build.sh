@@ -37,13 +37,54 @@ check_package eigen
 check_package tbb
 
 # 2. build and install prerequisites
+
+# by default: build on 4 procs
+if test -z $NPROC; then
+  export NPROC=4
+fi
+
+# by default: install under ./install
+if test -z $PREFIX; then
+  export PREFIX=`pwd`/install
+fi
+
+# by default: build TA and MPQC4 in debug mode (Libint always in Release)
+if test -z $BUILD_TYPE; then
+  export BUILD_TYPE=Debug
+fi
+
 #    - libint
-wget https://github.com/evaleev/libint/releases/download/v2.3.0-beta.3/libint-2.3.0-beta.3.tgz && tar -xvzf libint-2.3.0-beta.3.tgz && cd libint-2.3.0-beta.3 && ./configure --prefix=$PREFIX --with-incdirs="-I/usr/local/include/eigen3" --enable-shared --disable-static && make -j2 && make install && make clean && cd .. && rm -rf libint-2.3.0-beta.3
+export LIBINT_RELID=2.3.0-beta.4
+if test ! -d build/libint-${LIBINT_RELID}; then
+  mkdir -p build
+  cd build
+  wget https://github.com/evaleev/libint/releases/download/v${LIBINT_RELID}/libint-${LIBINT_RELID}.tgz && tar -xvzf libint-${LIBINT_RELID}.tgz && cd libint-${LIBINT_RELID}
+  ./configure --prefix=$PREFIX --with-incdirs="-I/usr/local/include/eigen3" --enable-shared --disable-static
+  make -j${NPROC} && make install && make distclean
+  cd ../..
+fi
+
 #    - tiledarray
-mkdir tiledarray && cd tiledarray && git clone --depth=1 https://github.com/ValeevGroup/tiledarray.git tiledarray_src && cmake tiledarray_src -DCMAKE_INSTALL_PREFIX=$PREFIX -DMPI_CXX_COMPILER=mpicxx -DMPI_C_COMPILER=mpicc -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=tiledarray_src/cmake/toolchains/osx-clang-mpi-accelerate.cmake && make && make install && make clean && cd .. && rm -rf tiledarray
+if test ! -d tiledarray; then
+  git clone --depth=1 https://github.com/ValeevGroup/tiledarray.git tiledarray
+fi
+if test ! -d build/tiledarray-clang; then
+  mkdir -p build/tiledarray-clang && cd build/tiledarray-clang
+  cmake ../../tiledarray -DCMAKE_INSTALL_PREFIX=$PREFIX -DMPI_CXX_COMPILER=mpicxx -DMPI_C_COMPILER=mpicc -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
+  make -j${NPROC} && make install
+  cd ../..
+fi
 
 # 3. build and install MPQC4
-git clone https://evaleev:f0aee3276b87c17a47d8b18e7c82af7a1cad8842@github.com/ValeevGroup/mpqc4.git && mkdir mpqc4-build && cd mpqc4-build && cmake ../mpqc4 -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=Release && make mpqc && make install
+if test ! -d mpqc4; then
+  git clone https://evaleev:f0aee3276b87c17a47d8b18e7c82af7a1cad8842@github.com/ValeevGroup/mpqc4.git
+fi
+if test ! -d build/mpqc4-clang; then
+  mkdir -p build/mpqc4-clang && cd build/mpqc4-clang
+  cmake ../../mpqc4 -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
+  make -j${NPROC} mpqc && make install
+  cd ../..
+fi
 
 ##############################################################
 

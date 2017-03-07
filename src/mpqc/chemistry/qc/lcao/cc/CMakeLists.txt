@@ -8,4 +8,4 @@ set(sources
         linkage.h
         )
 
-add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc" "mpqc/chemistry/qc/lcao/cc")
+add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc;MPQCmath_quadrature" "mpqc/chemistry/qc/lcao/cc")

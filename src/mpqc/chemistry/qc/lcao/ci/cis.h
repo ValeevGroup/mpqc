@@ -313,6 +313,7 @@ CIS<Tile, Policy>::compute_cis(
                           __FILE__, __LINE__, max_iter_, "CIS");
   }
 
+  // store the eigen vector
   eigen_vector_.insert(eigen_vector_.end(), guess.begin(), guess.end());
 
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());

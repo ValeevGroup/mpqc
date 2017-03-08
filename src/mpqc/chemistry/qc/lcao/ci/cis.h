@@ -16,8 +16,9 @@ namespace lcao {
 namespace detail {
 
 template <typename T>
-void print_cis_iteration(std::size_t iter, T norm, const EigenVector<T>& eig,
-                         double time1, double time2) {
+inline void print_cis_iteration(std::size_t iter, T norm,
+                                const EigenVector<T>& eig, double time1,
+                                double time2) {
   ExEnv::out0() << indent << "iteration: " << iter << "\n";
   ExEnv::out0() << indent << "norm: " << norm << "\n";
   ExEnv::out0() << indent << "excitation energy: "
@@ -34,7 +35,32 @@ void print_cis_iteration(std::size_t iter, T norm, const EigenVector<T>& eig,
   ExEnv::out0() << indent << indent << "product time: " << time1 << " S\n";
   ExEnv::out0() << indent << indent << "davidson time: " << time2 << " S\n\n";
 }
+
+template <typename T>
+inline void print_cis_excitation_energy(const EigenVector<T>& eig,
+                                        bool triplets) {
+  const auto& unit_factory = UnitFactory::get_default();
+  const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
+  // TODO not hard code this, missing speed of light in UnitFactory
+  // 2014 CODATA
+  const auto Hartree_to_wavenumber = 219474.6313702;
+
+  ExEnv::out0() << "CIS Excitation Energy: ( "
+                << (triplets ? "Triplets" : "Singlets") << " )\n";
+
+  ExEnv::out0() << mpqc::printf("%5s \t %10s \t %10s \t %10s \n", "state", "au",
+                                "eV", "cm^-1");
+
+  const auto size = eig.size();
+
+  for (auto i = 1; i <= size; i++) {
+    T e = eig[i - 1];
+    ExEnv::out0() << mpqc::printf("%5i \t %10.8f \t %10.5f \t %10.2f \n", i, e,
+                                  e * Hartree_to_eV, e * Hartree_to_wavenumber);
+  }
+  ExEnv::out0() << "\n";
 }
+}  // namespace detail
 
 /**
  * CIS for closed shell system
@@ -326,6 +352,7 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   ExEnv::out0() << "\n";
+  detail::print_cis_excitation_energy(eig,triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -426,6 +453,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   ExEnv::out0() << "\n";
+  detail::print_cis_excitation_energy(eig,triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -533,6 +561,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   ExEnv::out0() << "\n";
+  detail::print_cis_excitation_energy(eig,triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",

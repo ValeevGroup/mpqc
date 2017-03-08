@@ -134,9 +134,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
     if (method_ != "df" && method_ != "standard" && method_ != "direct") {
       throw InputError("Invalid CIS method! \n", __FILE__, __LINE__, "method");
     }
-    if (method_ == "df") {
-      df_ = true;
-    }
+    df_ = (method_=="df" ? true : false);
   }
 
   ~CIS() = default;
@@ -352,7 +350,7 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig,triplets);
+  detail::print_cis_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -453,7 +451,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig,triplets);
+  detail::print_cis_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -561,7 +559,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig,triplets);
+  detail::print_cis_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",

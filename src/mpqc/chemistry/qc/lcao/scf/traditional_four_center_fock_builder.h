@@ -28,7 +28,7 @@ class ReferenceFourCenterFockBuilder : public FockBuilder<Tile, Policy> {
   ReferenceFourCenterFockBuilder(Integral const &eri4_J, Integral const &eri4_K)
       : eri4_J_(eri4_J), eri4_K_(eri4_K) {}
 
-  array_type operator()(array_type const &D, array_type const &C) override {
+  array_type operator()(array_type const &D, array_type const &) override {
     const auto make_J = eri4_J_.is_initialized();
     const auto make_K = eri4_K_.is_initialized();
     assert(make_J || make_K);

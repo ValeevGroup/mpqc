@@ -11,6 +11,12 @@
 namespace mpqc {
 namespace scf {
 
+/// ReferenceFourCenterFockBuilder is a reference integral-direct implementation
+/// that uses 4-center integrals.
+
+/// @warning This is a very inefficient builder: the number of integrals it
+/// evaluates is roughly 6 to 16 times greater than optimal (this depends on
+/// whether the direct integral arrays account for any permutational symmetry)
 template <typename Tile, typename Policy, typename Integral>
 class ReferenceFourCenterFockBuilder : public FockBuilder<Tile, Policy> {
  public:

@@ -12,14 +12,14 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Integral>
-class FourCenterBuilder : public FockBuilder<Tile, Policy> {
+class FourCenterFockBuilder : public FockBuilder<Tile, Policy> {
  public:
   using array_type = typename FockBuilder<Tile, Policy>::array_type;
   Integral eri4_J_;
   Integral eri4_K_;
 
  public:
-  FourCenterBuilder(Integral const &eri4_J, Integral const &eri4_K)
+  FourCenterFockBuilder(Integral const &eri4_J, Integral const &eri4_K)
       : eri4_J_(eri4_J), eri4_K_(eri4_K) {}
 
   array_type operator()(array_type const &D, array_type const &C) override {

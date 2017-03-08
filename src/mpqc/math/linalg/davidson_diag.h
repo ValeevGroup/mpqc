@@ -5,13 +5,14 @@
 #ifndef SRC_MPQC_MATH_LINALG_DAVIDSON_DIAG_H_
 #define SRC_MPQC_MATH_LINALG_DAVIDSON_DIAG_H_
 
+#include <TiledArray/algebra/utils.h>
+#include <tiledarray.h>
+
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/gram_schmidt.h"
+#include "mpqc/util/misc/assert.h"
+#include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/exenv.h"
-
-#include <TiledArray/algebra/utils.h>
-#include <mpqc/util/misc/assert.h>
-#include <tiledarray.h>
 
 namespace mpqc {
 
@@ -71,21 +72,23 @@ class DavidsonDiag {
   ~DavidsonDiag() { eigen_vector_.clear(); }
 
   /// @return all stored eigen vector in Davidson
-  std::deque<value_type, std::allocator<value_type>> &eigen_vector() {
+  std::deque<value_type, std::allocator<value_type>>& eigen_vector() {
     return eigen_vector_;
   }
 
+  // clang-format off
   /**
    *
-   * @tparam Pred preconditioner object, which has void Pred(const element_type
-   * & e,
-   * D& residual) to update residual
+   * @tparam Pred preconditioner object, which has void Pred(const element_type & e,D& residual) to update residual
    *
    * @param HB product with A and guess vector
    * @param B  guess vector
    * @param pred preconditioner
+   *
    * @return B updated guess vector
+   * @return updated eigen values
    */
+  // clang-format on
   template <typename Pred>
   EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
                                         const Pred& pred) {
@@ -94,7 +97,7 @@ class DavidsonDiag {
     const auto n_v = B.size();
 
     // subspace
-    // dot_product will return a replicated Eigen Matrix
+    // G will be replicated Eigen Matrix
     RowMatrix<element_type> G(n_v, n_v);
     for (auto i = 0; i < n_v; ++i) {
       for (auto j = 0; j < n_v; ++j) {
@@ -191,7 +194,7 @@ class DavidsonDiag {
       const auto e_i = -E[i];
       scale(residual[i], e_i);
       for (auto j = 0; j < n_v; ++j) {
-        axpy(residual[i], C(j,i), HB[j]);
+        axpy(residual[i], C(j, i), HB[j]);
       }
     }
 
@@ -210,19 +213,18 @@ class DavidsonDiag {
     // subspace collapse
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
-    if(B.size() >= n_roots_*max_n_guess_){
+    if (B.size() >= n_roots_ * max_n_guess_) {
       B.clear();
       B.insert(B.end(), residual.begin(), residual.end());
       // use all stored eigen vector from last n_guess interation
-      for(auto& vector: eigen_vector_){
+      for (auto& vector : eigen_vector_) {
         B.insert(B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
       gram_schmidt(B);
       // call it second times
       gram_schmidt(B);
-    }
-    else{
+    } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
       gram_schmidt(B, n_v);
@@ -230,8 +232,7 @@ class DavidsonDiag {
       gram_schmidt(B, n_v);
     }
 
-
-    // test if orthonomalized
+// test if orthonomalized
 #ifndef NDEBUG
     const auto k = B.size();
     const auto tolerance =

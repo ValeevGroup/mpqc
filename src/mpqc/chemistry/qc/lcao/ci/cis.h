@@ -82,7 +82,6 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   };
 
  public:
-
   // clang-format off
   /**
   * KeyVal constructor
@@ -216,7 +215,8 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       } else if (method_ == "df") {
         triplet_result = compute_cis_df(n_roots, guess, target_precision, true);
       } else if (method_ == "direct") {
-        triplet_result = compute_cis_direct(n_roots, guess, target_precision, true);
+        triplet_result =
+            compute_cis_direct(n_roots, guess, target_precision, true);
       }
       result.insert(result.end(), triplet_result.begin(), triplet_result.end());
     }
@@ -287,7 +287,7 @@ CIS<Tile, Policy>::compute_cis(
   ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -332,8 +332,10 @@ CIS<Tile, Policy>::compute_cis(
                           __FILE__, __LINE__, max_iter_, "CIS");
   }
 
-  // store the eigen vector
-  eigen_vector_.insert(eigen_vector_.end(), guess.begin(), guess.end());
+  // get the latest eigen vector
+  auto& eigen_vector = dvd.eigen_vector().back();
+  eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
+                       eigen_vector.end());
 
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }
@@ -371,7 +373,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -430,7 +432,11 @@ CIS<Tile, Policy>::compute_cis_df(
                           __FILE__, __LINE__, max_iter_, "CIS");
   }
 
-  eigen_vector_.insert(eigen_vector_.end(), guess.begin(), guess.end());
+  // get the latest eigen vector
+  auto& eigen_vector = dvd.eigen_vector().back();
+
+  eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
+                       eigen_vector.end());
 
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }
@@ -468,7 +474,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -533,7 +539,11 @@ CIS<Tile, Policy>::compute_cis_direct(
                           __FILE__, __LINE__, max_iter_, "CIS");
   }
 
-  eigen_vector_.insert(eigen_vector_.end(), guess.begin(), guess.end());
+  // get the latest eigen vector
+  auto& eigen_vector = dvd.eigen_vector().back();
+
+  eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
+                       eigen_vector.end());
 
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }

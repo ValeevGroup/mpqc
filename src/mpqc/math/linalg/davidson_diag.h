@@ -63,13 +63,20 @@ class DavidsonDiag {
   /**
    *
    * @param n_roots number of lowest roots to solve
-   * @param n_guess max number of guess vector
+   * @param n_guess number of eigen vector per root at subspace collapse,
+   * default is 2
+   * @param max_n_guess max number of guess vector per root, default is 3
    * @param symmetric if matrix is symmetric
    */
-  DavidsonDiag(unsigned int n_roots, unsigned int n_guess,
-                   bool symmetric = true)
-      : n_roots_(n_roots), n_guess_(n_guess), symmetric_(symmetric) {}
+  DavidsonDiag(unsigned int n_roots, bool symmetric = true,
+               unsigned int n_guess = 2, unsigned int max_n_guess = 3)
+      : n_roots_(n_roots),
+        symmetric_(symmetric),
+        n_guess_(n_guess),
+        max_n_guess_(max_n_guess),
+        eigen_vector_() {}
 
+  ~DavidsonDiag() { eigen_vector_.clear(); }
   /**
    *
    * @tparam Pred preconditioner object, which has void Pred(const element_type
@@ -109,8 +116,9 @@ class DavidsonDiag {
       RowMatrix<element_type> v = es.eigenvectors();
       EigenVector<element_type> e = es.eigenvalues();
 
-      if(es.info() != Eigen::Success){
-        throw AlgorithmException("Eigen::SelfAdjointEigenSolver Failed!\n",__FILE__,__LINE__);
+      if (es.info() != Eigen::Success) {
+        throw AlgorithmException("Eigen::SelfAdjointEigenSolver Failed!\n",
+                                 __FILE__, __LINE__);
       }
 
       //        std::cout << es.eigenvalues() << std::endl;
@@ -120,20 +128,19 @@ class DavidsonDiag {
     }
     // non-symmetric matrix
     else {
-
       // unitary transform to upper triangular matrix
       Eigen::RealSchur<RowMatrix<element_type>> rs(G);
 
       RowMatrix<element_type> T = rs.matrixT();
       RowMatrix<element_type> U = rs.matrixU();
 
-      if(rs.info() != Eigen::Success){
-        throw AlgorithmException("Eigen::RealSchur Failed!\n",__FILE__,__LINE__);
+      if (rs.info() != Eigen::Success) {
+        throw AlgorithmException("Eigen::RealSchur Failed!\n", __FILE__,
+                                 __LINE__);
       }
 
       // do eigen solve on T
       Eigen::EigenSolver<RowMatrix<element_type>> es(T);
-
 
       // sort eigen values
       std::vector<EigenPair> eg;
@@ -141,8 +148,9 @@ class DavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
-        if(rs.info() != Eigen::Success){
-          throw AlgorithmException("Eigen::EigenSolver Failed!\n",__FILE__,__LINE__);
+        if (rs.info() != Eigen::Success) {
+          throw AlgorithmException("Eigen::EigenSolver Failed!\n", __FILE__,
+                                   __LINE__);
         }
 
         for (auto i = 0; i < n_v; ++i) {
@@ -157,8 +165,24 @@ class DavidsonDiag {
         E[i] = eg[i].eigen_value;
         C.col(i) = U * eg[i].eigen_vector;
       }
-
     }
+
+    // compute eigen_vector at current iteration and store it
+    // X(i) = B(i)*C(i)
+    value_type X(n_roots_);
+    for (auto i = 0; i < n_roots_; ++i) {
+      X[i] = copy(B[i]);
+      zero(X[i]);
+      for (auto j = 0; j < n_v; ++j) {
+        axpy(X[i], C(j, i), B[j]);
+      }
+    }
+
+    // check the size, if exceed n_guess, pop oldest
+    if (eigen_vector_.size() == n_guess_) {
+      eigen_vector_.pop_front();
+    }
+    eigen_vector_.push_back(X);
 
     // compute residual
     value_type residual(n_roots_);
@@ -183,32 +207,43 @@ class DavidsonDiag {
       pred(E[i], residual[i]);
     }
 
-    // extra vector
-    //    unsigned int n_extra = n_guess_ - (n_v + n_roots_);
-    // delete first n_extra vector
-    //    if( n_extra > 0 ){
-    //
-    //    }
-
     B.insert(B.end(), residual.begin(), residual.end());
 
-    // orthognolize new residual with original B
-    gram_schmidt(B, n_v);
-    // call it twice
-    gram_schmidt(B, n_v);
+    // subspace collapse
+    // Journal of Computational Chemistry, 11(10), 1164–1168.
+    // https://doi.org/10.1002/jcc.540111008
+    if(B.size() > n_roots_*max_n_guess_){
+      B.clear();
+      B.insert(B.end(), residual.begin(), residual.end());
+      for(auto& vector: eigen_vector_){
+        B.insert(B.end(), vector.begin(), vector.end());
+      }
+      // orthognolize all vectors
+      gram_schmidt(B);
+      // call it second times
+      gram_schmidt(B);
+    }
+    else{
+      // orthognolize new residual with original B
+      gram_schmidt(B, n_v);
+      // call it twice
+      gram_schmidt(B, n_v);
+    }
+
 
 #ifndef NDEBUG
     const auto k = B.size();
-    const auto tolerance = std::numeric_limits<typename D::element_type>::epsilon()*100;
-    for(auto i = 0; i < k; ++i){
-      for(auto j = i ; j < k; ++j ){
+    const auto tolerance =
+        std::numeric_limits<typename D::element_type>::epsilon() * 100;
+    for (auto i = 0; i < k; ++i) {
+      for (auto j = i; j < k; ++j) {
         const auto test = dot_product(B[i], B[j]);
-//        std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
-        if(i==j){
-          TA_ASSERT( test - 1.0 < tolerance);
-        }
-        else{
-          TA_ASSERT( test < tolerance);
+        //        std::cout << "i= " << i << " j= " << j << " dot= " << test <<
+        //        std::endl;
+        if (i == j) {
+          TA_ASSERT(test - 1.0 < tolerance);
+        } else {
+          TA_ASSERT(test < tolerance);
         }
       }
     }
@@ -219,8 +254,10 @@ class DavidsonDiag {
 
  private:
   unsigned int n_roots_;
-  unsigned int n_guess_;
   bool symmetric_;
+  unsigned int n_guess_;
+  unsigned int max_n_guess_;
+  std::deque<value_type> eigen_vector_;
 };
 
 }  // namespace mpqc

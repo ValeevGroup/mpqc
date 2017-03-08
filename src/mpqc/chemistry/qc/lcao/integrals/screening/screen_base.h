@@ -1,11 +1,11 @@
-
-
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
 
+#include <TiledArray/pmap/pmap.h>
 
-#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
+#include "mpqc/math/groups/petite_list.h"
 
 namespace mpqc {
 namespace lcao {
@@ -36,19 +36,33 @@ class Screener {
    * function indices into shell indices.  The motivation for this is to
    * simplify the integral kernel code.
    */
-  inline virtual bool skip(int64_t) { return false; }
-  inline virtual bool skip(int64_t) const { return false; }
+  virtual bool skip(int64_t);
+  virtual bool skip(int64_t) const;
 
-  inline virtual bool skip(int64_t, int64_t) { return false; }
-  inline virtual bool skip(int64_t, int64_t) const { return false; }
+  virtual bool skip(int64_t, int64_t);
+  virtual bool skip(int64_t, int64_t) const;
 
-  inline virtual bool skip(int64_t, int64_t, int64_t) { return false; }
-  inline virtual bool skip(int64_t, int64_t, int64_t) const { return false; }
+  virtual bool skip(int64_t, int64_t, int64_t);
+  virtual bool skip(int64_t, int64_t, int64_t) const;
 
-  inline virtual bool skip(int64_t, int64_t, int64_t, int64_t) { return false; }
-  inline virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
-    return false;
-  }
+  virtual bool skip(int64_t, int64_t, int64_t, int64_t);
+  virtual bool skip(int64_t, int64_t, int64_t, int64_t) const;
+
+  /*! \brief returns an estimate of shape norms for the given basis vector, in
+   * presence of symmetry described by a math::PetiteList object.
+   *
+   * This function will only compute the estimate for tiles which are
+   * considered local by the pmap, the user will be responsible for using the
+   * world based constructor for the TA::Shape.
+   *
+   * \warning The base class will error for all inputs.
+   */
+  virtual TA::Tensor<float> norm_estimate(
+      madness::World &world, std::vector<gaussian::Basis> const &bs_array,
+      TA::Pmap const &pmap,
+      const math::PetiteList &plist =
+          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
+          bool replicate = false) const;
 };
 
 }  // namespace  lcao

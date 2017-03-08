@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# this script builds an MPQC4 docker image
+
 disable_aslr=disable_aslr.sh
 
 ##############################################################

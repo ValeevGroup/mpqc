@@ -107,7 +107,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     }
 
     // lambda function will be used to do a Jacobi update of the residual
-    auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
+    auto jacobi_update = [eps_o, eps_v](TA::TensorD& result_tile) {
 
       const auto& range = result_tile.range();
       double norm = 0.0;

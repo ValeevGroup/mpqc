@@ -1,5 +1,7 @@
 
-/** \page overview Overview
+/** \page top MPQC overview and documentation
+
+\section overview Overview
 
 The Massively Parallel Quantum Chemistry (MPQC) package has two components:
   - a set of C++ libraries intended for use in molecular electronic structure (aka <em>quantum chemistry</em>, QC), and
@@ -39,5 +41,24 @@ releases.
 MPQC runs on Unix platforms of all kinds, from a laptop running
 Linux or Apple OS X to a basic lab-scale Unix cluster to a high-end supercomputer such as
 IBM BlueGene/Q.
+
+\section userref User's Reference
+<ul>
+  <li> \ref mpqccomp
+  <li> \ref mpqcrunning
+  <li> \ref mpqcinp
+  <li> \ref mpqclic
+  <li> \ref mpqcwar
+</ul>
+
+\section develref Developer's Reference
+<ul>
+  <li> \ref develop
+  <li> \ref srctree
+  <li> \ref namespacetree
+  <li> \ref keyval
+  <li> \ref units
+  <li> \ref factory
+</ul>
 
 */

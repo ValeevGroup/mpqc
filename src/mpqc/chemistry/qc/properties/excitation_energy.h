@@ -37,7 +37,7 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
    * | singlets | bool | true | compute singlet excitation energy, only apply to closed-shell system|
    * | triplets | bool | false | compute triplet excitation energy, only apply to closed-shell system|
    *
-   * @note This constructor overrides the default target precision to 1e-6 \f$ \sim 0.3~{\rm meV} \f$.
+   * @note This constructor overrides the default target precision to 1e-5 \f$ \sim 0.3~{\rm meV} \f$.
    */
   // clang-format on
   ExcitationEnergy(const KeyVal& kv);

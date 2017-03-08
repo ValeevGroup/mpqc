@@ -15,14 +15,6 @@
 
 namespace mpqc {
 
-template <typename Tile, typename Policy>
-inline void plus(TA::DistArray<Tile, Policy>& y,
-                 const TA::DistArray<Tile, Policy>& x) {
-  const std::string vars =
-      TA::detail::dummy_annotation(y.trange().tiles_range().rank());
-  y(vars) += x(vars);
-}
-
 /**
  * \brief Davidson Algorithm
  *
@@ -77,6 +69,12 @@ class DavidsonDiag {
         eigen_vector_() {}
 
   ~DavidsonDiag() { eigen_vector_.clear(); }
+
+  /// @return all stored eigen vector in Davidson
+  std::deque<value_type, std::allocator<value_type>> &eigen_vector() {
+    return eigen_vector_;
+  }
+
   /**
    *
    * @tparam Pred preconditioner object, which has void Pred(const element_type
@@ -185,36 +183,37 @@ class DavidsonDiag {
     eigen_vector_.push_back(X);
 
     // compute residual
+    // R(i) = (H - e(i)I)*B(i)*C(i)
+    //      = (HB(i)*C(i) - e(i)*X(i)
     value_type residual(n_roots_);
     for (auto i = 0; i < n_roots_; ++i) {
-      // initialize residual as 0
-      residual[i] = copy(B[i]);
-      zero(residual[i]);
+      residual[i] = copy(X[i]);
       const auto e_i = -E[i];
-
+      scale(residual[i], e_i);
       for (auto j = 0; j < n_v; ++j) {
-        D tmp = copy(residual[i]);
-        zero(tmp);
-        axpy(tmp, e_i, B[j]);
-        plus(tmp, HB[j]);
-        scale(tmp, C(j, i));
-        plus(residual[i], tmp);
+        axpy(residual[i], C(j,i), HB[j]);
       }
     }
 
     // precondition
+    // user should define preconditioner
+    // usually it is D(i) = (e(i) - H_D)^-1 R(i)
+    // where H_D is the diagonal element of H
+    // but H_D can be approximated and computed on the fly
     for (auto i = 0; i < n_roots_; i++) {
       pred(E[i], residual[i]);
     }
 
+    // add current correction vector to guess vector
     B.insert(B.end(), residual.begin(), residual.end());
 
     // subspace collapse
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
-    if(B.size() > n_roots_*max_n_guess_){
+    if(B.size() >= n_roots_*max_n_guess_){
       B.clear();
       B.insert(B.end(), residual.begin(), residual.end());
+      // use all stored eigen vector from last n_guess interation
       for(auto& vector: eigen_vector_){
         B.insert(B.end(), vector.begin(), vector.end());
       }
@@ -224,6 +223,7 @@ class DavidsonDiag {
       gram_schmidt(B);
     }
     else{
+      // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
       gram_schmidt(B, n_v);
       // call it twice
@@ -231,6 +231,7 @@ class DavidsonDiag {
     }
 
 
+    // test if orthonomalized
 #ifndef NDEBUG
     const auto k = B.size();
     const auto tolerance =

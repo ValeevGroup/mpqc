@@ -1,7 +1,6 @@
 {
   "property": {
     "type" : "ExcitationEnergy",
-    "precision" : 1.0e-8,
     "wfn" : "$:wfn",
     "n_roots" : 4,
     "triplets" : true

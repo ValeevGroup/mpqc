@@ -5,12 +5,12 @@ set(utests_src
     atom_test.cpp
     bug_test.cpp
     clustering_test.cpp
-    davidson_diag.cpp
+        davidson_diag_test.cpp
     exception_test.cpp
     f12_utility_test.cpp
     formio_test.cpp
     formula_test.cpp
-    gram_schmidt.cpp
+        gram_schmidt_test.cpp
     keyval_test.cpp
     libint_test.cpp
     molecule_test.cpp

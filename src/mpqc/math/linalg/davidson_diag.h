@@ -16,14 +16,27 @@
 
 namespace mpqc {
 
+// clang-format off
 /**
  * \brief Davidson Algorithm
  *
- * \tparam D array type
+ * Solves eigen value problem <tt> Hx = ex </tt> for the lowest n eigen value and eigen vector
  *
+ * it starts with orthogonal guess vector B {b1, b2, ... bn}
+ * the eigen vector is a linear combination of B
+ * extrapolate() will update the vector B and store new x
+ *
+ * \tparam D
+ * array type
+ * \c D::element_type must be defined and \c D must provide the following stand-alone functions:
+ * - `D copy(const D&)`
+ * - `element_type dot_product(const D& a, const D& b)`
+ * - `void scale(D& y , element_type a)`
+ * - `void axpy(D&y , element_tye a, const D& z)`
+ * - `void zero(D& x)`
  *
  */
-
+// clang-format on
 template <typename D>
 class DavidsonDiag {
  public:

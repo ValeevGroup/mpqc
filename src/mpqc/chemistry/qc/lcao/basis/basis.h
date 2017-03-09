@@ -89,11 +89,11 @@ class Basis : virtual public DescribedClass {
   int64_t max_nprim() const;
   /// @return the highest angular momentum of any shell in this Basis
   int64_t max_am() const;
-  /// @return the maximum number of functions (i.e., size) of any shell in this Basis
+  /// @return the total number of functions in this Basis
   int64_t nfunctions() const;
-  /// @return the number of shells in this Basis
+  /// @return the total number of shells in this Basis
   int64_t nshells() const;
-  /// @return the number of shell clusters in this Basis
+  /// @return the total number of shell clusters in this Basis
   int64_t nclusters() const { return shells_.size(); };
 
   template <typename Archive>

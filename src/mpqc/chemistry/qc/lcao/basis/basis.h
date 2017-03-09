@@ -1,6 +1,6 @@
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_H_
 
 #include <iosfwd>
 #include <memory>
@@ -239,4 +239,4 @@ struct ArchiveSerializeImpl<Archive, libint2::Shell> {
 
 }  // namespace madness
 }  // namespace archive
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_H_

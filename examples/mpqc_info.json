@@ -19,5 +19,6 @@
   "aux_basis":{
     "name": "cc-pVDZ-F12-CABS",
     "molecule": "$:molecule"
-  }
+  },
+  "frozen_core" : true
 }

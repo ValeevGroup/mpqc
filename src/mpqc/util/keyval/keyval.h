@@ -341,6 +341,13 @@ namespace mpqc {
     @ingroup CoreKeyVal
  */
 class KeyVal {
+ public:
+  /// data type for representing a property tree
+  using ptree = boost::property_tree::iptree;
+  using key_type = ptree::key_type;     // = std::string
+  using value_type = ptree::data_type;  // = std::string
+  constexpr static char separator = ':';
+
  private:
   template <typename Class>
   struct is_sequence : std::false_type {};
@@ -364,13 +371,57 @@ class KeyVal {
     container.resize(size);
   }
 
- public:
-  /// data type for representing a property tree
-  using ptree = boost::property_tree::iptree;
-  using key_type = ptree::key_type;     // = std::string
-  using value_type = ptree::data_type;  // = std::string
-  constexpr static char separator = ':';
+  /// make_ptree is a helper to implement KeyVal::assign() for recursive data
+  /// structures
 
+  /// This specialization makes a ptree from a sequence.
+  /// @tparam SequenceContainer any container for which
+  /// KeyVal::is_sequence<SequenceContainer> is a \c std::true_type,
+  ///         currently any of the following is allowed: \c std::array, \c
+  ///         std::vector, \c std::list .
+  /// @param value a sequence container to put at the path
+  /// @param json_style if true, use empty keys so that JSON arrays are produced
+  /// by KeyVal::write_json,
+  ///                   else use 0-based integer keys, e.g. the first element
+  ///                   will have key \c path:0,
+  ///                   the second -- \c path:1, etc. (this is similar to how
+  ///                   array elements were addressed in MPQC3)
+  template <typename SequenceContainer>
+  ptree make_ptree(
+      const SequenceContainer& value, bool json_style = true,
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
+          nullptr) {
+    ptree result;
+    size_t count = 0;
+    for (const auto& v : value) {
+      auto key =
+          json_style
+              ? key_type("")
+              : std::to_string(count);  // assumes key_type == std::string
+      ptree pt = make_ptree(v, json_style);
+      result.push_back(std::make_pair(key, pt));
+      ++count;
+    }
+    return result;
+  }
+
+  /// make_ptree is a helper to implement KeyVal::assign() for recursive data
+  /// structures
+
+  /// This specialization makes a ptree from an object of non-class non-sequence type.
+  /// @tparam T a type which is not a sequence and not a class
+  /// @param value a non-sequence object to put at the path
+  template <typename T>
+  std::enable_if_t<!KeyVal::is_sequence<T>::value &&
+                       !utility::meta::can_construct<T, const KeyVal&>::value,
+                   ptree>
+  make_ptree(const T& value, bool) {
+    ptree result;
+    result.put("", value);
+    return result;
+  }
+
+ public:
   /// creates empty KeyVal
   KeyVal();
 
@@ -446,7 +497,7 @@ class KeyVal {
       return child_opt->size();
   }
 
-  /// assign simple \c value at the given path (overwrite, if necessary)
+  /// @brief assign simple \c value at the given path (overwrite, if necessary)
   /// @param value a "simple" value, i.e. it can be converted to
   /// a KeyVal::key_type using a
   /// std::basic_ostream<KeyVal::key_type::value_type>
@@ -458,11 +509,13 @@ class KeyVal {
     return *this;
   }
 
-  /// assign a sequence container at the given path (overwrite, if necessary)
+  /// @brief Assign a sequence container at the given path (overwrite, if
+  /// necessary).
+
   /// @tparam SequenceContainer any container for which
   /// KeyVal::is_sequence<SequenceContainer> is a \c std::true_type,
   ///         currently any of the following is allowed: \c std::array, \c
-  ///         std::vector, \c std::list .
+  ///         std::vector, \c std::list . Can be a recursive sequence, i.e. sequence of sequence.
   /// @param path the target path
   /// @param value a sequence container to put at the path
   /// @param json_style if true, use empty keys so that JSON arrays are produced
@@ -478,23 +531,13 @@ class KeyVal {
       std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
           nullptr) {
     auto abs_path = to_absolute_path(path);
-    ptree obj;
-    size_t count = 0;
-    for (const auto& v : value) {
-      ptree pt;
-      auto key =
-          json_style
-              ? key_type("")
-              : std::to_string(count);  // assumes key_type == std::string
-      pt.put("", v);
-      obj.push_back(std::make_pair(key, pt));
-      ++count;
-    }
+    ptree obj = make_ptree(value, json_style);
     top_tree_->add_child(ptree::path_type{abs_path, separator}, obj);
     return *this;
   }
 
-  /// assign the given pointer to a DescribedClass object at the given path (overwrite,
+  /// assign the given pointer to a DescribedClass object at the given path
+  /// (overwrite,
   /// if necessary)
   /// @tparam T a class directly derived from DescribedClass
   /// @param path the path to \c value
@@ -502,9 +545,8 @@ class KeyVal {
   /// @warning these key/value pairs are not part of ptree, hence cannot be
   /// written to JSON/XML
   template <typename T = DescribedClass,
-      typename = std::enable_if_t<Describable<T>::value>>
-      KeyVal& assign(const key_type& path,
-                     const std::shared_ptr<T>& value) {
+            typename = std::enable_if_t<Describable<T>::value>>
+  KeyVal& assign(const key_type& path, const std::shared_ptr<T>& value) {
     auto abs_path = to_absolute_path(path);
     (*dc_registry_)[abs_path] = std::static_pointer_cast<DescribedClass>(value);
     return *this;
@@ -964,8 +1006,7 @@ class SubTreeKeyVal : public KeyVal {
       return SubTreeKeyVal(subtree.get(), *this);
     else
       throw KeyVal::bad_input(
-          std::string("detail::KeyVal::keyval: path not found"),
-          path);
+          std::string("detail::KeyVal::keyval: path not found"), path);
   }
 
  private:
@@ -1023,7 +1064,8 @@ SequenceContainer KeyVal::value(
           resolve_path(path));
     } catch (boost::property_tree::ptree_bad_path& x) {
       throw KeyVal::bad_input(
-          std::string("path ") + x.path<key_type>() + " not found", resolve_path(path));
+          std::string("path ") + x.path<key_type>() + " not found",
+          resolve_path(path));
     }
   } else
     throw KeyVal::bad_input(std::string("path not found"),

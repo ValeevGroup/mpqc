@@ -160,6 +160,6 @@ extern template class RIRMP2<TA::TensorD, TA::SparsePolicy>;
 }  // namespace lcao
 }  // namespace mpqc
 
-#include "mp2_impl.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/mp2_impl.h"
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_

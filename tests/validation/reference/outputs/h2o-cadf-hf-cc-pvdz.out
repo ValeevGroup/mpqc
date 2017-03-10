@@ -1,0 +1,210 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision e389d6d4edf3675559bb8e360d9a56a8e684e6a0
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             work@Drews-MacBook-Pro.local
+  Start Time:       Fri Mar 10 15:12:15 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "cc-pvdz",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ-ri",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "wfn": {
+        "type": "Cadf-RHF",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = cc-pvdz
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+DF Basis = cc-pVDZ-ri
+( tiles = [ 0, 1 ), elements = [ 0, 84 ) )
+Min and Max block size: 84 84
+Average: 84
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  Threshold = 1e-10
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+    Computed One Body Integral: < κ | λ > Size: 4.29153442382812e-06 GB Time: 0.002501125 s
+      Computed One Body Integral: < κ |V| λ > Size: 4.29153442382812e-06 GB Time: 0.005573607 s
+      Computed One Body Integral: < κ |T| λ > Size: 4.29153442382812e-06 GB Time: 0.000388672 s
+    Computed One Body Integral: < κ |H| λ > Size: 4.29153442382812e-06 GB Time: 0.000261442 s
+    Computed CADF fitting Coefficients: ( Κ |Cadf| κ λ ) Size: 0.000360488891601562 GB Time: 1.259238052 s
+    Computed Direct Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 0.000360488891601562 GB Time: 0.007709034 s
+    Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 5.25712966918945e-05 GB Time: 0.001912562 s
+overlap condition number = 107.909712786952Starting SCF:
+	Threshold: 1e-09
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.0103282566809
+	abs(Energy Change)/energy: 0.000467974310051274
+	(Gradient Norm)/n^2: 0.000518510442193262
+	Scf Time: 0.094435936
+		Density Time: 0.002490774
+		Fock Build Time: 0.090651718
+  J time: 0.054226306, Energy J: 23.577474836374
+  K time: 0.035333717, Energy K: 8.98570500004191
+iteration: 1
+	Energy: -76.0263102529895
+	abs(Energy Change)/energy: 0.00021021665072863
+	(Gradient Norm)/n^2: 0.000127840562760079
+	Scf Time: 0.083617738
+		Density Time: 0.00286402
+		Fock Build Time: 0.079740647
+  J time: 0.046834736, Energy J: 23.3214709858281
+  K time: 0.032545869, Energy K: 8.94098227242721
+iteration: 2
+	Energy: -76.0274218504727
+	abs(Energy Change)/energy: 1.46210072127818e-05
+	(Gradient Norm)/n^2: 4.39651513460858e-05
+	Scf Time: 0.08511076
+		Density Time: 0.002539195
+		Fock Build Time: 0.081453367
+  J time: 0.054843108, Energy J: 23.4775488884943
+  K time: 0.02627528, Energy K: 8.97980445918137
+iteration: 3
+	Energy: -76.0275844409724
+	abs(Energy Change)/energy: 2.13857247783347e-06
+	(Gradient Norm)/n^2: 1.03795397542336e-05
+	Scf Time: 0.079036106
+		Density Time: 0.002476265
+		Fock Build Time: 0.075295367
+  J time: 0.048029878, Energy J: 23.4278774285037
+  K time: 0.026929359, Energy K: 8.96894589341263
+iteration: 4
+	Energy: -76.0275988320394
+	abs(Energy Change)/energy: 1.89287406024795e-07
+	(Gradient Norm)/n^2: 1.42704027051928e-06
+	Scf Time: 0.083301011
+		Density Time: 0.002470782
+		Fock Build Time: 0.079509642
+  J time: 0.04738016, Energy J: 23.4339754765012
+  K time: 0.031837555, Energy K: 8.97091219807228
+iteration: 5
+	Energy: -76.0275992246187
+	abs(Energy Change)/energy: 5.16364225254549e-09
+	(Gradient Norm)/n^2: 2.12666900883044e-07
+	Scf Time: 0.082489988
+		Density Time: 0.002464745
+		Fock Build Time: 0.078747683
+  J time: 0.052768573, Energy J: 23.4336409114396
+  K time: 0.025644925, Energy K: 8.97088513826465
+iteration: 6
+	Energy: -76.0275992336021
+	abs(Energy Change)/energy: 1.18159801304093e-10
+	(Gradient Norm)/n^2: 4.00978980080053e-08
+	Scf Time: 0.085516852
+		Density Time: 0.002680303
+		Fock Build Time: 0.081492305
+  J time: 0.049542521, Energy J: 23.4335691632511
+  K time: 0.031591543, Energy K: 8.97087043956973
+iteration: 7
+	Energy: -76.0275992338542
+	abs(Energy Change)/energy: 3.31572158444163e-12
+	(Gradient Norm)/n^2: 4.20586049944061e-09
+	Scf Time: 0.082013054
+		Density Time: 0.002841618
+		Fock Build Time: 0.077686051
+  J time: 0.046575897, Energy J: 23.4335488565497
+  K time: 0.030797532, Energy K: 8.97086630680419
+iteration: 8
+	Energy: -76.0275992338567
+	abs(Energy Change)/energy: 3.34581522980457e-14
+	(Gradient Norm)/n^2: 1.06819928857113e-09
+	Scf Time: 0.085333769
+		Density Time: 0.002611044
+		Fock Build Time: 0.081359289
+  J time: 0.056471943, Energy J: 23.4335472856794
+  K time: 0.024550424, Energy K: 8.97086599108529
+iteration: 9
+	Energy: -76.0275992338569
+	abs(Energy Change)/energy: 2.99067283111022e-15
+	(Gradient Norm)/n^2: 2.96850430184645e-10
+	Scf Time: 0.083230013
+		Density Time: 0.002524921
+		Fock Build Time: 0.079331201
+  J time: 0.046253393, Energy J: 23.4335474365072
+  K time: 0.032751418, Energy K: 8.97086603569218
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "cc-pvdz",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ-ri",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "wfn": {
+        "type": "Cadf-RHF",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-76.027599233856947"
+        }
+    }
+}
+

@@ -1,7 +1,7 @@
 #include "zrhf.h"
 
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 
 #include <clocale>
 #include <sstream>
@@ -41,8 +41,8 @@ void zRHF::init(const KeyVal& kv) {
   const auto charge = 0;
   const auto nelectrons = unitcell.total_atomic_number() - charge;
   if (nelectrons % 2 != 0)
-    throw InputError("zRHF requires an even number of electrons",
-                         __FILE__, __LINE__, "unitcell");
+    throw InputError("zRHF requires an even number of electrons", __FILE__,
+                     __LINE__, "unitcell");
   docc_ = nelectrons / 2;
   dcell_ = unitcell.dcell();
 
@@ -139,7 +139,8 @@ void zRHF::solve(double thresh) {
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute zRHF energy
-    std::complex<double> e_complex = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
+    std::complex<double> e_complex =
+        (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
     ezrhf = e_complex.real();
 
     // compute new density
@@ -182,12 +183,11 @@ void zRHF::solve(double thresh) {
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
       if (iter == 0)
         ExEnv::out0() << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
-                                  niter.c_str(), nEle.c_str(), nTot.c_str(),
-                                  nDel.c_str(), nRMS.c_str(), nT.c_str());
+                                      niter.c_str(), nEle.c_str(), nTot.c_str(),
+                                      nDel.c_str(), nRMS.c_str(), nT.c_str());
       ExEnv::out0() << mpqc::printf(
           " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
           ezrhf + erep, ediff, rms, iter_duration);
-
     }
     ++iter;
 
@@ -204,7 +204,7 @@ void zRHF::solve(double thresh) {
       throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,
                             maxiter_);
   } else {
-      ExEnv::out0() << "\nPeriodic Hartree-Fock iterations have converged!\n";
+    ExEnv::out0() << "\nPeriodic Hartree-Fock iterations have converged!\n";
   }
 
   if (world.rank() == 0) {
@@ -215,8 +215,7 @@ void zRHF::solve(double thresh) {
       Eigen::IOFormat fmt(5);
       std::cout << "\n k | orbital energies" << std::endl;
       for (auto k = 0; k < k_size_; ++k) {
-        std::cout << k << " | " << eps_[k].transpose().format(fmt)
-                  << std::endl;
+        std::cout << k << " | " << eps_[k].transpose().format(fmt) << std::endl;
       }
     }
 
@@ -324,9 +323,8 @@ zRHF::TArrayZ zRHF::transform_real2recip(TArray& matrix) {
     }
   }
 
-
-  result = array_ops::eigen_to_array<TA::TensorZ, TA::SparsePolicy>(world, result_eig,
-                                                             tr0, tr1);
+  result = array_ops::eigen_to_array<TA::TensorZ, TA::SparsePolicy>(
+      world, result_eig, tr0, tr1);
 
   return result;
 }
@@ -372,14 +370,13 @@ bool zRHF::can_evaluate(Energy* energy) {
 }
 
 void zRHF::evaluate(Energy* result) {
-  if(!this->computed()){
+  if (!this->computed()) {
     init(kv_);
     solve(result->target_precision(0));
     this->computed_ = true;
     set_value(result, energy_);
   }
 }
-
 
 }  // namespace lcao
 }  // namespace mpqc

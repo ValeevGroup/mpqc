@@ -104,10 +104,6 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   /// compute integrals that has four dimensions
   TArray compute4(const Formula &formula_string);
 
-  /// find the corresponding AO formula, if index is already AO, it will be
-  /// ignored
-  Formula mo_to_ao(const Formula &formula);
-
   /// find the correct range of summation for σ in <μ0 νR|ρR_j σ(R_j+R)>
   std::vector<int64_t> restricted_latt_range(int64_t R, int64_t RJ);
 
@@ -169,7 +165,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   TArray result;
 
   // get AO formula
-  auto ao_formula = mo_to_ao(formula);
+  auto ao_formula = detail::lcao_to_ao(formula, this->orbital_registry());
 
   // get AO bases
   auto bra_index = ao_formula.bra_indices()[0];
@@ -317,7 +313,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         if (RJ == 0)
           ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
         else
-          ao_int("p, q") += pao_factory_.compute_integrals(world, engine_pool, bases)("p, q");
+          ao_int("p, q") +=
+              pao_factory_.compute_integrals(world, engine_pool, bases)("p, q");
       }
     } else if (ao_formula.oper().type() == Operator::Type::J) {
       // change operator type to Coulomb for computing integrals
@@ -345,7 +342,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto J = pao_factory_.compute_integrals(world, engine_pool, bases, p_screener);
+        auto J = pao_factory_.compute_integrals(world, engine_pool, bases,
+                                                p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
@@ -381,7 +379,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto K = pao_factory_.compute_integrals(world, engine_pool, bases, p_screener);
+        auto K = pao_factory_.compute_integrals(world, engine_pool, bases,
+                                                p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
@@ -415,7 +414,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   TArray result;
 
   // get AO formula
-  auto ao_formula = mo_to_ao(formula);
+  auto ao_formula = detail::lcao_to_ao(formula, this->orbital_registry());
 
   // get AO bases
   auto bra_index0 = ao_formula.bra_indices()[0];
@@ -547,51 +546,6 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
                 << std::endl;
 
   return result;
-}
-
-template <typename Tile, typename Policy>
-Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
-  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
-
-  int increment = 0;
-  auto left_index = formula.bra_indices();
-  for (const auto &index : left_index) {
-    // find the correspoding ao index
-    if (index.is_lcao()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_left_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_left_index.push_back(index);
-    }
-  }
-
-  auto right_index = formula.ket_indices();
-  for (const auto &index : right_index) {
-    // find the correspoding ao index
-    if (index.is_lcao()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_right_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_right_index.push_back(index);
-    }
-  }
-
-  // set formula with ao index
-  auto ao_formula = formula;
-  ao_formula.set_bra_indices(ao_left_index);
-  ao_formula.set_ket_indices(ao_right_index);
-
-  return ao_formula;
 }
 
 template <typename Tile, typename Policy>

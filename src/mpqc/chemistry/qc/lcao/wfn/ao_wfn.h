@@ -8,9 +8,9 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
-#include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 
 namespace mpqc {
 namespace lcao {
@@ -22,13 +22,12 @@ namespace lcao {
  * \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
  * \todo elaborate AOWavefunction documentation
 **/
-template<typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-
-  using ArrayType = TA::DistArray<Tile,Policy>;
-  using DirectArrayType = gaussian::DirectArray<Tile,Policy>;
-  using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
+  using ArrayType = TA::DistArray<Tile, Policy>;
+  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
+  using AOFactoryType = gaussian::AOFactoryBase<Tile, Policy>;
 
   // clang-format off
   /**
@@ -42,9 +41,7 @@ class AOWavefunction : public Wavefunction {
    * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
    */
   // clang-format on
-  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    init_factory(kv);
-  }
+  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) { init_factory(kv); }
   virtual ~AOWavefunction() = default;
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
@@ -61,13 +58,12 @@ class AOWavefunction : public Wavefunction {
    */
   const AOFactoryType &ao_factory() const { return *ao_factory_; }
 
-private:
-
+ private:
   /**
     *  Default way of initialize factories
     *  use AOFactory
     */
-  virtual void init_factory(const KeyVal& kv) {
+  virtual void init_factory(const KeyVal &kv) {
     ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
   }
 

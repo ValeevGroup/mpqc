@@ -113,14 +113,14 @@ std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
 namespace gaussian {
 namespace detail {
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift) {
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
     for (auto shell : shell_vec) {
-      std::array<double, 3> new_origin = {{
-          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)}};
+      std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                           shell.O[1] + shift(1),
+                                           shell.O[2] + shift(2)}};
       shell.move(new_origin);
       shells.push_back(shell);
     }
@@ -131,10 +131,8 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
   return result_ptr;
 }
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift_base,
-                                                    Vector3i nshift,
-                                                    Vector3d dcell) {
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
+                                          Vector3i nshift, Vector3d dcell) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;
@@ -149,8 +147,8 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
       ShellVec shells;
       for (auto shell : shell_vec) {
         std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
-                                            shell.O[1] + shift(1),
-                                            shell.O[2] + shift(2)}};
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
         shell.move(new_origin);
         shells.push_back(shell);
       }

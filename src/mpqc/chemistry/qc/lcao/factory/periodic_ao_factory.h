@@ -211,10 +211,10 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
 
-//    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
-//      return TA::TensorZ(arg.range(), arg.data());
-//    };
-//    op_ = convert_op;
+    //    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
+    //      return TA::TensorZ(arg.range(), arg.data());
+    //    };
+    //    op_ = convert_op;
     detail::set_oper(op_);
 
     print_detail_ = kv.value<bool>("print_detail", false);

@@ -86,8 +86,8 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
       engine_pool = make_engine_pool(
           libint2::Operator::coulomb,
           utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener =
-          detail::make_screener(world, engine_pool, bases, screen, screen_thresh);
+      p_screener = detail::make_screener(world, engine_pool, bases, screen,
+                                         screen_thresh);
 
       g_J = pao_factory.compute_direct_integrals(world, engine_pool, bases,
                                                  p_screener);
@@ -100,8 +100,8 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
       engine_pool = make_engine_pool(
           libint2::Operator::coulomb,
           utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener =
-          detail::make_screener(world, engine_pool, bases, screen, screen_thresh);
+      p_screener = detail::make_screener(world, engine_pool, bases, screen,
+                                         screen_thresh);
 
       g_K = pao_factory.compute_direct_integrals(world, engine_pool, bases,
                                                  p_screener);

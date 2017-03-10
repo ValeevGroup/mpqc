@@ -2,8 +2,8 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
-#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 #include <memory>
 
@@ -25,17 +25,14 @@ using Matrix = RowMatrixXd;
  * complex-valued Restricted Hartree-Fock class
  */
 
-class zRHF
-    : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
-      public Provides<
-          Energy/*,
+class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
+             public Provides<Energy /*,
           CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
   using Tile = TA::TensorD;
   using Policy = TA::SparsePolicy;
-  using TArray =
-      PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+  using TArray = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
   using TArrayZ = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
@@ -94,7 +91,7 @@ class zRHF
    * \param matrix the real-space integral matrix
    * \return the reciprocal-space integral matrix
    */
-  TArrayZ transform_real2recip(TArray &matrix);
+  TArrayZ transform_real2recip(TArray& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value

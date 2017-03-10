@@ -4,8 +4,8 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
                                 Version 4.0.0-alpha
                  Revision e389d6d4edf3675559bb8e360d9a56a8e684e6a0
 
-  Machine:          Darwin-16.4.0-x86_64
-  User:             work@Drews-MacBook-Pro.local
+  Machine:          
+  User:             
   Start Time:       Fri Mar 10 15:12:15 2017 UTC
   Default World:    1 MPI process
 

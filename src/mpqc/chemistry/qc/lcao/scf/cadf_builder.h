@@ -46,6 +46,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   std::vector<double> F_times_;         // E_mo_ + M * C_mo times
   std::vector<double> L_times_;         // (C_mo)^T * F_df times
   std::vector<double> K_times_;         // L^T + L times
+  std::vector<double> se_times_;        // L^T + L times
   std::vector<double> Exch_times_;      // L^T + L times
 
   std::vector<std::array<double, 2>> LMO_sizes_;
@@ -78,6 +79,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
       auto t0 = mpqc::fenced_now(world);
       seC_ =
           lcao::secadf_by_atom_correction<Tile, Policy>(world, obs, dfbs, aaab);
+      // Precompute the transpose so we don't do it every iteration.
+      seC_("p,r,q,s") = seC_("p,q,r,s");
       auto t1 = mpqc::fenced_now(world);
       auto time = mpqc::duration_in_s(t0, t1);
 
@@ -124,6 +127,11 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
                   << ", Energy J: " << energy_J_ << "\n";
     ExEnv::out0() << indent << "K time: " << Exch_times_.back()
                   << ", Energy K: " << energy_K_ << "\n";
+    if (!se_times_.empty()) {
+      ExEnv::out0() << indent << indent
+                    << "Semi-exact correction time: " << se_times_.back()
+                    << "\n";
+    }
   }
 
  private:
@@ -257,12 +265,14 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
     // SeCadf correction
     if (secadf_) {
+      auto se0 = mpqc::fenced_now(world);
       ArrayType Datom, Katom;
       Datom("i,j") = Iac_("i,k") * D("k,l") * Iac_("j, l");
-      Datom.truncate();
-      Katom("mu, nu") = seC_("mu, rho, nu, sig") * Datom("rho, sig");
+      Katom("mu, nu") = seC_("mu, nu, rho, sig") * Datom("rho, sig");
       K("mu, nu") += Iac_("k, mu") * Katom("k,l") * Iac_("l, nu");
       K.truncate();
+      auto se1 = mpqc::fenced_now(world);
+      se_times_.push_back(mpqc::duration_in_s(se0, se1));
     }
     auto k1 = mpqc::fenced_now(world);
     K_times_.push_back(mpqc::duration_in_s(k0, k1));

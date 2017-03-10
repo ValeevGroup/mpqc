@@ -49,8 +49,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   auto p_screener = std::make_shared<Screener>(Screener{});
 
   // soad density
-  auto D_real = soad_density_eig_matrix(unitcell);
-  auto D_comp = D_real.cast<std::complex<double>>();
+  auto D_eig = soad_density_eig_matrix(unitcell);
 
   // get minimal basis
   auto min_bs = parallel_make_basis(world, Basis::Factory("sto-3g"), unitcell);
@@ -61,7 +60,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   auto min_tr0 = min_trange.data()[0];
   auto min_tr1 = min_trange.data()[1];
   auto D =
-      array_ops::eigen_to_array<Tile, Policy>(world, D_comp, min_tr0, min_tr1);
+      array_ops::eigen_to_array<Tile, Policy>(world, D_eig, min_tr0, min_tr1);
 
   // get normal basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);

@@ -11,7 +11,7 @@ namespace gaussian {
 
 template class AOFactory<TA::TensorD, TA::SparsePolicy>;
 template class AOFactory<TA::TensorD, TA::DensePolicy>;
-template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
+template class PeriodicAOFactory<TA::TensorD, TA::SparsePolicy>;
 
 }  // namespace gaussian
 

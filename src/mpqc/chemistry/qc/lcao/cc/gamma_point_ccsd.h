@@ -20,7 +20,7 @@ public:
     ~GammaPointCCSD() {}
 
     GammaPointCCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv), kv_(kv) {
-        phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>>();
+        phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
         lcao_factory_ = lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);
 
         max_iter_ = kv.value<int64_t>("max_iter", 30);
@@ -35,7 +35,7 @@ public:
 
 
 private:
-    std::shared_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>> phf_wfn_;
+    std::shared_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>> phf_wfn_;
     std::shared_ptr<LCAOFactoryType> lcao_factory_;
 
     const KeyVal kv_;

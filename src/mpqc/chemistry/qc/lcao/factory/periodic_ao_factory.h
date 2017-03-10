@@ -22,6 +22,7 @@ typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
     Matrixz;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorz;
+typedef Eigen::Matrix<double, Eigen::Dynamic, 1> Vectord;
 
 // constant
 const std::complex<double> I(0.0, 1.0);
@@ -210,10 +211,11 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
 
-    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
-      return TA::TensorZ(arg.range(), arg.data());
-    };
-    op_ = convert_op;
+//    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
+//      return TA::TensorZ(arg.range(), arg.data());
+//    };
+//    op_ = convert_op;
+    detail::set_oper(op_);
 
     print_detail_ = kv.value<bool>("print_detail", false);
   }
@@ -968,7 +970,7 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-extern template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
+extern template class PeriodicAOFactory<TA::TensorD, TA::SparsePolicy>;
 
 }  // namespace gaussian
 }  // namespace lcao

@@ -19,7 +19,7 @@ public:
 
     GammaPointMP2(const KeyVal &kv) : RMP2<Tile, Policy>(kv) {
 
-        phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>>();
+        phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
         lcao_factory_ = lcao::detail::construct_periodic_lcao_factory<Tile,Policy>(kv);
         print_detail_ = kv.value<bool>("print_detail", false);
     }
@@ -34,7 +34,7 @@ private:
     double e_mp2_;
     RowMatrixXd C_;
     Eigen::VectorXd eps_;
-    std::shared_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>> phf_wfn_;
+    std::shared_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>> phf_wfn_;
 
     bool print_detail_;
     std::shared_ptr<LCAOFactoryType> lcao_factory_;

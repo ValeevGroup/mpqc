@@ -215,7 +215,7 @@ void zRHF::solve(double thresh) {
       Eigen::IOFormat fmt(5);
       std::cout << "\n k | orbital energies" << std::endl;
       for (auto k = 0; k < k_size_; ++k) {
-        std::cout << k << " | " << eps_[k].real().transpose().format(fmt)
+        std::cout << k << " | " << eps_[k].transpose().format(fmt)
                   << std::endl;
       }
     }
@@ -264,7 +264,7 @@ zRHF::TArray zRHF::compute_density() {
 
     // Diagonalize F'
     Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(Ft);
-    eps_[k] = comp_eig_solver.eigenvalues().cast<std::complex<double>>();
+    eps_[k] = comp_eig_solver.eigenvalues();
     Matrixz Ctemp = comp_eig_solver.eigenvectors();
 
     // When k=0 (gamma point), reverse phase factor of complex eigenvectors
@@ -274,7 +274,7 @@ zRHF::TArray zRHF::compute_density() {
     C_[k] = X * Ctemp;
   }
 
-  Matrixz result_eig(tr0.extent(), tr1.extent());
+  Matrix result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
   for (auto R = 0; R < RD_size_; ++R) {
     auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
@@ -286,7 +286,7 @@ zRHF::TArray zRHF::compute_density() {
           std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
       auto D_comp = exponent * D_real;
       result_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent()) +=
-          D_comp;
+          D_comp.real();
     }
   }
 
@@ -295,8 +295,8 @@ zRHF::TArray zRHF::compute_density() {
   return result;
 }
 
-zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
-  TArray result;
+zRHF::TArrayZ zRHF::transform_real2recip(TArray& matrix) {
+  TArrayZ result;
   auto tr0 = matrix.trange().data()[0];
   auto tr1 = detail::extend_trange1(tr0, k_size_);
   auto& world = matrix.world();
@@ -325,7 +325,7 @@ zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
   }
 
 
-  result = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, result_eig,
+  result = array_ops::eigen_to_array<TA::TensorZ, TA::SparsePolicy>(world, result_eig,
                                                              tr0, tr1);
 
   return result;

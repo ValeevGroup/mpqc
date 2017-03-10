@@ -18,22 +18,25 @@ namespace lcao {
 
 using MatrixzVec = std::vector<Matrixz>;
 using VectorzVec = std::vector<Vectorz>;
+using VectordVec = std::vector<Vectord>;
+using Matrix = RowMatrixXd;
 
 /**
  * complex-valued Restricted Hartree-Fock class
  */
 
 class zRHF
-    : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
+    : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
       public Provides<
           Energy/*,
           CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
-  using Tile = TA::TensorZ;
+  using Tile = TA::TensorD;
+  using Policy = TA::SparsePolicy;
   using TArray =
-      PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
-  using PeriodicAOIntegral = PeriodicAOWavefunction::AOIntegral;
+      PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+  using TArrayZ = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
 
@@ -62,7 +65,7 @@ class zRHF
   MatrixzVec co_coeff() override { return C_; }
 
   /// return crystal orbital energies
-  VectorzVec co_energy() override { return eps_; }
+  VectordVec co_energy() override { return eps_; }
 
   /// return # of k points in each direction
   Vector3i nk() override { return nk_; }
@@ -91,7 +94,7 @@ class zRHF
    * \param matrix the real-space integral matrix
    * \return the reciprocal-space integral matrix
    */
-  TArray transform_real2recip(TArray& matrix);
+  TArrayZ transform_real2recip(TArray &matrix);
 
   /*!
    * \brief This changes phase factor of a complex value
@@ -103,17 +106,16 @@ class zRHF
   TArray T_;
   TArray V_;
   TArray S_;
-  TArray Sk_;
+  TArrayZ Sk_;
   TArray H_;
-  TArray Hk_;
   TArray J_;
   TArray K_;
   TArray F_;
-  TArray Fk_;
+  TArrayZ Fk_;
   TArray D_;
 
   MatrixzVec C_;
-  VectorzVec eps_;
+  VectordVec eps_;
   MatrixzVec X_;
 
   double energy_;

@@ -78,13 +78,6 @@ class Formula {
  */
   Formula(std::wstring formula);
 
-  /**
-   *  Make Formula printable
-   *  @param ostream the stream the Formula should be printed into
-   *  @param Formula the formula to be printed
-   */
-  friend std::ostream& operator<<(std::ostream&, Formula const&);
-
   /// reconstruct a std::wstring representation of the formula
   /// @sa Formula::to_ta_expression()
   std::wstring string() const;

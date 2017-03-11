@@ -140,7 +140,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);
   
-  /// compute integrals that has four dimension
+  /// compute CADF fitting coefficients
   TArray compute_cadf_coeffs(const Formula& formula_string);
 
   /// compute integrals that has two dimension

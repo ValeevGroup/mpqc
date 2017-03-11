@@ -72,7 +72,10 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
 /*! \brief Construct direct integral tensors in parallel with screening.
  *
  * \param user_provided_norms is a user supplied replicated tensor with the
- * norm estimates for the array.
+ * norm estimates for the array. It is of type vector<std::pair<Idx, float>>
+ * where Idx is a type that provides random access via operator[] and the
+ * values are the indices of the tile. The float is then the norm estimate for
+ * that tile. 
  */
 template <typename Tile = TA::TensorD, typename Engine, typename Idx>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(

@@ -9,12 +9,12 @@
   },
   "obs": {
     "type": "Basis",
-    "name": "cc-pvdz",
+    "name": "3-21g",
     "molecule": "$:molecule"
   },
   "dfbs": {
     "type": "Basis",
-    "name": "cc-pVDZ-ri",
+    "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
   "wfn_world":{

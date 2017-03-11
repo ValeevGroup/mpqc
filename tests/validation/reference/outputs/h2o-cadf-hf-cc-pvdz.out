@@ -2,11 +2,11 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision e389d6d4edf3675559bb8e360d9a56a8e684e6a0
+                 Revision 0a1cc3fb0a620b09109fe38ef094010bcc15b33d
 
   Machine:          
   User:             
-  Start Time:       Fri Mar 10 15:12:15 2017 UTC
+  Start Time:       Sat Mar 11 14:37:33 2017 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
@@ -21,12 +21,12 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
     },
     "obs": {
         "type": "Basis",
-        "name": "cc-pvdz",
+        "name": "3-21g",
         "molecule": "$:molecule"
     },
     "dfbs": {
         "type": "Basis",
-        "name": "cc-pVDZ-ri",
+        "name": "cc-pVDZ",
         "molecule": "$:molecule"
     },
     "wfn_world": {
@@ -50,15 +50,15 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
   Using fundamental constants system 2010CODATA
 
 Constructing Basis Registry: 
-OBS Basis = cc-pvdz
+OBS Basis = 3-21g
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis = cc-pVDZ
 ( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
 Min and Max block size: 24 24
 Average: 24
-
-DF Basis = cc-pVDZ-ri
-( tiles = [ 0, 1 ), elements = [ 0, 84 ) )
-Min and Max block size: 84 84
-Average: 84
 
 
 Constructing AOFactory: 
@@ -67,106 +67,97 @@ Constructing AOFactory:
   Precision = 2.22044604925031e-16
   Iterative inverse = false
 
-    Computed One Body Integral: < κ | λ > Size: 4.29153442382812e-06 GB Time: 0.002501125 s
-      Computed One Body Integral: < κ |V| λ > Size: 4.29153442382812e-06 GB Time: 0.005573607 s
-      Computed One Body Integral: < κ |T| λ > Size: 4.29153442382812e-06 GB Time: 0.000388672 s
-    Computed One Body Integral: < κ |H| λ > Size: 4.29153442382812e-06 GB Time: 0.000261442 s
-    Computed CADF fitting Coefficients: ( Κ |Cadf| κ λ ) Size: 0.000360488891601562 GB Time: 1.259238052 s
-    Computed Direct Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 0.000360488891601562 GB Time: 0.007709034 s
-    Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 5.25712966918945e-05 GB Time: 0.001912562 s
-overlap condition number = 107.909712786952Starting SCF:
+    Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.005828388 s
+      Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.002347902 s
+      Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000152451 s
+    Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.001457602 s
+    Computed CADF fitting Coefficients: ( Κ |Cadf| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.033894456 s
+    Computed Direct Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.011841205 s
+    Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.000359844 s
+overlap condition number = 29.2649973834146Starting SCF:
 	Threshold: 1e-09
 	Maximum number of iterations: 30
 iteration: 0
-	Energy: -76.0103282566809
-	abs(Energy Change)/energy: 0.000467974310051274
-	(Gradient Norm)/n^2: 0.000518510442193262
-	Scf Time: 0.094435936
-		Density Time: 0.002490774
-		Fock Build Time: 0.090651718
-  J time: 0.054226306, Energy J: 23.577474836374
-  K time: 0.035333717, Energy K: 8.98570500004191
+	Energy: -75.7551465651476
+	abs(Energy Change)/energy: 0.00316715208680689
+	(Gradient Norm)/n^2: 0.00287492732005896
+	Scf Time: 0.007114866
+		Density Time: 0.000576245
+		Fock Build Time: 0.006103752
+  J time: 0.003254214, Energy J: 23.1315709253388
+  K time: 0.002271334, Energy K: 8.33540394319591
 iteration: 1
-	Energy: -76.0263102529895
-	abs(Energy Change)/energy: 0.00021021665072863
-	(Gradient Norm)/n^2: 0.000127840562760079
-	Scf Time: 0.083617738
-		Density Time: 0.00286402
-		Fock Build Time: 0.079740647
-  J time: 0.046834736, Energy J: 23.3214709858281
-  K time: 0.032545869, Energy K: 8.94098227242721
+	Energy: -75.8057342796915
+	abs(Energy Change)/energy: 0.000667333613011629
+	(Gradient Norm)/n^2: 0.00109109920435411
+	Scf Time: 0.00438321
+		Density Time: 0.000592445
+		Fock Build Time: 0.003204594
+  J time: 0.001651094, Energy J: 22.1697417107838
+  K time: 0.001334668, Energy K: 8.18912146801731
 iteration: 2
-	Energy: -76.0274218504727
-	abs(Energy Change)/energy: 1.46210072127818e-05
-	(Gradient Norm)/n^2: 4.39651513460858e-05
-	Scf Time: 0.08511076
-		Density Time: 0.002539195
-		Fock Build Time: 0.081453367
-  J time: 0.054843108, Energy J: 23.4775488884943
-  K time: 0.02627528, Energy K: 8.97980445918137
+	Energy: -75.8134406084536
+	abs(Energy Change)/energy: 0.00010164858236621
+	(Gradient Norm)/n^2: 0.000140289130847678
+	Scf Time: 0.003897352
+		Density Time: 0.000560822
+		Fock Build Time: 0.002780287
+  J time: 0.001455923, Energy J: 22.5160333187727
+  K time: 0.001121537, Energy K: 8.2552510242409
 iteration: 3
-	Energy: -76.0275844409724
-	abs(Energy Change)/energy: 2.13857247783347e-06
-	(Gradient Norm)/n^2: 1.03795397542336e-05
-	Scf Time: 0.079036106
-		Density Time: 0.002476265
-		Fock Build Time: 0.075295367
-  J time: 0.048029878, Energy J: 23.4278774285037
-  K time: 0.026929359, Energy K: 8.96894589341263
+	Energy: -75.8136459316651
+	abs(Energy Change)/energy: 2.70826193596067e-06
+	(Gradient Norm)/n^2: 1.9724594457189e-05
+	Scf Time: 0.004267346
+		Density Time: 0.000598585
+		Fock Build Time: 0.003048619
+  J time: 0.001636838, Energy J: 22.4844177062348
+  K time: 0.001205511, Energy K: 8.25103024704699
 iteration: 4
-	Energy: -76.0275988320394
-	abs(Energy Change)/energy: 1.89287406024795e-07
-	(Gradient Norm)/n^2: 1.42704027051928e-06
-	Scf Time: 0.083301011
-		Density Time: 0.002470782
-		Fock Build Time: 0.079509642
-  J time: 0.04738016, Energy J: 23.4339754765012
-  K time: 0.031837555, Energy K: 8.97091219807228
+	Energy: -75.8136487125308
+	abs(Energy Change)/energy: 3.66802780360486e-08
+	(Gradient Norm)/n^2: 1.23513737889541e-06
+	Scf Time: 0.004306305
+		Density Time: 0.00059245
+		Fock Build Time: 0.003057419
+  J time: 0.001737489, Energy J: 22.4873920389571
+  K time: 0.001122975, Energy K: 8.25167597607603
 iteration: 5
-	Energy: -76.0275992246187
-	abs(Energy Change)/energy: 5.16364225254549e-09
-	(Gradient Norm)/n^2: 2.12666900883044e-07
-	Scf Time: 0.082489988
-		Density Time: 0.002464745
-		Fock Build Time: 0.078747683
-  J time: 0.052768573, Energy J: 23.4336409114396
-  K time: 0.025644925, Energy K: 8.97088513826465
+	Energy: -75.8136487282946
+	abs(Energy Change)/energy: 2.07928294865741e-10
+	(Gradient Norm)/n^2: 1.39367242527313e-07
+	Scf Time: 0.004069603
+		Density Time: 0.000563412
+		Fock Build Time: 0.002829477
+  J time: 0.001488143, Energy J: 22.4875308901802
+  K time: 0.001136945, Energy K: 8.2516875621336
 iteration: 6
-	Energy: -76.0275992336021
-	abs(Energy Change)/energy: 1.18159801304093e-10
-	(Gradient Norm)/n^2: 4.00978980080053e-08
-	Scf Time: 0.085516852
-		Density Time: 0.002680303
-		Fock Build Time: 0.081492305
-  J time: 0.049542521, Energy J: 23.4335691632511
-  K time: 0.031591543, Energy K: 8.97087043956973
+	Energy: -75.8136487287456
+	abs(Energy Change)/energy: 5.94780278392144e-12
+	(Gradient Norm)/n^2: 5.46953444205654e-08
+	Scf Time: 0.004015966
+		Density Time: 0.000599565
+		Fock Build Time: 0.002783704
+  J time: 0.001462671, Energy J: 22.4875284822515
+  K time: 0.001122234, Energy K: 8.25168628549459
 iteration: 7
-	Energy: -76.0275992338542
-	abs(Energy Change)/energy: 3.31572158444163e-12
-	(Gradient Norm)/n^2: 4.20586049944061e-09
-	Scf Time: 0.082013054
-		Density Time: 0.002841618
-		Fock Build Time: 0.077686051
-  J time: 0.046575897, Energy J: 23.4335488565497
-  K time: 0.030797532, Energy K: 8.97086630680419
+	Energy: -75.8136487288234
+	abs(Energy Change)/energy: 1.02607142665383e-12
+	(Gradient Norm)/n^2: 3.01459582750101e-09
+	Scf Time: 0.004032963
+		Density Time: 0.000567511
+		Fock Build Time: 0.002788965
+  J time: 0.00145195, Energy J: 22.4875250015544
+  K time: 0.001169975, Energy K: 8.25168564921725
 iteration: 8
-	Energy: -76.0275992338567
-	abs(Energy Change)/energy: 3.34581522980457e-14
-	(Gradient Norm)/n^2: 1.06819928857113e-09
-	Scf Time: 0.085333769
-		Density Time: 0.002611044
-		Fock Build Time: 0.081359289
-  J time: 0.056471943, Energy J: 23.4335472856794
-  K time: 0.024550424, Energy K: 8.97086599108529
-iteration: 9
-	Energy: -76.0275992338569
-	abs(Energy Change)/energy: 2.99067283111022e-15
-	(Gradient Norm)/n^2: 2.96850430184645e-10
-	Scf Time: 0.083230013
-		Density Time: 0.002524921
-		Fock Build Time: 0.079331201
-  J time: 0.046253393, Energy J: 23.4335474365072
-  K time: 0.032751418, Energy K: 8.97086603569218
+	Energy: -75.8136487288235
+	abs(Energy Change)/energy: 2.24933451221152e-15
+	(Gradient Norm)/n^2: 5.40885160106795e-10
+	Scf Time: 0.004073345
+		Density Time: 0.000598177
+		Fock Build Time: 0.002837175
+  J time: 0.00147393, Energy J: 22.487524963609
+  K time: 0.001170677, Energy K: 8.25168566521517
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -179,12 +170,12 @@ iteration: 9
     },
     "obs": {
         "type": "Basis",
-        "name": "cc-pvdz",
+        "name": "3-21g",
         "molecule": "$:molecule"
     },
     "dfbs": {
         "type": "Basis",
-        "name": "cc-pVDZ-ri",
+        "name": "cc-pVDZ",
         "molecule": "$:molecule"
     },
     "wfn_world": {
@@ -203,7 +194,7 @@ iteration: 9
         "type": "Energy",
         "wfn": "$:wfn",
         "value": {
-            "value": "-76.027599233856947"
+            "value": "-75.813648728823523"
         }
     }
 }

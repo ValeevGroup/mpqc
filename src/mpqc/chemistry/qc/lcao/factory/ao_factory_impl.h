@@ -484,10 +484,15 @@ AOFactory<Tile, Policy>::compute_cadf_coeffs(const Formula& formula) {
   auto& world = this->world();
   time0 = mpqc::now(world, this->accurate_time_);
 
-  gaussian::Basis obs = *this->basis_registry()->retrieve(L"κ");
-  gaussian::Basis dfbs = *this->basis_registry()->retrieve(L"Κ");
+  auto Xindex = formula.bra_indices();
+  auto mu_nu_index = formula.ket_indices();
+
+  const auto& basis_registry = *this->basis_registry();
+
+  auto obs = detail::index_to_basis(basis_registry, mu_nu_index[0]);
+  auto dfbs = detail::index_to_basis(basis_registry, Xindex[0]);
   
-  auto C = cadf_fitting_coefficients<Tile, Policy>(world, obs, dfbs);
+  auto C = cadf_fitting_coefficients<Tile, Policy>(world, *obs, *dfbs);
 
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);

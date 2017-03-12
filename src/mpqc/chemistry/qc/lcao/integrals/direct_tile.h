@@ -3,6 +3,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
 
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
+#include "mpqc/chemistry/qc/lcao/integrals/integral_builder.h"
 
 #include <madness/world/worldptr.h>
 

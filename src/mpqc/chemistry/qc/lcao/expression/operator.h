@@ -36,6 +36,7 @@ namespace mpqc {
  *  - F -> Fock
  *  - F(α) -> FockAlpha(Fock for Alpha Spin)
  *  - F(β) -> FockBeta(Fock for Beta Spin)
+ *  - Cadf -> CADF Fitting Coefficents
  *
  */
 
@@ -63,7 +64,8 @@ class Operator {
     FockBeta = 38,
     hJ = 39,
     __last_fock_operator = 39,
-    __first_2body_operator = 128,
+    __first_2body_operator = 127,
+    Cadf=127,
     Coulomb = 128,
     cGTG = 129,
     cGTG2 = 130,
@@ -136,6 +138,7 @@ class Operator {
  private:
   Type type_;
 };
-}
+
+} // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_OPERATOR_H_

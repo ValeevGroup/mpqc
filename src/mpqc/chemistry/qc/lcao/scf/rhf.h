@@ -67,16 +67,16 @@ class RHF
   /// @return true if using eigen solver and orbitals are not localized
   bool can_evaluate(CanonicalOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all canonical orbitals, annotated with orbital energies
-  void evaluate(CanonicalOrbitalSpace<array_type>* result, double target_precision,
-                std::size_t target_blocksize) override;
+  void evaluate(CanonicalOrbitalSpace<array_type>* result,
+                double target_precision, std::size_t target_blocksize) override;
 
   // these implement PopulatedOrbitalSpace::Provider methods
 
   /// @return true if using eigen solver
   bool can_evaluate(PopulatedOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all or occupied orbitals, annotated with occupancies
-  void evaluate(PopulatedOrbitalSpace<array_type>* result, double target_precision,
-                std::size_t target_blocksize) override;
+  void evaluate(PopulatedOrbitalSpace<array_type>* result,
+                double target_precision, std::size_t target_blocksize) override;
 
  protected:
   double energy_;
@@ -157,7 +157,37 @@ class RIRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * DirectRIRHF, fock_builder uses density fitting with 3-center integrals computed on the fly
+ * CadfRHF class, using direct traditional density fitting for J and the
+ * Concentric Atomic Density Fitting Approach for K.
+ *
+ */
+template <typename Tile, typename Policy>
+class CadfRHF : public RHF<Tile, Policy> {
+ public:
+  /*!
+   * Parameter tcutc can be set to truncate elements of the molecular orbitals,
+   * by default it is 0.0 ensuring no truncation
+   *
+   * A further approximation called force shape may be applied by including the
+   * force_shape_threshold keyword and assigning a value greater than 0 to it.
+   *
+   * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
+   * but will still be settable by the user.
+   */
+  CadfRHF(const KeyVal& kv);
+
+ private:
+  void init_fock_builder() override;
+
+  double force_shape_threshold_ = 0.0;
+  double tcutc_ = 0.0;
+  bool secadf_ = false;
+  bool aaab_ = false;
+};
+
+/**
+ * DirectRIRHF, fock_builder uses density fitting with 3-center integrals
+ * computed on the fly
  */
 template <typename Tile, typename Policy>
 class DirectRIRHF : public RHF<Tile, Policy> {
@@ -180,16 +210,31 @@ class DirectRHF : public RHF<Tile, Policy> {
   void init_fock_builder() override;
 };
 
+/**
+ * RIJ-EXACTK-RHF, fock_builder is overide to use direct four center integral
+ */
+template <typename Tile, typename Policy>
+class RIJEXACTKRHF : public RHF<Tile, Policy> {
+ public:
+  RIJEXACTKRHF(const KeyVal& kv);
+
+ private:
+  void init_fock_builder() override;
+};
+
 #if TA_DEFAULT_POLICY == 0
 extern template class RHF<TA::TensorD, TA::DensePolicy>;
 extern template class RIRHF<TA::TensorD, TA::DensePolicy>;
 extern template class DirectRHF<TA::TensorD, TA::DensePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::DensePolicy>;
+extern template class CadfRHF<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 extern template class RHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class CadfRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

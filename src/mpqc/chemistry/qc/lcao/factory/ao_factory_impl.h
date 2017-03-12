@@ -28,20 +28,22 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
 
   // if have auxilary basis
   if (kv.exists(prefix + "aux_basis")) {
-
     f12::GTGParams gtg_params;
     if (kv.exists(prefix + "f12_factor")) {
-      auto f12_factor_str = kv.value<std::string>(prefix + "f12_factor", "stg-6g[1]");
+      auto f12_factor_str =
+          kv.value<std::string>(prefix + "f12_factor", "stg-6g[1]");
 
-      std::regex f12_factor_regex("(stg|STG)\\-(\\d+)(g|G)\\[([0-9\\-eEdD\\.]+)\\]");
+      std::regex f12_factor_regex(
+          "(stg|STG)\\-(\\d+)(g|G)\\[([0-9\\-eEdD\\.]+)\\]");
       std::smatch f12_factor_match;
-      if(std::regex_search(f12_factor_str, f12_factor_match, f12_factor_regex)) {
+      if (std::regex_search(f12_factor_str, f12_factor_match,
+                            f12_factor_regex)) {
         auto n_gtg = std::stoi(f12_factor_match[2]);
         auto lengthscale = std::stod(f12_factor_match[4]);
         gtg_params = f12::GTGParams(lengthscale, n_gtg);
-      }
-      else
-        throw InputError("invalid format for the f12_factor value",__FILE__,__LINE__,"f12_factor");
+      } else
+        throw InputError("invalid format for the f12_factor value", __FILE__,
+                         __LINE__, "f12_factor");
     } else {
       if (kv.exists(prefix + "vir_basis")) {
         std::string basis_name =
@@ -135,7 +137,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
       }
     }
 
-    // if formula not find
+    // if formula not found
     if (!result.is_initialized()) {
       // compute formula
       if (formula.rank() == 2) {
@@ -473,6 +475,36 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   return result;
 }
+template <typename Tile, typename Policy>
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute_cadf_coeffs(const Formula& formula) {
+  double time = 0.0;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
+  auto& world = this->world();
+  time0 = mpqc::now(world, this->accurate_time_);
+
+  auto Xindex = formula.bra_indices();
+  auto mu_nu_index = formula.ket_indices();
+
+  const auto& basis_registry = *this->basis_registry();
+
+  auto obs = detail::index_to_basis(basis_registry, mu_nu_index[0]);
+  auto dfbs = detail::index_to_basis(basis_registry, Xindex[0]);
+  
+  auto C = cadf_fitting_coefficients<Tile, Policy>(world, *obs, *dfbs);
+
+  time1 = mpqc::now(world, this->accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
+
+  ExEnv::out0() << indent;
+  ExEnv::out0() << "Computed CADF fitting Coefficients: "
+                << utility::to_string(formula.string());
+  double size = mpqc::detail::array_size(C);
+  ExEnv::out0() << " Size: " << size << " GB"
+                << " Time: " << time << " s\n";
+  return C;
+}
 
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
@@ -487,6 +519,10 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   BasisVector bs_array;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+
+  if (formula.oper().type() == Operator::Type::Cadf) {
+    return compute_cadf_coeffs(formula);
+  }
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world(), engine_pool, bs_array, p_screener);

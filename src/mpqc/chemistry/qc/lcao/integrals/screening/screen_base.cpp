@@ -23,7 +23,7 @@ bool Screener::skip(int64_t, int64_t, int64_t, int64_t) const { return false; }
 
 TA::Tensor<float> Screener::norm_estimate(
     madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-    TA::Pmap const &pmap, const math::PetiteList &plist, bool replicate) const {
+    TA::Pmap const &pmap, bool replicate) const {
   const auto trange = gaussian::detail::create_trange(bs_array);
   const auto ndim = bs_array.size();
   if (ndim == 2) {

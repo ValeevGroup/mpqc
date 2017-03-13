@@ -112,6 +112,8 @@ namespace gaussian {
 template <typename Tile, typename Policy>
 class PeriodicAOFactory;
 
+template <typename Tile, typename Policy>
+using PeriodicAOFactoryBase = Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile,Policy>>;
 /*!
  * \brief This constructs a PeriodicAOFactory object
  *
@@ -166,7 +168,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
+class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
@@ -181,7 +183,8 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \brief KeyVal constructor for PeriodicAOFactory
    * \param kv the KeyVal object
    */
-  PeriodicAOFactory(const KeyVal &kv) : Factory<TArray>(kv) {
+  PeriodicAOFactory(const KeyVal &kv)
+      : PeriodicAOFactoryBase<Tile,Policy>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -916,7 +919,13 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
     std::shared_ptr<Screener> screen, Op op) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  TA::TensorF tile_norms = screen->norm_estimate(world, bases);
+
+  auto pmap =
+      Policy::default_pmap(world, trange.tiles_range().volume());
+
+  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *pmap);
+
+  TA::SparseShape<float> shape(world, tile_norms, trange);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);
@@ -937,10 +946,8 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
 
   };
 
-  TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange,
-                                                      std::move(shape));
-  auto pmap = out.pmap();
+                                                      std::move(shape), pmap);
 
   for (auto const &ord : *pmap) {
     if (!out.is_zero(ord)) {
@@ -970,7 +977,9 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+#if TA_DEFAULT_POLICY == 1
 extern template class PeriodicAOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 }  // namespace lcao

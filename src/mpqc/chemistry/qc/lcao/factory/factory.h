@@ -12,7 +12,7 @@
 namespace mpqc {
 namespace lcao {
 
-template <typename Array, typename DirectArray = Array>
+template <typename Array, typename DirectArray=Array>
 class Factory : virtual public DescribedClass {
  public:
   Factory() = default;
@@ -96,8 +96,7 @@ class Factory : virtual public DescribedClass {
 
   /// wrapper to compute function
   Array compute(const std::wstring& string) {
-    auto formula = Formula(string);
-    return compute(formula);
+    return compute(Formula(string));
   }
 
   /// wrapper to compute direct function

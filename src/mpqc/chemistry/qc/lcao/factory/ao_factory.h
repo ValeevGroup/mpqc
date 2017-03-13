@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 
+#include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
@@ -138,6 +139,9 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
 
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);
+  
+  /// compute CADF fitting coefficients
+  TArray compute_cadf_coeffs(const Formula& formula_string);
 
   /// compute integrals that has two dimension
   DirectTArray compute_direct2(const Formula& formula_string);
@@ -257,8 +261,11 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   bool iterative_inv_sqrt_;
 };
 
-extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 extern template class AOFactory<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 }  // namespace lcao

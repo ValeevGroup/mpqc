@@ -1,14 +1,17 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_LCAO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_LCAO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
-#include "periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
 class PeriodicLCAOFactory;
+
+
+template <typename Tile, typename Policy>
+using PeriodicLCAOFactoryBase = Factory<TA::DistArray<Tile,Policy>, TA::DistArray<Tile,Policy>>;
 
 namespace detail {
 /*!
@@ -35,7 +38,7 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
+class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactoryType = gaussian::PeriodicAOFactory<Tile, Policy>;
@@ -45,7 +48,7 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \param kv the KeyVal object
    */
   PeriodicLCAOFactory(const KeyVal &kv)
-      : Factory<TArray>(kv),
+      : PeriodicLCAOFactoryBase<Tile,Policy>(kv),
         pao_factory_(
             *gaussian::construct_periodic_ao_factory<TA::TensorD, Policy>(kv)) {
     std::string prefix = "";
@@ -86,8 +89,8 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    */
   TArray compute(const Formula &formula) override;
 
-  using Factory<TArray>::compute;
-  using Factory<TArray>::compute_direct;
+  using PeriodicLCAOFactoryBase<Tile,Policy>::compute;
+  using PeriodicLCAOFactoryBase<Tile,Policy>::compute_direct;
 
   /// return reference to PeriodicAOFactory object
   AOFactoryType &pao_factory() const { return pao_factory_; }
@@ -567,6 +570,10 @@ std::vector<int64_t> PeriodicLCAOFactory<Tile, Policy>::restricted_latt_range(
 
   return result;
 }
+
+#if TA_DEFAULT_POLICY == 1
+extern template class PeriodicLCAOFactory<TA::TensorZ, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

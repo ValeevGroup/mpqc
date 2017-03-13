@@ -37,8 +37,7 @@ namespace gaussian {
 template <typename E, typename Tile = TA::TensorD>
 std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-    std::function<Tile(TA::TensorD &&)> op =
-        TA::Noop<TA::TensorD,true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tiles_range = trange.tiles_range();
@@ -222,8 +221,7 @@ std::vector<TA::DistArray<Tile, TA::DensePolicy>> dense_xyz_integrals(
   std::vector<TA::DistArray<Tile, TA::DensePolicy>> arrays(3);
 
   for (auto i = 0; i < 3; ++i) {
-    arrays[i] =
-        TA::DistArray<Tile, TA::DensePolicy>(world, trange, pmap);
+    arrays[i] = TA::DistArray<Tile, TA::DensePolicy>(world, trange, pmap);
     detail::set_array(tiles[i], arrays[i]);
   }
   world.gop.fence();
@@ -236,21 +234,23 @@ std::vector<TA::DistArray<Tile, TA::DensePolicy>> dense_xyz_integrals(
  */
 
 template <typename Tile, typename Policy, typename E>
-std::vector<TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value,
-                             TA::DensePolicy>::type >>
-    xyz_integrals(
-        madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-        std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()){
-        return dense_xyz_integrals(world, shr_pool, bases, op);
-    };
-
-template <typename Tile, typename Policy, typename E>
-std::vector<TA::DistArray< Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
-                         TA::SparsePolicy>::type >>
+std::vector<TA::DistArray<
+    Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value,
+                                  TA::DensePolicy>::type>>
 xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()){
-return sparse_xyz_integrals(world, shr_pool, bases, op);
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+  return dense_xyz_integrals(world, shr_pool, bases, op);
+};
+
+template <typename Tile, typename Policy, typename E>
+std::vector<TA::DistArray<
+    Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
+                                  TA::SparsePolicy>::type>>
+xyz_integrals(
+    madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+  return sparse_xyz_integrals(world, shr_pool, bases, op);
 };
 
 /*! \brief Construct sparse integral tensors in parallel.
@@ -285,12 +285,12 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
       make_integral_builder(std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
-  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
+  auto task_f = [=](int64_t ord, detail::IdxVec idx_task, TA::Range rng,
                     TA::TensorF *tile_norms_ptr, Tile *out_tile) {
 
     // This is why builder was made into a shared_ptr.
     auto &builder = *builder_ptr;
-    auto ta_tile = builder.integrals(idx, std::move(rng));
+    auto ta_tile = builder.integrals(idx_task, std::move(rng));
 
     const auto tile_volume = ta_tile.range().volume();
     const auto tile_norm = ta_tile.norm();
@@ -319,7 +319,9 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
+  world.gop.fence();
   out.truncate();
+  world.gop.fence();
 
   return out;
 }

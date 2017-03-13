@@ -9,16 +9,21 @@ namespace mpqc {
 namespace lcao {
 namespace gaussian {
 
-template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 template class AOFactory<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+template class AOFactory<TA::TensorD, TA::SparsePolicy>;
 template class PeriodicAOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace gaussian
 
-template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 template class LCAOFactory<TA::TensorD, TA::DensePolicy>;
-
+#elif TA_DEFAULT_POLICY == 1
+template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
 template class PeriodicLCAOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

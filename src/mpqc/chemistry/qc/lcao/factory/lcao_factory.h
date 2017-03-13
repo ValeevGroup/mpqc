@@ -5,14 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_
 
-#include <string>
-#include <vector>
-
-#include <tiledarray.h>
-
-#include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
 #include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
 #include "mpqc/math/linalg/diagonal_array.h"
 
 namespace mpqc {
@@ -82,7 +75,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
    *
    */
   LCAOFactory(const KeyVal& kv)
-      : Factory<TArray>(kv),
+      : LCAOFactoryBase<Tile,Policy>(kv),
         ao_factory_(*gaussian::construct_ao_factory<Tile, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
@@ -105,7 +98,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
 
   void obsolete() override {
     // obsolete self
-    Factory<TArray>::obsolete();
+    LCAOFactoryBase<Tile,Policy>::obsolete();
     // obsolete AOFactory
     ao_factory_.obsolete();
   }
@@ -135,20 +128,20 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
     throw ProgrammingError("Not Implemented!", __FILE__, __LINE__);
   }
 
-  using Factory<TArray>::compute;
-  using Factory<TArray>::compute_direct;
+  using LCAOFactoryBase<Tile,Policy>::compute;
+  using LCAOFactoryBase<Tile,Policy>::compute_direct;
 
   /// purge formula that contain Operator described by string \c str
   /// from mo_registry and ao_registry
   void purge_operator(const std::wstring& str) override {
-    Factory<TArray>::purge_operator(str);
+    LCAOFactoryBase<Tile,Policy>::purge_operator(str);
     ao_factory().purge_operator(str);
   }
 
   /// purge formulae that contain index described by string \c idx_str
   /// from mo_registry and ao_registry
   void purge_index(const std::wstring& idx_str) override {
-    Factory<TArray>::purge_index(idx_str);
+    LCAOFactoryBase<Tile,Policy>::purge_index(idx_str);
     ao_factory().purge_index(idx_str);
   }
 
@@ -568,8 +561,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
   return result;
 }
 
-extern template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
 extern template class LCAOFactory<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

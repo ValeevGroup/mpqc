@@ -4,8 +4,12 @@
 
 #include "operator.h"
 
+#include "greek_to_english_name.h"
 #include "mpqc/util/misc/string.h"
 #include <boost/algorithm/string.hpp>
+
+#include <codecvt>
+#include <locale>
 #include <memory>
 #include <string>
 
@@ -20,7 +24,8 @@ const std::map<Operator::Type, std::wstring> Operator::oper_to_string = {
     {Type::hJ, L"hJ"},         {Type::K, L"K"},
     {Type::KAlpha, L"K(α)"},   {Type::KBeta, L"K(β)"},
     {Type::Fock, L"F"},        {Type::FockAlpha, L"F(α)"},
-    {Type::FockBeta, L"F(β)"}, {Type::Identity, L"I"}};
+    {Type::FockBeta, L"F(β)"}, {Type::Cadf, L"Cadf"},
+    {Type::Identity, L"I"}};
 
 bool Operator::is_onebody() const {
   return Type::__first_1body_operator <= type_ &&
@@ -37,8 +42,7 @@ bool Operator::is_fock() const {
           type_ == Type::FockBeta);
 }
 
-bool Operator::is_jk() const {
-  return (type_ == Type::J || type_ == Type::K || type_ == Type::KAlpha ||
+bool Operator::is_jk() const { return (type_ == Type::J || type_ == Type::K || type_ == Type::KAlpha ||
           type_ == Type::KBeta);
 }
 

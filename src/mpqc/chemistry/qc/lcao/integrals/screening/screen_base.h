@@ -59,10 +59,7 @@ class Screener {
    */
   virtual TA::Tensor<float> norm_estimate(
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-      TA::Pmap const &pmap,
-      const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
-          bool replicate = false) const;
+      TA::Pmap const &pmap, bool replicate = false) const;
 };
 
 }  // namespace  lcao

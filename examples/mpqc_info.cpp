@@ -150,6 +150,7 @@ int try_main(int argc, char* argv[], madness::World& world) {
 
   bool frozen_core = kv.value<bool>("frozen_core", true);
 
+
   std::size_t occ = mol->total_atomic_number() / 2;
   std::size_t nfr = frozen_core ? mol->core_electrons() / 2 : 0;
 
@@ -167,14 +168,12 @@ int try_main(int argc, char* argv[], madness::World& world) {
     df_basis_analysis(*obs, *dfbs, occ, nfr);
   }
 
-
   const auto& cabs_index = OrbitalIndex(L"α");
   if(basis_registry.have(cabs_index)){
     const auto& dfbs = basis_registry.retrieve(dfbs_index);
     const auto& cabs = basis_registry.retrieve(cabs_index);
     cabs_basis_analysis(*obs, *dfbs, *cabs, occ, nfr);
   }
-
   return 0;
 }
 

@@ -289,8 +289,6 @@ class SchwarzScreen : public Screener {
   double thresh_;                 // Threshold used for screening
   double thresh2_;  // Threshold squared since estimates are not squared
 
-  inline Qmatrix const &Qbra() const { return *Qbra_; }
-  inline Qmatrix const &Qket() const { return *Qket_; }
 
   inline boost::optional<double> estimate(int64_t a) const;
 
@@ -345,6 +343,12 @@ class SchwarzScreen : public Screener {
    */
   SchwarzScreen(std::shared_ptr<Qmatrix> Qbra, std::shared_ptr<Qmatrix> Qket,
                 double thresh);
+  
+  /// Returns the screening matrix for the Bra indices
+  inline Qmatrix const &Qbra() const { return *Qbra_; }
+
+  /// Returns the screening matrix for the Ket indices
+  inline Qmatrix const &Qket() const { return *Qket_; }
 
   /// Reports the threshold being used for skipping integrals
   double skip_threshold() const;
@@ -371,10 +375,7 @@ class SchwarzScreen : public Screener {
    */
   TA::Tensor<float> norm_estimate(
       madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-      TA::Pmap const &pmap,
-      const math::PetiteList &plist =
-          math::SymmPetiteList<math::PetiteList::Symmetry::e>(),
-      bool replicate = false) const override;
+      TA::Pmap const &pmap, bool replicate = false) const override;
 };
 
 /*! \brief Creates a Schwarz Screener

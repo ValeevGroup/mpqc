@@ -161,12 +161,19 @@ int try_main(int argc, char* argv[], madness::World& world) {
   const auto& obs = basis_registry.retrieve(OrbitalIndex(L"λ"));
   ao_basis_analysis(*obs, occ, nfr);
 
-  const auto& dfbs = basis_registry.retrieve(OrbitalIndex(L"Κ"));
-  df_basis_analysis(*obs, *dfbs, occ, nfr);
+  const auto dfbs_index = OrbitalIndex(L"Κ");
+  if(basis_registry.have(dfbs_index)){
+    const auto& dfbs = basis_registry.retrieve(dfbs_index);
+    df_basis_analysis(*obs, *dfbs, occ, nfr);
+  }
 
-  const auto& cabs = basis_registry.retrieve(OrbitalIndex(L"α"));
 
-  cabs_basis_analysis(*obs, *dfbs, *cabs, occ, nfr);
+  const auto& cabs_index = OrbitalIndex(L"α");
+  if(basis_registry.have(cabs_index)){
+    const auto& dfbs = basis_registry.retrieve(dfbs_index);
+    const auto& cabs = basis_registry.retrieve(cabs_index);
+    cabs_basis_analysis(*obs, *dfbs, *cabs, occ, nfr);
+  }
 
   return 0;
 }

@@ -48,7 +48,6 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
   using DirectTileType = DirectTile<Tile, Engine>;
 
   auto task_f = [=](int64_t ord, detail::IdxVec const &idx, TA::Range rng) {
-    auto &builder = *builder_ptr;
     return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
   };
 

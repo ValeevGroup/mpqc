@@ -128,29 +128,19 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
     std::vector<std::pair<Idx_t, float>> out;
     out.reserve(ext[0] * ext[1]);
 
-    auto fmax = std::numeric_limits<float>::max();
     for (auto a = 0; a < ext[0]; ++a) {
-      out.emplace_back(std::make_pair(Idx_t{a, a, a, a}, in(a, a, a, a)));
-      // out.emplace_back(std::make_pair(Idx_t{a, a, a, a}, fmax));
+      out.emplace_back(std::make_pair(Idx_t{{a, a, a, a}}, in(a, a, a, a)));
       for (auto b = 0; b < ext[1]; ++b) {
         if (aaab) {
-          out.emplace_back(std::make_pair(Idx_t{a, a, a, b}, in(a, a, a, b)));
-          out.emplace_back(std::make_pair(Idx_t{a, a, b, a}, in(a, a, b, a)));
-          out.emplace_back(std::make_pair(Idx_t{a, b, a, a}, in(a, b, a, a)));
-          out.emplace_back(std::make_pair(Idx_t{b, a, a, a}, in(b, a, a, a)));
-          // out.emplace_back(std::make_pair(Idx_t{a, a, a, b}, fmax));
-          // out.emplace_back(std::make_pair(Idx_t{a, a, b, a}, fmax));
-          // out.emplace_back(std::make_pair(Idx_t{a, b, a, a}, fmax));
-          // out.emplace_back(std::make_pair(Idx_t{b, a, a, a}, fmax));
+          out.emplace_back(std::make_pair(Idx_t{{a, a, a, b}}, in(a, a, a, b)));
+          out.emplace_back(std::make_pair(Idx_t{{a, a, b, a}}, in(a, a, b, a)));
+          out.emplace_back(std::make_pair(Idx_t{{a, b, a, a}}, in(a, b, a, a)));
+          out.emplace_back(std::make_pair(Idx_t{{b, a, a, a}}, in(b, a, a, a)));
         }
-        out.emplace_back(std::make_pair(Idx_t{a, b, a, b}, in(a, b, a, b)));
-        out.emplace_back(std::make_pair(Idx_t{a, b, b, a}, in(a, b, b, a)));
-        out.emplace_back(std::make_pair(Idx_t{b, a, a, b}, in(b, a, a, b)));
-        out.emplace_back(std::make_pair(Idx_t{b, a, b, a}, in(b, a, b, a)));
-        // out.emplace_back(std::make_pair(Idx_t{a, b, a, b}, fmax));
-        // out.emplace_back(std::make_pair(Idx_t{a, b, b, a}, fmax));
-        // out.emplace_back(std::make_pair(Idx_t{b, a, a, b}, fmax));
-        // out.emplace_back(std::make_pair(Idx_t{b, a, b, a}, fmax));
+        out.emplace_back(std::make_pair(Idx_t{{a, b, a, b}}, in(a, b, a, b)));
+        out.emplace_back(std::make_pair(Idx_t{{a, b, b, a}}, in(a, b, b, a)));
+        out.emplace_back(std::make_pair(Idx_t{{b, a, a, b}}, in(b, a, a, b)));
+        out.emplace_back(std::make_pair(Idx_t{{b, a, b, a}}, in(b, a, b, a)));
       }
     }
 
@@ -228,23 +218,18 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
     using Idx_t = std::array<int, 3>;
     std::vector<std::pair<Idx_t, float>> out;
 
-    auto fmax = std::numeric_limits<float>::max();
     for (auto a = 0; a < ext[1]; ++a) {
-      // out.emplace_back(std::make_pair(Idx_t{a, a, a}, in(a, a, a)));
-      out.emplace_back(std::make_pair(Idx_t{a, a, a}, fmax));
+       out.emplace_back(std::make_pair(Idx_t{{a, a, a}}, in(a, a, a)));
 
       for (auto b = 0; b < ext[2]; ++b) {
-        // out.emplace_back(std::make_pair(Idx_t{a, a, b}, in(a, a, b)));
-        // out.emplace_back(std::make_pair(Idx_t{b, a, b}, in(b, a, b)));
-        out.emplace_back(std::make_pair(Idx_t{a, a, b}, fmax));
-        out.emplace_back(std::make_pair(Idx_t{b, a, b}, fmax));
+         out.emplace_back(std::make_pair(Idx_t{{a, a, b}}, in(a, a, b)));
+         out.emplace_back(std::make_pair(Idx_t{{b, a, b}}, in(b, a, b)));
         
       }
 
       if (aaab) {
         for (auto X = 0; X < ext[0]; ++X) {
-          // out.emplace_back(std::make_pair(Idx_t{X, a, a}, in(X, a, a)));
-          out.emplace_back(std::make_pair(Idx_t{X, a, a}, fmax));
+          out.emplace_back(std::make_pair(Idx_t{{X, a, a}}, in(X, a, a)));
         }
       }
     }
@@ -269,17 +254,17 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
 
     const auto fmax = std::numeric_limits<float>::max();
     for (auto a = 0; a < ext[1]; ++a) {
-      // if (Cin(a, a, a) != 0) {
+      if (Cin(a, a, a) != 0) {
         out(a, a, a) = fmax;
-      // }
+      }
 
       for (auto b = 0; b < ext[2]; ++b) {
         // Check if C has or is missing a function
         auto Cmax = std::max(Cin(a, a, b), Cin(b, a, b));
-        // if (Cmax != 0.0) {
+        if (Cmax != 0.0) {
           out(a, a, b) = fmax;
           out(b, a, b) = fmax;
-        // }
+        }
       }
 
       if (aaab) {
@@ -356,7 +341,6 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   const auto natoms = trange.tiles_range().extent_data()[0];
   auto const &eri3_tiles = trange.tiles_range();
-  auto const &M_tiles = M.trange().tiles_range();
 
   using ArrayType =
       typename std::remove_reference<decltype(eri3.array())>::type;
@@ -518,7 +502,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
     Array const &C_atom, gaussian::Basis const &obs,
     gaussian::Basis const &dfbs) {
   auto trange = gaussian::detail::create_trange(
-      std::array<gaussian::Basis, 3>{dfbs, obs, obs});
+      std::array<gaussian::Basis, 3>{{dfbs, obs, obs}});
 
   std::unordered_map<int64_t, std::vector<int64_t>> c2a;
   auto shape = cadf_shape_cluster(C_atom, trange, c2a);

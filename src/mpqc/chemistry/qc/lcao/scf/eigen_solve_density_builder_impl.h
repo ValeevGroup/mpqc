@@ -1,5 +1,5 @@
-#include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
+#include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/cholesky_inverse.h"
@@ -17,24 +17,26 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy>
-ESolveDensityBuilder<Tile,Policy>::ESolveDensityBuilder(
-    typename ESolveDensityBuilder<Tile,Policy>::array_type const &S, std::vector<typename ESolveDensityBuilder<Tile,Policy>::array_type> r_xyz, int64_t nocc,
-    int64_t nclusters, double TcutC, std::string const &metric_decomp_type,
-    bool localize)
+ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
+    typename ESolveDensityBuilder<Tile, Policy>::array_type const &S,
+    std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
+    int64_t nocc, int64_t nclusters, double TcutC,
+    std::string const &metric_decomp_type, bool localize)
     : S_(S),
       r_xyz_ints_(r_xyz),
-      nocc_(nocc),
-      n_coeff_clusters_(nclusters),
       TcutC_(TcutC),
+      localize_(localize),
+      n_coeff_clusters_(nclusters),
       metric_decomp_type_(metric_decomp_type),
-      localize_(localize) {
+      nocc_(nocc) {
   auto inv0 = mpqc::fenced_now(S_.world());
   if (metric_decomp_type_ == "cholesky_inverse") {
     M_inv_ = array_ops::cholesky_inverse(S_);
   } else if (metric_decomp_type_ == "inverse_sqrt") {
     M_inv_ = array_ops::inverse_sqrt(S_);
   } else if (metric_decomp_type_ == "conditioned") {
-     M_inv_ = array_ops::conditioned_orthogonalizer(S_, 1.0 / std::numeric_limits<double>::epsilon());
+    M_inv_ = array_ops::conditioned_orthogonalizer(
+        S_, 1.0 / std::numeric_limits<double>::epsilon());
   } else {
     throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";
@@ -44,10 +46,12 @@ ESolveDensityBuilder<Tile,Policy>::ESolveDensityBuilder(
 }
 
 template <typename Tile, typename Policy>
-std::pair<typename ESolveDensityBuilder<Tile,Policy>::array_type, typename ESolveDensityBuilder<Tile,Policy>::array_type>
-ESolveDensityBuilder<Tile,Policy>::operator()(
-    typename ESolveDensityBuilder<Tile,Policy>::array_type const &F) {
-  typename ESolveDensityBuilder<Tile,Policy>::array_type Fp, C_occ, C_occ_ao, D;
+std::pair<typename ESolveDensityBuilder<Tile, Policy>::array_type,
+          typename ESolveDensityBuilder<Tile, Policy>::array_type>
+ESolveDensityBuilder<Tile, Policy>::operator()(
+    typename ESolveDensityBuilder<Tile, Policy>::array_type const &F) {
+  typename ESolveDensityBuilder<Tile, Policy>::array_type Fp, C_occ, C_occ_ao,
+      D;
   auto &world = F.world();
 
   auto e0 = mpqc::fenced_now(world);
@@ -63,7 +67,8 @@ ESolveDensityBuilder<Tile,Policy>::operator()(
   auto tr_ao = Fp.trange().data()[0];
 
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, nocc_);
-  C_occ = array_ops::eigen_to_array<Tile,Policy>(Fp.world(), C_occ_eig, tr_ao, tr_occ);
+  C_occ = array_ops::eigen_to_array<Tile, Policy>(Fp.world(), C_occ_eig, tr_ao,
+                                                  tr_occ);
 
   // Get back to AO land
   C_occ_ao("i,j") = M_inv_("k,i") * C_occ("k,j");
@@ -72,7 +77,8 @@ ESolveDensityBuilder<Tile,Policy>::operator()(
     eps_ = eps;
     auto nobs = eps.rows();
     auto tr_obs = scf::tr_occupied(n_coeff_clusters_, nobs);
-    auto C = array_ops::eigen_to_array<Tile,Policy>(Fp.world(), C_eig, tr_ao, tr_obs);
+    auto C = array_ops::eigen_to_array<Tile, Policy>(Fp.world(), C_eig, tr_ao,
+                                                     tr_obs);
     C_("i,j") = M_inv_("k,i") * C("k,j");
   }
   auto e1 = mpqc::fenced_now(world);
@@ -98,10 +104,6 @@ ESolveDensityBuilder<Tile,Policy>::operator()(
 #if TA_DEFAULT_POLICY == 1
   if (TcutC_ != 0) {
     minimize_storage(C_occ_ao, TcutC_);
-    auto shape_c = C_occ_ao.shape();
-    auto &norms = shape_c.data();
-    auto norm_mat = TA::eigen_map(norms, norms.range().extent_data()[0],
-                                  norms.range().extent_data()[1]);
   }
 #endif
 

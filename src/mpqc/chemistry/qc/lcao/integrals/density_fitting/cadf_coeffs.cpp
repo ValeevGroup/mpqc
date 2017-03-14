@@ -179,8 +179,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
         auto in_val = std::max(in(a, a, b), in(b, a, b));
 
         if (in_val >= thresh) {
-          norms.emplace_back(std::make_pair(idx_type{a, a, b}, val_max));
-          norms.emplace_back(std::make_pair(idx_type{b, a, b}, val_max));
+          norms.emplace_back(std::make_pair(idx_type{{a, a, b}}, val_max));
+          norms.emplace_back(std::make_pair(idx_type{{b, a, b}}, val_max));
         }
       }
     }

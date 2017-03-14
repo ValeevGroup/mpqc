@@ -47,4 +47,37 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
       }
     }
   }
+
+  std::vector<Array> vecs2(v);
+  // initialize another vector
+  for (auto i = 0; i < v; i++) {
+    EigenVector<double> vec = double(i + v) * EigenVector<double>::Random(n);
+    vecs2[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
+        TA::get_default_world(), vec, tr_n, tr_v);
+  }
+
+  gram_schmidt(vecs, vecs2);
+
+  for (auto i = 0; i < v; ++i) {
+    for (auto j = 0; j < v; ++j) {
+      const auto test = dot_product(vecs[i], vecs2[j]);
+//      std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
+      // test if orthogonalized
+      REQUIRE(test == Approx(0.0).epsilon(tolerance));
+    }
+  }
+
+  for (auto i = 0; i < v; ++i) {
+    for (auto j = i; j < v; ++j) {
+      const auto test = dot_product(vecs2[i], vecs2[j]);
+//      std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
+      if (i == j) {
+        // test if normalized
+        REQUIRE(test == Approx(1.0).epsilon(tolerance));
+      } else {
+        // test if orthogonalized
+        REQUIRE(test == Approx(0.0).epsilon(tolerance));
+      }
+    }
+  }
 }

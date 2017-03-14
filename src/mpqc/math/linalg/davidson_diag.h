@@ -104,7 +104,7 @@ class DavidsonDiag {
   // clang-format on
   template <typename Pred>
   EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
-                                        const Pred& pred) {
+                                        value_type& new_B, const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of vector
     const auto n_v = B.size();
@@ -117,6 +117,9 @@ class DavidsonDiag {
         G(i, j) = dot_product(B[j], HB[i]);
       }
     }
+
+//    std::cout << "G: " << std::endl;
+//    std::cout << G << std::endl;
 
     // do eigen solve locally
     result_type E(n_roots_);
@@ -220,29 +223,34 @@ class DavidsonDiag {
       pred(E[i], residual[i]);
     }
 
-    // add current correction vector to guess vector
-    B.insert(B.end(), residual.begin(), residual.end());
-
     // subspace collapse
+    // restart with new vector and most recent eigen vector
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
     if (B.size() >= n_roots_ * max_n_guess_) {
       B.clear();
-      B.insert(B.end(), residual.begin(), residual.end());
+      HB.clear();
+      new_B.clear();
+      new_B.insert(new_B.end(), residual.begin(), residual.end());
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {
-        B.insert(B.end(), vector.begin(), vector.end());
+        new_B.insert(new_B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
-      gram_schmidt(B);
+      gram_schmidt(new_B);
       // call it second times
-      gram_schmidt(B);
+      gram_schmidt(new_B);
+      // update guess vector
+      B = new_B;
     } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
-      gram_schmidt(B, n_v);
+      gram_schmidt(B, residual);
       // call it twice
-      gram_schmidt(B, n_v);
+      gram_schmidt(B, residual);
+      new_B = residual;
+      // update guess vector
+      B.insert(B.end(), new_B.begin(), new_B.end());
     }
 
 // test if orthonomalized

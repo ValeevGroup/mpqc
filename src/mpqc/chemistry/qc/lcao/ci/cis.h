@@ -582,7 +582,7 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
 
   auto& factory = this->lcao_factory();
 
-  //  std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
+  std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
   std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
 
   // use f_ia for shape
@@ -596,9 +596,11 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     guess.fill(numeric_type(0.0));
 
     // fill in with 1.0
-    std::size_t idx_i = i % n_a;
-    std::size_t idx_a = i / n_a;
+//    std::size_t idx_i = i % n_a;
+//    std::size_t idx_a = i / n_a;
 
+    std::size_t idx_i = n_i - 1;
+    std::size_t idx_a = i;
     //    std::cout << "element index" << std::endl;
     //    std::cout << idx_i << std::endl;
     //    std::cout << idx_a << std::endl;

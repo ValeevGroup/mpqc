@@ -363,10 +363,11 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto eri4_J = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[aa_bb]");
-  auto eri4_K = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
+  auto& world = this->ao_factory().world();
+  auto basis =
+        this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   auto builder =
-      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4_J)>(std::move(eri4_J),std::move(eri4_K));
+      scf::FourCenterFockBuilder<Tile, Policy>(world, basis, basis, basis, true, true);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 

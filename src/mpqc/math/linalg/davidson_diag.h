@@ -89,7 +89,7 @@ class DavidsonDiag {
     eigen_vector_.clear();
     HB_.clear();
     B_.clear();
-    subspace_.resize(0,0);
+    subspace_.resize(0, 0);
   }
 
   /// @return all stored eigen vector in Davidson
@@ -111,7 +111,8 @@ class DavidsonDiag {
    */
   // clang-format on
   template <typename Pred>
-  EigenVector<element_type> extrapolate(value_type& HB, value_type& B, const Pred& pred) {
+  EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
+                                        const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of new vector
     const auto n_b = B.size();
@@ -128,39 +129,37 @@ class DavidsonDiag {
 
     // compute new subspace
     // G will be replicated Eigen Matrix
-    { 
+    {
       RowMatrix<element_type> G = RowMatrix<element_type>::Zero(n_v, n_v);
       // reuse stored subspace
-      G.block(0,0,n_s,n_s) << subspace_;
+      G.block(0, 0, n_s, n_s) << subspace_;
       // initialize new value
-      if (symmetric_){
-
-       for (auto i = 0; i < n_b; ++i) {
-         const auto ii = i + n_s;
-         for (auto j = 0; j <= ii; ++j) {
-           G(ii, j) = dot_product(B_[j], HB_[ii]);
-	   if( ii != j ){
-            G(j,ii) = G(j,ii);
-	   }
-	 }
-       }
-      }
-      else{
-       for (auto i = 0; i < n_b; ++i) {
-         const auto ii = i + n_s;
-         for (auto j = 0; j <= ii; ++j) {
-           G(ii, j) = dot_product(B_[j], HB_[ii]);
-	   if( ii != j ){
-            G(j,ii) = dot_product(B_[ii], HB_[j]);
-	   }
-         }
-       }
+      if (symmetric_) {
+        for (auto i = 0; i < n_b; ++i) {
+          const auto ii = i + n_s;
+          for (auto j = 0; j <= ii; ++j) {
+            G(ii, j) = dot_product(B_[j], HB_[ii]);
+            if (ii != j) {
+              G(j, ii) = G(j, ii);
+            }
+          }
+        }
+      } else {
+        for (auto i = 0; i < n_b; ++i) {
+          const auto ii = i + n_s;
+          for (auto j = 0; j <= ii; ++j) {
+            G(ii, j) = dot_product(B_[j], HB_[ii]);
+            if (ii != j) {
+              G(j, ii) = dot_product(B_[ii], HB_[j]);
+            }
+          }
+        }
       }
       subspace_ = G;
     }
 
-//    std::cout << "G: " << std::endl;
-//    std::cout << G << std::endl;
+    //    std::cout << "G: " << std::endl;
+    //    std::cout << G << std::endl;
 
     // do eigen solve locally
     result_type E(n_roots_);
@@ -268,10 +267,10 @@ class DavidsonDiag {
     // restart with new vector and most recent eigen vector
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
-    if (B_.size() > n_roots_ * (max_n_guess_-1)) {
+    if (B_.size() > n_roots_ * (max_n_guess_ - 1)) {
       B_.clear();
       HB_.clear();
-      subspace_.resize(0,0);
+      subspace_.resize(0, 0);
       B.insert(B.end(), residual.begin(), residual.end());
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {

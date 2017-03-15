@@ -78,14 +78,13 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   auto i = 0;
 
   for (; i < max_iter; i++) {
-    //std::cout << "Iter: " << i << std::endl;
+    // std::cout << "Iter: " << i << std::endl;
     const auto n_v = guess_ta.size();
     std::vector<Array> HB(n_v);
 
     for (auto i = 0; i < n_v; i++) {
       HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
-
 
     EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
 
@@ -179,7 +178,6 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
     for (auto i = 0; i < n_v; i++) {
       HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
-
 
     EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
 

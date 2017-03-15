@@ -10,34 +10,60 @@
 namespace mpqc {
 
 namespace detail {
+/// Abstract base for a fundamental constants system
+/// @tparam the real type used to report the values
 template <typename real_t>
 struct FundamentalConstants {
+  /// @return a string describing the particular fundamental constants system
   virtual const char* description() const = 0;
+
+  ////////////////////////////////////////////////////////////////////////////
   // fundamental constants proper
+
+  /// @return the value of Bohr radius (m)
   virtual real_t bohr_radius() const = 0;
+  /// @return the value of elementary charge (C)
   virtual real_t elementary_charge() const = 0;
+  /// @return the value of electron mass (kg)
   virtual real_t electron_mass() const = 0;
+  /// @return the value of Avogadro number ( mol\f$^{-1}\f$ )
   virtual real_t Avogadro_constant() const = 0;
+  /// @return the value of Planck constant ( J s )
   virtual real_t Planck_constant() const = 0;
 
-  // nonfundamental but approved
+  /// @return the atomic mass unit, a.m.u. (kg)
+  /// @note nonfundamental but approved in CODATA
   virtual real_t atomic_mass_unit() const = 0;
 
+  ////////////////////////////////////////////////////////////////////////////
   // derived
+
+  /// @return the value of eV / Hartree ratio (unitless)
   virtual real_t Hartree_to_electron_volt() const = 0;
 
+  ////////////////////////////////////////////////////////////////////////////
   // exact in the CODATA system
+
   static constexpr real_t _electric_constant = 8.854187817e-12;  // F/m
+  /// @return the value of electric constant (F / m)
+  /// @note this constant is exact in the SI system
   real_t electric_constant() const {
     return _electric_constant;  // F/m
   }
-  // exact
-  static constexpr real_t _thermochemical_calorie = 4.184;  // F/m
+  static constexpr real_t _speed_of_light = 299792458;  // m/s
+  /// @return the value of the speed of light in vacuum (m/s)
+  /// @note this constant is exact in the SI system
+  real_t speed_of_light() const {
+    return _speed_of_light;  // m/s
+  }
+  /// @return the value of thermochemical calorie (J)
+  /// @note this is an exact conversion factor
+  static constexpr real_t _thermochemical_calorie = 4.184;  // J
   real_t thermochemical_calorie() const {
     return _thermochemical_calorie;  // J
   }
-  // atomic unit of dipole moment in Debye
-  // this is fixed at the value used by MPQC2
+  /// @return the atomic unit of dipole moment (Debye)
+  /// @note this is fixed at the value used by MPQC2
   static constexpr real_t _atomic_unit_to_debye = 2.541765;
   real_t atomic_unit_to_debye() const {
     return _atomic_unit_to_debye;  // J
@@ -47,6 +73,7 @@ struct FundamentalConstants {
 
 namespace constants {
 
+/// The 2014 CODATA revision
 template <typename Real>
 struct codata_2014 {
   static constexpr const char* const description =
@@ -64,6 +91,8 @@ struct codata_2014 {
       ((4 * M_PI * detail::FundamentalConstants<Real>::_electric_constant) *
        bohr_radius);
 };
+
+/// The 2010 CODATA revision
 template <typename Real>
 struct codata_2010 {
   static constexpr const char* const description =
@@ -81,6 +110,7 @@ struct codata_2010 {
       ((4 * M_PI * detail::FundamentalConstants<Real>::_electric_constant) *
        bohr_radius);
 };
+/// The 2006 CODATA revision
 /// \note 2006 CODATA set is the default in Gaussian09 (see http://www.gaussian.com/g_tech/g_ur/k_constants.htm)
 template <typename Real>
 struct codata_2006 {
@@ -99,6 +129,7 @@ struct codata_2006 {
       ((4 * M_PI * detail::FundamentalConstants<Real>::_electric_constant) *
        bohr_radius);
 };
+/// The constants system used by MPQC2
 /// \note based on CODATA1986, except the atomic mass unit
 /// see http://physics.nist.gov/cuu/pdf/codata86.pdf
 template <typename Real>
@@ -119,19 +150,21 @@ struct mpqc2 {
 
 };  // namespace constants
 
-template <typename Data>
+/// The set of fundamental constants described by \c System
+/// @tparam System a data type describing the system of fundamental constants (see namespace ::mpqc::constants )
+template <typename System>
 struct FundamentalConstants
-    : detail::FundamentalConstants<typename Data::real_t> {
-  const char* description() const override { return Data::description; }
-  using real_t = typename Data::real_t;
-  real_t bohr_radius() const override { return Data::bohr_radius; }
-  real_t elementary_charge() const override { return Data::elementary_charge; }
-  real_t electron_mass() const override { return Data::electron_mass; }
-  real_t Avogadro_constant() const override { return Data::Avogadro_constant; }
-  real_t Planck_constant() const override { return Data::Planck_constant; }
-  real_t atomic_mass_unit() const override { return Data::atomic_mass_unit; }
+    : detail::FundamentalConstants<typename System::real_t> {
+  const char* description() const override { return System::description; }
+  using real_t = typename System::real_t;
+  real_t bohr_radius() const override { return System::bohr_radius; }
+  real_t elementary_charge() const override { return System::elementary_charge; }
+  real_t electron_mass() const override { return System::electron_mass; }
+  real_t Avogadro_constant() const override { return System::Avogadro_constant; }
+  real_t Planck_constant() const override { return System::Planck_constant; }
+  real_t atomic_mass_unit() const override { return System::atomic_mass_unit; }
   real_t Hartree_to_electron_volt() const override {
-    return Data::Hartree_to_electron_volt;
+    return System::Hartree_to_electron_volt;
   }
 };
 
@@ -207,6 +240,9 @@ class UnitFactory {
 
   /// \return the name of the fundamental constants system
   const std::string& system() const { return system_; }
+
+  /// \return a shared_ptr to the fundamental constants system object
+  std::shared_ptr<const detail::FundamentalConstants<double>> constants() const { return constants_; }
 
   /// \return the description of the fundamental constants system
   const char* description() const { return constants_->description(); }

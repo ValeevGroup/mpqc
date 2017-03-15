@@ -77,21 +77,17 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
   auto i = 0;
 
-  std::vector<Array> new_guess = guess_ta;
-  std::vector<Array> HB;
-
   for (; i < max_iter; i++) {
     //    std::cout << "Iter: " << i << std::endl;
-    const auto n_v = new_guess.size();
-    std::vector<Array> new_HB(n_v);
+    const auto n_v = guess_ta.size();
+    std::vector<Array> HB(n_v);
 
     for (auto i = 0; i < n_v; i++) {
-      new_HB[i]("i,j") = A_ta("i,k") * new_guess[i]("k,j");
+      HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
 
-    HB.insert(HB.end(), new_HB.begin(), new_HB.end());
 
-    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, new_guess, pred);
+    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
 
     //    std::cout << "n_vector= " << n_v << "\n";
     //    std::cout << "norm= " << (eig - eig_new).norm() << "\n";
@@ -175,20 +171,17 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
   auto i = 0;
-  std::vector<Array> new_guess = guess_ta;
-  std::vector<Array> HB;
   for (; i < max_iter; i++) {
     //    std::cout << "Iter: " << i << std::endl;
-    const auto n_v = new_guess.size();
-    std::vector<Array> new_HB(n_v);
+    const auto n_v = guess_ta.size();
+    std::vector<Array> HB(n_v);
 
     for (auto i = 0; i < n_v; i++) {
-      new_HB[i]("i,j") = A_ta("i,k") * new_guess[i]("k,j");
+      HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
 
-    HB.insert(HB.end(), new_HB.begin(), new_HB.end());
 
-    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, new_guess, pred);
+    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
 
     //    std::cout << eig_new << std::endl;
     //    std::cout << "norm= " << (eig - eig_new).norm() << "\n";

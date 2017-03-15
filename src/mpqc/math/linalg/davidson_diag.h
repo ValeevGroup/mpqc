@@ -80,9 +80,15 @@ class DavidsonDiag {
         symmetric_(symmetric),
         n_guess_(n_guess),
         max_n_guess_(max_n_guess),
-        eigen_vector_() {}
+        eigen_vector_(),
+        HB_(),
+        B_() {}
 
-  ~DavidsonDiag() { eigen_vector_.clear(); }
+  ~DavidsonDiag() {
+    eigen_vector_.clear();
+    HB_.clear();
+    B_.clear();
+  }
 
   /// @return all stored eigen vector in Davidson
   std::deque<value_type, std::allocator<value_type>>& eigen_vector() {
@@ -103,18 +109,24 @@ class DavidsonDiag {
    */
   // clang-format on
   template <typename Pred>
-  EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
-                                        value_type& new_B, const Pred& pred) {
+  EigenVector<element_type> extrapolate(value_type& HB, value_type& B, const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of vector
-    const auto n_v = B.size();
+
+    B_.insert(B_.end(), B.begin(), B.end());
+    B.clear();
+
+    HB_.insert(HB_.end(), HB.begin(), HB.end());
+    HB.clear();
+
+    const auto n_v = B_.size();
 
     // subspace
     // G will be replicated Eigen Matrix
     RowMatrix<element_type> G(n_v, n_v);
     for (auto i = 0; i < n_v; ++i) {
       for (auto j = 0; j < n_v; ++j) {
-        G(i, j) = dot_product(B[j], HB[i]);
+        G(i, j) = dot_product(B_[j], HB_[i]);
       }
     }
 
@@ -188,10 +200,10 @@ class DavidsonDiag {
     // X(i) = B(i)*C(i)
     value_type X(n_roots_);
     for (auto i = 0; i < n_roots_; ++i) {
-      X[i] = copy(B[i]);
+      X[i] = copy(B_[i]);
       zero(X[i]);
       for (auto j = 0; j < n_v; ++j) {
-        axpy(X[i], C(j, i), B[j]);
+        axpy(X[i], C(j, i), B_[j]);
       }
     }
 
@@ -210,7 +222,7 @@ class DavidsonDiag {
       const auto e_i = -E[i];
       scale(residual[i], e_i);
       for (auto j = 0; j < n_v; ++j) {
-        axpy(residual[i], C(j, i), HB[j]);
+        axpy(residual[i], C(j, i), HB_[j]);
       }
     }
 
@@ -227,30 +239,25 @@ class DavidsonDiag {
     // restart with new vector and most recent eigen vector
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
-    if (B.size() >= n_roots_ * max_n_guess_) {
-      B.clear();
-      HB.clear();
-      new_B.clear();
-      new_B.insert(new_B.end(), residual.begin(), residual.end());
+    if (B_.size() >= n_roots_ * max_n_guess_) {
+      B_.clear();
+      HB_.clear();
+      B.insert(B.end(), residual.begin(), residual.end());
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {
-        new_B.insert(new_B.end(), vector.begin(), vector.end());
+        B.insert(B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
-      gram_schmidt(new_B);
+      gram_schmidt(B);
       // call it second times
-      gram_schmidt(new_B);
-      // update guess vector
-      B = new_B;
+      gram_schmidt(B);
     } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
-      gram_schmidt(B, residual);
+      gram_schmidt(B_, residual);
       // call it twice
-      gram_schmidt(B, residual);
-      new_B = residual;
-      // update guess vector
-      B.insert(B.end(), new_B.begin(), new_B.end());
+      gram_schmidt(B_, residual);
+      B = residual;
     }
 
 // test if orthonomalized
@@ -281,6 +288,8 @@ class DavidsonDiag {
   unsigned int n_guess_;
   unsigned int max_n_guess_;
   std::deque<value_type> eigen_vector_;
+  value_type HB_;
+  value_type B_;
 };
 
 }  // namespace mpqc

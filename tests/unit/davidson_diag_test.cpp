@@ -78,7 +78,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   auto i = 0;
 
   for (; i < max_iter; i++) {
-    //    std::cout << "Iter: " << i << std::endl;
+    //std::cout << "Iter: " << i << std::endl;
     const auto n_v = guess_ta.size();
     std::vector<Array> HB(n_v);
 

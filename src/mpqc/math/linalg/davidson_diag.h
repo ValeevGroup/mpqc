@@ -82,12 +82,14 @@ class DavidsonDiag {
         max_n_guess_(max_n_guess),
         eigen_vector_(),
         HB_(),
-        B_() {}
+        B_(),
+        subspace_() {}
 
   ~DavidsonDiag() {
     eigen_vector_.clear();
     HB_.clear();
     B_.clear();
+    subspace_.resize(0,0);
   }
 
   /// @return all stored eigen vector in Davidson
@@ -111,23 +113,50 @@ class DavidsonDiag {
   template <typename Pred>
   EigenVector<element_type> extrapolate(value_type& HB, value_type& B, const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
-    // size of vector
+    // size of new vector
+    const auto n_b = B.size();
+    // size of original subspace
+    const auto n_s = subspace_.cols();
 
     B_.insert(B_.end(), B.begin(), B.end());
     B.clear();
 
     HB_.insert(HB_.end(), HB.begin(), HB.end());
     HB.clear();
-
+    // size of new subspace
     const auto n_v = B_.size();
 
-    // subspace
+    // compute new subspace
     // G will be replicated Eigen Matrix
-    RowMatrix<element_type> G(n_v, n_v);
-    for (auto i = 0; i < n_v; ++i) {
-      for (auto j = 0; j < n_v; ++j) {
-        G(i, j) = dot_product(B_[j], HB_[i]);
+    { 
+      RowMatrix<element_type> G = RowMatrix<element_type>::Zero(n_v, n_v);
+      // reuse stored subspace
+      G.block(0,0,n_s,n_s) << subspace_;
+      // initialize new value
+      if (symmetric_){
+
+       for (auto i = 0; i < n_b; ++i) {
+         const auto ii = i + n_s;
+         for (auto j = 0; j <= ii; ++j) {
+           G(ii, j) = dot_product(B_[j], HB_[ii]);
+	   if( ii != j ){
+            G(j,ii) = G(j,ii);
+	   }
+	 }
+       }
       }
+      else{
+       for (auto i = 0; i < n_b; ++i) {
+         const auto ii = i + n_s;
+         for (auto j = 0; j <= ii; ++j) {
+           G(ii, j) = dot_product(B_[j], HB_[ii]);
+	   if( ii != j ){
+            G(j,ii) = dot_product(B_[ii], HB_[j]);
+	   }
+         }
+       }
+      }
+      subspace_ = G;
     }
 
 //    std::cout << "G: " << std::endl;
@@ -140,7 +169,7 @@ class DavidsonDiag {
     // symmetric matrix
     if (symmetric_) {
       // this return eigenvalue and eigenvector
-      Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(G);
+      Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(subspace_);
 
       RowMatrix<element_type> v = es.eigenvectors();
       EigenVector<element_type> e = es.eigenvalues();
@@ -158,7 +187,7 @@ class DavidsonDiag {
     // non-symmetric matrix
     else {
       // unitary transform to upper triangular matrix
-      Eigen::RealSchur<RowMatrix<element_type>> rs(G);
+      Eigen::RealSchur<RowMatrix<element_type>> rs(subspace_);
 
       RowMatrix<element_type> T = rs.matrixT();
       RowMatrix<element_type> U = rs.matrixU();
@@ -242,6 +271,7 @@ class DavidsonDiag {
     if (B_.size() > n_roots_ * (max_n_guess_-1)) {
       B_.clear();
       HB_.clear();
+      subspace_.resize(0,0);
       B.insert(B.end(), residual.begin(), residual.end());
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {
@@ -290,6 +320,7 @@ class DavidsonDiag {
   std::deque<value_type> eigen_vector_;
   value_type HB_;
   value_type B_;
+  RowMatrix<element_type> subspace_;
 };
 
 }  // namespace mpqc

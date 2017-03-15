@@ -71,11 +71,11 @@ class DavidsonDiag {
    * @param n_roots number of lowest roots to solve
    * @param n_guess number of eigen vector per root at subspace collapse,
    * default is 2
-   * @param max_n_guess max number of guess vector per root, default is 3
+   * @param max_n_guess max number of guess vector per root, default is 4
    * @param symmetric if matrix is symmetric
    */
   DavidsonDiag(unsigned int n_roots, bool symmetric = true,
-               unsigned int n_guess = 2, unsigned int max_n_guess = 3)
+               unsigned int n_guess = 2, unsigned int max_n_guess = 4)
       : n_roots_(n_roots),
         symmetric_(symmetric),
         n_guess_(n_guess),
@@ -239,7 +239,7 @@ class DavidsonDiag {
     // restart with new vector and most recent eigen vector
     // Journal of Computational Chemistry, 11(10), 1164–1168.
     // https://doi.org/10.1002/jcc.540111008
-    if (B_.size() >= n_roots_ * max_n_guess_) {
+    if (B_.size() > n_roots_ * (max_n_guess_-1)) {
       B_.clear();
       HB_.clear();
       B.insert(B.end(), residual.begin(), residual.end());

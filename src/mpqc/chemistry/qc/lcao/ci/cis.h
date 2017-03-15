@@ -311,7 +311,7 @@ CIS<Tile, Policy>::compute_cis(
   ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -398,7 +398,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -500,7 +500,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 

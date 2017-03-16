@@ -46,7 +46,9 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
+class CCSD : public LCAOWavefunction<Tile, Policy>,
+             public Provides<Energy>,
+             public std::enable_shared_from_this<CCSD<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactory = gaussian::AOFactory<Tile, Policy>;
@@ -101,10 +103,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  protected:
   TArray T1_;
   TArray T2_;
+  const KeyVal kv_;
 
   /// private members
  private:
-  const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
   typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
@@ -194,7 +196,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
+        direct_ao_array_ =
+            this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -1366,6 +1369,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return diis;
   };
 
+ protected:
   /// get mo coefficient
   /// occ part
   const TArray get_Ci() {
@@ -1512,6 +1516,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
   }
 
+ private:
   /// AO integral-direct computation of (ab|cd) ints contributions to the
   /// doubles residual
 
@@ -1529,12 +1534,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
-      u2_u11("p, r, i, j") = 0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
+      u2_u11("p, r, i, j") =
+          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
       throw ProgrammingError(
           "CCSD: integral-direct implementation used, but direct integral not "
-          "initialized", __FILE__, __LINE__);
+          "initialized",
+          __FILE__, __LINE__);
     }
   }
 };  // class CCSD

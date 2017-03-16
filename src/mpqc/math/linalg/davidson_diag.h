@@ -135,9 +135,9 @@ class DavidsonDiag {
       G.block(0, 0, n_s, n_s) << subspace_;
       // initialize new value
       if (symmetric_) {
-        for (auto i = 0; i < n_b; ++i) {
+        for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
-          for (auto j = 0; j <= ii; ++j) {
+          for (std::size_t j = 0; j <= ii; ++j) {
             G(ii, j) = dot_product(B_[j], HB_[ii]);
             if (ii != j) {
               G(j, ii) = G(j, ii);
@@ -145,9 +145,9 @@ class DavidsonDiag {
           }
         }
       } else {
-        for (auto i = 0; i < n_b; ++i) {
+        for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
-          for (auto j = 0; j <= ii; ++j) {
+          for (std::size_t j = 0; j <= ii; ++j) {
             G(ii, j) = dot_product(B_[j], HB_[ii]);
             if (ii != j) {
               G(j, ii) = dot_product(B_[ii], HB_[j]);
@@ -210,7 +210,7 @@ class DavidsonDiag {
                                    __LINE__);
         }
 
-        for (auto i = 0; i < n_v; ++i) {
+        for (std::size_t i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
         }
 
@@ -218,7 +218,7 @@ class DavidsonDiag {
       }
 
       // obtain final eigen value and eigen vector
-      for (auto i = 0; i < n_roots_; ++i) {
+      for (std::size_t i = 0; i < n_roots_; ++i) {
         E[i] = eg[i].eigen_value;
         C.col(i) = U * eg[i].eigen_vector;
       }
@@ -227,10 +227,10 @@ class DavidsonDiag {
     // compute eigen_vector at current iteration and store it
     // X(i) = B(i)*C(i)
     value_type X(n_roots_);
-    for (auto i = 0; i < n_roots_; ++i) {
+    for (std::size_t i = 0; i < n_roots_; ++i) {
       X[i] = copy(B_[i]);
       zero(X[i]);
-      for (auto j = 0; j < n_v; ++j) {
+      for (std::size_t j = 0; j < n_v; ++j) {
         axpy(X[i], C(j, i), B_[j]);
       }
     }
@@ -245,11 +245,11 @@ class DavidsonDiag {
     // R(i) = (H - e(i)I)*B(i)*C(i)
     //      = (HB(i)*C(i) - e(i)*X(i)
     value_type residual(n_roots_);
-    for (auto i = 0; i < n_roots_; ++i) {
+    for (std::size_t i = 0; i < n_roots_; ++i) {
       residual[i] = copy(X[i]);
       const auto e_i = -E[i];
       scale(residual[i], e_i);
-      for (auto j = 0; j < n_v; ++j) {
+      for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
     }
@@ -259,7 +259,7 @@ class DavidsonDiag {
     // usually it is D(i) = (e(i) - H_D)^-1 R(i)
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
-    for (auto i = 0; i < n_roots_; i++) {
+    for (std::size_t i = 0; i < n_roots_; i++) {
       pred(E[i], residual[i]);
     }
 
@@ -294,8 +294,8 @@ class DavidsonDiag {
     const auto k = B.size();
     const auto tolerance =
         std::numeric_limits<typename D::element_type>::epsilon() * 100;
-    for (auto i = 0; i < k; ++i) {
-      for (auto j = i; j < k; ++j) {
+    for (std::size_t i = 0; i < k; ++i) {
+      for (std::size_t j = i; j < k; ++j) {
         const auto test = dot_product(B[i], B[j]);
         //        std::cout << "i= " << i << " j= " << j << " dot= " << test <<
         //        std::endl;

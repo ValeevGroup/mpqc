@@ -24,8 +24,8 @@ inline void print_cis_iteration(std::size_t iter, T norm,
   ExEnv::out0() << indent << "excitation energy: "
                 << "\n";
 
-  const auto size = eig.size();
-  for (auto i = 0; i < size - 1; i++) {
+  const std::size_t size = eig.size();
+  for (std::size_t i = 0; i < size - 1; i++) {
     ExEnv::out0() << indent << indent << eig[i] << "\n";
   }
   ExEnv::out0() << indent << indent << eig[size - 1];
@@ -49,9 +49,9 @@ inline void print_cis_excitation_energy(const EigenVector<T> &eig,
   ExEnv::out0() << mpqc::printf("%5s \t %10s \t %10s \t %10s \n", "state", "au",
                                 "eV", "cm^-1");
 
-  const auto size = eig.size();
+  const std::size_t size = eig.size();
 
-  for (auto i = 1; i <= size; i++) {
+  for (std::size_t i = 1; i <= size; i++) {
     T e = eig[i - 1];
     ExEnv::out0() << mpqc::printf("%5i \t %10.8f \t %10.5f \t %10.2f \n", i, e,
                                   e * Hartree_to_eV, e * Hartree_to_wavenumber);
@@ -316,7 +316,7 @@ CIS<Tile, Policy>::compute_cis(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     time0 = mpqc::fenced_now(world);
 
@@ -325,7 +325,7 @@ CIS<Tile, Policy>::compute_cis(
     std::vector<TA::DistArray < Tile, Policy>>
     HB(n_v);
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       HB[i]("i,a") = H("i,j,a,b") * guess[i]("j,b");
     }
@@ -405,7 +405,7 @@ CIS<Tile, Policy>::compute_cis_df(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     auto time0 = mpqc::fenced_now(world);
 
@@ -414,7 +414,7 @@ CIS<Tile, Policy>::compute_cis_df(
     std::vector<TA::DistArray < Tile, Policy>>
     HB(n_v);
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       const auto &vec = guess[i];
       // singlets
@@ -509,7 +509,7 @@ CIS<Tile, Policy>::compute_cis_direct(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     auto time0 = mpqc::fenced_now(world);
 
@@ -519,7 +519,7 @@ CIS<Tile, Policy>::compute_cis_direct(
     HB(n_v);
     // TODO need to avoid compute all four center at each iteration
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       const auto &vec = guess[i];
       // singlets

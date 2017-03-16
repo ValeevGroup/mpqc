@@ -1,5 +1,9 @@
 //
 //
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EOM_CCSD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EOM_CCSD_H_
+
+
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
@@ -8,22 +12,22 @@
 namespace mpqc {
 namespace lcao {
 
-struct guess_vector {
-  using TArray = TiledArray::TSpArrayD;
+template<typename Tile, typename Policy>
+struct GuessVector {
+  using TArray = TA::DistArray<Tile,Policy>;
   TArray Cai;
   TArray Cabij;
 };
 
 // close-shell eom-ccsd
 // still working on it
-class EOM_CCSD : public CCSD<TA::TensorD, TA::SparsePolicy>,
+template<typename Tile, typename Policy>
+class EOM_CCSD : public CCSD<Tile, Policy>,
                  public Provides<ExcitationEnergy> {
-  // using CC = CCSD<typename Tile, typename Policy>;
-  // using CCinter = CCSDIntermediate<typename Tile, typename Policy>;
 
-  using TArray = TiledArray::TSpArrayD;
+  using guess_vector = GuessVector<Tile,Policy>;
+  using TArray = TA::DistArray<Tile,Policy>;
 
-  TArray F_;
   TArray Gijkl_;
   TArray Gijka_;
   TArray Gabij_;
@@ -32,6 +36,7 @@ class EOM_CCSD : public CCSD<TA::TensorD, TA::SparsePolicy>,
   TArray Gaibc_;
   TArray Gabcd_;
 
+  TArray F_;
   TArray FAB_;
   TArray FIJ_;
   TArray FIA_;
@@ -76,12 +81,12 @@ class EOM_CCSD : public CCSD<TA::TensorD, TA::SparsePolicy>,
   }
 
  public:
-  EOM_CCSD(const KeyVal &kv) : CCSD<TA::TensorD, TA::SparsePolicy>(kv) {}
+  EOM_CCSD(const KeyVal &kv) : CCSD<Tile,Policy>(kv) {}
   // read guess vectors from input
   //    void read_guess_vectors(rapidjson::Document& in);
 
   void obsolete() override {
-    CCSD<TA::TensorD,TA::SparsePolicy>::obsolete();
+    CCSD<Tile,Policy>::obsolete();
     TArray F_ = TArray();
     TArray Gijkl_ = TArray();
     TArray Gijka_ = TArray();
@@ -123,5 +128,15 @@ class EOM_CCSD : public CCSD<TA::TensorD, TA::SparsePolicy>,
   void evaluate(ExcitationEnergy *ex_energy) override;
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class EOM_CCSD<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class EOM_CCSD<TA::TensorD, TA::SparsePolicy>;
+#endif
+
 }  // namespace lcao
 }  // namespace mpqc
+
+#include "eom_ccsd_impl.h"
+
+#endif 

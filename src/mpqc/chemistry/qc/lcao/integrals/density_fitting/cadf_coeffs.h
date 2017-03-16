@@ -172,8 +172,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   auto ints0 = mpqc::fenced_now(world);
   auto eri4 = direct_sparse_integrals(world, eng4, four_array, abab_norms,
                                       std::move(screener));
-  // auto eri4 = direct_sparse_integrals(world, eng4, four_array,
-  //                                       std::move(screener));
+
   auto abab1 = mpqc::fenced_now(world);
   auto time_est = mpqc::duration_in_s(est0, est1);
   auto time_apply = mpqc::duration_in_s(est1, special1);
@@ -187,7 +186,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   ExEnv::out0() << indent << "\tTime for abab shape: " << time_apply << "\n";
   ExEnv::out0() << indent << "\tTime for integrals: " << time_ints << "\n";
 
-  // detail::print_shape(eri4.array().shape().data(), "four_center_shape.csv");
 
   //
   // Compute C, M and 3 center integrals for robust fitting
@@ -199,7 +197,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
                                       std::vector<gaussian::Basis>{dfbs, dfbs});
 
   auto C = detail::cadf_by_atom_coeffs(world, by_cluster_obs, by_cluster_dfbs);
-  // detail::print_shape(C.shape().data(), "C_shape.csv");
 
   auto eri3_screener = detail::cadf_by_atom_screener(world, obs, dfbs, 1e-12);
   auto eng3 = make_engine_pool(libint2::Operator::coulomb,
@@ -211,6 +208,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   auto pmap3 =
       TA::SparsePolicy::default_pmap(world, trange3.tiles_range().volume());
 
+  auto const &c_shape_data = C.shape().data();
   auto E_sparse_norms_func = [&](TA::Tensor<float> const &in) {
     auto &range = in.range();
     auto ext = range.extent_data();
@@ -219,17 +217,28 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
     std::vector<std::pair<Idx_t, float>> out;
 
     for (auto a = 0; a < ext[1]; ++a) {
-       out.emplace_back(std::make_pair(Idx_t{{a, a, a}}, in(a, a, a)));
+      out.emplace_back(std::make_pair(Idx_t{{a, a, a}}, in(a, a, a)));
 
       for (auto b = 0; b < ext[2]; ++b) {
-         out.emplace_back(std::make_pair(Idx_t{{a, a, b}}, in(a, a, b)));
-         out.emplace_back(std::make_pair(Idx_t{{b, a, b}}, in(b, a, b)));
-        
-      }
+        out.emplace_back(std::make_pair(Idx_t{{a, a, b}}, in(a, a, b)));
+        out.emplace_back(std::make_pair(Idx_t{{b, a, b}}, in(b, a, b)));
+        if (aaab) {
+          // Realistically this one isn't needed since aaa will always get
+          // included, but it is here for completeness. 
+          const auto Caab = c_shape_data(a, a, b);
+          const auto Caba = c_shape_data(a, b, a);
+          const auto Xa_max = std::max(Caab, Caba);
+          if (Xa_max != 0.0) {
+            out.emplace_back(std::make_pair(Idx_t{{a, a, a}}, in(a, a, a)));
+          }
 
-      if (aaab) {
-        for (auto X = 0; X < ext[0]; ++X) {
-          out.emplace_back(std::make_pair(Idx_t{{X, a, a}}, in(X, a, a)));
+          // This is the one that matters
+          const auto Cbab = c_shape_data(b, a, b);
+          const auto Cbba = c_shape_data(b, b, a);
+          const auto Xb_max = std::max(Cbab, Cbba);
+          if (Xb_max != 0.0) {
+            out.emplace_back(std::make_pair(Idx_t{{b, a, a}}, in(b, a, a)));
+          }
         }
       }
     }
@@ -244,7 +253,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   auto E = direct_sparse_integrals(world, eng3, three_array, E_sparse_norms,
                                    std::move(eri3_screener));
 
-  // detail::print_shape(E.array().shape().data(), "E_ab_ab_shape.csv");
 
   auto C_contract_shape_func = [&](TA::Tensor<float> const &Cin) {
     auto const &range = Cin.range();
@@ -265,11 +273,16 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
           out(a, a, b) = fmax;
           out(b, a, b) = fmax;
         }
-      }
+        if (aaab) {
+          auto Xa_max = std::max(Cin(a, a, b), Cin(a, b, a));
+          if (Xa_max != 0.0) {
+            out(a, a, a) = fmax;
+          }
 
-      if (aaab) {
-        for (auto X = 0; X < ext[0]; ++X) {
-          out(X, a, a) = fmax;
+          auto Xb_max = std::max(Cin(b, a, b), Cin(b, b, a));
+          if (Xb_max != 0.0) {
+            out(b, a, a) = fmax;
+          }
         }
       }
     }
@@ -285,7 +298,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   EC("p,q,r,s") = (E("X, p, q") * C("X, r, s")).set_shape(abab_data);
   EC.truncate();
   MC.truncate();
-  // detail::print_shape(MC.shape().data(), "MC_shape.csv");
   auto inputs1 = mpqc::fenced_now(world);
   auto time_inputs = mpqc::duration_in_s(inputs0, inputs1);
   ExEnv::out0() << indent << "Time for correction inputs: " << time_inputs
@@ -307,15 +319,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   ExEnv::out0() << indent << "Time for exact ints: " << time_direct_ints
                 << "\n";
 
-  double norm = by_atom_correction("p,q,r,s").norm();
-  ExEnv::out0()
-      << indent << "Correction Norm: " << norm << ", element average: "
-      << norm / double(by_atom_correction.trange().elements_range().volume())
-      << "\n";
-
-
   return by_atom_correction;
-  // return TA::DistArray<TA::Tensor<double>, TA::SparsePolicy>();
 }
 
 template <>

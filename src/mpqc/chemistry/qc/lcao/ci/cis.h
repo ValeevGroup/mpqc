@@ -15,9 +15,9 @@ namespace lcao {
 
 namespace detail {
 
-template <typename T>
+template<typename T>
 inline void print_cis_iteration(std::size_t iter, T norm,
-                                const EigenVector<T>& eig, double time1,
+                                const EigenVector<T> &eig, double time1,
                                 double time2) {
   ExEnv::out0() << indent << "iteration: " << iter << "\n";
   ExEnv::out0() << indent << "norm: " << norm << "\n";
@@ -36,14 +36,12 @@ inline void print_cis_iteration(std::size_t iter, T norm,
   ExEnv::out0() << indent << indent << "davidson time: " << time2 << " S\n\n";
 }
 
-template <typename T>
-inline void print_cis_excitation_energy(const EigenVector<T>& eig,
+template<typename T>
+inline void print_cis_excitation_energy(const EigenVector<T> &eig,
                                         bool triplets) {
-  const auto& unit_factory = UnitFactory::get_default();
+  const auto &unit_factory = UnitFactory::get_default();
   const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
-  // TODO not hard code this, missing speed of light in UnitFactory
-  // 2014 CODATA
-  const auto Hartree_to_wavenumber = 219474.6313702;
+  const auto Hartree_to_wavenumber = unit_factory->make_unit("cm^-1").from_atomic_units();
 
   ExEnv::out0() << "CIS Excitation Energy: ( "
                 << (triplets ? "Triplets" : "Singlets") << " )\n";
@@ -66,14 +64,14 @@ inline void print_cis_excitation_energy(const EigenVector<T>& eig,
  * CIS for closed shell system
  *
  */
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 class CIS : public LCAOWavefunction<Tile, Policy>,
             public Provides<ExcitationEnergy> {
- public:
+public:
   using TArray = TA::DistArray<Tile, Policy>;
   using numeric_type = typename Tile::numeric_type;
 
- private:
+private:
   /// precoditioner in DavidsonDiag, use F_aa - F_ii to
   /// approximate the diagonal of CIS H matrix
   struct Preconditioner {
@@ -82,19 +80,19 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
     /// diagonal of F_ab matrix
     EigenVector<numeric_type> eps_v;
 
-    Preconditioner(const EigenVector<numeric_type>& eps_O,
-                   const EigenVector<numeric_type>& eps_V)
+    Preconditioner(const EigenVector<numeric_type> &eps_O,
+                   const EigenVector<numeric_type> &eps_V)
         : eps_o(eps_O), eps_v(eps_V) {}
 
-    void operator()(const numeric_type& e,
-                    TA::DistArray<Tile, Policy>& guess) const {
-      const auto& eps_v = this->eps_v;
-      const auto& eps_o = this->eps_o;
+    void operator()(const numeric_type &e,
+                    TA::DistArray <Tile, Policy> &guess) const {
+      const auto &eps_v = this->eps_v;
+      const auto &eps_o = this->eps_o;
 
-      auto task = [&eps_v, &eps_o, e](TA::TensorD& result_tile) {
-        const auto& range = result_tile.range();
+      auto task = [&eps_v, &eps_o, e](TA::TensorD &result_tile) {
+        const auto &range = result_tile.range();
         float norm = 0.0;
-        for (const auto& i : range) {
+        for (const auto &i : range) {
           const auto result = result_tile[i] / (e + eps_o[i[0]] - eps_v[i[1]]);
           result_tile[i] = result;
           norm += result * result;
@@ -107,7 +105,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
     }
   };
 
- public:
+public:
   // clang-format off
   /**
   * KeyVal constructor
@@ -119,7 +117,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   * | max_iter| int | 30 | max number of iteration in davidson diagonalization|
   */
   // clang-format on
-  explicit CIS(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
+  explicit CIS(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
@@ -134,7 +132,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
     if (method_ != "df" && method_ != "standard" && method_ != "direct") {
       throw InputError("Invalid CIS method! \n", __FILE__, __LINE__, "method");
     }
-    df_ = (method_=="df" ? true : false);
+    df_ = (method_ == "df" ? true : false);
   }
 
   ~CIS() = default;
@@ -148,12 +146,12 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
     }
   }
 
- private:
-  bool can_evaluate(ExcitationEnergy* ex_energy) override {
+private:
+  bool can_evaluate(ExcitationEnergy *ex_energy) override {
     return ex_energy->order() == 0;
   }
 
-  void evaluate(ExcitationEnergy* ex_energy) override;
+  void evaluate(ExcitationEnergy *ex_energy) override;
 
   /// this approach stores two electron integral and computes and stores H
   /// matrix
@@ -184,7 +182,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// @return guess vector of size n_roots as unit vector
   std::vector<TArray> init_guess_vector(std::size_t n_roots);
 
- private:
+private:
   /// max number of iteration in davidson
   std::size_t max_iter_;
   /// if has density fitting
@@ -194,17 +192,17 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// reference wavefunction
   std::shared_ptr<Wavefunction> ref_wfn_;
   /// eigen vector
-  std::vector<TA::DistArray<Tile, Policy>> eigen_vector_;
+  std::vector<TA::DistArray < Tile, Policy>> eigen_vector_;
   /// diagonal of f_ij
   EigenVector<numeric_type> eps_o_;
   /// diagonal of f_ab
   EigenVector<numeric_type> eps_v_;
 };
 
-template <typename Tile, typename Policy>
-void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
+template<typename Tile, typename Policy>
+void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
   if (!this->computed()) {
-    auto& world = this->wfn_world()->world();
+    auto &world = this->wfn_world()->world();
 
     auto target_precision = ex_energy->target_precision(0);
     auto target_ref_precision = target_precision / 100.0;
@@ -254,7 +252,7 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   }
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
 CIS<Tile, Policy>::compute_cis(
     std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
@@ -265,10 +263,10 @@ CIS<Tile, Policy>::compute_cis(
                 << "\n";
   ExEnv::out0() << "\n";
 
-  auto& world = this->wfn_world()->world();
+  auto &world = this->wfn_world()->world();
   auto time0 = mpqc::fenced_now(world);
 
-  auto& factory = this->lcao_factory();
+  auto &factory = this->lcao_factory();
 
   // compute required integrals
   auto F_ab = factory.compute(L"<a|F|b>");
@@ -286,18 +284,18 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   // compute H
-  TA::DistArray<Tile, Policy> H;
+  TA::DistArray <Tile, Policy> H;
 
   // singlets
   if (!triplets) {
     auto G_ijab = factory.compute(L"<i j|G|a b>");
     H("i,j,a,b") = I_ij("i,j") * F_ab("a,b") - F_ij("i,j") * I_ab("a,b") +
-                   2.0 * G_ijab("i,j,a,b") - G_iajb("i,a,j,b");
+        2.0 * G_ijab("i,j,a,b") - G_iajb("i,a,j,b");
   }
-  // triplets
+    // triplets
   else {
     H("i,j,a,b") = I_ij("i,j") * F_ab("a,b") - F_ij("i,j") * I_ab("a,b") -
-                   G_iajb("i,a,j,b");
+        G_iajb("i,a,j,b");
   }
 
   factory.registry().purge_formula(L"<i j|G|a b>");
@@ -311,7 +309,8 @@ CIS<Tile, Policy>::compute_cis(
   ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
+  DavidsonDiag<TA::DistArray < Tile, Policy>>
+  dvd(n_roots, true, 2, 10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -323,7 +322,8 @@ CIS<Tile, Policy>::compute_cis(
 
     const auto n_v = guess.size();
 
-    std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
+    std::vector<TA::DistArray < Tile, Policy>>
+    HB(n_v);
     // product of H with guess vector
     for (auto i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
@@ -358,14 +358,14 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   // get the latest eigen vector
-  auto& eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector().back();
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
 
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
 CIS<Tile, Policy>::compute_cis_df(
     std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
@@ -375,9 +375,9 @@ CIS<Tile, Policy>::compute_cis_df(
                 << (triplets ? "Triplets" : "Singlets") << "\n";
   ExEnv::out0() << "\n";
 
-  auto& world = this->wfn_world()->world();
-  auto& factory = this->lcao_factory();
-  auto& ao_factory = this->ao_factory();
+  auto &world = this->wfn_world()->world();
+  auto &factory = this->lcao_factory();
+  auto &ao_factory = this->ao_factory();
 
   // compute required integrals
   auto F_ab = factory.compute(L"<a|F|b>[df]");
@@ -398,7 +398,8 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
+  DavidsonDiag<TA::DistArray < Tile, Policy>>
+  dvd(n_roots, true, 2, 10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -410,24 +411,25 @@ CIS<Tile, Policy>::compute_cis_df(
 
     const auto n_v = guess.size();
 
-    std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
+    std::vector<TA::DistArray < Tile, Policy>>
+    HB(n_v);
     // product of H with guess vector
     for (auto i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
-      const auto& vec = guess[i];
+      const auto &vec = guess[i];
       // singlets
       if (!triplets) {
         HB[i]("j,b") =
             vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-            2.0 * vec("i,a") * X_ia("x,i,a") * X("x,y") * X_ia("y,j,b") -
-            X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
+                F_ij("i,j") * vec("i,a") * I_ab("a,b") +
+                2.0 * vec("i,a") * X_ia("x,i,a") * X("x,y") * X_ia("y,j,b") -
+                X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
       }
-      // triplets
+        // triplets
       else {
         HB[i]("j,b") = vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-                       F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-                       -X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
+            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
+            -X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
       }
     }
 
@@ -459,7 +461,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   // get the latest eigen vector
-  auto& eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector().back();
 
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
@@ -467,7 +469,7 @@ CIS<Tile, Policy>::compute_cis_df(
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
 CIS<Tile, Policy>::compute_cis_direct(
     std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
@@ -478,9 +480,9 @@ CIS<Tile, Policy>::compute_cis_direct(
                 << "\n";
   ExEnv::out0() << "\n";
 
-  auto& world = this->wfn_world()->world();
-  auto& factory = this->lcao_factory();
-  auto& ao_factory = this->ao_factory();
+  auto &world = this->wfn_world()->world();
+  auto &factory = this->lcao_factory();
+  auto &ao_factory = this->ao_factory();
 
   // compute required integrals
   auto F_ab = factory.compute(L"<a|F|b>");
@@ -500,7 +502,8 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots,true,2,10);
+  DavidsonDiag<TA::DistArray < Tile, Policy>>
+  dvd(n_roots, true, 2, 10);
 
   auto pred = Preconditioner(eps_o_, eps_v_);
 
@@ -512,30 +515,31 @@ CIS<Tile, Policy>::compute_cis_direct(
 
     const auto n_v = guess.size();
 
-    std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
+    std::vector<TA::DistArray < Tile, Policy>>
+    HB(n_v);
     // TODO need to avoid compute all four center at each iteration
     // product of H with guess vector
     for (auto i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
-      const auto& vec = guess[i];
+      const auto &vec = guess[i];
       // singlets
       if (!triplets) {
         HB[i]("j,b") =
             vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-            2.0 * ((vec("i,a") * C_a("nu,a") * C_i("mu,i")) *
-                   G("mu,nu,rho,sigma")) *
-                C_i("rho,j") * C_a("sigma,b") -
-            ((vec("i,a") * C_a("rho,a") * C_i("mu,i")) * G("mu,nu,rho,sigma")) *
-                C_i("nu,j") * C_a("sigma,b");
+                F_ij("i,j") * vec("i,a") * I_ab("a,b") +
+                2.0 * ((vec("i,a") * C_a("nu,a") * C_i("mu,i")) *
+                    G("mu,nu,rho,sigma")) *
+                    C_i("rho,j") * C_a("sigma,b") -
+                ((vec("i,a") * C_a("rho,a") * C_i("mu,i")) * G("mu,nu,rho,sigma")) *
+                    C_i("nu,j") * C_a("sigma,b");
       }
-      // triplets
+        // triplets
       else {
         HB[i]("j,b") = vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-                       F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-                       -((vec("i,a") * C_a("rho,a") * C_i("mu,i")) *
-                         G("mu,nu,rho,sigma")) *
-                           C_i("nu,j") * C_a("sigma,b");
+            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
+            -((vec("i,a") * C_a("rho,a") * C_i("mu,i")) *
+                G("mu,nu,rho,sigma")) *
+                C_i("nu,j") * C_a("sigma,b");
       }
     }
 
@@ -567,7 +571,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   // get the latest eigen vector
-  auto& eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector().back();
 
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
@@ -575,12 +579,13 @@ CIS<Tile, Policy>::compute_cis_direct(
   return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::TArray>
 CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
-  std::vector<TA::DistArray<Tile, Policy>> guess_vector(n_roots);
+  std::vector<TA::DistArray < Tile, Policy>>
+  guess_vector(n_roots);
 
-  auto& factory = this->lcao_factory();
+  auto &factory = this->lcao_factory();
 
   std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
   std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
@@ -591,7 +596,7 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   auto range = f_ia.trange();
 
   for (std::size_t i = 0; i < n_roots; i++) {
-    TA::DistArray<Tile, Policy> guess(f_ia.world(), range, f_ia.shape());
+    TA::DistArray <Tile, Policy> guess(f_ia.world(), range, f_ia.shape());
 
     guess.fill(numeric_type(0.0));
 

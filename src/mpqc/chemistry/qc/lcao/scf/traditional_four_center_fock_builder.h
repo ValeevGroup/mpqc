@@ -105,6 +105,8 @@ class FourCenterFockBuilder
     // same basis on each center only
     assert(bra_basis_ == ket_basis_ && bra_basis_ == density_basis_ &&
            "not yet implemented");
+    // WorldObject mandates this is called from the ctor
+    WorldObject_::process_pending();
   }
 
   array_type operator()(array_type const &D, array_type const &,
@@ -143,8 +145,11 @@ class FourCenterFockBuilder
     pmap_D_ = D.pmap();
     auto trange1 = trange_D_.dim(0);
     auto trange = TA::TiledRange({trange1, trange1, trange1, trange1});
+    const auto ntile_tasks =
+        static_cast<uint64_t>(ntiles * (ntiles + 1)) *
+        static_cast<uint64_t>((ntiles + 2) * (3 * ntiles + 1)) / 24;
     auto pmap = std::make_shared<const TA::detail::BlockedPmap>(
-        compute_world, ntiles * ntiles * ntiles * ntiles);
+        compute_world, ntile_tasks);
 
     // make the engine pool
     auto oper_type = libint2::Operator::coulomb;
@@ -160,11 +165,12 @@ class FourCenterFockBuilder
     auto empty = TA::Future<Tile>(Tile());
 
     // todo screen loop with schwarz
-    for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
+    for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles; ++tile0) {
       for (auto tile1 = 0ul; tile1 <= tile0; ++tile1) {
         for (auto tile2 = 0ul; tile2 <= tile0; ++tile2) {
-          const auto tile3_fence = (tile0 == tile2) ? tile1 + 1 : tile2 + 1;
-          for (auto tile3 = 0ul; tile3 != tile3_fence; ++tile3) {
+          // if tile0==tile2 there will be shell blocks such that shell0 >
+          // shell2, hence need shell3<=shell2 -> tile3<=tile2
+          for (auto tile3 = 0ul; tile3 <= tile2; ++tile3, ++tile0123) {
             // TODO screen D blocks using schwarz estimate for this Coulomb
             // operator tile
             auto D01 =
@@ -180,9 +186,11 @@ class FourCenterFockBuilder
             auto D13 =
                 D.is_zero({tile1, tile3}) ? empty : D.find({tile1, tile3});
 
-            WorldObject_::task(
-                me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03, D12, D13,
-                std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
+            if (pmap->is_local(tile0123))
+              WorldObject_::task(
+                  me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03, D12, D13,
+                  std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
+
           }
         }
       }
@@ -220,9 +228,9 @@ class FourCenterFockBuilder
     G.fill_local(0.0, true);
     local_fock_tiles_.clear();
 
-    G("i,j") = 0.5 * (G("i,j") + G("j,i"));
+    std::cout << "G = " << G << std::endl;
 
-    std::cout << "G after transpose: " << G << std::endl;
+    G("i,j") = 0.5 * (G("i,j") + G("j,i"));
 
     return G;
   }
@@ -253,12 +261,14 @@ class FourCenterFockBuilder
   void accumulate_task(Tile fock_matrix_tile, long tile0, long tile1) {
     const auto ntiles = trange_D_.dim(0).tile_extent();
     const auto tile01 = tile0 * ntiles + tile1;
+    assert(pmap_D_->is_local(tile01));
     // if reducer does not exist, create entry and store F, else accumulate F to the existing contents
     typename decltype(local_fock_tiles_)::accessor acc;
     if (!local_fock_tiles_.insert(acc, std::make_pair(tile01, fock_matrix_tile))) {  // try inserting
       acc->second += fock_matrix_tile;  // if failed insertion, it's there already so just add
     }
     acc.release();
+    madness::print("accumulating F[",tile0,tile1,"] on proc ", pmap_D_->rank(),"\n");
   }
 
   void compute_task(Tile D01, Tile D23, Tile D02, Tile D03, Tile D12, Tile D13,
@@ -319,38 +329,43 @@ class FourCenterFockBuilder
       const auto& cluster2 = basis->cluster_shells()[tile_idx[2]];
       const auto& cluster3 = basis->cluster_shells()[tile_idx[3]];
 
-      // these is the index of the first basis functions for each shell *in this shell cluster*
-      auto f0_offset = 0;
+      // this is the index of the first basis functions for each shell *in this shell cluster*
+      auto cf0_offset = 0;
+      // this is the index of the first basis functions for each shell *in the basis set*
+      auto bf0_offset = rng0.first;
 
       // loop over unique shell sets
       // N.B. skip nonunique shell sets that did not get eliminated by unique cluster set iteration
       for(const auto& shell0: cluster0) {
         const auto nf0 = shell0.size();
-        auto f1_offset = 0;
+        auto cf1_offset = 0;
+        auto bf1_offset = rng1.first;
         for(const auto& shell1: cluster1) {
           // skip if shell set is nonunique
-          if (f0_offset < f1_offset)
-            continue;
-          const auto multiplicity01 = f0_offset == f1_offset ? 1.0 : 2.0;
+          if (bf0_offset < bf1_offset)
+            break;  // assuming basis functions increase monotonically in the basis
+          const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
           const auto nf1 = shell1.size();
-          auto f2_offset = 0;
+          auto cf2_offset = 0;
+          auto bf2_offset = rng2.first;
           for(const auto& shell2: cluster2) {
             // skip if shell set is nonunique
-            if (f0_offset < f2_offset)
-              continue;
+            if (bf0_offset < bf2_offset)
+              break;
 
             const auto nf2 = shell2.size();
-            auto f3_offset = 0;
+            auto cf3_offset = 0;
+            auto bf3_offset = rng3.first;
             for(const auto& shell3: cluster3) {
               const auto nf3 = shell3.size();
 
               // skip if shell set is nonunique
-              if (f2_offset < f3_offset || (f0_offset == f2_offset && f1_offset < f3_offset))
-                continue;
+              if (bf2_offset < bf3_offset || (bf0_offset == bf2_offset && bf1_offset < bf3_offset))
+                break;
 
-              const auto multiplicity23 = f2_offset == f3_offset ? 1.0 : 2.0;
-              const auto multiplicity0213 = (f0_offset == f2_offset && f1_offset == f3_offset) ? 1.0 : 2.0;
+              const auto multiplicity23 = bf2_offset == bf3_offset ? 1.0 : 2.0;
+              const auto multiplicity0213 = (bf0_offset == bf2_offset && bf1_offset == bf3_offset) ? 1.0 : 2.0;
               const auto multiplicity = multiplicity01 * multiplicity23 * multiplicity0213;
 
               // compute shell set
@@ -361,16 +376,16 @@ class FourCenterFockBuilder
                 continue; // if all integrals screened out, skip to next quartet
 
               for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-                const auto cf0 = f0 + f0_offset;  // basis function index in the tile (i.e. shell cluster)
+                const auto cf0 = f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
                 for (auto f1 = 0; f1 != nf1; ++f1) {
-                  const auto cf1 = f1 + f1_offset;
+                  const auto cf1 = f1 + cf1_offset;
                   const auto cf01 = cf0 * rng1_size + cf1;  // index of {cf0,cf1} in D01 or F01
                   for (auto f2 = 0; f2 != nf2; ++f2) {
-                    const auto cf2 = f2 + f2_offset;
+                    const auto cf2 = f2 + cf2_offset;
                     const auto cf02 = cf0 * rng2_size + cf2;  // index of {cf0,cf2} in D02 or F02
                     const auto cf12 = cf1 * rng2_size + cf2;  // index of {cf1,cf2} in D12 or F12
                     for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-                      const auto cf3 = f3 + f3_offset;
+                      const auto cf3 = f3 + cf3_offset;
                       const auto cf03 = cf0 * rng3_size + cf3;  // index of {cf0,cf3} in D03 or F03
                       const auto cf13 = cf1 * rng3_size + cf3;  // index of {cf1,cf3} in D13 or F13
                       const auto cf23 = cf2 * rng3_size + cf3;  // index of {cf2,cf3} in D23 or F23
@@ -390,16 +405,22 @@ class FourCenterFockBuilder
                 }
               }
 
-              f3_offset += nf3;
+              cf3_offset += nf3;
+              bf3_offset += nf3;
             }
-            f2_offset += nf2;
+            cf2_offset += nf2;
+            bf2_offset += nf2;
           }
-          f1_offset += nf1;
+          cf1_offset += nf1;
+          bf1_offset += nf1;
         }
-        f0_offset += nf0;
+        cf0_offset += nf0;
+        bf0_offset += nf0;
       }
     }
 
+    const auto me = this->get_world().rank();
+    assert(me == pmap_D_->rank());
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
     const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
@@ -409,17 +430,35 @@ class FourCenterFockBuilder
     const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
     const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
     WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
-                       tile_idx[0], tile_idx[1]);
+                       tile_idx[0], tile_idx[1], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[1], "] to proc ",
+                   proc01,"\n");
     WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
-                       tile_idx[2], tile_idx[3]);
+                       tile_idx[2], tile_idx[3], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[2], tile_idx[3], "] to proc ",
+                   proc23,"\n");
     WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
-                       tile_idx[0], tile_idx[2]);
+                       tile_idx[0], tile_idx[2], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[2], "] to proc ",
+                   proc02,"\n");
     WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
-                       tile_idx[0], tile_idx[3]);
+                       tile_idx[0], tile_idx[3], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[3], "] to proc ",
+                   proc03,"\n");
     WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
-                       tile_idx[1], tile_idx[2]);
+                       tile_idx[1], tile_idx[2], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[1], tile_idx[2], "] to proc ",
+                   proc12,"\n");
     WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
-                       tile_idx[1], tile_idx[3]);
+                       tile_idx[1], tile_idx[3], madness::TaskAttributes::hipri());
+    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
+                   "} on proc ", me, ": sending F[", tile_idx[1], tile_idx[3], "] to proc ",
+                   proc13,"\n");
   };
 };
 

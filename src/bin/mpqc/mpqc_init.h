@@ -33,7 +33,7 @@ namespace mpqc {
 ///                additional MPQC-specific options will be enrolled
 void initialize(int &argc, char **argv,
                 const madness::World& top_world,
-                std::shared_ptr<GetLongOpt> opt = nullptr);
+                std::shared_ptr<GetLongOpt> opt = std::shared_ptr<GetLongOpt>(nullptr));
 
 /// Finalize MPQC.
 void finalize();

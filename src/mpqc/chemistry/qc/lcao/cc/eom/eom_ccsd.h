@@ -3,7 +3,6 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EOM_CCSD_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EOM_CCSD_H_
 
-
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
@@ -12,21 +11,64 @@
 namespace mpqc {
 namespace lcao {
 
-template<typename Tile, typename Policy>
-struct GuessVector {
-  using TArray = TA::DistArray<Tile,Policy>;
-  TArray Cai;
-  TArray Cabij;
-};
-
 // close-shell eom-ccsd
 // still working on it
-template<typename Tile, typename Policy>
-class EOM_CCSD : public CCSD<Tile, Policy>,
-                 public Provides<ExcitationEnergy> {
+template <typename Tile, typename Policy>
+class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
+ public:
+  using TArray = TA::DistArray<Tile, Policy>;
+  using GuessVector = cc::T1T2<TArray, TArray>;
+  using numeric_type = typename Tile::numeric_type;
 
-  using guess_vector = GuessVector<Tile,Policy>;
-  using TArray = TA::DistArray<Tile,Policy>;
+ private:
+
+  // preconditioner in DavidsonDiag, approximate the diaagonal H_bar matrix
+  struct Preconditioner {
+    /// diagonal of F_ij matrix
+    EigenVector<numeric_type> eps_o;
+    /// diagonal of F_ab matrix
+    EigenVector<numeric_type> eps_v;
+
+    Preconditioner(const EigenVector<numeric_type> &eps_O,
+                   const EigenVector<numeric_type> &eps_V)
+        : eps_o(eps_O), eps_v(eps_V) {}
+
+    // default constructor
+    Preconditioner() : eps_o(), eps_v() {}
+
+    void operator()(const numeric_type &e, GuessVector &guess) const {
+      const auto &eps_v = this->eps_v;
+      const auto &eps_o = this->eps_o;
+
+      auto task1 = [&eps_v, &eps_o, e](Tile &result_tile) {
+        const auto &range = result_tile.range();
+        float norm = 0.0;
+        for (const auto &i : range) {
+          const auto result = result_tile[i] / (e + eps_o[i[1]] - eps_v[i[0]]);
+          result_tile[i] = result;
+          norm += result * result;
+        }
+        return std::sqrt(norm);
+      };
+
+      auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
+        const auto &range = result_tile.range();
+        float norm = 0.0;
+        for (const auto &i : range) {
+          const auto result = result_tile[i] / (e - eps_v[i[0]] - eps_v[i[1]] +
+                                                eps_o[i[2]] + eps_o[i[3]]);
+          result_tile[i] = result;
+          norm += result * result;
+        }
+        return std::sqrt(norm);
+      };
+
+      TA::foreach_inplace(guess.t1, task1);
+      TA::foreach_inplace(guess.t2, task2);
+
+      guess.t1.world().gop.fence();
+    }
+  };
 
   TArray Gijkl_;
   TArray Gijka_;
@@ -54,7 +96,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>,
   TArray WKlIc_;
   // TArray WKliC_;
 
-  std::vector<guess_vector> C_;
+  std::vector<GuessVector> C_;
 
   // compute F and W intermediates
   void compute_FWintermediates();
@@ -81,12 +123,12 @@ class EOM_CCSD : public CCSD<Tile, Policy>,
   }
 
  public:
-  EOM_CCSD(const KeyVal &kv) : CCSD<Tile,Policy>(kv) {}
+  EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {}
   // read guess vectors from input
   //    void read_guess_vectors(rapidjson::Document& in);
 
   void obsolete() override {
-    CCSD<Tile,Policy>::obsolete();
+    CCSD<Tile, Policy>::obsolete();
     TArray F_ = TArray();
     TArray Gijkl_ = TArray();
     TArray Gijka_ = TArray();
@@ -114,18 +156,19 @@ class EOM_CCSD : public CCSD<Tile, Policy>,
     // TArray WKliC_ = TArray();
   }
 
-  // not complete
-  void davidson_solver(std::size_t max_iter, double convergence);
-
-  // compute energies (not complete, now just test intermediates)
-  double compute_energy(std::size_t max_iter, double convergence);
-
  protected:
   bool can_evaluate(ExcitationEnergy *ex_energy) override {
     return ex_energy->order() == 0;
   }
 
   void evaluate(ExcitationEnergy *ex_energy) override;
+
+ private:
+  // not complete
+  void davidson_solver(std::size_t max_iter, double convergence);
+
+  // compute energies (not complete, now just test intermediates)
+  double compute_energy(std::size_t max_iter, double convergence);
 };
 
 #if TA_DEFAULT_POLICY == 0
@@ -139,4 +182,4 @@ extern template class EOM_CCSD<TA::TensorD, TA::SparsePolicy>;
 
 #include "eom_ccsd_impl.h"
 
-#endif 
+#endif

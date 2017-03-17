@@ -89,7 +89,7 @@ private:
       const auto &eps_v = this->eps_v;
       const auto &eps_o = this->eps_o;
 
-      auto task = [&eps_v, &eps_o, e](TA::TensorD &result_tile) {
+      auto task = [&eps_v, &eps_o, e](Tile &result_tile) {
         const auto &range = result_tile.range();
         float norm = 0.0;
         for (const auto &i : range) {

@@ -8,8 +8,8 @@
 namespace mpqc {
 namespace lcao {
 
-template<typename Tile, typename Policy>
-void EOM_CCSD<Tile,Policy>::compute_FWintermediates() {
+template <typename Tile, typename Policy>
+void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   TArray tau_ab;
   auto T2_ = this->t2();
   auto T1_ = this->t1();
@@ -182,8 +182,8 @@ void EOM_CCSD<Tile,Policy>::compute_FWintermediates() {
 }
 
 // compute [HSS C]^A_I
-template<typename Tile,typename Policy>
-TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HSSC(TArray Cai) {
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSSC(TArray Cai) {
   TArray HSSC;
   HSSC("a,i") =  //   Fac C^c_i
       FAB_("a,c") * Cai("c,i")
@@ -196,7 +196,7 @@ TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HSSC(TArray Cai) {
 
 // compute [HSD C]^A_I
 template <typename Tile, typename Policy>
-TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HSDC(TArray Cabij) {
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSDC(TArray Cabij) {
   TArray HSDC;
   HSDC("a,i") =  //   Fkc C^ac_ik
       FIA_("k,c") * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k"))
@@ -209,7 +209,7 @@ TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HSDC(TArray Cabij) {
 
 // compute [HDS C]^Ab_Ij
 template <typename Tile, typename Policy>
-TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HDSC(TArray Cai) {
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDSC(TArray Cai) {
   TArray HDSC;
   auto T2_ = this->t2();
   auto T1_ = this->t1();
@@ -240,7 +240,7 @@ TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HDSC(TArray Cai) {
 
 // compute [HDD C]^Ab_Ij
 template <typename Tile, typename Policy>
-TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HDDC(TArray Cabij) {
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDDC(TArray Cabij) {
   TArray GC_ab, GC_ij, HDDC;
   auto T2_ = this->t2();
   auto T1_ = this->t1();
@@ -403,130 +403,87 @@ TA::DistArray<Tile,Policy> EOM_CCSD<Tile,Policy>::compute_HDDC(TArray Cabij) {
 //    } // end of looping over guess vectors
 //
 //  }
-template<typename Tile, typename Policy>
-void EOM_CCSD<Tile,Policy>::davidson_solver(std::size_t max_iter, double convergence) {
+template <typename Tile, typename Policy>
+void EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
+                                             double convergence) {
   madness::World& world =
-      C_[0].Cai.is_initialized() ? C_[0].Cai.world() : C_[0].Cabij.world();
+      C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
   std::size_t iter = 0;
+  std::size_t n_roots = C_.size();
   double norm_r = 1.0;
 
-  std::size_t dim;
+  /// make preconditioner
+  Preconditioner pred;
+  {
+    auto& orbital_registry = this->lcao_factory().orbital_registry();
+    auto nocc = orbital_registry.retrieve("m").rank();
+    auto nocc_act = orbital_registry.retrieve("i").rank();
+    auto nvir = orbital_registry.retrieve("a").rank();
+    auto nfzc = nocc - nocc_act;
+
+    auto eps_p = *this->orbital_energy();
+    auto eps_o = eps_p.segment(nfzc, nocc_act);
+    auto eps_v = eps_p.tail(nvir);
+
+    pred = Preconditioner(eps_o, eps_v);
+  }
+
+  /// make davidson object
+  DavidsonDiag<GuessVector> dvd(n_roots, false);
+
+  EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
+
   while (iter < max_iter && norm_r > convergence) {
-    dim = C_.size();
-    Eigen::MatrixXd CHC(dim, dim);
-    if (world.rank() == 0) std::cout << "CHC dimension: " << dim << std::endl;
+    auto time0 = mpqc::fenced_now(world);
+    std::size_t dim = C_.size();
+//    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
-    std::vector<guess_vector> HC(dim);
+    // compute product of H with guess vector
+    std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
-      if (C_[i].Cai.is_initialized() && C_[i].Cabij.is_initialized()) {
-        TArray HSSC_ai = compute_HSSC(C_[i].Cai);
-        TArray HDSC_abij = compute_HDSC(C_[i].Cai);
-        TArray HSDC_ai = compute_HSDC(C_[i].Cabij);
-        TArray HDDC_abij = compute_HDDC(C_[i].Cabij);
+      if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
+        TArray HSSC_ai = compute_HSSC(C_[i].t1);
+        TArray HDSC_abij = compute_HDSC(C_[i].t1);
+        TArray HSDC_ai = compute_HSDC(C_[i].t2);
+        TArray HDDC_abij = compute_HDDC(C_[i].t2);
 
-        HC[i].Cai("a,i") = HSSC_ai("a,i") + HSDC_ai("a,i");
-        HC[i].Cabij("a,b,i,j") = HDSC_abij("a,b,i,j") + HDDC_abij("a,b,i,j");
+        HC[i].t1("a,i") = HSSC_ai("a,i") + HSDC_ai("a,i");
+        HC[i].t2("a,b,i,j") = HDSC_abij("a,b,i,j") + HDDC_abij("a,b,i,j");
 
-      } else if (C_[i].Cai.is_initialized()) {
-        HC[i].Cai = compute_HSSC(C_[i].Cai);
-        HC[i].Cabij = compute_HDSC(C_[i].Cai);
-
-      } else if (C_[i].Cabij.is_initialized()) {
-        HC[i].Cai = compute_HSDC(C_[i].Cabij);
-        HC[i].Cabij = compute_HDDC(C_[i].Cabij);
-      }
-
-      double CHC_ai = 0.0;
-      double CHC_abij = 0.0;
-      for (std::size_t j = 0; j < dim; ++j) {
-        if (C_[j].Cai.is_initialized())
-          CHC_ai = C_[j].Cai("a,i") * HC[i].Cai("a,i");
-
-        if (C_[j].Cabij.is_initialized())
-          CHC_abij = C_[j].Cabij("a,b,i,j") * HC[i].Cabij("a,b,i,j");
-
-        CHC(i, j) = CHC_ai + CHC_abij;
+      } else {
+        throw ProgrammingError("Guess Vector not initialized", __FILE__,
+                               __LINE__);
       }
     }
 
-    // compute CHC a^k = \lambda^k a^k
-    Eigen::EigenSolver<Eigen::MatrixXd> es(CHC);
-    Eigen::VectorXd es_values = es.eigenvalues().real();
-    Eigen::MatrixXd es_vectors = es.eigenvectors().real();
+    //      else if (C_[i].t1.is_initialized()) {
+    //        HC[i].t1 = compute_HSSC(C_[i].t1);
+    //        HC[i].t2 = compute_HDSC(C_[i].t1);
+    //
+    //      } else if (C_[i].t2.is_initialized()) {
+    //        HC[i].t1 = compute_HSDC(C_[i].t2);
+    //        HC[i].t2 = compute_HDDC(C_[i].t2);
+    //      }
 
-    if (world.rank() == 0) {
-      std::cout << "CHC:" << std::endl << CHC << std::endl;
-      std::cout << "The eigenvalues of CHC are:" << std::endl
-                << es.eigenvalues() << std::endl;
-      std::cout << "The matrix of eigenvectors, V, is:" << std::endl
-                << es.eigenvectors() << std::endl;
-      std::cout << "real eigenvalues is:" << std::endl
-                << es_values << std::endl;
-      std::cout << "real eigenvectors is:" << std::endl
-                << es_vectors << std::endl;
-    }
+    auto time1 = mpqc::fenced_now(world);
+    EigenVector<double> eig_new = dvd.extrapolate(HC, C_, pred);
+    auto time2 = mpqc::fenced_now(world);
 
-    // compute residual r^k = a^k_i (HC_i - \lambda^k C_i)
-    std::vector<guess_vector> r(dim);
-    for (std::size_t k = 0; k < dim; ++k) {
-      const double e_k = es_values(k);
+    norm_r = (eig - eig_new).norm();
 
-      for (std::size_t i = 0; i < dim; ++i) {
-        if (C_[i].Cai.is_initialized()) {
-          if (!r[k].Cai.is_initialized()) {
-            TiledArray::TensorF tile_norms(C_[i].Cai.trange().tiles_range(),
-                                           0.0f);
-            typename TArray::shape_type shape(tile_norms, C_[i].Cai.trange());
-            r[k].Cai = TArray(C_[i].Cai.world(), C_[i].Cai.trange(), shape,
-                              C_[i].Cai.pmap());
-          }
-          r[k].Cai("a,i") +=
-              es_vectors(i, k) * (HC[i].Cai("a,i") - C_[i].Cai("a,i") * e_k);
-        }
-        if (C_[i].Cabij.is_initialized()) {
-          if (!r[k].Cabij.is_initialized()) {
-            TiledArray::TensorF tile_norms(C_[i].Cabij.trange().tiles_range(),
-                                           0.0f);
-            typename TArray::shape_type shape(tile_norms, C_[i].Cabij.trange());
-            r[k].Cabij = TArray(C_[i].Cabij.world(), C_[i].Cabij.trange(),
-                                shape, C_[i].Cabij.pmap());
-          }
-          r[k].Cabij("a,b,i,j") +=
-              es_vectors(i, k) *
-              (HC[i].Cabij("a,b,i,j") - C_[i].Cabij("a,b,i,j") * e_k);
-        }
-      }
-    }
+    detail::print_cis_iteration(iter, norm_r, eig_new,
+                                mpqc::duration_in_s(time0, time1),
+                                mpqc::duration_in_s(time1, time2));
 
-    // compute norm of r
-    double norm_square_r = 0.0;
-    for (std::size_t i = 0; i < dim; ++i) {
-      if (r[i].Cai.is_initialized())
-        norm_square_r += r[i].Cai("a,i").squared_norm();
+    eig = eig_new;
+    iter++;
 
-      if (r[i].Cabij.is_initialized())
-        norm_square_r += r[i].Cabij("a,b,i,j").squared_norm();
-    }
-    norm_r = sqrt(norm_square_r);
-
-    // compute preconditioned residual vector:
-    // \gamma^k = r^k / (D - \lambda^k I)
-    std::vector<guess_vector> gamma(dim);
-
-    // Schmidt orthonormalize \gamma^k against C^k
-
-    // append \gamma^k to C
-    C_.resize(dim * 2);
-    for (std::size_t i = 0; i < dim; ++i) {
-      if (gamma[i].Cai.is_initialized()) C_[i + dim].Cai = gamma[i].Cai;
-
-      if (gamma[i].Cabij.is_initialized()) C_[i + dim].Cabij = gamma[i].Cabij;
-    }
   }  // end of while loop
 }
 
-template<typename Tile, typename Policy>
-double EOM_CCSD<Tile,Policy>::compute_energy(std::size_t max_iter, double convergence) {
+template <typename Tile, typename Policy>
+double EOM_CCSD<Tile, Policy>::compute_energy(std::size_t max_iter,
+                                              double convergence) {
   // check if intermediates are computed
   compute_FWintermediates();
 
@@ -607,15 +564,16 @@ double EOM_CCSD<Tile,Policy>::compute_energy(std::size_t max_iter, double conver
   return 1.0;
 }
 
-template<typename Tile, typename Policy>
-void EOM_CCSD<Tile,Policy>::evaluate(ExcitationEnergy *ex_energy) {
+template <typename Tile, typename Policy>
+void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
   if (!this->computed()) {
-    auto &world = this->wfn_world()->world();
+    auto& world = this->wfn_world()->world();
 
-    auto ccsd_energy = std::make_shared<Energy>(this->shared_from_this(),target_precision);
+    auto ccsd_energy =
+        std::make_shared<Energy>(this->shared_from_this(), target_precision);
     // do CCSD energy
-    CCSD<Tile,Policy>::evaluate(ccsd_energy.get());
+    CCSD<Tile, Policy>::evaluate(ccsd_energy.get());
 
     auto time0 = mpqc::fenced_now(world);
 
@@ -635,30 +593,28 @@ void EOM_CCSD<Tile,Policy>::evaluate(ExcitationEnergy *ex_energy) {
     ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";
     this->init();
 
-    C_ = std::vector<guess_vector>(n_roots);
-    for(std::size_t i = 0; i < n_roots; i++){
-      C_[i].Cai("a,i") = guess[i]("i,a");
-      C_[i].Cabij = TArray(Gabij_.world(), Gabij_.trange(), Gabij_.shape());
-      C_[i].Cabij.fill(0.0);
+    C_ = std::vector<GuessVector>(n_roots);
+    for (std::size_t i = 0; i < n_roots; i++) {
+      C_[i].t1("a,i") = guess[i]("i,a");
+      C_[i].t2 = TArray(Gabij_.world(), Gabij_.trange(), Gabij_.shape());
+      C_[i].t2.fill(0.0);
     }
 
     std::vector<double> result(n_roots);
-    for(auto i = 0; i > n_roots; i++){
+    for (auto i = 0; i > n_roots; i++) {
       result[i] = i;
     }
 
-    davidson_solver(50, target_precision);
+    davidson_solver(15, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(ex_energy, result);
 
     auto time1 = mpqc::fenced_now(world);
-    ExEnv::out0() << "EOM-CCSD Total Time: " << mpqc::duration_in_s(time0, time1)
-                  << " S\n";
+    ExEnv::out0() << "EOM-CCSD Total Time: "
+                  << mpqc::duration_in_s(time0, time1) << " S\n";
   }
 }
 
-
 }  // namespace lcao
 }  // namespace mpqc
-

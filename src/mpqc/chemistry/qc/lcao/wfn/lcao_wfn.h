@@ -68,7 +68,7 @@ class LCAOWavefunction : public Wavefunction {
     unocc_block_ = kv.value<int>("unocc_block_size", mo_block);
   }
 
-  virtual ~LCAOWavefunction() = default;
+  virtual ~LCAOWavefunction() { }
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
 
@@ -211,7 +211,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
     unocc_block_ = kv.value<int>("unocc_block_size", mo_block);
   }
 
-  virtual ~PeriodicLCAOWavefunction() = default;
+  virtual ~PeriodicLCAOWavefunction() { }
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
 

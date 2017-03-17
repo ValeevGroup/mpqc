@@ -32,7 +32,7 @@ class Group : public std::enable_shared_from_this<Group> {
   /// an irreducible representation of Group
   class Irrep {
    public:
-    virtual ~Irrep() = default;
+    virtual ~Irrep() { }
 
     /// @return true if this is a trivial representation
     virtual bool is_trivial() const = 0;
@@ -52,7 +52,7 @@ class Group : public std::enable_shared_from_this<Group> {
   /// a table of irreducible representations for Group
   class IrrepTable {
    public:
-    virtual ~IrrepTable() = default;
+    virtual ~IrrepTable() { }
 
     /// @return shared_ptr to the Group object that defines this
     const std::weak_ptr<const Group>& group() const;
@@ -76,7 +76,7 @@ class Group : public std::enable_shared_from_this<Group> {
     std::weak_ptr<const Group> group_;
   };
 
-  virtual ~Group() = default;
+  virtual ~Group() { }
 
   /// @return the order of the group
   virtual ordinal_type order() const = 0;

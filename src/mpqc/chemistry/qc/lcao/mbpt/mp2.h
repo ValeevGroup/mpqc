@@ -104,7 +104,7 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy>
    */
   // clang-format on
   RMP2(const KeyVal &kv);
-  virtual ~RMP2() = default;
+  virtual ~RMP2() { }
 
   void obsolete() override;
 

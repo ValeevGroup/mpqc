@@ -39,7 +39,7 @@ namespace math {
 class PetiteList {
  public:
   PetiteList() = default;
-  virtual ~PetiteList() = default;
+  virtual ~PetiteList() { }
 
   /// permutation groups implemented by SymmPetiteList
   enum class Symmetry {

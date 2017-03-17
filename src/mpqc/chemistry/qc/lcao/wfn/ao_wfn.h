@@ -45,7 +45,7 @@ class AOWavefunction : public Wavefunction {
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     init_factory(kv);
   }
-  virtual ~AOWavefunction() = default;
+  virtual ~AOWavefunction() { }
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
@@ -101,7 +101,7 @@ class PeriodicAOWavefunction : public Wavefunction {
   PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
   }
-  virtual ~PeriodicAOWavefunction() = default;
+  virtual ~PeriodicAOWavefunction() { }
 
   virtual MatrixzVec co_coeff() = 0;
   virtual VectorzVec co_energy() = 0;

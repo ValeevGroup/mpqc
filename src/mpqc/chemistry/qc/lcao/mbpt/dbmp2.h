@@ -83,7 +83,7 @@ class DBRMP2 : public RMP2<Tile,Policy> {
 
   DBRMP2() = default;
 
-  virtual ~DBRMP2() = default;
+  virtual ~DBRMP2() { }
 
   DBRMP2(const KeyVal &kv) : RMP2<Tile,Policy>(kv) {
     method_ = kv.value<std::string>("method", "valeev");

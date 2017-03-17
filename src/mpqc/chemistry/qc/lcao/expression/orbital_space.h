@@ -148,7 +148,7 @@ class OrbitalSpace {
           __FILE__, __LINE__);
   }
 
-  virtual ~OrbitalSpace() = default;
+  virtual ~OrbitalSpace() { }
 
   /// @return the base OrbitalIndex object for this space
   const OrbitalIndex& index() const { return index_; }

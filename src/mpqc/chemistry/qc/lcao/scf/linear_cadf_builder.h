@@ -87,7 +87,7 @@ class ONCADFFockBuilder : public FockBuilder {
     }
   }
 
-  ~ONCADFFockBuilder() = default;
+  ~ONCADFFockBuilder() { }
 
   array_type operator()(array_type const &D, array_type const &C) override {
     array_type G;

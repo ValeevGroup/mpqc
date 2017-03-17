@@ -143,7 +143,7 @@ class RIRMP2 : public RMP2<Tile, Policy> {
   * keywords: inherit all keywords from RMP2
   */
   RIRMP2(const KeyVal &kv);
-  ~RIRMP2() = default;
+  ~RIRMP2() { }
 
  protected:
   /// override the compute function from RMP2

@@ -294,7 +294,7 @@ public:
    */
 
   RIDBRMP2(const KeyVal& kv) : DBRMP2<Tile,Policy>(kv) {};
-  ~RIDBRMP2() = default;
+  ~RIDBRMP2() { }
 
   /// override DBRMP2's compute_scf_correction function
   double compute_scf_correction() override;

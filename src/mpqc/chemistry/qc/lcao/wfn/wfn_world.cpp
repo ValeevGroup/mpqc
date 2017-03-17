@@ -7,4 +7,4 @@ lcao::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)
   atoms_ = kv.class_ptr<Molecule>("molecule");
   basis_registry_ = std::make_shared<gaussian::OrbitalBasisRegistry>(kv);
 }
-lcao::WavefunctionWorld::~WavefunctionWorld() = default;
+lcao::WavefunctionWorld::~WavefunctionWorld() { }

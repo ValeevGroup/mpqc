@@ -28,7 +28,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy>,
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
-  ~GammaPointMP2() = default;
+  ~GammaPointMP2() { }
 
   void obsolete() override {
     e_mp2_ = 0.0;

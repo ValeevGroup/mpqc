@@ -42,7 +42,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
    */
   // clang-format on
   RMP2F12(const KeyVal& kv);
-  ~RMP2F12() = default;
+  ~RMP2F12() { }
 
   void obsolete() override;
 
@@ -123,7 +123,7 @@ class RIRMP2F12 : public RMP2F12<Tile> {
  *
  */
   RIRMP2F12(const KeyVal& kv);
-  ~RIRMP2F12() = default;
+  ~RIRMP2F12() { }
 
  private:
   TArray compute_B() override;

@@ -97,7 +97,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
   }
 
-  ~CADFForcedShapeFockBuilder() = default;
+  ~CADFForcedShapeFockBuilder() { }
 
   array_type operator()(array_type const &D, array_type const &C) override {
     array_type G;

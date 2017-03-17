@@ -91,7 +91,7 @@ namespace groups {
 class Z1 : public Group {
  public:
   Z1() = default;
-  ~Z1() = default;
+  ~Z1() { }
 
   ordinal_type order() const override;
 
@@ -100,7 +100,7 @@ class Z1 : public Group {
   class Irrep : public Group::Irrep {
    public:
     Irrep(std::shared_ptr<const Group> grp = std::make_shared<const Z1>());
-    ~Irrep() = default;
+    ~Irrep() { }
 
     bool is_trivial() const override;
 
@@ -111,7 +111,7 @@ class Z1 : public Group {
   class IrrepTable : public Group::IrrepTable {
    public:
     IrrepTable(std::shared_ptr<const Group> grp);
-    ~IrrepTable() = default;
+    ~IrrepTable() { }
 
     std::shared_ptr<const Group::Irrep> make_irrep(
         ordinal_type irrep_ordinal) const override;
@@ -150,7 +150,7 @@ class SupercellTranslationGroup : public Group {
    public:
     /// constructs an Irrep, \c K is renormalized modulo \c n
     Irrep(std::shared_ptr<const Group> grp, Vector3i K);
-    ~Irrep() = default;
+    ~Irrep() { }
 
     bool is_trivial() const override;
 
@@ -169,7 +169,7 @@ class SupercellTranslationGroup : public Group {
   class IrrepTable : public Group::IrrepTable {
    public:
     IrrepTable(std::shared_ptr<const Group>);
-    ~IrrepTable() = default;
+    ~IrrepTable() { }
     /// converts an ordinal to the corresponding Irrep
     std::shared_ptr<const Group::Irrep> make_irrep(
         ordinal_type irrep_ordinal) const override;

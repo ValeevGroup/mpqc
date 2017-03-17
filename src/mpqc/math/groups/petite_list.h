@@ -292,7 +292,7 @@ template <PetiteList::Symmetry TC = PetiteList::Symmetry::e>
 class SymmPetiteList : public PetiteList {
  public:
   SymmPetiteList() = default;
-  ~SymmPetiteList() = default;
+  ~SymmPetiteList() { }
 
   bool is_canonical(long idx0) const override {
     return detail::TupleCanonicalizer<TC>::is_canonical(idx0);

@@ -22,7 +22,7 @@ class DecomposedTensor {
   using value_type = TA::Tensor<T>;
 
   DecomposedTensor() : tensors_(){};
-  // ~DecomposedTensor() = default;
+  // ~DecomposedTensor() { }
   // DecomposedTensor(DecomposedTensor const &) = default;
   // DecomposedTensor(DecomposedTensor &&) = default;
   // DecomposedTensor &operator=(DecomposedTensor const &) = default;

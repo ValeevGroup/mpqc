@@ -267,7 +267,7 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
                         const std::vector<OrbitalAttribute>& attributes)
       : OrbitalSpace<Array>(idx, ao_idx, tarray), attributes_(attributes) {}
 
-  ~DecoratedOrbitalSpace() = default;
+  ~DecoratedOrbitalSpace() { }
 
   /// constructs this DecoratedOrbitalSpace using a visiting Provider
   /// @tparam Visitor a class derived from OrbitalSpace::Provider

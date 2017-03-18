@@ -6,7 +6,7 @@
 
 namespace mpqc {
 
-std::shared_ptr<const AtomicData> AtomicData::instance_ = nullptr;
+std::shared_ptr<const AtomicData> AtomicData::instance_(nullptr);
 
 std::shared_ptr<const AtomicData> AtomicData::get_default() {
   if (!instance_) instance_ = std::make_shared<const NIST_v41_AtomicData>();

@@ -109,6 +109,8 @@ class FourCenterFockBuilder
     WorldObject_::process_pending();
   }
 
+  virtual ~FourCenterFockBuilder() {}
+
   array_type operator()(array_type const &D, array_type const &,
                         double target_precision) override {
     // validate preconditions
@@ -228,8 +230,7 @@ class FourCenterFockBuilder
     G.fill_local(0.0, true);
     local_fock_tiles_.clear();
 
-    std::cout << "G = " << G << std::endl;
-
+    // symmetrize to account for permutation symmetry use
     G("i,j") = 0.5 * (G("i,j") + G("j,i"));
 
     return G;

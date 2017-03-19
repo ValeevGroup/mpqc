@@ -365,10 +365,9 @@ template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
   auto& world = this->ao_factory().world();
   auto basis =
-        this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
-  auto builder =
-      scf::FourCenterFockBuilder<Tile, Policy>(world, basis, basis, basis, true, true);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  this->f_builder_ = std::make_unique<scf::FourCenterFockBuilder<Tile, Policy>>(
+      world, basis, basis, basis, true, true);
 }
 
 }  // namespace lcao

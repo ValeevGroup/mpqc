@@ -113,7 +113,8 @@ template <typename Tile, typename Policy>
 class PeriodicAOFactory;
 
 template <typename Tile, typename Policy>
-using PeriodicAOFactoryBase = Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile,Policy>>;
+using PeriodicAOFactoryBase =
+    Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>;
 /*!
  * \brief This constructs a PeriodicAOFactory object
  *
@@ -168,7 +169,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
+class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
@@ -184,7 +185,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
    * \param kv the KeyVal object
    */
   PeriodicAOFactory(const KeyVal &kv)
-      : PeriodicAOFactoryBase<Tile,Policy>(kv) {
+      : PeriodicAOFactoryBase<Tile, Policy>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -313,8 +314,14 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
   TArray get_density() { return D_; }
 
  private:
+  /// compute integrals that has one dimension
+  TArray compute1(const Formula &formula);
+
   /// compute integrals that has two dimension for periodic systems
   TArray compute2(const Formula &formula);
+
+  /// compute integrals that has two dimension for periodic systems
+  TArray compute3(const Formula &formula);
 
   /// compute integrals that has four dimension for periodic systems
   TArray compute4(const Formula &formula);
@@ -325,16 +332,42 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
   /// compute integrals that has two dimension for periodic systems
   TArray compute_direct4(const Formula &formula);
 
-  /// parse one body formula and set engine_pool and basis array for periodic
+  /// parse 1-body 1-center formula written as <X|U> and set engine_pool and
+  /// basis array
+  void parse_one_body_one_center(
+      const Formula &formula,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases);
+
+  /// parse 1-body 2-center formula and set engine_pool and basis array for
+  /// periodic
   /// system
-  void parse_one_body_periodic(
+  void parse_one_body_two_center_periodic(
       const Formula &formula,
       std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
       BasisVector &bases, const Molecule &shifted_mol);
 
-  /// parse two body formula and set engine_pool and basis array for periodic
+  /// parse 2-body 2-center formula and set engine_pool and basis array for
+  /// periodic
+  /// system. The ket basis is shifted by \c shift
+  void parse_two_body_two_center_periodic(
+      const Formula &formula,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, const Vector3d &shift);
+
+  /// parse 2-body 3-center formula and set engine_pool and basis array for
+  /// periodic
+  /// system. The ket basis is shifted by \c shift
+  void parse_two_body_three_center_periodic(
+      const Formula &formula,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, const Vector3d &shift,
+      std::shared_ptr<Screener> &p_screener);
+
+  /// parse 2-body 4-center formula and set engine_pool and basis array for
+  /// periodic
   /// system
-  void parse_two_body_periodic(
+  void parse_two_body_four_center_periodic(
       const Formula &formula,
       std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
       BasisVector &bases, Vector3d shift_coul, bool if_coulomb,
@@ -417,13 +450,50 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     return result;
   }
 
-  if (formula.rank() == 2) {
+  if (formula.rank() == 1) {
+    result = compute1(formula);
+    this->registry_.insert(formula, result);
+  } else if (formula.rank() == 2) {
     result = compute2(formula);
+    this->registry_.insert(formula, result);
+  } else if (formula.rank() == 3) {
+    result = compute3(formula);
     this->registry_.insert(formula, result);
   } else if (formula.rank() == 4) {
     result = compute4(formula);
   } else
     throw std::runtime_error("Operator rank not supported");
+
+  return result;
+}
+
+template <typename Tile, typename Policy>
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute1(const Formula &formula) {
+  BasisVector bs_array;
+  TArray result;
+
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
+  auto &world = this->world();
+
+  double size = 0.0;
+
+  ExEnv::out0() << "\nComputing One Center Integral for Periodic System: "
+                << utility::to_string(formula.string()) << std::endl;
+  exit(19);
+
+  auto basis =
+      detail::index_to_basis(*this->basis_registry(), formula.bra_indices()[0]);
+  auto emptybasis = Basis();
+  auto oper_type = formula.oper().type();
+
+  engine_pool = make_engine_pool(
+      detail::to_libint2_operator(oper_type),
+      utility::make_array_of_refs(*basis, emptybasis), libint2::BraKet::x_x,
+      detail::to_libint2_operator_params(oper_type, *unitcell_));
+  bs_array = BasisVector{{*basis, emptybasis}};
+
+  result = compute_integrals(world, engine_pool, bs_array);
 
   return result;
 }
@@ -437,13 +507,22 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   auto &world = this->world();
   double size = 0.0;
 
-  ExEnv::out0() << "\nComputing One Body Integral for Periodic System: "
+  ExEnv::out0() << "\nComputing Two Center Integral for Periodic System: "
                 << utility::to_string(formula.string()) << std::endl;
 
-  auto time0 = mpqc::now(world, false);
-  if (formula.oper().type() == Operator::Type::Kinetic ||
-      formula.oper().type() == Operator::Type::Overlap) {
-    parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
+  auto time0 = mpqc::now(world, this->accurate_time());
+
+  // compute one center integrals written as <X|U> or <U|X>
+  if (formula.bra_indices()[0] == OrbitalIndex(L"U") ||
+      formula.ket_indices()[0] == OrbitalIndex(L"U")) {
+    parse_one_body_one_center(formula, engine_pool, bs_array);
+    auto result_2D = compute_integrals(world, engine_pool, bs_array);
+    result = result_2D;
+
+  } else if (formula.oper().type() == Operator::Type::Kinetic ||
+             formula.oper().type() == Operator::Type::Overlap) {
+    parse_one_body_two_center_periodic(formula, engine_pool, bs_array,
+                                       *unitcell_);
     result = compute_integrals(world, engine_pool, bs_array);
   } else if (formula.oper().type() == Operator::Type::Nuclear) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
@@ -451,7 +530,20 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
       using ::mpqc::lcao::detail::shift_mol_origin;
       auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
       auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
-      parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
+      parse_one_body_two_center_periodic(formula, engine_pool, bs_array,
+                                         *shifted_mol);
+      if (RJ == 0)
+        result = compute_integrals(world, engine_pool, bs_array);
+      else
+        result("mu, nu") +=
+            compute_integrals(world, engine_pool, bs_array)("mu, nu");
+    }
+  } else if (formula.oper().type() == Operator::Type::Coulomb) {
+    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+      using ::mpqc::lcao::detail::direct_vector;
+      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+      parse_two_body_two_center_periodic(formula, engine_pool, bs_array,
+                                         vec_RJ);
       if (RJ == 0)
         result = compute_integrals(world, engine_pool, bs_array);
       else
@@ -460,7 +552,46 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     }
   } else
     throw std::runtime_error("Rank-2 operator type not supported");
-  auto time1 = mpqc::now(world, false);
+  auto time1 = mpqc::now(world, this->accurate_time());
+  auto time = mpqc::duration_in_s(time0, time1);
+
+  size = mpqc::detail::array_size(result);
+  utility::print_par(world, " Size: ", size, " GB");
+  utility::print_par(world, " Time: ", time, " s\n");
+
+  return result;
+}
+
+template <typename Tile, typename Policy>
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
+  TArray result;
+  BasisVector bs_array;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
+  auto &world = this->world();
+  std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+
+  double size = 0.0;
+
+  ExEnv::out0() << "\nComputing Two Center Integral for Periodic System: "
+                << utility::to_string(formula.string()) << std::endl;
+
+  auto time0 = mpqc::now(world, this->accurate_time());
+  if (formula.oper().type() == Operator::Type::Coulomb) {
+    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+      using ::mpqc::lcao::detail::direct_vector;
+      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+      parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
+                                           vec_RJ, p_screener);
+      auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
+      if (RJ == 0)
+        result("mu, nu, K") = g("mu, nu, K");
+      else
+        result("mu, nu, K") += g("mu, nu, K");
+    }
+  } else
+    throw std::runtime_error("Rank-3 operator type not supported");
+  auto time1 = mpqc::now(world, this->accurate_time());
   auto time = mpqc::duration_in_s(time0, time1);
 
   size = mpqc::detail::array_size(result);
@@ -492,7 +623,7 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   }
 
   if (formula.oper().type() == Operator::Type::J) {
-    auto time_j0 = mpqc::now(world, false);
+    auto time_j0 = mpqc::now(world, this->accurate_time());
 
     auto j_formula = formula;
     j_formula.set_operator_type(Operator::Type::Coulomb);
@@ -500,12 +631,12 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
-                              p_screener);
+      parse_two_body_four_center_periodic(j_formula, engine_pool, bs_array,
+                                          vec_RJ, true, p_screener);
 
-      auto time_g0 = mpqc::now(world, false);
+      auto time_g0 = mpqc::now(world, this->accurate_time());
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
-      auto time_g1 = mpqc::now(world, false);
+      auto time_g1 = mpqc::now(world, this->accurate_time());
 
       if (print_detail_) {
         double size = mpqc::detail::array_size(g);
@@ -514,31 +645,31 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
-      auto time_contr0 = mpqc::now(world, false);
+      auto time_contr0 = mpqc::now(world, this->accurate_time());
       if (RJ == 0)
         result("mu, nu") = g("mu, nu, lambda, rho") * D_("lambda, rho");
       else
         result("mu, nu") += g("mu, nu, lambda, rho") * D_("lambda, rho");
-      auto time_contr1 = mpqc::now(world, false);
+      auto time_contr1 = mpqc::now(world, this->accurate_time());
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
-    auto time_j1 = mpqc::now(world, false);
+    auto time_j1 = mpqc::now(world, this->accurate_time());
     time = mpqc::duration_in_s(time_j0, time_j1);
 
   } else if (formula.oper().type() == Operator::Type::K) {
-    auto time_k0 = mpqc::now(world, false);
+    auto time_k0 = mpqc::now(world, this->accurate_time());
 
     auto k_formula = formula;
     k_formula.set_operator_type(Operator::Type::Coulomb);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
-                              p_screener);
+      parse_two_body_four_center_periodic(k_formula, engine_pool, bs_array,
+                                          vec_RJ, false, p_screener);
 
-      auto time_g0 = mpqc::now(world, false);
+      auto time_g0 = mpqc::now(world, this->accurate_time());
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
-      auto time_g1 = mpqc::now(world, false);
+      auto time_g1 = mpqc::now(world, this->accurate_time());
 
       if (print_detail_) {
         double size = mpqc::detail::array_size(g);
@@ -547,15 +678,15 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
-      auto time_contr0 = mpqc::now(world, false);
+      auto time_contr0 = mpqc::now(world, this->accurate_time());
       if (RJ == 0)
         result("mu, nu") = g("mu, lambda, nu, rho") * D_("lambda, rho");
       else
         result("mu, nu") += g("mu, lambda, nu, rho") * D_("lambda, rho");
-      auto time_contr1 = mpqc::now(world, false);
+      auto time_contr1 = mpqc::now(world, this->accurate_time());
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
-    auto time_k1 = mpqc::now(world, false);
+    auto time_k1 = mpqc::now(world, this->accurate_time());
     time = mpqc::duration_in_s(time_k0, time_k1);
 
   } else
@@ -631,7 +762,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
   }
 
   if (formula.oper().type() == Operator::Type::J) {
-    auto time_j0 = mpqc::now(world, false);
+    auto time_j0 = mpqc::now(world, this->accurate_time());
 
     auto j_formula = formula;
     j_formula.set_operator_type(Operator::Type::Coulomb);
@@ -646,15 +777,15 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
       DirectTArray &g = gj_[RJ];
       if (!g.array().is_initialized()) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
-                                p_screener);
+        parse_two_body_four_center_periodic(j_formula, engine_pool, bs_array,
+                                            vec_RJ, true, p_screener);
 
         // std::cout << "In compute 4 J\n" <<
         // p_screener->norm_estimate(bs_array) << std::endl;
 
-        auto time_g0 = mpqc::now(world, false);
+        auto time_g0 = mpqc::now(world, this->accurate_time());
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
-        auto time_g1 = mpqc::now(world, false);
+        auto time_g1 = mpqc::now(world, this->accurate_time());
 
         if (print_detail_) {
           double size = mpqc::detail::array_size(g.array());
@@ -664,19 +795,19 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
-      auto time_contr0 = mpqc::now(world, false);
+      auto time_contr0 = mpqc::now(world, this->accurate_time());
       if (RJ == 0)
         result("mu, nu") = g("mu, nu, lambda, rho") * D_("lambda, rho");
       else
         result("mu, nu") += g("mu, nu, lambda, rho") * D_("lambda, rho");
-      auto time_contr1 = mpqc::now(world, false);
+      auto time_contr1 = mpqc::now(world, this->accurate_time());
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
-    auto time_j1 = mpqc::now(world, false);
+    auto time_j1 = mpqc::now(world, this->accurate_time());
     time = mpqc::duration_in_s(time_j0, time_j1);
 
   } else if (formula.oper().type() == Operator::Type::K) {
-    auto time_k0 = mpqc::now(world, false);
+    auto time_k0 = mpqc::now(world, this->accurate_time());
 
     auto k_formula = formula;
     k_formula.set_operator_type(Operator::Type::Coulomb);
@@ -690,15 +821,15 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
       DirectTArray &g = gk_[RJ];
       if (!g.array().is_initialized()) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
-                                p_screener);
+        parse_two_body_four_center_periodic(k_formula, engine_pool, bs_array,
+                                            vec_RJ, false, p_screener);
 
         // std::cout << "In compute 4 K\n" <<
         // p_screener->norm_estimate(bs_array) << std::endl;
 
-        auto time_g0 = mpqc::now(world, false);
+        auto time_g0 = mpqc::now(world, this->accurate_time());
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
-        auto time_g1 = mpqc::now(world, false);
+        auto time_g1 = mpqc::now(world, this->accurate_time());
 
         if (print_detail_) {
           double size = mpqc::detail::array_size(g.array());
@@ -708,15 +839,15 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
-      auto time_contr0 = mpqc::now(world, false);
+      auto time_contr0 = mpqc::now(world, this->accurate_time());
       if (RJ == 0)
         result("mu, nu") = g("mu, lambda, nu, rho") * D_("lambda, rho");
       else
         result("mu, nu") += g("mu, lambda, nu, rho") * D_("lambda, rho");
-      auto time_contr1 = mpqc::now(world, false);
+      auto time_contr1 = mpqc::now(world, this->accurate_time());
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
-    auto time_k1 = mpqc::now(world, false);
+    auto time_k1 = mpqc::now(world, this->accurate_time());
     time = mpqc::duration_in_s(time_k0, time_k1);
 
   } else
@@ -735,7 +866,45 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
+void PeriodicAOFactory<Tile, Policy>::parse_one_body_one_center(
+    const Formula &formula,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases) {
+  auto bra_indices = formula.bra_indices();
+  auto ket_indices = formula.ket_indices();
+
+  TA_ASSERT(bra_indices.size() == 1);
+  TA_ASSERT(ket_indices.size() == 1);
+
+  auto bra_index = bra_indices[0];
+  auto ket_index = ket_indices[0];
+
+  TA_ASSERT(bra_index == OrbitalIndex(L"U") || ket_index == OrbitalIndex(L"U"));
+
+  if (bra_index == OrbitalIndex(L"U"))
+    TA_ASSERT(ket_index.is_ao());
+  else
+    TA_ASSERT(bra_index.is_ao());
+
+  const auto &basis_registry = *this->basis_registry();
+
+  auto bra_basis = detail::index_to_basis(basis_registry, bra_index);
+  auto ket_basis = detail::index_to_basis(basis_registry, ket_index);
+
+  TA_ASSERT(bra_basis != nullptr);
+  TA_ASSERT(ket_basis != nullptr);
+
+  bases = BasisVector{{*bra_basis, *ket_basis}};
+
+  auto oper_type = formula.oper().type();
+  engine_pool = make_engine_pool(
+      detail::to_libint2_operator(oper_type),
+      utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
+      detail::to_libint2_operator_params(oper_type, *unitcell_));
+}
+
+template <typename Tile, typename Policy>
+void PeriodicAOFactory<Tile, Policy>::parse_one_body_two_center_periodic(
     const Formula &formula,
     std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
     BasisVector &bases, const Molecule &shifted_mol) {
@@ -774,7 +943,107 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
+void PeriodicAOFactory<Tile, Policy>::parse_two_body_two_center_periodic(
+    const Formula &formula,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, const Vector3d &shift) {
+  auto bra_indices = formula.bra_indices();
+  auto ket_indices = formula.ket_indices();
+
+  TA_ASSERT(bra_indices.size() == 1);
+  TA_ASSERT(ket_indices.size() == 1);
+
+  auto bra_index = bra_indices[0];
+  auto ket_index = ket_indices[0];
+
+  TA_ASSERT(bra_index.is_ao());
+  TA_ASSERT(ket_index.is_ao());
+
+  const auto &basis_registry = *this->basis_registry();
+
+  auto bra_basis = detail::index_to_basis(basis_registry, bra_index);
+  auto ket_basis = detail::index_to_basis(basis_registry, ket_index);
+
+  TA_ASSERT(bra_basis != nullptr);
+  TA_ASSERT(ket_basis != nullptr);
+
+  // Shift ket basis
+  ket_basis = detail::shift_basis_origin(*ket_basis, shift);
+
+  bases = BasisVector{{*bra_basis, *ket_basis}};
+
+  auto oper_type = formula.oper().type();
+  engine_pool = make_engine_pool(
+      detail::to_libint2_operator(oper_type),
+      utility::make_array_of_refs(*bra_basis, *ket_basis),
+      libint2::BraKet::xs_xs,
+      detail::to_libint2_operator_params(oper_type, *unitcell_));
+}
+
+template <typename Tile, typename Policy>
+void PeriodicAOFactory<Tile, Policy>::parse_two_body_three_center_periodic(
+    const Formula &formula,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, const Vector3d &shift,
+    std::shared_ptr<Screener> &p_screener) {
+  auto bra_indices = formula.bra_indices();
+  auto ket_indices = formula.ket_indices();
+
+  TA_ASSERT(bra_indices.size() == 2);
+  TA_ASSERT(ket_indices.size() == 1);
+
+  auto bra_index0 = bra_indices[0];
+  auto bra_index1 = bra_indices[1];
+  auto ket_index0 = ket_indices[0];
+
+  TA_ASSERT(bra_index0.is_ao());
+  TA_ASSERT(bra_index1.is_ao());
+  TA_ASSERT(ket_index0.is_ao());
+
+  const auto &basis_registry = *this->basis_registry();
+
+  auto bra_basis0 = detail::index_to_basis(basis_registry, bra_index0);
+  auto bra_basis1 = detail::index_to_basis(basis_registry, bra_index1);
+  auto ket_basis0 = detail::index_to_basis(basis_registry, ket_index0);
+
+  TA_ASSERT(bra_basis0 != nullptr);
+  TA_ASSERT(bra_basis1 != nullptr);
+  TA_ASSERT(ket_basis0 != nullptr);
+
+  // Form a compound index bra1 basis
+  Vector3d zero_shift_base(0.0, 0.0, 0.0);
+  bra_basis1 =
+      detail::shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, dcell_);
+  // Shift ket basis
+  ket_basis0 = detail::shift_basis_origin(*ket_basis0, shift);
+
+  if (formula.notation() == Formula::Notation::Chemical)
+    bases = BasisVector{{*bra_basis0, *bra_basis1, *ket_basis0}};
+  else
+    throw "Physical notation not supported!";
+
+  auto oper_type = formula.oper().type();
+  engine_pool = make_engine_pool(
+      detail::to_libint2_operator(oper_type),
+      utility::make_array_of_refs(*bra_basis0, *bra_basis1, *ket_basis0),
+      libint2::BraKet::xx_xs,
+      detail::to_libint2_operator_params(oper_type, *unitcell_));
+
+  if (!screen_.empty()) {
+    auto screen_engine_pool = make_engine_pool(
+        detail::to_libint2_operator(oper_type),
+        utility::make_array_of_refs(*bra_basis0, *bra_basis1, *ket_basis0),
+        libint2::BraKet::xx_xx,
+        detail::to_libint2_operator_params(oper_type, *unitcell_));
+
+    p_screener =
+        detail::make_screener(this->world(), screen_engine_pool, bases,
+                              this->screen(), this->screen_threshold());
+  }
+}
+
+template <typename Tile, typename Policy>
+void PeriodicAOFactory<Tile, Policy>::parse_two_body_four_center_periodic(
     const Formula &formula,
     std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
     BasisVector &bases, Vector3d shift_coul, bool if_coulomb,
@@ -920,8 +1189,7 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
 
-  auto pmap =
-      Policy::default_pmap(world, trange.tiles_range().volume());
+  auto pmap = Policy::default_pmap(world, trange.tiles_range().volume());
 
   TA::TensorF tile_norms = screen->norm_estimate(world, bases, *pmap);
 

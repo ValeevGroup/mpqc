@@ -60,7 +60,8 @@ namespace lcao {
         <tr><td><tt>ρ, σ, τ, υ</tt><td><tt>ribs</tt><td> union of <tt>obs</tt>
    and <tt>abs</tt>, supports <tt>othervirt</tt>, <tt>allvirt</tt>, and
    <tt>allany</tt> </tr>
-
+        <tr><td><tt>U</tt><td><tt>ubs</tt><td> unit basis used in periodic
+   density-fitting in Coulomb term </tr>
         </table>
  */
 class OrbitalIndex {
@@ -84,7 +85,8 @@ class OrbitalIndex {
     vbs = -2,
     abs = -3,
     ribs = -4,
-    dfbs = -5
+    dfbs = -5,
+    ubs = 0
   };
 
   ///
@@ -109,6 +111,7 @@ class OrbitalIndex {
   static const wchar_t dfbs_wchar[4];
   static const wchar_t abs_wchar[4];
   static const wchar_t ribs_wchar[4];
+  static const wchar_t ubs_wchar[1];
 
   OrbitalIndex() = default;
   OrbitalIndex(OrbitalIndex const &) = default;

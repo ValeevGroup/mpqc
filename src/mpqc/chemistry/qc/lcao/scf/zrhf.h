@@ -146,10 +146,35 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
    *
    * \param kv KeyVal object
    */
-  void init(const KeyVal& kv);
+  virtual void init(const KeyVal& kv);
 
   bool can_evaluate(Energy* energy) override;
   void evaluate(Energy* result) override;
+};
+
+/*!
+ * \brief DFzRHF class uses density fitting for Coulomb
+ *
+ * Refs: Burow, A. M.; Sierka, M.; Mohamed, F. JCP. 131, 214101 (2009)
+ */
+class DFzRHF : public zRHF {
+ public:
+    using DirectTArray = PeriodicAOWavefunction<Tile, Policy>::DirectTArray;
+
+    DFzRHF(const KeyVal& kv);
+
+    ~DFzRHF() = default;
+
+ private:
+
+    DirectTArray Gamma_;  // (κ λ | G| K) 3-center 2-electron direct integrals
+    TArray V_;  // (K |G| Λ) 2-center 2-electron integrals
+    TArray P_para_;  // projection matrix that projects X onto auxiliary charge vector
+    TArray P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
+    TArray C_;  // fitting coefficients
+    TArray C_para_;  // the part of C_ that is along with auxiliary charge vector
+    TArray C_perp_;  // the part of C_ that is orthogonal to auxiliary charge vector
+    TArray M_;  // charge matrix of product density
 };
 
 }  // namespace  lcao

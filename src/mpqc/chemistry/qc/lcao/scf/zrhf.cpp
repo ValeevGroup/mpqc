@@ -2,6 +2,7 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
+#include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 
 #include <clocale>
 #include <sstream>
@@ -230,6 +231,36 @@ void zRHF::solve(double thresh) {
     std::cout << mpqc::printf("\tDiag + Density:      %20.3f\n", d_duration_);
     std::cout << mpqc::printf("\tTotal:               %20.3f\n\n",
                               scf_duration_);
+  }
+
+  if (0) {
+      /// test density fitting
+      // overlap matrix
+      auto M = S_;
+
+      // normalized charge vector
+      auto unit_basis = gaussian::detail::create_unit_basis();
+      ao_factory.basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
+      auto charge_mat = ao_factory.compute(L"< U | Κ >");  // 1*N charge matrix of auxiliary basis within one unit cell
+      auto charge_vec = gaussian::detail::take_row_from_2D_array(charge_mat, 0);  // charge vector of auxiliary basis within one unit cell
+      double charge_tot = charge_vec("q") * charge_vec("q");
+      TArray charge_normalized;
+      charge_normalized("q") = (1.0 / charge_tot) * charge_vec("q");
+
+      // (κ λ | G| K) 2-body 3-center integrals
+      auto Gamma = ao_factory.compute(L"(μ ν | G | Κ )");
+
+      // (K |G| Λ) 2-body 2-center integrals
+      auto V = ao_factory.compute(L"( Κ | G | Λ )");
+
+      // DF coeffs parallel to charge vector
+      TArray C_para;
+      C_para("mu, nu, q") = (1.0 / charge_tot) * M("mu, nu") * charge_normalized("q");
+
+      // projection matrix that projects X on to charge vector
+      TArray P_para;
+      P_para("p, q") = charge_normalized("p") * charge_normalized("q");
+
   }
 }
 

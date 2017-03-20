@@ -80,6 +80,7 @@ class PeriodicAOWavefunction : public Wavefunction {
  public:
   using AOIntegral = gaussian::PeriodicAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
+  using DirectTArray = typename AOIntegral::DirectTArray;
   using MatrixzVec = std::vector<Matrixz>;
   using VectordVec = std::vector<Vectord>;
 

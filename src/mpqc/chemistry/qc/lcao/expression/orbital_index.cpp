@@ -30,6 +30,7 @@ const wchar_t OrbitalIndex::vbs_wchar[4] = {L'Α', L'Β', L'Γ', L'Δ'};
 const wchar_t OrbitalIndex::dfbs_wchar[4] = {L'Κ', L'Λ', L'Μ', L'Ν'};
 const wchar_t OrbitalIndex::abs_wchar[4] = {L'α', L'β', L'γ', L'δ'};
 const wchar_t OrbitalIndex::ribs_wchar[4] = {L'ρ', L'σ', L'τ', L'υ'};
+const wchar_t OrbitalIndex::ubs_wchar[1] = {L'U'};
 
 void OrbitalIndex::init(const std::wstring &string) {
   const wchar_t *letter = string.c_str();
@@ -135,6 +136,8 @@ OrbitalIndex::Type OrbitalIndex::wchar_to_index(const wchar_t first) {
     return Type::dfbs;
   } else if (first >= ribs_wchar[0] && first <= ribs_wchar[3]) {
     return Type::ribs;
+  } else if (first == ubs_wchar[0]) {
+    return Type::ubs;
   } else {
     std::string error_message = "Wrong Key Index " +
                                 utility::to_string(std::wstring(1, first)) +

@@ -233,7 +233,7 @@ void zRHF::solve(double thresh) {
                               scf_duration_);
   }
 
-  if (0) {
+  if (1) {
       /// test density fitting
       // overlap matrix
       auto M = S_;
@@ -260,6 +260,12 @@ void zRHF::solve(double thresh) {
       // projection matrix that projects X on to charge vector
       TArray P_para;
       P_para("p, q") = charge_normalized("p") * charge_normalized("q");
+
+      // projection matrix that projects X orthogonal to charge vector
+      TArray identity = ao_factory.compute(L"<κ|I|λ>");
+      TArray P_perp;
+      P_perp("p, q") = identity("p, q") - P_para("p, q");
+
 
   }
 }

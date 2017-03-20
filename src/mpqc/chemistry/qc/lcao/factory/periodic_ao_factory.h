@@ -222,6 +222,12 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     detail::set_oper(op_);
 
     print_detail_ = kv.value<bool>("print_detail", false);
+
+    auto orbital_space_registry =
+        std::make_shared<OrbitalSpaceRegistry<TArray>>();
+
+    this->set_orbital_registry(orbital_space_registry);
+
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -512,9 +518,23 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
 
   auto time0 = mpqc::now(world, this->accurate_time());
 
-  // compute one center integrals written as <X|U> or <U|X>
-  if (formula.bra_indices()[0] == OrbitalIndex(L"U") ||
-      formula.ket_indices()[0] == OrbitalIndex(L"U")) {
+  if (formula.oper().type() == Operator::Type::Identity) {
+    // Identity matrix
+
+    auto bra_index = formula.bra_indices()[0];
+    auto ket_index = formula.ket_indices()[0];
+    auto bra_basis = this->basis_registry()->retrieve(bra_index);
+    auto ket_basis = this->basis_registry()->retrieve(ket_index);
+    auto bra_tr = bra_basis->create_trange1();
+    auto ket_tr = ket_basis->create_trange1();
+    // create diagonal array
+    result = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        world, bra_tr, ket_tr, 1.0);
+    result.truncate();
+
+  } else if (formula.bra_indices()[0] == OrbitalIndex(L"U") ||
+             formula.ket_indices()[0] == OrbitalIndex(L"U")) {
+    // compute one center integrals written as <X|U> or <U|X>
     parse_one_body_one_center(formula, engine_pool, bs_array);
     auto result_2D = compute_integrals(world, engine_pool, bs_array);
     result = result_2D;

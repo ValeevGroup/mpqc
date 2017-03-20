@@ -259,39 +259,46 @@ void zRHF::solve(double thresh) {
 
     // DF coeffs parallel to charge vector
     TArray C_para;
-    C_para("mu, nu, q") =
-        (1.0 / charge_tot) * M("mu, nu") * charge_normalized("q");
+    C_para("mu, nu, X") =
+        (1.0 / charge_tot) * M("mu, nu") * charge_normalized("X");
 
-    // projection matrix that projects X on to charge vector
+    // projection matrix that projects matrix X on to charge vector
     TArray P_para;
-    P_para("p, q") = charge_normalized("p") * charge_normalized("q");
+    P_para("X, Y") = charge_normalized("X") * charge_normalized("Y");
 
     // projection matrix that projects X orthogonal to charge vector
-    TArray identity = ao_factory.compute(L"<κ|I|λ>");
+    TArray identity = ao_factory.compute(L"< Κ | I | Λ >");
     TArray P_perp;
-    P_perp("p, q") = identity("p, q") - P_para("p, q");
+    P_perp("X, Y") = identity("X, Y") - P_para("X, Y");
 
     // perpendicular part of 2-body 2-center integrals
     TArray V_perp;
-    V_perp("p, q") = P_perp("p, r") * V("r, s") * P_perp("s, q");
+    V_perp("X, Y") = P_perp("X, W") * V("Z, W") * P_perp("W, Y");
 
-    // L inverse. L = V_perp + P_para
-    TArray L;
-    L("p, q") = V_perp("p, q") + P_para("p, q");
-    auto L_eig = array_ops::array_to_eigen(L);
-    using MatType = decltype(L_eig);
-    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(L_eig).matrixL()).inverse();
-    auto tr0 = L.trange().data()[0];
-    auto tr1 = L.trange().data()[1];
+    // A inverse. A = V_perp + P_para
+    TArray A;
+    A("X, Y") = V_perp("X, Y") + P_para("X, Y");
+    auto A_eig = array_ops::array_to_eigen(A);
+    using MatType = decltype(A_eig);
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(A_eig).matrixL()).inverse();
+    auto tr0 = A.trange().data()[0];
+    auto tr1 = A.trange().data()[1];
+    assert(tr0 == tr1 && "Matrix A = LLT must be symmetric!");
     TArray L_inv =
         array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
+    TArray A_inv;
+    A_inv("X, Y") = L_inv("Z, X") * L_inv("Z, Y");
 
     // DF coeffs
     TArray C_tot = C_para;
-    C_tot("mu, nu, q") = L_inv("p, q") * P_perp("s, p") *
-                         (Gamma("mu, nu, s") - V("r, s") * C_para("mu, nu, r"));
-
+    C_tot("mu, nu, X") = A_inv("Y, X") * P_perp("Z, Y") *
+                         (Gamma("mu, nu, Z") - V("W, Z") * C_para("mu, nu, W"));
     ExEnv::out0() << "\nDF Coeffs = \n" << C_tot << std::endl;
+
+    // compute coulomb interaction energy
+    double J1 = D_("mu, nu") * Gamma("mu, nu, X") * C_tot("rho, sig, X") * D_("rho, sig");
+    double J2 = -0.5 * D_("mu, nu") * C_tot("mu, nu, X") * V("X, Y") * C_tot("rho, sig, Y") * D_("rho, sig");
+
   }
 }
 

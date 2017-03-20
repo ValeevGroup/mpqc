@@ -593,7 +593,7 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
 
   double size = 0.0;
 
-  ExEnv::out0() << "\nComputing Two Center Integral for Periodic System: "
+  ExEnv::out0() << "\nComputing Three Center Integral for Periodic System: "
                 << utility::to_string(formula.string()) << std::endl;
 
   auto time0 = mpqc::now(world, this->accurate_time());

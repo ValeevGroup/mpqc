@@ -1,8 +1,8 @@
 #include "zrhf.h"
 
+#include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
-#include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 
 #include <clocale>
 #include <sstream>
@@ -234,39 +234,64 @@ void zRHF::solve(double thresh) {
   }
 
   if (1) {
-      /// test density fitting
-      // overlap matrix
-      auto M = S_;
+    /// test density fitting
+    // overlap matrix
+    auto M = S_;
 
-      // normalized charge vector
-      auto unit_basis = gaussian::detail::create_unit_basis();
-      ao_factory.basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
-      auto charge_mat = ao_factory.compute(L"< U | Κ >");  // 1*N charge matrix of auxiliary basis within one unit cell
-      auto charge_vec = gaussian::detail::take_row_from_2D_array(charge_mat, 0);  // charge vector of auxiliary basis within one unit cell
-      double charge_tot = charge_vec("q") * charge_vec("q");
-      TArray charge_normalized;
-      charge_normalized("q") = (1.0 / charge_tot) * charge_vec("q");
+    // normalized charge vector
+    auto unit_basis = gaussian::detail::create_unit_basis();
+    ao_factory.basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
+    auto charge_mat = ao_factory.compute(L"< U | Κ >");  // 1*N charge matrix of
+                                                         // auxiliary basis
+                                                         // within one unit cell
+    auto charge_vec = gaussian::detail::take_row_from_2D_array(
+        charge_mat,
+        0);  // charge vector of auxiliary basis within one unit cell
+    double charge_tot = charge_vec("q") * charge_vec("q");
+    TArray charge_normalized;
+    charge_normalized("q") = (1.0 / charge_tot) * charge_vec("q");
 
-      // (κ λ | G| K) 2-body 3-center integrals
-      auto Gamma = ao_factory.compute(L"(μ ν | G | Κ )");
+    // (κ λ | G| K) 2-body 3-center integrals
+    auto Gamma = ao_factory.compute(L"(μ ν | G | Κ )");
 
-      // (K |G| Λ) 2-body 2-center integrals
-      auto V = ao_factory.compute(L"( Κ | G | Λ )");
+    // (K |G| Λ) 2-body 2-center integrals
+    auto V = ao_factory.compute(L"( Κ | G | Λ )");
 
-      // DF coeffs parallel to charge vector
-      TArray C_para;
-      C_para("mu, nu, q") = (1.0 / charge_tot) * M("mu, nu") * charge_normalized("q");
+    // DF coeffs parallel to charge vector
+    TArray C_para;
+    C_para("mu, nu, q") =
+        (1.0 / charge_tot) * M("mu, nu") * charge_normalized("q");
 
-      // projection matrix that projects X on to charge vector
-      TArray P_para;
-      P_para("p, q") = charge_normalized("p") * charge_normalized("q");
+    // projection matrix that projects X on to charge vector
+    TArray P_para;
+    P_para("p, q") = charge_normalized("p") * charge_normalized("q");
 
-      // projection matrix that projects X orthogonal to charge vector
-      TArray identity = ao_factory.compute(L"<κ|I|λ>");
-      TArray P_perp;
-      P_perp("p, q") = identity("p, q") - P_para("p, q");
+    // projection matrix that projects X orthogonal to charge vector
+    TArray identity = ao_factory.compute(L"<κ|I|λ>");
+    TArray P_perp;
+    P_perp("p, q") = identity("p, q") - P_para("p, q");
 
+    // perpendicular part of 2-body 2-center integrals
+    TArray V_perp;
+    V_perp("p, q") = P_perp("p, r") * V("r, s") * P_perp("s, q");
 
+    // L inverse. L = V_perp + P_para
+    TArray L;
+    L("p, q") = V_perp("p, q") + P_para("p, q");
+    auto L_eig = array_ops::array_to_eigen(L);
+    using MatType = decltype(L_eig);
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(L_eig).matrixL()).inverse();
+    auto tr0 = L.trange().data()[0];
+    auto tr1 = L.trange().data()[1];
+    TArray L_inv =
+        array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
+
+    // DF coeffs
+    TArray C_tot = C_para;
+    C_tot("mu, nu, q") = L_inv("p, q") * P_perp("s, p") *
+                         (Gamma("mu, nu, s") - V("r, s") * C_para("mu, nu, r"));
+
+    ExEnv::out0() << "\nDF Coeffs = \n" << C_tot << std::endl;
   }
 }
 

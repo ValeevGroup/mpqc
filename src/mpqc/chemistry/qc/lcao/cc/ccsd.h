@@ -1507,43 +1507,55 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     }
   }
 
-  /// <p|f|q>
-  const TArray get_fock_pq() {
-    if (df_) {
-      return this->lcao_factory().compute(L"<p|F|q>[df]");
-    } else {
-      return this->lcao_factory().compute(L"<p|F|q>");
-    }
+  /// <i|f|j>
+  const TArray get_fock_ij() {
+    std::wstring formula = df_ ? L"<i|F|j>[df]" : L"<i|F|j>";
+    return this->lcao_factory().compute(formula);
   }
 
- private:
-  /// AO integral-direct computation of (ab|cd) ints contributions to the
-  /// doubles residual
-
-  /// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} +
-  /// t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
-  /// @param t2 doubles amplitudes in MO basis
-  /// @param t1 singles amplitudes in MO basis
-  /// @return U tensor
-  TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
-    if (direct_ao_array_.array().is_initialized()) {
-      TArray Ca = get_Ca();
-      TArray tc;
-      TArray u2_u11;
-      tc("i,q") = Ca("q,c") * t1("c,i");
-      u2_u11("p, r, i, j") =
-          ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
-          direct_ao_array_("p,q,r,s");
-      u2_u11("p, r, i, j") =
-          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
-      return u2_u11;
-    } else {
-      throw ProgrammingError(
-          "CCSD: integral-direct implementation used, but direct integral not "
-          "initialized",
-          __FILE__, __LINE__);
-    }
+  /// <a|f|b>
+  const TArray get_fock_ab() {
+    std::wstring formula = df_ ? L"<a|F|b>[df]" : L"<a|F|b>";
+    return this->lcao_factory().compute(formula);
   }
+
+/// <p|f|q>
+const TArray
+get_fock_pq() {
+  if (df_) {
+    return this->lcao_factory().compute(L"<p|F|q>[df]");
+  } else {
+    return this->lcao_factory().compute(L"<p|F|q>");
+  }
+}
+
+private:
+/// AO integral-direct computation of (ab|cd) ints contributions to the
+/// doubles residual
+
+/// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} +
+/// t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
+/// @param t2 doubles amplitudes in MO basis
+/// @param t1 singles amplitudes in MO basis
+/// @return U tensor
+TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
+  if (direct_ao_array_.array().is_initialized()) {
+    TArray Ca = get_Ca();
+    TArray tc;
+    TArray u2_u11;
+    tc("i,q") = Ca("q,c") * t1("c,i");
+    u2_u11("p, r, i, j") =
+        ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
+        direct_ao_array_("p,q,r,s");
+    u2_u11("p, r, i, j") = 0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
+    return u2_u11;
+  } else {
+    throw ProgrammingError(
+        "CCSD: integral-direct implementation used, but direct integral not "
+        "initialized",
+        __FILE__, __LINE__);
+  }
+}
 };  // class CCSD
 
 #if TA_DEFAULT_POLICY == 0

@@ -20,15 +20,16 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   t2_temp("a,b,i,j") = 2.0 * T2_("a,b,i,j") - T2_("a,b,j,i");
 
   // \cal{F}
-  FIA_("i,a") =  //   fia
-      // + t^b_j g^ij_ab
-      gabij_temp("a,b,i,j") * T1_("b,j");
+  //   fia + t^b_j g^ij_ab
+  FIA_("i,a") = Fai_("a,i") + gabij_temp("a,b,i,j") * T1_("b,j");
   FAB_("a,b") =  //   fab (1 - delta_ab) - fkb t^a_k
+      Fab_("a,b") +
       // + t^d_k g^ak_bd
       T1_("d,k") * (2.0 * Giabc_("k,a,d,b") - Giabc_("k,a,b,d"))
       // - 1/2 tau^ad_kl g^kl_bd
       - tau_ab("a,d,k,l") * gabij_temp("b,d,k,l");
   FIJ_("i,j") =  //   fij (1 - delta_ij) + 1/2 fic t^c_j
+      Fij_("i,j") +
       // + t^c_l g^il_jc
       T1_("c,l") * (2.0 * Gijka_("i,l,j,c") - Gijka_("l,i,j,c"))
       // + 1/2 tau^cd_jl g^il_cd
@@ -415,28 +416,23 @@ void EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
   /// make preconditioner
   Preconditioner pred;
   {
-    auto& orbital_registry = this->lcao_factory().orbital_registry();
-    auto nocc = orbital_registry.retrieve("m").rank();
-    auto nocc_act = orbital_registry.retrieve("i").rank();
-    auto nvir = orbital_registry.retrieve("a").rank();
-    auto nfzc = nocc - nocc_act;
-
-    auto eps_p = *this->orbital_energy();
-    auto eps_o = eps_p.segment(nfzc, nocc_act);
-    auto eps_v = eps_p.tail(nvir);
+    EigenVector<numeric_type> eps_o =
+        array_ops::array_to_eigen(Fij_).diagonal();
+    EigenVector<numeric_type> eps_v =
+        array_ops::array_to_eigen(Fab_).diagonal();
 
     pred = Preconditioner(eps_o, eps_v);
   }
 
   /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false);
+  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, 10);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
 
   while (iter < max_iter && norm_r > convergence) {
     auto time0 = mpqc::fenced_now(world);
     std::size_t dim = C_.size();
-//    ExEnv::out0() << "vector dimension: " << dim << std::endl;
+    //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
     // compute product of H with guess vector
     std::vector<GuessVector> HC(dim);
@@ -605,7 +601,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       result[i] = i;
     }
 
-    davidson_solver(15, target_precision);
+    davidson_solver(30, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(ex_energy, result);

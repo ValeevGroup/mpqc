@@ -70,6 +70,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     }
   };
 
+  TArray Fab_;
+  TArray Fij_;
+  TArray Fai_;
   TArray Gijkl_;
   TArray Gijka_;
   TArray Gabij_;
@@ -112,6 +115,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void compute_HC();
 
   void init() {
+    Fij_ = this->get_fock_ij();
+    Fab_ = this->get_fock_ab();
+    Fai_ = this->get_fock_ai();
     Gijkl_ = this->get_ijkl();
     Gijka_ = this->get_ijka();
     Gabij_ = this->get_abij();

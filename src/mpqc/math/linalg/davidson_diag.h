@@ -138,9 +138,9 @@ class DavidsonDiag {
         for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
           for (std::size_t j = 0; j <= ii; ++j) {
-            G(ii, j) = dot_product(B_[j], HB_[ii]);
+            G(ii, j) = dot_product(B_[ii], HB_[j]);
             if (ii != j) {
-              G(j, ii) = G(j, ii);
+              G(j, ii) = G(ii, j);
             }
           }
         }
@@ -148,9 +148,9 @@ class DavidsonDiag {
         for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
           for (std::size_t j = 0; j <= ii; ++j) {
-            G(ii, j) = dot_product(B_[j], HB_[ii]);
+            G(ii, j) = dot_product(B_[ii], HB_[j]);
             if (ii != j) {
-              G(j, ii) = dot_product(B_[ii], HB_[j]);
+              G(j, ii) = dot_product(B_[j], HB_[ii]);
             }
           }
         }
@@ -185,19 +185,8 @@ class DavidsonDiag {
     }
     // non-symmetric matrix
     else {
-      // unitary transform to upper triangular matrix
-      Eigen::RealSchur<RowMatrix<element_type>> rs(subspace_);
-
-      RowMatrix<element_type> T = rs.matrixT();
-      RowMatrix<element_type> U = rs.matrixU();
-
-      if (rs.info() != Eigen::Success) {
-        throw AlgorithmException("Eigen::RealSchur Failed!\n", __FILE__,
-                                 __LINE__);
-      }
-
       // do eigen solve on T
-      Eigen::EigenSolver<RowMatrix<element_type>> es(T);
+      Eigen::EigenSolver<RowMatrix<element_type>> es(subspace_);
 
       // sort eigen values
       std::vector<EigenPair> eg;
@@ -205,7 +194,7 @@ class DavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
-        if (rs.info() != Eigen::Success) {
+        if (es.info() != Eigen::Success) {
           throw AlgorithmException("Eigen::EigenSolver Failed!\n", __FILE__,
                                    __LINE__);
         }
@@ -220,8 +209,30 @@ class DavidsonDiag {
       // obtain final eigen value and eigen vector
       for (std::size_t i = 0; i < n_roots_; ++i) {
         E[i] = eg[i].eigen_value;
-        C.col(i) = U * eg[i].eigen_vector;
+        C.col(i) = eg[i].eigen_vector;
       }
+
+      // orthonormalize C
+      //      RowMatrix<element_type> Q = C;
+      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(Q);
+      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(C);
+      //      C = qr.householderQ();
+
+      //      const auto tolerance =
+      //          std::numeric_limits<typename D::element_type>::epsilon() *
+      //          100;
+      //      for (auto i = 0; i < n_roots_; ++i) {
+      //        for (auto j = i; j < n_roots_; ++j) {
+      //          const auto test = C.col(i).dot(C.col(j));
+      //          if (i == j) {
+      //            TA_ASSERT(test - 1.0 < tolerance);
+      //          } else {
+      //            TA_ASSERT(test < tolerance);
+      //          }
+      //          std::cout << "i= " << i << " j= " << j << " dot= " << test
+      //                    << std::endl;
+      //        }
+      //      }
     }
 
     // compute eigen_vector at current iteration and store it
@@ -287,6 +298,12 @@ class DavidsonDiag {
       // call it twice
       gram_schmidt(B_, residual);
       B = residual;
+
+      //      for (std::size_t i = 0; i < n_roots_; i++) {
+      //        const auto m = norm2(B[i]);
+      //        std::cout << "norm: " << i << " " << m << std::endl;
+      //        TA_ASSERT(m > 1.0e-3);
+      //      }
     }
 
 // test if orthonomalized
@@ -297,8 +314,9 @@ class DavidsonDiag {
     for (std::size_t i = 0; i < k; ++i) {
       for (std::size_t j = i; j < k; ++j) {
         const auto test = dot_product(B[i], B[j]);
-        //        std::cout << "i= " << i << " j= " << j << " dot= " << test <<
-        //        std::endl;
+        //                std::cout << "i= " << i << " j= " << j << " dot= " <<
+        //                test <<
+        //                std::endl;
         if (i == j) {
           TA_ASSERT(test - 1.0 < tolerance);
         } else {

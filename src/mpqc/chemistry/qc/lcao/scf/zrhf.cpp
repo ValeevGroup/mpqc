@@ -234,46 +234,53 @@ void zRHF::solve(double thresh) {
   }
 
   if (1) {
+    auto time0 = mpqc::fenced_now(world);
     /// test density fitting
     // overlap matrix
     auto M = S_;
 
-    // normalized charge vector
+    // 1*N charge matrix of auxiliary basis within one unit cell
     auto unit_basis = gaussian::detail::create_unit_basis();
     ao_factory.basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
-    auto charge_mat = ao_factory.compute(L"< U | Κ >");  // 1*N charge matrix of
-                                                         // auxiliary basis
-                                                         // within one unit cell
-    auto charge_vec = gaussian::detail::take_row_from_2D_array(
-        charge_mat,
-        0);  // charge vector of auxiliary basis within one unit cell
-    double charge_tot = charge_vec("q") * charge_vec("q");
+    auto charge_mat = ao_factory.compute(L"< U | Κ >");
+    // charge vector of auxiliary basis within one unit cell
+    auto charge_vec = gaussian::detail::take_row_from_2D_array(charge_mat, 0);
+    double charge_2 = charge_vec("X") * charge_vec("X");
+    double charge_tot = std::sqrt(charge_2);
+    // normalized charge vector of auxiliary basis within one unit cell
     TArray charge_normalized;
-    charge_normalized("q") = (1.0 / charge_tot) * charge_vec("q");
+    charge_normalized("X") = (1.0 / charge_tot) * charge_vec("X");
 
-    // (κ λ | G| K) 2-body 3-center integrals
-    auto Gamma = ao_factory.compute(L"(μ ν | G | Κ )");
-
-    // (K |G| Λ) 2-body 2-center integrals
+    // 2-body 3-center integrals
+    auto Gamma = ao_factory.compute(L"( Κ | G|κ λ)");
+    // 2-body 2-center integrals
     auto V = ao_factory.compute(L"( Κ | G | Λ )");
 
     // DF coeffs parallel to charge vector
     TArray C_para;
-    C_para("mu, nu, X") =
+    C_para("X, mu, nu") =
         (1.0 / charge_tot) * M("mu, nu") * charge_normalized("X");
 
     // projection matrix that projects matrix X on to charge vector
     TArray P_para;
     P_para("X, Y") = charge_normalized("X") * charge_normalized("Y");
 
-    // projection matrix that projects X orthogonal to charge vector
+    // projection matrix that projects matrix X orthogonal to charge vector
     TArray identity = ao_factory.compute(L"< Κ | I | Λ >");
     TArray P_perp;
     P_perp("X, Y") = identity("X, Y") - P_para("X, Y");
 
+    // perpendicular part of 3-body 2-center integrals
+    TArray Gamma_perp;
+    Gamma_perp("X, mu, nu") = P_perp("X, Y") * Gamma("Y, mu, nu");
+
     // perpendicular part of 2-body 2-center integrals
     TArray V_perp;
-    V_perp("X, Y") = P_perp("X, W") * V("Z, W") * P_perp("W, Y");
+    V_perp("X, Y") = P_perp("X, Z") * V("Z, W") * P_perp("W, Y");
+
+    // perpendicular η
+    TArray Eta_perp;
+    Eta_perp("X, mu, nu") = P_perp("X, Y") * V("Y, Z") * C_para("Z, mu, nu");
 
     // A inverse. A = V_perp + P_para
     TArray A;
@@ -289,16 +296,37 @@ void zRHF::solve(double thresh) {
     TArray A_inv;
     A_inv("X, Y") = L_inv("Z, X") * L_inv("Z, Y");
 
-    // DF coeffs
-    TArray C_tot = C_para;
-    C_tot("mu, nu, X") = A_inv("Y, X") * P_perp("Z, Y") *
-                         (Gamma("mu, nu, Z") - V("W, Z") * C_para("mu, nu, W"));
-    ExEnv::out0() << "\nDF Coeffs = \n" << C_tot << std::endl;
+    // DF coeffs orthogonal to charge vector
+    TArray C_perp;
+    C_perp("X, mu, nu") =
+        A_inv("X, Y") * (Gamma_perp("Y, mu, nu") - Eta_perp("Y, mu, nu"));
 
-    // compute coulomb interaction energy
-    double J1 = D_("mu, nu") * Gamma("mu, nu, X") * C_tot("rho, sig, X") * D_("rho, sig");
-    double J2 = -0.5 * D_("mu, nu") * C_tot("mu, nu, X") * V("X, Y") * C_tot("rho, sig, Y") * D_("rho, sig");
+    // DF coeffs total C_total = C_parallel + C_perpendicular
+    TArray C_tot;
+    C_tot("X, mu, nu") = C_para("X, mu, nu") + C_perp("X, mu, nu");
 
+    /// compute coulomb-term contribution to total energy
+    // a dummy way to do this:
+    double J_v1 = 2.0 * D_("mu, nu") * Gamma("X, mu, nu") *
+                  C_tot("X, rho, sig") * D_("rho, sig");
+    ExEnv::out0() << "\n3-center-only Coulomb energy            = " << J_v1
+                  << std::endl;
+    // a better way to do this
+    double J1_v2 = 2.0 * J_v1;
+    double J2_v2 = -2.0 * D_("mu, nu") * C_tot("X, mu, nu") * V("X, Y") *
+                   C_tot("Y, rho, sig") * D_("rho, sig");
+    ExEnv::out0() << "\n2.0 * (μν|ρ_R) - (ρ|ρ_R) Coulomb energy = "
+                  << J1_v2 + J2_v2 << std::endl;
+
+    auto time1 = mpqc::fenced_now(world);
+    double time = mpqc::duration_in_s(time0, time1);
+
+    // test against actual 4-center Coulomb energy
+    double e_coul = 2.0 * J_("mu, nu") * D_("mu, nu");
+    ExEnv::out0() << "\n4-center Coulomb energy                 = " << e_coul
+                  << std::endl;
+
+    ExEnv::out0() << "\nRI-J time: " << time << " s\n" << std::endl;
   }
 }
 

@@ -605,9 +605,9 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
                                            vec_RJ, p_screener);
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       if (RJ == 0)
-        result("mu, nu, K") = g("mu, nu, K");
+        result("K, mu, nu") = g("K, mu, nu");
       else
-        result("mu, nu, K") += g("mu, nu, K");
+        result("K, mu, nu") += g("K, mu, nu");
     }
   } else
     throw std::runtime_error("Rank-3 operator type not supported");
@@ -1009,50 +1009,50 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_three_center_periodic(
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
-  TA_ASSERT(bra_indices.size() == 2);
-  TA_ASSERT(ket_indices.size() == 1);
+  TA_ASSERT(bra_indices.size() == 1);
+  TA_ASSERT(ket_indices.size() == 2);
 
   auto bra_index0 = bra_indices[0];
-  auto bra_index1 = bra_indices[1];
   auto ket_index0 = ket_indices[0];
+  auto ket_index1 = ket_indices[1];
 
   TA_ASSERT(bra_index0.is_ao());
-  TA_ASSERT(bra_index1.is_ao());
   TA_ASSERT(ket_index0.is_ao());
+  TA_ASSERT(ket_index1.is_ao());
 
   const auto &basis_registry = *this->basis_registry();
 
   auto bra_basis0 = detail::index_to_basis(basis_registry, bra_index0);
-  auto bra_basis1 = detail::index_to_basis(basis_registry, bra_index1);
   auto ket_basis0 = detail::index_to_basis(basis_registry, ket_index0);
+  auto ket_basis1 = detail::index_to_basis(basis_registry, ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
-  TA_ASSERT(bra_basis1 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
+  TA_ASSERT(ket_basis1 != nullptr);
 
-  // Form a compound index bra1 basis
+  // Form a compound index ket1 basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
-  bra_basis1 =
-      detail::shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, dcell_);
-  // Shift ket basis
-  ket_basis0 = detail::shift_basis_origin(*ket_basis0, shift);
+  ket_basis1 =
+      detail::shift_basis_origin(*ket_basis1, zero_shift_base, R_max_, dcell_);
+  // Shift bra basis
+  bra_basis0 = detail::shift_basis_origin(*bra_basis0, shift);
 
   if (formula.notation() == Formula::Notation::Chemical)
-    bases = BasisVector{{*bra_basis0, *bra_basis1, *ket_basis0}};
+    bases = BasisVector{{*bra_basis0, *ket_basis0, *ket_basis1}};
   else
     throw "Physical notation not supported!";
 
   auto oper_type = formula.oper().type();
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
-      utility::make_array_of_refs(*bra_basis0, *bra_basis1, *ket_basis0),
-      libint2::BraKet::xx_xs,
+      utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
+      libint2::BraKet::xs_xx,
       detail::to_libint2_operator_params(oper_type, *unitcell_));
 
   if (!screen_.empty()) {
     auto screen_engine_pool = make_engine_pool(
         detail::to_libint2_operator(oper_type),
-        utility::make_array_of_refs(*bra_basis0, *bra_basis1, *ket_basis0),
+        utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
         libint2::BraKet::xx_xx,
         detail::to_libint2_operator_params(oper_type, *unitcell_));
 

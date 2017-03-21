@@ -41,7 +41,8 @@ inline void print_cis_excitation_energy(const EigenVector<T> &eig,
                                         bool triplets) {
   const auto &unit_factory = UnitFactory::get_default();
   const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
-  const auto Hartree_to_wavenumber = unit_factory->make_unit("cm^-1").from_atomic_units();
+  const auto Hartree_to_wavenumber =
+      unit_factory->make_unit("energy_wavenumber[cm]").from_atomic_units();
 
   ExEnv::out0() << "CIS Excitation Energy: ( "
                 << (triplets ? "Triplets" : "Singlets") << " )\n";

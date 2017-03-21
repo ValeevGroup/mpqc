@@ -66,8 +66,8 @@ void Unit::parse() {
         eq(unitstring, "Hartree") || eq(unitstring, "Hartrees")) {
     } else if (eq(unitstring, "ev") || eq(unitstring, "eV")) {
       factor = 1.0 / constants_->Hartree_to_electron_volt();
-    } else if (eq(unitstring, "cm^-1")) {
-      factor = (100 * h * c) / Ea;
+    } else if (eq(unitstring, "energy_wavenumber[cm]")) {
+      factor = (100 * h * c) / Ea;  // the energy of photon with wave length of 1 cm
     } else if (eq(unitstring, "debye")) {
       factor = 1.0 / constants_->atomic_unit_to_debye();
     } else if (eq(unitstring, "radian") || eq(unitstring, "radians")) {

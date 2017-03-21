@@ -95,7 +95,8 @@ void Unit::parse() {
       factor = M_PI / 180.0;
     } else if (eq(unitstring, "second") || eq(unitstring, "seconds") ||
         eq(unitstring, "s")) {
-      factor = Ea / hbar;
+      factor = Ea / hbar;  // atomic unit of time = how long it takes electron
+                           // to travel 1 radian in bohr orbit
     } else {
       throw InputError("unknown Unit string", __FILE__, __LINE__, "unitstring",
                        unitstring.get());

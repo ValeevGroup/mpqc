@@ -202,26 +202,36 @@ CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
 # Dependencies
 ###############################################################################
 
+##### TiledArray #####
+# search for TA first, other packages can be found with it
 if(TiledArray_INSTALL_DIR)
   set(TiledArray_DIR ${TiledArray_INSTALL_DIR}/lib/cmake/tiledarray)
 endif()
-# search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
-# Treating boost the way suggested in https://rix0r.nl/blog/2015/08/13/cmake-guide/
+##### Boost #####
+# Treating boost the "Modern CMake" (https://rix0r.nl/blog/2015/08/13/cmake-guide/)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization)
 add_library(boost INTERFACE IMPORTED)
 set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES 
   ${Boost_INCLUDE_DIRS})
 
+##### TBB #####
+# TiledArray and MADNESS set search path for TBB to TBB_ROOT_DIR, KitWare's FindTBB expects TBB_ROOT
+if(TBB_ROOT_DIR)
+  set(TBB_ROOT ${TBB_ROOT_DIR})
+endif(TBB_ROOT_DIR)
 FIND_PACKAGE(TBB REQUIRED)
+# set up an interface library for TBB a la https://github.com/justusc/FindTBB
+include(ImportTBB)
+import_tbb()
+
 FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(LIBINT2 REQUIRED)
 
-INCLUDE_DIRECTORIES(${TBB_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LIBINT2_INCLUDE_DIRS})
 add_definitions(${LIBINT2_EXTRA_DEFINITIONS})

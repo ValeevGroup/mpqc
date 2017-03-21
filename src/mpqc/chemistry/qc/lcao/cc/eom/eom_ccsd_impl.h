@@ -23,7 +23,7 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   //   fia + t^b_j g^ij_ab
   FIA_("i,a") = Fai_("a,i") + gabij_temp("a,b,i,j") * T1_("b,j");
   FAB_("a,b") =  //   fab (1 - delta_ab) - fkb t^a_k
-      Fab_("a,b") +
+      Fab_("a,b") - T1_("a,m")*Fai_("b,m") +
       // + t^d_k g^ak_bd
       T1_("d,k") * (2.0 * Giabc_("k,a,d,b") - Giabc_("k,a,b,d"))
       // - 1/2 tau^ad_kl g^kl_bd

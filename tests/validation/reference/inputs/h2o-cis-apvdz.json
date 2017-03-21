@@ -1,0 +1,37 @@
+{
+  "property": {
+    "type" : "ExcitationEnergy",
+    "wfn" : "$:wfn",
+    "n_roots" : 4,
+    "triplets" : true
+  },
+  "molecule": {
+    "file_name": "h2o.xyz",
+    "attach_hydrogen": false,
+    "n_cluster": 2
+  },
+  "basis": {
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "scf":{
+    "type": "RHF",
+    "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "CIS",
+    "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
+    "frozen_core" : true,
+    "ref": "$:scf",
+    "method" : "standard",
+    "occ_block_size": 8,
+    "unocc_block_size":8
+  }
+}

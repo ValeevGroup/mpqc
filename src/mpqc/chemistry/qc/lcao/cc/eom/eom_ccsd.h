@@ -4,6 +4,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EOM_CCSD_H_
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
 #include "mpqc/math/linalg/davidson_diag.h"
@@ -17,7 +18,7 @@ template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using GuessVector = cc::T1T2<TArray, TArray>;
+  using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
   using numeric_type = typename Tile::numeric_type;
 
  private:
@@ -112,8 +113,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   TArray compute_HDSC(TArray Cai);
   TArray compute_HDDC(TArray Cabij);
 
-  void compute_HC();
-
   void init() {
     Fij_ = this->get_fock_ij();
     Fab_ = this->get_fock_ab();
@@ -159,7 +158,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
     TArray WAkCd_ = TArray();
     TArray WKlIc_ = TArray();
-    // TArray WKliC_ = TArray();
   }
 
  protected:

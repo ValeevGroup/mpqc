@@ -71,9 +71,7 @@ void zRHF::init(const KeyVal& kv) {
 
   // compute density matrix using soad/core guess
   if (!soad_guess) {
-    if (world.rank() == 0) {
-      std::cout << "\nUsing CORE guess for initial Fock ..." << std::endl;
-    }
+    ExEnv::out0() << "\nUsing CORE guess for initial Fock ..." << std::endl;
     F_ = H_;
   } else {
     F_ = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
@@ -120,12 +118,12 @@ void zRHF::solve(double thresh) {
       if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
 
     auto j_start = mpqc::fenced_now(world);
-    J_ = ao_factory.compute_direct(L"(μ ν| J|κ λ)");  // Coulomb
+    J_ = J_builder();  // Coulomb
     auto j_end = mpqc::fenced_now(world);
     j_duration_ += mpqc::duration_in_s(j_start, j_end);
 
     auto k_start = mpqc::fenced_now(world);
-    K_ = ao_factory.compute_direct(L"(μ ν| K|κ λ)");  // Exchange
+    K_ = K_builder();  // Exchange
     auto k_end = mpqc::fenced_now(world);
     k_duration_ += mpqc::duration_in_s(k_start, k_end);
 
@@ -140,9 +138,7 @@ void zRHF::solve(double thresh) {
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute zRHF energy
-    std::complex<double> e_complex =
-        (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
-    ezrhf = e_complex.real();
+    ezrhf = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
@@ -155,7 +151,9 @@ void zRHF::solve(double thresh) {
     // compute difference with last iteration
     ediff = ezrhf - ezrhf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
-    rms = Ddiff("mu, nu").norm();
+    auto volume = Ddiff.trange().elements_range().volume();
+    rms = Ddiff("mu, nu").norm() / volume;
+
     if ((rms <= thresh) || fabs(ediff) <= thresh) converged = true;
 
     auto iter_end = mpqc::fenced_now(world);
@@ -473,6 +471,14 @@ void zRHF::evaluate(Energy* result) {
     this->computed_ = true;
     set_value(result, energy_);
   }
+}
+
+zRHF::TArray zRHF::J_builder() {
+    return this->ao_factory().compute_direct(L"(μ ν| J|κ λ)");
+}
+
+zRHF::TArray zRHF::K_builder() {
+    return this->ao_factory().compute_direct(L"(μ ν| K|κ λ)");
 }
 
 }  // namespace lcao

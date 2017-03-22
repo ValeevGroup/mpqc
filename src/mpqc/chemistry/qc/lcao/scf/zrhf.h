@@ -34,6 +34,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   using Policy = TA::SparsePolicy;
   using TArray = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
   using TArrayZ = TA::DistArray<TA::TensorZ, Policy>;
+  using factory_type = PeriodicAOWavefunction<Tile, Policy>::AOIntegral;
 
   zRHF() = default;
 
@@ -150,6 +151,11 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
   bool can_evaluate(Energy* energy) override;
   void evaluate(Energy* result) override;
+
+  /// returns Coulomb term J_μν
+  virtual TArray J_builder();
+  /// returns Exchange term K_μν
+  virtual TArray K_builder();
 };
 
 /*!

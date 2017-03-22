@@ -30,6 +30,7 @@ if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
         zrhf.h
         zrhf.cpp
+        df_zrhf.cpp
         decomposed_rij.h
         decomposed_rij.cpp
         pbc/periodic_cond_ortho.h

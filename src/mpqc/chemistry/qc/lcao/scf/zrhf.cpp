@@ -1,4 +1,4 @@
-#include "zrhf.h"
+#include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
@@ -86,6 +86,8 @@ void zRHF::init(const KeyVal& kv) {
 
   // set density in periodic ao_factory
   ao_factory.set_density(D_);
+
+  init_other();
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
@@ -231,7 +233,7 @@ void zRHF::solve(double thresh) {
                               scf_duration_);
   }
 
-  if (1) {
+  if (0) {
     auto time0 = mpqc::fenced_now(world);
     /// test density fitting
     // overlap matrix

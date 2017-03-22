@@ -34,7 +34,6 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   using Policy = TA::SparsePolicy;
   using TArray = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
   using TArrayZ = TA::DistArray<TA::TensorZ, Policy>;
-  using factory_type = PeriodicAOWavefunction<Tile, Policy>::AOIntegral;
 
   zRHF() = default;
 
@@ -101,16 +100,19 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
    */
   Matrixz reverse_phase_factor(Matrixz& mat0);
 
+ protected:
+  TArray S_;
+  TArray D_;
+
+ private:
   TArray T_;
   TArray V_;
-  TArray S_;
   TArrayZ Sk_;
   TArray H_;
   TArray J_;
   TArray K_;
   TArray F_;
   TArrayZ Fk_;
-  TArray D_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -142,7 +144,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   double scf_duration_ = 0.0;
 
   /*!
-   * \brief This initialize zRHF by assigning values to private members
+   * \brief This initializes zRHF by assigning values to private members
    * and computing initial guess for the density
    *
    * \param kv KeyVal object
@@ -156,6 +158,8 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   virtual TArray J_builder();
   /// returns Exchange term K_μν
   virtual TArray K_builder();
+  /// initializes other stuff (may be used by derived class)
+  virtual void init_other() {}
 };
 
 /*!
@@ -169,18 +173,24 @@ class DFzRHF : public zRHF {
 
     DFzRHF(const KeyVal& kv);
 
-    ~DFzRHF() = default;
-
  private:
 
-    DirectTArray Gamma_;  // (κ λ | G| K) 3-center 2-electron direct integrals
-    TArray V_;  // (K |G| Λ) 2-center 2-electron integrals
+    TArray M_;  // charge matrix of product density <μ|ν>
+    TArray n_;  // normalized charge vector <Κ>
+    double q_;  // total charge of auxiliary basis functions
+    TArray V_;  // (Κ |G| Λ) 2-center 2-electron integrals
+    TArray Gamma_;  // (Κ | G| κ λ) 3-center 2-electron direct integrals
     TArray P_para_;  // projection matrix that projects X onto auxiliary charge vector
     TArray P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
-    TArray C_;  // fitting coefficients
+    TArray C_df_;  // fitting coefficients
     TArray C_para_;  // the part of C_ that is along with auxiliary charge vector
     TArray C_perp_;  // the part of C_ that is orthogonal to auxiliary charge vector
-    TArray M_;  // charge matrix of product density
+
+    /// returns DF Coulomb term J_μν
+    TArray J_builder() override;
+
+    /// initializes necessary arrays for J builder
+    void init_other() override;
 };
 
 }  // namespace  lcao

@@ -8,5 +8,5 @@
 #include "zrhf.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-
 MPQC_CLASS_EXPORT2("zRHF", mpqc::lcao::zRHF);
+MPQC_CLASS_EXPORT2("DF-zRHF", mpqc::lcao::DFzRHF);

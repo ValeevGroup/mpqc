@@ -95,9 +95,7 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
 
   if (!F_.is_initialized()) {
     // soad
-    auto eri_e = gaussian::make_engine_pool(libint2::Operator::coulomb,
-                                            utility::make_array_of_refs(basis));
-    F_ = gaussian::fock_from_soad(world, mol, basis, eri_e, H_);
+    F_ = gaussian::fock_from_soad(world, mol, basis, H_);
   }
 
   F_diis_ = F_;

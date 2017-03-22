@@ -174,7 +174,6 @@ void soad_task(Engs eng_pool, int64_t ord,
 
 /**
  * fock matrix computed from soad for SparsePolicy
- * @tparam ShrPool
  * @tparam Tile Tile type
  * @tparam Policy TA::SparsePolicy
  * @param world  world object
@@ -185,19 +184,24 @@ void soad_task(Engs eng_pool, int64_t ord,
  * @param op  operator to convert TA::TensorD to Tile
  * @return Fock matrix from soad
  */
-template <typename ShrPool, typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value, TA::SparsePolicy>::type>
 fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
-    Basis const &obs, ShrPool engs, TA::DistArray<Tile,Policy> const &H,
+    Basis const &obs, TA::DistArray<Tile,Policy> const &H,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 
   // Get minimal basis
+  const auto min_bs = parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol);
   const auto min_bs_shells =
-      parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
-          .flattened_shells();
+      min_bs.flattened_shells();
+
+  // make engine pool
+  auto engs = gaussian::make_engine_pool(libint2::Operator::coulomb,
+                                         utility::make_array_of_refs(obs,min_bs));
+
   // Make F scaffolding
   auto const &trange = H.trange();
   auto const &shape_range = H.shape().data().range();
@@ -220,7 +224,7 @@ fock_from_soad(
         auto const &obs_row = obs.cluster_shells()[i];
         auto const &obs_col = obs.cluster_shells()[j];
 
-        world.taskq.add(soad_task<ShrPool,Tile,Policy>, engs, ord, &obs_row,
+        world.taskq.add(soad_task<decltype(engs),Tile,Policy>, engs, ord, &obs_row,
                         &obs_col, &min_bs_shells, &D, &F, op);
       }
     }
@@ -246,19 +250,23 @@ fock_from_soad(
  * @param op  operator to convert TA::TensorD to Tile
  * @return Fock matrix from soad
  */
-template <typename ShrPool, typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value, TA::DensePolicy>::type>
 fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
-    Basis const &obs, ShrPool engs, TA::DistArray<Tile,Policy> const &H,
+    Basis const &obs, TA::DistArray<Tile,Policy> const &H,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 
   // Get minimal basis
+  const auto min_bs = parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol);
   const auto min_bs_shells =
-      parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
-          .flattened_shells();
+      min_bs.flattened_shells();
+
+  // make engine pool
+  auto engs = gaussian::make_engine_pool(libint2::Operator::coulomb,
+                                         utility::make_array_of_refs(obs,min_bs));
 
   auto const &trange = H.trange();
   TA::DistArray<Tile,Policy> F(world, trange);
@@ -275,7 +283,7 @@ fock_from_soad(
         auto const &obs_row = obs.cluster_shells()[i];
         auto const &obs_col = obs.cluster_shells()[j];
 
-        world.taskq.add(soad_task<ShrPool,Tile, Policy>, engs, ord, &obs_row,
+        world.taskq.add(soad_task<decltype(engs),Tile, Policy>, engs, ord, &obs_row,
                         &obs_col, &min_bs_shells, &D, &F, op);
       }
     }

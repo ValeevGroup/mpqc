@@ -266,7 +266,14 @@ class FourCenterFockBuilder
     // if reducer does not exist, create entry and store F, else accumulate F to the existing contents
     typename decltype(local_fock_tiles_)::accessor acc;
     if (!local_fock_tiles_.insert(acc, std::make_pair(tile01, fock_matrix_tile))) {  // try inserting
-      acc->second += fock_matrix_tile;  // if failed insertion, it's there already so just add
+      // if failed insertion, it's there already so just add
+      // can't just do acc->second += fock_matrix_tile to avoid spawning TBB
+      // tasks from critical section
+      const auto size = fock_matrix_tile.range().volume();
+      TA::math::inplace_vector_op_serial(
+          [](TA::detail::numeric_t<Tile>& l,
+             const TA::detail::numeric_t<Tile> r) { l += r; },
+          size, acc->second.data(), fock_matrix_tile.data());
     }
     acc.release();
     madness::print("accumulating F[",tile0,tile1,"] on proc ", pmap_D_->rank(),"\n");

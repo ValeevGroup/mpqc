@@ -356,15 +356,6 @@ EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
       }
     }
 
-    //      else if (C_[i].t1.is_initialized()) {
-    //        HC[i].t1 = compute_HSSC(C_[i].t1);
-    //        HC[i].t2 = compute_HDSC(C_[i].t1);
-    //
-    //      } else if (C_[i].t2.is_initialized()) {
-    //        HC[i].t1 = compute_HSDC(C_[i].t2);
-    //        HC[i].t2 = compute_HDDC(C_[i].t2);
-    //      }
-
     auto time1 = mpqc::fenced_now(world);
     EigenVector<double> eig_new = dvd.extrapolate(HC, C_, pred);
     auto time2 = mpqc::fenced_now(world);
@@ -389,89 +380,6 @@ EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
   detail::print_excitation_energy(eig, false);
 
   return eig;
-}
-
-template <typename Tile, typename Policy>
-double EOM_CCSD<Tile, Policy>::compute_energy(std::size_t max_iter,
-                                              double convergence) {
-  // check if intermediates are computed
-  compute_FWintermediates();
-
-  // test intermediates
-  //    if (T1_.world().rank() == 0) {
-  //      std::cout << "T1_ " << T1_ << std::endl;
-  //    }
-  //
-  //    TArray L1_test, L2_test, CGac, CGki;
-  //    TArray gabij_temp, t2_temp;
-  //    gabij_temp("a,b,i,j") = 2.0 * Gabij_("a,b,i,j") - Gabij_("a,b,j,i");
-  //    t2_temp("a,b,i,j") = 2.0 * T2_("a,b,i,j") - T2_("b,a,i,j");
-  //
-  //    CGac("a,c") =  // - 1/2 t^cd_kl lambda^kl_ad
-  //                 - T2_("c,d,k,l") * t2_temp("a,d,k,l");
-  //    CGki("k,i") =  // 1/2 t^cd_kl lambda^il_cd
-  //                   T2_("c,d,k,l") * t2_temp("c,d,i,l");
-  //
-  //    L1_test("a,i") =  FIA_("i,a")
-  //                    + T1_("c,i") * FAB_("c,a")
-  //                    - T1_("a,k") * FIJ_("i,k")
-  //                    + T1_("c,k") * (2.0 * WIbAj_("i,c,a,k") +
-  //                    WIbaJ_("i,c,a,k"))
-  //                    + t2_temp("c,d,i,k") * WAbCi_("c,d,a,k")
-  //                    - t2_temp("a,c,k,l") * WKaIj_("i,c,k,l")
-  //                    - CGac("c,d") * (2.0 * WAkCd_("c,i,d,a") -
-  //                    WAkCd_("c,i,a,d"))
-  //                    - CGki("k,l") * (2.0 * WKlIc_("k,i,l,a") -
-  //                    WKlIc_("i,k,l,a"))//+ WKliC_("k,i,l,a"))
-  //                    ;
-  //    if (T1_.world().rank() == 0) {
-  //      std::cout << "L1_test " << L1_test << std::endl;
-  //    }
-  //
-  //    L2_test("a,b,i,j") =  Gabij_("a,b,i,j")
-  //
-  //                        + L1_test("c,i") * WAkCd_("c,j,a,b")
-  //                        + L1_test("c,j") * WAkCd_("c,i,b,a")
-  //
-  //                        - L1_test("a,k") * WKlIc_("i,j,k,b")
-  //                        + L1_test("b,k") * -
-  //                        WKlIc_("j,i,k,a")//WKliC_("i,j,k,a")
-  //
-  //                        + L1_test("a,i") * FIA_("j,b")
-  //                        + L1_test("b,j") * FIA_("i,a")
-  //
-  //                        + T2_("a,c,i,j") * FAB_("c,b")
-  //                        + T2_("c,b,i,j") * FAB_("c,a")
-  //
-  //                        - T2_("a,b,i,k") * FIJ_("j,k")
-  //                        - T2_("a,b,k,j") * FIJ_("i,k")
-  //
-  //                        + T2_("a,b,k,l") * WKlIj_("i,j,k,l")
-  //
-  //                        + T2_("c,d,i,j") * WAbCd_("c,d,a,b")
-  //
-  //                        + (  t2_temp("a,c,i,k") * WIbAj_("j,c,b,k")
-  //                           + T2_("a,c,i,k") * WIbaJ_("j,c,b,k"))
-  //                        + T2_("c,b,i,k") * WIbaJ_("j,c,a,k")
-  //                        + T2_("a,c,k,j") * WIbaJ_("i,c,b,k")
-  //                        + (  t2_temp("b,c,j,k") * WIbAj_("i,c,a,k")
-  //                           + T2_("b,c,j,k") * WIbaJ_("i,c,a,k"))
-  //
-  //                        + Gabij_("a,c,i,j") * CGac("b,c")
-  //                        + Gabij_("c,b,i,j") * CGac("a,c")
-  //
-  //                        - Gabij_("a,b,i,k") * CGki("k,j")
-  //                        - Gabij_("a,b,k,j") * CGki("k,i")
-  //                        ;
-  //    double E_L = dot(gabij_temp("a,b,i,j"), L2_test("a,b,i,j") );
-  //    if (T1_.world().rank() == 0) {
-  //      std::cout << "CCSD test E_L: " << E_L << std::endl;
-  //
-  //      //std::cout << "Gijkl_: " << Gijkl_ << std::endl;
-  //    }
-
-  davidson_solver(max_iter, convergence);
-  return 1.0;
 }
 
 template <typename Tile, typename Policy>

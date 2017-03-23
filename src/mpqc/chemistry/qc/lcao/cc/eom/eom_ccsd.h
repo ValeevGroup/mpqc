@@ -13,7 +13,6 @@ namespace mpqc {
 namespace lcao {
 
 // close-shell eom-ccsd
-// still working on it
 template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
@@ -23,7 +22,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
  private:
 
-  // preconditioner in DavidsonDiag, approximate the diaagonal H_bar matrix
+  // preconditioner in DavidsonDiag, approximate the diagonal H_bar matrix
   struct Preconditioner {
     /// diagonal of F_ij matrix
     EigenVector<numeric_type> eps_o;
@@ -116,8 +115,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
  public:
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {}
-  // read guess vectors from input
-  //    void read_guess_vectors(rapidjson::Document& in);
 
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
@@ -148,11 +145,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-  // not complete
   EigenVector<numeric_type> davidson_solver(std::size_t max_iter, double convergence);
 
-  // compute energies (not complete, now just test intermediates)
-  double compute_energy(std::size_t max_iter, double convergence);
 };
 
 #if TA_DEFAULT_POLICY == 0

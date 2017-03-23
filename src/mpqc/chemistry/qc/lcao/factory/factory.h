@@ -20,7 +20,7 @@ class Factory : virtual public DescribedClass {
   Factory(std::shared_ptr<WavefunctionWorld> wfn_world)
       : registry_(),
         direct_registry_(),
-        orbital_space_registry_(nullptr),
+        orbital_space_registry_(),
         accurate_time_(false),
         wfn_world_(wfn_world) {}
 

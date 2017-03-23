@@ -1,7 +1,6 @@
 set(sources
 builder.h
 cadf_builder.h
-nrcadf_builder.h
 clr_cadf_builder.h
 clusterd_coeffs.h
 density_builder.h

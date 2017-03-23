@@ -69,7 +69,7 @@ void make_closed_shell_canonical_sdref_subspaces(
   // get all the trange1s
   auto tr_ao = p_space->coefs().trange().data()[0];
   auto tr_i = tre->get_active_occ_tr1();
-  auto tr_m = tre->compute_range(ndocc, occ_blksize);
+  auto tr_m = utility::compute_trange1(ndocc, occ_blksize);
   auto tr_a = tre->get_vir_tr1();
   auto tr_p = tre->get_all_tr1();
 
@@ -167,7 +167,7 @@ void make_closed_shell_sdref_subspaces(
     RowMatrixXd C_m_eig = array_ops::array_to_eigen(input_space->coefs());
     auto C_m = array_ops::eigen_to_array<Tile, Policy>(
         world, C_m_eig, tr_ao,
-        TRange1Engine::compute_range(C_m_eig.cols(), occ_blksize));
+        utility::compute_trange1(C_m_eig.cols(), occ_blksize));
     auto m_space =
         POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m, occ_m);
     orbital_registry.add(m_space);
@@ -178,7 +178,7 @@ void make_closed_shell_sdref_subspaces(
         C_m_eig.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
     auto C_i = array_ops::eigen_to_array<Tile, Policy>(
         world, C_i_eig, tr_ao,
-        TRange1Engine::compute_range(C_i_eig.cols(), occ_blksize));
+        utility::compute_trange1(C_i_eig.cols(), occ_blksize));
     std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
     auto i_space =
         POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_m, occ_i);
@@ -209,7 +209,7 @@ void make_closed_shell_sdref_subspaces(
 
     auto C_a = array_ops::eigen_to_array<Tile, Policy>(
         world, Vnull, obs_basis->create_trange1(),
-        TRange1Engine::compute_range(n_unocc, unocc_blksize));
+        utility::compute_trange1(n_unocc, unocc_blksize));
     C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
     std::vector<double> occ_a(n_unocc, 0);
     auto a_space =
@@ -225,7 +225,7 @@ void make_closed_shell_sdref_subspaces(
       C_p_eig.block(0, 0, nao, ndocc) << C_m_eig;
       C_p_eig.block(0, ndocc, nao, n_unocc) << C_a_eig;
 
-      auto tr_all = TRange1Engine::join(m_space.trange(), a_space.trange());
+      auto tr_all = utility::join_trange1(m_space.trange(), a_space.trange());
       C_p = array_ops::eigen_to_array<Tile, Policy>(
           world, C_p_eig, obs_basis->create_trange1(), tr_all);
 
@@ -253,7 +253,7 @@ void make_closed_shell_sdref_subspaces(
     // get all the trange1s
     auto tr_ao = p_space.coefs().trange().data()[0];
     auto tr_i = tre->get_active_occ_tr1();
-    auto tr_m = tre->compute_range(ndocc, occ_blksize);
+    auto tr_m = utility::compute_trange1(ndocc, occ_blksize);
     auto tr_a = tre->get_vir_tr1();
     auto tr_p = tre->get_all_tr1();
 
@@ -377,7 +377,7 @@ void closed_shell_cabs_mo_build_svd(
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
 
     auto tr_ribs = ri_basis.create_trange1();
-    auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
+    auto tr_cabs_mo = utility::compute_trange1(nbf_cabs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
 
     C_cabs = array_ops::eigen_to_array<Tile, Policy>(world, Vnull, tr_ribs,
@@ -403,13 +403,13 @@ void closed_shell_cabs_mo_build_svd(
     }
 
     // reblock C_ribs
-    auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
+    auto tr_ribs_mo = utility::compute_trange1(nbf_ribs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
     auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
         world, tr_ribs, tr_ribs_mo, 1.0);
     C_ri("i,j") = S_ribs_inv("i,k") * ribs_to_mo("k,j");
 
-    auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
+    auto tr_allvir_mo = utility::compute_trange1(nbf_cabs + n_vir, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
                                             "All Virtual MO");
 
@@ -521,7 +521,7 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
                                              vir_blocksize, n_frozen_core);
   auto tr_obs = S.trange().data().back();
   auto tr_vbs = S_vbs.trange().data().back();
-  auto tr_occ = tre->compute_range(nocc, occ_blocksize);
+  auto tr_occ = utility::compute_trange1(nocc, occ_blocksize);
   auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
 
@@ -687,8 +687,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                      ->create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
-      tre->compute_range(tr_cabs.elements_range().second, vir_blocksize);
-  auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
+      utility::compute_trange1(tr_cabs.elements_range().second, vir_blocksize);
+  auto tr_allvir_mo = utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
 
   mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
   TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile, Policy>(
@@ -753,7 +753,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLC
   // get all trange1s
   auto tr_obs = obs_basis->create_trange1();
   auto tr_corr_occ = tre->get_active_occ_tr1();
-  auto tr_occ = tre->compute_range(occ, occ_block);
+  auto tr_occ = utility::compute_trange1(occ, occ_block);
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 

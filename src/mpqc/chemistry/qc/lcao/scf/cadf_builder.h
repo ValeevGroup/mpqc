@@ -115,8 +115,6 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &LMO) override {
-    auto &world = D.world();
-
     ArrayType G;
     G("m, n") = 2 * compute_J(D)("m, n") - compute_K(LMO, D)("m, n");
     return G;

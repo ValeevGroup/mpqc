@@ -11,11 +11,15 @@ namespace mpqc{
 
 class Energy;
 detail::ForceLink<Energy> fl_energy;
+
+class ExcitationEnergy;
+detail::ForceLink<ExcitationEnergy> fl_ex_energy;
+
 class GFRealPole;
 detail::ForceLink<GFRealPole> fl_gfrealpole;
 template <size_t Order, typename Value> class MolecularFiniteDifferenceDerivative;
 detail::ForceLink<MolecularFiniteDifferenceDerivative<1,double>> fl_fdgrad;
 
-}
+} //namespce mpqc
 
 #endif //MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_LINKAGE_H_

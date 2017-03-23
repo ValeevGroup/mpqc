@@ -8,8 +8,6 @@
 #include "mpqc/util/misc/string.h"
 #include <boost/algorithm/string.hpp>
 
-#include <codecvt>
-#include <locale>
 #include <memory>
 #include <string>
 

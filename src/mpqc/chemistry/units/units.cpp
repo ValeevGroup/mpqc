@@ -5,21 +5,21 @@
 
 namespace mpqc {
 
-static inline int eq(const std::unique_ptr<char[]>& a, const char* b) {
+static inline int eq(const std::unique_ptr<char[]> &a, const char *b) {
   return !strcmp(a.get(), b);
 }
 
-Unit::Unit(const std::string& strrep,
-           const std::shared_ptr<detail::FundamentalConstants<double>>& consts)
+Unit::Unit(const std::string &strrep,
+           const std::shared_ptr<detail::FundamentalConstants<double>> &consts)
     : strrep_(strrep), constants_(consts) {
   parse();
 }
 
-double Unit::to(const Unit& unit) const {
+double Unit::to(const Unit &unit) const {
   return to_atomic_units_ / unit.to_atomic_units_;
 }
 
-double Unit::from(const Unit& unit) const { return 1.0 / to(unit); }
+double Unit::from(const Unit &unit) const { return 1.0 / to(unit); }
 
 double Unit::to_atomic_units() const { return to_atomic_units_; }
 
@@ -36,6 +36,7 @@ void Unit::parse() {
   const double NA = constants_->Avogadro_constant();  // mol-1
   const double h = constants_->Planck_constant();     // J s
   const double hbar = h / (2 * M_PI);                 // J s
+  const double c = constants_->speed_of_light();      // m/s
 
   // derived au conversion factors
   const double Ea = e * e / ((4.0 * M_PI * e0) * a0);  // J
@@ -45,10 +46,10 @@ void Unit::parse() {
   const double cal = constants_->thermochemical_calorie();  // J
 
   int invert = 0;
-  const char* rest = strrep_.c_str();
+  const char *rest = strrep_.c_str();
 
   while (rest) {
-    const char* end = ::strpbrk(rest, " */");
+    const char *end = ::strpbrk(rest, " */");
     int nchar;
     if (end) {
       nchar = end - rest;
@@ -62,9 +63,11 @@ void Unit::parse() {
     double factor = 1.0;
     if (eq(unitstring, "bohr") || eq(unitstring, "bohrs")) {
     } else if (eq(unitstring, "hartree") || eq(unitstring, "hartrees") ||
-               eq(unitstring, "Hartree") || eq(unitstring, "Hartrees")) {
+        eq(unitstring, "Hartree") || eq(unitstring, "Hartrees")) {
     } else if (eq(unitstring, "ev") || eq(unitstring, "eV")) {
       factor = 1.0 / constants_->Hartree_to_electron_volt();
+    } else if (eq(unitstring, "energy_wavenumber[cm]")) {
+      factor = (100 * h * c) / Ea;  // the energy of photon with wave length of 1 cm
     } else if (eq(unitstring, "debye")) {
       factor = 1.0 / constants_->atomic_unit_to_debye();
     } else if (eq(unitstring, "radian") || eq(unitstring, "radians")) {
@@ -79,31 +82,34 @@ void Unit::parse() {
     } else if (eq(unitstring, "dyne")) {
       factor = 1.0e-5 * a0 / Ea;
     } else if (eq(unitstring, "m") || eq(unitstring, "meter") ||
-               eq(unitstring, "meters")) {
+        eq(unitstring, "meters")) {
       factor = 1.0 / a0;
     } else if (eq(unitstring, "cm") || eq(unitstring, "centimeter")) {
       factor = 1.0e-2 / a0;
     } else if (eq(unitstring, "angstrom") || eq(unitstring, "angstroms") ||
-               eq(unitstring, "aangstrom") || eq(unitstring, "aangstroms")) {
+        eq(unitstring, "aangstrom") || eq(unitstring, "aangstroms")) {
       factor = 1.0e-10 / a0;
     } else if (eq(unitstring, "amu")) {
       factor = amu / me;
     } else if (eq(unitstring, "degree") || eq(unitstring, "degrees")) {
       factor = M_PI / 180.0;
     } else if (eq(unitstring, "second") || eq(unitstring, "seconds") ||
-               eq(unitstring, "s")) {
-      factor = Ea / hbar;
+        eq(unitstring, "s")) {
+      factor = Ea / hbar;  // atomic unit of time = how long it takes electron
+                           // to travel 1 radian in bohr orbit
     } else {
       throw InputError("unknown Unit string", __FILE__, __LINE__, "unitstring",
                        unitstring.get());
     }
 
     unitstring.reset();
-    if (invert) factor = 1.0 / factor;
+    if (invert)
+      factor = 1.0 / factor;
     to_atomic_units_ *= factor;
     rest = ::strpbrk(rest, " */");
     while (rest && (*rest == ' ' || *rest == '*' || *rest == '/')) {
-      if (*rest == '/') invert = !invert;
+      if (*rest == '/')
+        invert = !invert;
       rest++;
     }
   }
@@ -128,17 +134,17 @@ UnitFactory::UnitFactory(std::string system) : system_(std::move(system)) {
   }
 }
 
-Unit UnitFactory::make_unit(const std::string& unit_str) const {
+Unit UnitFactory::make_unit(const std::string &unit_str) const {
   return Unit(unit_str, constants_);
 }
 
 std::shared_ptr<const UnitFactory> UnitFactory::get_default() { return instance(); }
 
-void UnitFactory::set_default(const std::string& system) {
+void UnitFactory::set_default(const std::string &system) {
   instance() = std::make_shared<const UnitFactory>(system);
 }
 
-std::shared_ptr<const UnitFactory>& UnitFactory::instance() {
+std::shared_ptr<const UnitFactory> &UnitFactory::instance() {
   static std::shared_ptr<const UnitFactory> instance_ =
       std::make_shared<const UnitFactory>("2014CODATA");
   return instance_;

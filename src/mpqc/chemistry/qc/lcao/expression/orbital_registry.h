@@ -96,7 +96,7 @@ class OrbitalSpaceRegistry : public OrbitalRegistry<OrbitalSpace<Array>> {
   }
 
  private:
-  mutable std::shared_ptr<const TRange1Engine> trange1_engine_ = nullptr;
+  mutable std::shared_ptr<const TRange1Engine> trange1_engine_ = std::shared_ptr<const TRange1Engine>();
 };
 
 }  // namespace lcao

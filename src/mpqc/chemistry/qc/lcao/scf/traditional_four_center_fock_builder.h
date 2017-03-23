@@ -373,8 +373,7 @@ class FourCenterFockBuilder
               engine.compute2<libint2::Operator::coulomb, libint2::BraKet::xx_xx, 0>(
                   shell0, shell1, shell2, shell3);
               const auto* eri_0123 = computed_shell_sets[0];
-              if (eri_0123 == nullptr)
-                continue; // if all integrals screened out, skip to next quartet
+              if (eri_0123 != nullptr) { // if the shell set is not screened out
 
               for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
                 const auto cf0 = f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
@@ -404,6 +403,8 @@ class FourCenterFockBuilder
                     }
                   }
                 }
+              }
+
               }
 
               cf3_offset += nf3;

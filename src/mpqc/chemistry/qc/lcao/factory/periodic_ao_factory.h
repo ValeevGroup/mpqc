@@ -320,9 +320,6 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   TArray get_density() { return D_; }
 
  private:
-  /// compute integrals that has one dimension
-  TArray compute1(const Formula &formula);
-
   /// compute integrals that has two dimension for periodic systems
   TArray compute2(const Formula &formula);
 
@@ -332,8 +329,8 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// compute integrals that has four dimension for periodic systems
   TArray compute4(const Formula &formula);
 
-  /// compute integrals that has two dimension for periodic systems
-  //  TArray compute_direct2(const Formula &formula);
+  /// compute integrals that has three dimension for periodic systems
+  TArray compute_direct3(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
   TArray compute_direct4(const Formula &formula);
@@ -456,10 +453,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     return result;
   }
 
-  if (formula.rank() == 1) {
-    result = compute1(formula);
-    this->registry_.insert(formula, result);
-  } else if (formula.rank() == 2) {
+  if (formula.rank() == 2) {
     result = compute2(formula);
     this->registry_.insert(formula, result);
   } else if (formula.rank() == 3) {
@@ -469,37 +463,6 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     result = compute4(formula);
   } else
     throw std::runtime_error("Operator rank not supported");
-
-  return result;
-}
-
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::compute1(const Formula &formula) {
-  BasisVector bs_array;
-  TArray result;
-
-  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-  auto &world = this->world();
-
-  double size = 0.0;
-
-  ExEnv::out0() << "\nComputing One Center Integral for Periodic System: "
-                << utility::to_string(formula.string()) << std::endl;
-  exit(19);
-
-  auto basis =
-      detail::index_to_basis(*this->basis_registry(), formula.bra_indices()[0]);
-  auto emptybasis = Basis();
-  auto oper_type = formula.oper().type();
-
-  engine_pool = make_engine_pool(
-      detail::to_libint2_operator(oper_type),
-      utility::make_array_of_refs(*basis, emptybasis), libint2::BraKet::x_x,
-      detail::to_libint2_operator_params(oper_type, *unitcell_));
-  bs_array = BasisVector{{*basis, emptybasis}};
-
-  result = compute_integrals(world, engine_pool, bs_array);
 
   return result;
 }

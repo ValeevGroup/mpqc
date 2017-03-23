@@ -95,11 +95,11 @@ class FourCenterFockBuilder
                         std::shared_ptr<const Basis> density_basis,
                         bool compute_J, bool compute_K)
       : WorldObject_(world),
+        compute_J_(compute_J),
+        compute_K_(compute_K),
         bra_basis_(std::move(bra_basis)),
         ket_basis_(std::move(ket_basis)),
-        density_basis_(std::move(density_basis)),
-        compute_J_(compute_J),
-        compute_K_(compute_K) {
+        density_basis_(std::move(density_basis)) {
     // total density only
     assert(compute_J && compute_K && "not yet implemented");
     // same basis on each center only
@@ -276,7 +276,6 @@ class FourCenterFockBuilder
           size, acc->second.data(), fock_matrix_tile.data());
     }
     acc.release();
-    madness::print("accumulating F[",tile0,tile1,"] on proc ", pmap_D_->rank(),"\n");
   }
 
   void compute_task(Tile D01, Tile D23, Tile D02, Tile D03, Tile D12, Tile D13,
@@ -440,35 +439,17 @@ class FourCenterFockBuilder
     const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
     WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
                        tile_idx[0], tile_idx[1], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[1], "] to proc ",
-                   proc01,"\n");
     WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
                        tile_idx[2], tile_idx[3], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[2], tile_idx[3], "] to proc ",
-                   proc23,"\n");
     WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
                        tile_idx[0], tile_idx[2], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[2], "] to proc ",
-                   proc02,"\n");
     WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
                        tile_idx[0], tile_idx[3], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[0], tile_idx[3], "] to proc ",
-                   proc03,"\n");
     WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
                        tile_idx[1], tile_idx[2], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[1], tile_idx[2], "] to proc ",
-                   proc12,"\n");
     WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
                        tile_idx[1], tile_idx[3], madness::TaskAttributes::hipri());
-    madness::print("task{", tile_idx[0], tile_idx[1], tile_idx[2], tile_idx[3],
-                   "} on proc ", me, ": sending F[", tile_idx[1], tile_idx[3], "] to proc ",
-                   proc13,"\n");
-  };
+  }
 };
 
 }  // namespace scf

@@ -16,9 +16,9 @@ namespace lcao {
 namespace detail {
 
 template<typename T>
-inline void print_cis_iteration(std::size_t iter, T norm,
-                                const EigenVector<T> &eig, double time1,
-                                double time2) {
+inline void print_excitation_energy_iteration(std::size_t iter, T norm,
+                                              const EigenVector<T> &eig, double time1,
+                                              double time2) {
   ExEnv::out0() << indent << "iteration: " << iter << "\n";
   ExEnv::out0() << indent << "norm: " << norm << "\n";
   ExEnv::out0() << indent << "excitation energy: "
@@ -37,13 +37,13 @@ inline void print_cis_iteration(std::size_t iter, T norm,
 }
 
 template<typename T>
-inline void print_cis_excitation_energy(const EigenVector<T> &eig,
-                                        bool triplets) {
+inline void print_excitation_energy(const EigenVector<T> &eig,
+                                    bool triplets) {
   const auto &unit_factory = UnitFactory::get_default();
   const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
   const auto Hartree_to_wavenumber = unit_factory->make_unit("cm^-1").from_atomic_units();
 
-  ExEnv::out0() << "CIS Excitation Energy: ( "
+  ExEnv::out0() << "Excitation Energy: ( "
                 << (triplets ? "Triplets" : "Singlets") << " )\n";
 
   ExEnv::out0() << mpqc::printf("%5s \t %10s \t %10s \t %10s \n", "state", "au",
@@ -338,9 +338,9 @@ CIS<Tile, Policy>::compute_cis(
 
     auto norm = (eig - eig_new).norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    detail::print_excitation_energy_iteration(i, norm, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -350,7 +350,7 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  detail::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -441,9 +441,9 @@ CIS<Tile, Policy>::compute_cis_df(
 
     auto norm = (eig - eig_new).norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    detail::print_excitation_energy_iteration(i, norm, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -453,7 +453,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  detail::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -551,9 +551,9 @@ CIS<Tile, Policy>::compute_cis_direct(
 
     auto norm = (eig - eig_new).norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    detail::print_excitation_energy_iteration(i, norm, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -563,7 +563,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  detail::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",

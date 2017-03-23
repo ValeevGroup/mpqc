@@ -16,10 +16,6 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   auto T1_ = this->t1();
   Tau("a,b,i,j") = T2_("a,b,i,j") + (T1_("a,i") * T1_("b,j"));
 
-  TArray gabij_temp, t2_temp;
-  gabij_temp("a,b,i,j") = 2.0 * Gabij_("a,b,i,j") - Gabij_("a,b,j,i");
-  t2_temp("a,b,i,j") = 2.0 * T2_("a,b,i,j") - T2_("a,b,j,i");
-
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
       this->lcao_factory(), this->ao_factory(), T1_, Tau, df);
 
@@ -262,9 +258,9 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDDC(TArray Cabij) {
   auto T2_ = this->t2();
   auto T1_ = this->t1();
   GC_ab("a,b") =
-      Gabij_("a,c,k,l") * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
+      g_ijab_("k,l,a,c") * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
   GC_ij("i,j") =
-      Gabij_("c,d,i,k") * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
+      g_ijab_("i,k,c,d") * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
 
   HDDC("a,b,i,j") =  //   P(ab) Fbc C^ac_ij
       //   Fbc C^ac_ij + Fac C^cb_ij
@@ -312,8 +308,9 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDDC(TArray Cabij) {
 }
 
 template <typename Tile, typename Policy>
-void EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
-                                             double convergence) {
+EigenVector<typename Tile::numeric_type>
+EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
+                                        double convergence) {
   madness::World& world =
       C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
   std::size_t iter = 0;
@@ -324,15 +321,15 @@ void EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
   Preconditioner pred;
   {
     EigenVector<numeric_type> eps_o =
-        array_ops::array_to_eigen(Fij_).diagonal();
+        array_ops::array_to_eigen(FIJ_).diagonal();
     EigenVector<numeric_type> eps_v =
-        array_ops::array_to_eigen(Fab_).diagonal();
+        array_ops::array_to_eigen(FAB_).diagonal();
 
     pred = Preconditioner(eps_o, eps_v);
   }
 
   /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, 10);
+  DavidsonDiag<GuessVector> dvd(n_roots, false);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
 
@@ -374,14 +371,24 @@ void EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
 
     norm_r = (eig - eig_new).norm();
 
-    detail::print_cis_iteration(iter, norm_r, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    detail::print_excitation_energy_iteration(
+        iter, norm_r, eig_new, mpqc::duration_in_s(time0, time1),
+        mpqc::duration_in_s(time1, time2));
 
     eig = eig_new;
     iter++;
 
   }  // end of while loop
+
+  if (iter == max_iter) {
+    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
+                          __FILE__, __LINE__, max_iter, "EOM-CCSD");
+  }
+
+  ExEnv::out0() << "\n";
+  detail::print_excitation_energy(eig, false);
+
+  return eig;
 }
 
 template <typename Tile, typename Policy>
@@ -473,6 +480,13 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 
+    bool triplets = ex_energy->triplets();
+
+    if (triplets) {
+      throw InputError("EOM-CCSD only supports Singlets at this moment!\n",
+                       __FILE__, __LINE__, "triplet","true");
+    }
+
     auto ccsd_energy =
         std::make_shared<Energy>(this->shared_from_this(), target_precision);
     // do CCSD energy
@@ -497,21 +511,19 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     this->init();
 
     C_ = std::vector<GuessVector>(n_roots);
+    auto t2 = this->t2();
     for (std::size_t i = 0; i < n_roots; i++) {
       C_[i].t1("a,i") = guess[i]("i,a");
-      C_[i].t2 = TArray(Gabij_.world(), Gabij_.trange(), Gabij_.shape());
+      C_[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
       C_[i].t2.fill(0.0);
     }
 
-    std::vector<double> result(n_roots);
-    for (auto i = 0; i > n_roots; i++) {
-      result[i] = i;
-    }
-
-    davidson_solver(30, target_precision);
+    auto result = davidson_solver(30, target_precision);
 
     this->computed_ = true;
-    ExcitationEnergy::Provider::set_value(ex_energy, result);
+    ExcitationEnergy::Provider::set_value(
+        ex_energy, std::vector<numeric_type>(result.data(),
+                                             result.data() + result.size()));
 
     auto time1 = mpqc::fenced_now(world);
     ExEnv::out0() << "EOM-CCSD Total Time: "

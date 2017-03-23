@@ -71,18 +71,11 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     }
   };
 
+  TArray g_ijab_;
   TArray Fab_;
   TArray Fij_;
   TArray Fai_;
-  TArray Gijkl_;
-  TArray Gijka_;
-  TArray Gabij_;
-  TArray Giajb_;
-  TArray Giabc_;
-  TArray Gaibc_;
-  TArray Gabcd_;
 
-  TArray F_;
   TArray FAB_;
   TArray FIJ_;
   TArray FIA_;
@@ -114,16 +107,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   TArray compute_HDDC(TArray Cabij);
 
   void init() {
+    g_ijab_("i,j,a,b") = this->get_abij()("a,b,i,j");
     Fij_ = this->get_fock_ij();
     Fab_ = this->get_fock_ab();
     Fai_ = this->get_fock_ai();
-    Gijkl_ = this->get_ijkl();
-    Gijka_ = this->get_ijka();
-    Gabij_ = this->get_abij();
-    Giajb_ = this->get_iajb();
-    Gaibc_ = this->get_aibc();
-    Giabc_ = this->get_iabc();
-    Gabcd_ = this->get_abcd();
     compute_FWintermediates();
   }
 
@@ -134,14 +121,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
-    TArray F_ = TArray();
-    TArray Gijkl_ = TArray();
-    TArray Gijka_ = TArray();
-    TArray Gabij_ = TArray();
-    TArray Giajb_ = TArray();
-    TArray Giabc_ = TArray();
-    TArray Gaibc_ = TArray();
-    TArray Gabcd_ = TArray();
+    TArray g_ijab_ = TArray();
 
     TArray FAB_ = TArray();
     TArray FIJ_ = TArray();
@@ -169,7 +149,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
  private:
   // not complete
-  void davidson_solver(std::size_t max_iter, double convergence);
+  EigenVector<numeric_type> davidson_solver(std::size_t max_iter, double convergence);
 
   // compute energies (not complete, now just test intermediates)
   double compute_energy(std::size_t max_iter, double convergence);

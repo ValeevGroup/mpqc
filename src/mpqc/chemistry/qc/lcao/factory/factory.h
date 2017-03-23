@@ -20,7 +20,7 @@ class Factory : virtual public DescribedClass {
   Factory(std::shared_ptr<WavefunctionWorld> wfn_world)
       : registry_(),
         direct_registry_(),
-        orbital_space_registry_(nullptr),
+        orbital_space_registry_(),
         accurate_time_(false),
         wfn_world_(wfn_world) {}
 
@@ -96,8 +96,7 @@ class Factory : virtual public DescribedClass {
 
   /// wrapper to compute function
   Array compute(const std::wstring& string) {
-    auto formula = Formula(string);
-    return compute(formula);
+    return compute(Formula(string));
   }
 
   /// wrapper to compute direct function

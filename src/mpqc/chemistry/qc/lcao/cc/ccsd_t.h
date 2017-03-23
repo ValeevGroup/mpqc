@@ -2055,11 +2055,10 @@ void reblock() {
 
   if (reblock_inner_) {
     auto &tr1 = this->local_trange1_engine();
-    using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
     // occ inner
     tr_occ_inner_ =
-        TRange1Engine::compute_range(tr1->get_active_occ(), inner_block_size_);
+        utility::compute_trange1(tr1->get_active_occ(), inner_block_size_);
 
     mpqc::detail::parallel_print_range_info(world, tr_occ_inner_,
                                             "CCSD(T) OCC Inner");
@@ -2077,7 +2076,7 @@ void reblock() {
     lcao_factory.orbital_registry().add(inner_occ_space);
 
     // vir inner
-    tr_vir_inner_ = TRange1Engine::compute_range(vir, inner_block_size_);
+    tr_vir_inner_ = utility::compute_trange1(vir, inner_block_size_);
     mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                             "CCSD(T) Vir Inner");
     auto vir_inner_convert =

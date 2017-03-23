@@ -1,0 +1,492 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 92d8fce4e338abf0642ad81a8785986991da5075
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             ChongPen@Chong-MacBook-Pro.local
+  Start Time:       Wed Mar  8 21:03:57 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "property": {
+        "type": "ExcitationEnergy",
+        "wfn": "$:wfn",
+        "n_roots": "4",
+        "triplets": "true"
+    },
+    "molecule": {
+        "file_name": "h2o.xyz",
+        "attach_hydrogen": "false",
+        "n_cluster": "2"
+    },
+    "basis": {
+        "name": "aug-cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:basis"
+    },
+    "scf": {
+        "type": "RHF",
+        "molecule": "$:molecule",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CIS",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "frozen_core": "true",
+        "ref": "$:scf",
+        "method": "standard",
+        "occ_block_size": "8",
+        "unocc_block_size": "8"
+    }
+}
+
+  Using fundamental constants system 2014CODATA
+
+Constructing Basis Registry: 
+OBS Basis = aug-cc-pVDZ
+( tiles = [ 0, 2 ), elements = [ 0, 41 ) )
+Min and Max block size: 9 32
+Average: 20
+
+
+Constructing AOFactory: 
+  Screen = none
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = false
+  Accurate time = false
+
+  Frozen Core: 2 electrons
+    Computed One Body Integral: < κ | λ > Size: 1.2524425983429e-05 GB Time: 0.001745092 s
+      Computed One Body Integral: < κ |V| λ > Size: 1.2524425983429e-05 GB Time: 0.005267476 s
+      Computed One Body Integral: < κ |T| λ > Size: 1.2524425983429e-05 GB Time: 0.000660772 s
+    Computed One Body Integral: < κ |H| λ > Size: 1.2524425983429e-05 GB Time: 0.00020016 s
+    Computed Twobody Four Center Integral: ( μ ν |G| κ λ ) Size: 0.0210535600781441 GB Time: 1.277628414 s
+overlap condition number = 2126.30726987766Starting SCF:
+	Threshold: 1e-07
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.0234146357253
+	abs(Energy Change)/energy: 0.00197321951144468
+	(Gradient Norm)/n^2: 0.000229093785914769
+	Scf Time: 0.060182563
+		Density Time: 0.007305277
+		Fock Build Time: 0.050652688
+iteration: 1
+	Energy: -76.0398846821765
+	abs(Energy Change)/energy: 0.000216597467500501
+	(Gradient Norm)/n^2: 5.90504569300737e-05
+	Scf Time: 0.046687998
+		Density Time: 0.00703611
+		Fock Build Time: 0.037915685
+iteration: 2
+	Energy: -76.0409066978988
+	abs(Energy Change)/energy: 1.34403410839913e-05
+	(Gradient Norm)/n^2: 1.96548546664197e-05
+	Scf Time: 0.051058188
+		Density Time: 0.009283266
+		Fock Build Time: 0.032131905
+iteration: 3
+	Energy: -76.0410716514541
+	abs(Energy Change)/energy: 2.16926920772513e-06
+	(Gradient Norm)/n^2: 4.88311012150852e-06
+	Scf Time: 0.057738313
+		Density Time: 0.019821561
+		Fock Build Time: 0.035832734
+iteration: 4
+	Energy: -76.0410813125493
+	abs(Energy Change)/energy: 1.27050997530234e-07
+	(Gradient Norm)/n^2: 5.11430816964507e-07
+	Scf Time: 0.068769534
+		Density Time: 0.020028642
+		Fock Build Time: 0.042797232
+iteration: 5
+	Energy: -76.041081488525
+	abs(Energy Change)/energy: 2.31421879259362e-09
+	(Gradient Norm)/n^2: 9.21972736826554e-08
+	Scf Time: 0.042102371
+		Density Time: 0.007139378
+		Fock Build Time: 0.032683805
+Occ Range
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+ActiveOcc Range
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Unocc Range
+( tiles = [ 0, 4 ), elements = [ 0, 36 ) )
+Min and Max block size: 8 12
+Average: 9
+
+Obs Range
+( tiles = [ 0, 5 ), elements = [ 0, 41 ) )
+Min and Max block size: 8 9
+Average: 8
+
+  
+CIS Excitation Energy 
+      Retrieved AO Integral: < κ0 |F| κ1 > Size: 1.2524425983429e-05 GB
+    Transformed LCAO Integral: < i |F| a > Size: 1.07288360595703e-06 GB Time: 0.000345356 s
+
+  CIS standard: Singlets
+
+      Retrieved AO Integral: < κ0 |F| κ1 > Size: 1.2524425983429e-05 GB
+    Transformed LCAO Integral: < a |F| b > Size: 9.65595245361328e-06 GB Time: 0.000662993 s
+      Retrieved AO Integral: < κ0 |F| κ1 > Size: 1.2524425983429e-05 GB
+    Transformed LCAO Integral: < i |F| j > Size: 1.19209289550781e-07 GB Time: 0.000349994 s
+    Computed Identity: < a |I| b > Size: 2.50339508056641e-06 GB Time: 0.000307429 s
+    Computed Identity: < i |I| j > Size: 1.19209289550781e-07 GB Time: 0.0001264 s
+      Computed Twobody Four Center Integral: < κ0 κ1 |G| κ2 κ3 > Size: 0.0210535600781441 GB Time: 0.723681952 s
+    Transformed LCAO Integral: < i a |G| j b > Size: 0.000154495239257812 GB Time: 0.050562572 s
+      Retrieved AO Integral: < κ0 κ1 |G| κ2 κ3 > Size: 0.0210535600781441 GB
+    Transformed LCAO Integral: < i j |G| a b > Size: 0.000154495239257812 GB Time: 0.016093784 s
+  Removed from Registry: < i j |G| a b >
+  Removed from Registry: < i a |G| j b >
+  Computed H matrix. Time: 0.798654856 S
+  iteration: 0
+  norm: 1.45710583855353
+  excitation energy: 
+    0.364312573884559
+    0.44524913588712
+    0.568065814711157
+    1.21222448845282
+  total time: 0.015284874 S
+    product time: 0.000732348 S
+    davidson time: 0.014552526 S
+
+  iteration: 1
+  norm: 0.693270986959179
+  excitation energy: 
+    0.321542584685123
+    0.40931163946281
+    0.481691290476398
+    0.52662742946175
+  total time: 0.038403666 S
+    product time: 0.002906684 S
+    davidson time: 0.035496982 S
+
+  iteration: 2
+  norm: 0.0144103103518338
+  excitation energy: 
+    0.318252124201751
+    0.405880785624494
+    0.46908963621789
+    0.521503225510628
+  total time: 0.059383184 S
+    product time: 0.00767868 S
+    davidson time: 0.051704504 S
+
+  iteration: 3
+  norm: 0.0406091640976137
+  excitation energy: 
+    0.318000866850841
+    0.404991483396477
+    0.450023243823069
+    0.485660194095241
+  total time: 0.052114658 S
+    product time: 0.003458091 S
+    davidson time: 0.048656567 S
+
+  iteration: 4
+  norm: 0.0160931068481251
+  excitation energy: 
+    0.317995949104583
+    0.404779263162736
+    0.446140430726774
+    0.470043959309846
+  total time: 0.054566342 S
+    product time: 0.003436793 S
+    davidson time: 0.051129549 S
+
+  iteration: 5
+  norm: 0.00470898273494159
+  excitation energy: 
+    0.317995589265497
+    0.40474226405817
+    0.443401473832528
+    0.466213650645232
+  total time: 0.060292675 S
+    product time: 0.003548564 S
+    davidson time: 0.056744111 S
+
+  iteration: 6
+  norm: 0.0442210443994848
+  excitation energy: 
+    0.317995458537195
+    0.396605261708409
+    0.404739046343069
+    0.44635145889441
+  total time: 0.05281124 S
+    product time: 0.007665555 S
+    davidson time: 0.045145685 S
+
+  iteration: 7
+  norm: 0.0159961834578472
+  excitation energy: 
+    0.317995423301682
+    0.380615266952803
+    0.404738677899731
+    0.445906540030127
+  total time: 0.049166297 S
+    product time: 0.003706409 S
+    davidson time: 0.045459888 S
+
+  iteration: 8
+  norm: 0.000605948616841208
+  excitation energy: 
+    0.317995421804655
+    0.380009700505908
+    0.404738613121723
+    0.445885022584918
+  total time: 0.06654516 S
+    product time: 0.004024066 S
+    davidson time: 0.062521094 S
+
+  iteration: 9
+  norm: 2.74605930078979e-05
+  excitation energy: 
+    0.317995421780323
+    0.379982778480311
+    0.404738609480754
+    0.445879610682031
+  total time: 0.054013525 S
+    product time: 0.003597702 S
+    davidson time: 0.050415823 S
+
+  iteration: 10
+  norm: 2.899715905615e-06
+  excitation energy: 
+    0.317995421779144
+    0.379980210585723
+    0.404738609310676
+    0.445878263733744
+  total time: 0.053842768 S
+    product time: 0.003529744 S
+    davidson time: 0.050313024 S
+
+
+CIS Excitation Energy: ( Singlets )
+state 	         au 	         eV 	      cm^-1 
+    1 	 0.31799542 	    8.65310 	   69791.93 
+    2 	 0.37998278 	   10.33986 	   83396.58 
+    3 	 0.40473861 	   11.01350 	   88829.86 
+    4 	 0.44587961 	   12.13300 	   97859.26 
+
+
+  CIS standard: Triplets
+
+    Retrieved LCAO Integral: < a |F| b > Size: 9.65595245361328e-06 GB
+    Retrieved LCAO Integral: < i |F| j > Size: 1.19209289550781e-07 GB
+    Retrieved LCAO Integral: < a |I| b > Size: 2.50339508056641e-06 GB
+    Retrieved LCAO Integral: < i |I| j > Size: 1.19209289550781e-07 GB
+      Retrieved AO Integral: < κ0 κ1 |G| κ2 κ3 > Size: 0.0210535600781441 GB
+    Transformed LCAO Integral: < i a |G| j b > Size: 0.000154495239257812 GB Time: 0.02554439 s
+  Removed from Registry: < i a |G| j b >
+  Computed H matrix. Time: 0.026932256 S
+  iteration: 0
+  norm: 1.44333107357224
+  excitation energy: 
+    0.360237244118572
+    0.438709267243259
+    0.562768557433018
+    1.20177345847239
+  total time: 0.016830582 S
+    product time: 0.003083056 S
+    davidson time: 0.013747526 S
+
+  iteration: 1
+  norm: 0.724051325977486
+  excitation energy: 
+    0.299093823141771
+    0.380042273871994
+    0.470566569285119
+    0.488633372660802
+  total time: 0.04626388 S
+    product time: 0.002149712 S
+    davidson time: 0.044114168 S
+
+  iteration: 2
+  norm: 0.0242212399777909
+  excitation energy: 
+    0.293456249092463
+    0.373691430355253
+    0.460023549006191
+    0.46854860891003
+  total time: 0.057085954 S
+    product time: 0.005771195 S
+    davidson time: 0.051314759 S
+
+  iteration: 3
+  norm: 0.028103296254941
+  excitation energy: 
+    0.29313190458357
+    0.372702781043462
+    0.443826836448767
+    0.445605654961094
+  total time: 0.052327873 S
+    product time: 0.004324164 S
+    davidson time: 0.048003709 S
+
+  iteration: 4
+  norm: 0.0108672697358667
+  excitation energy: 
+    0.293124024962215
+    0.372550394864474
+    0.436202391968595
+    0.437863425679752
+  total time: 0.060165069 S
+    product time: 0.003992468 S
+    davidson time: 0.056172601 S
+
+  iteration: 5
+  norm: 0.00331222192412886
+  excitation energy: 
+    0.293123342960337
+    0.372515218357949
+    0.433753766560677
+    0.435633221690284
+  total time: 0.054447158 S
+    product time: 0.003762481 S
+    davidson time: 0.050684677 S
+
+  iteration: 6
+  norm: 0.0476318467880846
+  excitation energy: 
+    0.29312319810095
+    0.372496842810762
+    0.386436571106283
+    0.430167372708422
+  total time: 0.068863106 S
+    product time: 0.005697134 S
+    davidson time: 0.063165972 S
+
+  iteration: 7
+  norm: 0.0171501816024245
+  excitation energy: 
+    0.293123154437109
+    0.36830804466005
+    0.372494445251996
+    0.421100960754951
+  total time: 0.048500601 S
+    product time: 0.003780378 S
+    davidson time: 0.044720223 S
+
+  iteration: 8
+  norm: 0.00118848131450107
+  excitation energy: 
+    0.293123152790864
+    0.367347675597879
+    0.372494349579485
+    0.420400832845075
+  total time: 0.056399963 S
+    product time: 0.003583111 S
+    davidson time: 0.052816852 S
+
+  iteration: 9
+  norm: 9.22086701435574e-05
+  excitation energy: 
+    0.293123152747827
+    0.36730831010808
+    0.372494344136786
+    0.420317449411271
+  total time: 0.051699282 S
+    product time: 0.003473272 S
+    davidson time: 0.04822601 S
+
+  iteration: 10
+  norm: 1.17042434097292e-05
+  excitation energy: 
+    0.293123152746131
+    0.367304543481486
+    0.372494343774904
+    0.42030636781221
+  total time: 0.049079887 S
+    product time: 0.003563902 S
+    davidson time: 0.045515985 S
+
+  iteration: 11
+  norm: 1.95262279829175e-06
+  excitation energy: 
+    0.29312315274597
+    0.367303662597174
+    0.372494343687695
+    0.420304625176673
+  total time: 0.051028423 S
+    product time: 0.00338511 S
+    davidson time: 0.047643313 S
+
+
+CIS Excitation Energy: ( Triplets )
+state 	         au 	         eV 	      cm^-1 
+    1 	 0.29312315 	    7.97629 	   64333.10 
+    2 	 0.36730454 	    9.99487 	   80614.03 
+    3 	 0.37249434 	   10.13609 	   81753.06 
+    4 	 0.42030637 	   11.43712 	   92246.59 
+
+CIS Total Time: 2.018215006 S
+  Output KeyVal (format=JSON):
+{
+    "property": {
+        "type": "ExcitationEnergy",
+        "wfn": "$:wfn",
+        "n_roots": "4",
+        "triplets": "true",
+        "value": {
+            "value": [
+                "0.31799542178032336",
+                "0.37998277848031098",
+                "0.40473860948075358",
+                "0.44587961068203091",
+                "0.29312315274613077",
+                "0.367304543481486",
+                "0.37249434377490409",
+                "0.42030636781220959"
+            ]
+        }
+    },
+    "molecule": {
+        "file_name": "h2o.xyz",
+        "attach_hydrogen": "false",
+        "n_cluster": "2"
+    },
+    "basis": {
+        "name": "aug-cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:basis"
+    },
+    "scf": {
+        "type": "RHF",
+        "molecule": "$:molecule",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CIS",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "frozen_core": "true",
+        "ref": "$:scf",
+        "method": "standard",
+        "occ_block_size": "8",
+        "unocc_block_size": "8"
+    }
+}
+

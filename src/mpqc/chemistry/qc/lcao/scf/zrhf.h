@@ -180,20 +180,17 @@ class DFzRHF : public zRHF {
     TArray M_;  // charge matrix of product density <μ|ν>
     TArray n_;  // normalized charge vector <Κ>
     double q_;  // total charge of auxiliary basis functions
-    TArray V_;  // (Κ |G| Λ) 2-center 2-electron integrals
-    TArray V_perp_;  // perpendicular part of 2-body 2-center integrals
-    TArray Gamma_;  // (Κ | G| κ λ) 3-center 2-electron direct integrals contracted with density matrix
     TArray P_para_;  // projection matrix that projects X onto auxiliary charge vector
     TArray P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
+    TArray V_;  // 2-center 2-electron integrals
+    TArray V_perp_;  // part of 2-center 2-electron integrals that is orthogonal to auxiliary charge vector
+    TArray G_;  // 3-center 2-electron direct integrals contracted with density matrix
     TArray inv_;  // A inverse where A = V_perp + P_para
-    TArray C_df_;  // fitting coefficients
-    TArray C_para_;  // the part of C_ that is along with auxiliary charge vector
-    TArray C_perp_;  // the part of C_ that is orthogonal to auxiliary charge vector
+    TArray identity_;  // idensity matrix
+    std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct integrals. vector size = RJ_size_
+    TArray CD_;  // intermediate for C_Xμν D_μν
+    TArray IP_;  // intermediate for inv_XY P_perp_YZ
 
-    std::vector<DirectTArray> Gamma_vec_;  // 3-center 2-electron direct integral
-    TArray W_;  // intermediate for C_Xμν D_μν
-    TArray W_para_;  // intermediate for C_para_Xμν D_μν
-    TArray G_;  // intermediate for Gamma_Xμν D_μν
     /// returns DF Coulomb term J_μν
     TArray J_builder() override;
 

@@ -34,6 +34,8 @@ std::shared_ptr<const PetiteList> PetiteList::make(Symmetry symmetry) {
       return std::make_shared<const SymmPetiteList<Symmetry::e>>();
     case Symmetry::aa:
       return std::make_shared<const SymmPetiteList<Symmetry::aa>>();
+    case Symmetry::a_bb:
+      return std::make_shared<const SymmPetiteList<Symmetry::a_bb>>();
     case Symmetry::aa_bb:
       return std::make_shared<const SymmPetiteList<Symmetry::aa_bb>>();
     case Symmetry::ab_ab:
@@ -50,6 +52,7 @@ std::shared_ptr<const PetiteList> PetiteList::make(Symmetry symmetry) {
 std::map<PetiteList::Symmetry, std::string> PetiteList::symmetry_to_string = {
     {PetiteList::Symmetry::e,           "e"},
     {PetiteList::Symmetry::aa,         "aa"},
+    {PetiteList::Symmetry::a_bb,     "a_bb"},
     {PetiteList::Symmetry::aa_aa,   "aa_aa"},
     {PetiteList::Symmetry::aa_bb,   "aa_bb"},
     {PetiteList::Symmetry::ab_ab,   "ab_ab"}

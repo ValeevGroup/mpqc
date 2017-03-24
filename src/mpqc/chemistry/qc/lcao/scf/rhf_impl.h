@@ -377,9 +377,9 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
 template <typename Tile, typename Policy>
 void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
-  scf::CADFFockBuilder<Tile, Policy, DirectArray> builder(
+  using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
+  this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
 /**
@@ -410,10 +410,11 @@ void RIJEXACTKRHF<Tile, Policy>::init_fock_builder() {
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
   auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
-  auto eri4 = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
+  auto basis =
+      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
-  scf::RIJEXACTKBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3, eri4);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+  using Builder = scf::RIJEXACTKBuilder<Tile, Policy, decltype(eri3)>;
+  this->f_builder_ = std::make_unique<Builder>(inv, eri3, basis, basis, basis);
 }
 
 }  // namespace lcao

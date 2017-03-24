@@ -19,19 +19,15 @@ template <typename Tile, typename Policy, typename Integral>
 class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
  public:
   using array_type = typename FockBuilder<Tile, Policy>::array_type;
-  array_type L_inv_;
-  Integral eri3_;
-  Integral eri4_;
+  using Basis = ::mpqc::lcao::gaussian::Basis;
 
-  double time_J_;
-  double time_K_;
-  double energy_J_;
-  double energy_K_;
-
- public:
   RIJEXACTKBuilder(array_type const &M, Integral const &eri3,
-                   Integral const &eri4)
-      : eri3_(eri3), eri4_(eri4) {
+                   std::shared_ptr<const Basis> bra_basis,
+                   std::shared_ptr<const Basis> ket_basis,
+                   std::shared_ptr<const Basis> density_basis)
+      : eri3_(eri3),
+        K_builder_(std::make_shared<Direct4CBuilder>(
+            M.world(), bra_basis, ket_basis, density_basis, false, true)) {
     auto M_eig = array_ops::array_to_eigen(M);
 
     RowMatrixXd L_inv_eig =
@@ -43,7 +39,9 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
                                                      tr_M);
   }
 
-  array_type operator()(array_type const &D, array_type const &C) override {
+  array_type operator()(array_type const &D, array_type const &C,
+                        double target_precision =
+                            std::numeric_limits<double>::epsilon()) override {
     auto &world = D.world();
     auto j0 = mpqc::fenced_now(world);
     array_type J;
@@ -55,17 +53,16 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
 
     // Make K
     auto k0 = mpqc::fenced_now(world);
-    array_type K;
-    K("mu, nu") = eri4_("mu, rho, nu, sig") * D("rho, sig");
+    array_type minus_K = (*K_builder_)(D, C, target_precision);
     auto k1 = mpqc::fenced_now(world);
     time_K_ = mpqc::duration_in_s(k0, k1);
 
     // Make and return G
     array_type G;
-    G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");
+    G("mu, nu") = 2 * J("mu, nu") + minus_K("mu, nu");
 
     energy_J_ = D("i,j").dot(J("i,j"));
-    energy_K_ = D("i,j").dot(K("i,j"));
+    energy_K_ = -D("i,j").dot(minus_K("i,j"));
 
     return G;
   }
@@ -81,6 +78,17 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
     ExEnv::out0() << "Time K: " << time_K_ << ", Energy K: " << energy_K_
                   << "\n";
   }
+
+ private:
+  array_type L_inv_;
+  Integral eri3_;
+  using Direct4CBuilder = FourCenterFockBuilder<Tile, Policy>;
+  std::shared_ptr<Direct4CBuilder> K_builder_;
+
+  double time_J_;
+  double time_K_;
+  double energy_J_;
+  double energy_K_;
 };
 
 }  // namespace scf

@@ -100,8 +100,6 @@ class FourCenterFockBuilder
         bra_basis_(std::move(bra_basis)),
         ket_basis_(std::move(ket_basis)),
         density_basis_(std::move(density_basis)) {
-    // total density only
-    assert(compute_J && compute_K && "not yet implemented");
     // same basis on each center only
     assert(bra_basis_ == ket_basis_ && bra_basis_ == density_basis_ &&
            "not yet implemented");
@@ -126,11 +124,8 @@ class FourCenterFockBuilder
              tiles_range_D.extent(1) == ntiles_D);
     }
 
-    if (compute_J_ && compute_K_) {
-      if (bra_basis_ == density_basis_ && ket_basis_ == density_basis_)
-        return compute_JK_aaaa(D, target_precision);
-      assert(false && "feature not implemented");
-    }
+    if (bra_basis_ == density_basis_ && ket_basis_ == density_basis_)
+      return compute_JK_aaaa(D, target_precision);
     assert(false && "feature not implemented");
   }
 

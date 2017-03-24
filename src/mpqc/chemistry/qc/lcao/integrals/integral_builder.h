@@ -14,6 +14,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
+#include "mpqc/math/groups/petite_list.h"
 
 namespace mpqc {
 namespace lcao {
@@ -22,8 +23,7 @@ namespace gaussian {
 /*! \brief Builds integrals from an  array of bases and an integral engine pool.
  *
  * \param Op is a function or functor that takes a TA::Tensor && and returns a
- *tile.
- * The simplest type of Op is simply the following:
+ * tile. The simplest type of Op is simply the following:
  * ```
  * auto op = [](TA::Tensor<double> && t){ return std::move(t) };
  * ```
@@ -39,6 +39,7 @@ class IntegralBuilder
   ShrPool<Engine> engines_;
   std::shared_ptr<Screener> screen_;
   Op op_;
+  std::shared_ptr<const math::PetiteList> plist_;
 
  public:
   /*! \brief Constructor which copies all shared_ptr members
@@ -50,13 +51,18 @@ class IntegralBuilder
    * \param screen is a shared pointer to a Screener type
    * \param op should be a thread safe function or functor that takes a
    *  rvalue of a TA::TensorD and returns a valid TA::Array tile.
+   * \param plist the PetiteList object describing the symmetry properties of the set of AO integrals
    */
-  IntegralBuilder(ShrPool<Engine> shr_epool, std::shared_ptr<BasisVector> shr_bases,
-                  std::shared_ptr<Screener> screen, Op op)
+  IntegralBuilder(ShrPool<Engine> shr_epool,
+                  std::shared_ptr<BasisVector> shr_bases,
+                  std::shared_ptr<Screener> screen, Op op,
+                  std::shared_ptr<const math::PetiteList> plist =
+                      math::PetiteList::make_trivial())
       : bases_(std::move(shr_bases)),
         engines_(std::move(shr_epool)),
         screen_(std::move(screen)),
-        op_(std::move(op)) {
+        op_(std::move(op)),
+        plist_(std::move(plist)) {
     std::size_t N = bases_->size();
     TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
@@ -80,7 +86,7 @@ class IntegralBuilder
 
       // Compute integrals over the selected shells.
       return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_);
+                                     shellvec_ptrs, *screen_, *plist_);
     } else if (size == 3) {
       // Get integral shells
       detail::VecArray<3> shellvec_ptrs;
@@ -91,7 +97,7 @@ class IntegralBuilder
 
       // Compute integrals over the selected shells.
       return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_);
+                                     shellvec_ptrs, *screen_, *plist_);
     } else if (size == 4) {
       // Get integral shells
       detail::VecArray<4> shellvec_ptrs;
@@ -102,7 +108,7 @@ class IntegralBuilder
 
       // Compute integrals over the selected shells.
       return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_);
+                                     shellvec_ptrs, *screen_, *plist_);
     } else {
       throw std::runtime_error(
           "Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
@@ -119,8 +125,9 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
 
   DirectIntegralBuilder(madness::World &world, ShrPool<Engine> shr_epool,
                         std::shared_ptr<BasisVector> shr_bases,
-                        std::shared_ptr<Screener> screen, Op op)
-      : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op),
+                        std::shared_ptr<Screener> screen, Op op,
+                        std::shared_ptr<const math::PetiteList> plist)
+      : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op, plist),
         id_(world.register_ptr(this)) {}
 
   madness::uniqueidT id() const { return id_; }
@@ -148,10 +155,11 @@ template <typename Tile, typename Engine>
 std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
     ShrPool<Engine> shr_epool, std::shared_ptr<BasisVector> shr_bases,
     std::shared_ptr<Screener> shr_screen,
-    std::function<Tile(TA::TensorD &&)> op) {
+    std::function<Tile(TA::TensorD &&)> op,
+    std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
   return std::make_shared<IntegralBuilder<Tile, Engine>>(
       std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
-      std::move(op));
+      std::move(op), std::move(plist));
 }
 
 /*!
@@ -159,13 +167,16 @@ std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
  * DirectIntegralBuilder for details.
  */
 template <typename Tile, typename Engine>
-std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builder(
-    madness::World &world, ShrPool<Engine> shr_epool,
-    std::shared_ptr<BasisVector> shr_bases, std::shared_ptr<Screener> shr_screen,
-    std::function<Tile(TA::TensorD &&)> op) {
+std::shared_ptr<DirectIntegralBuilder<Tile, Engine>>
+make_direct_integral_builder(madness::World &world, ShrPool<Engine> shr_epool,
+                             std::shared_ptr<BasisVector> shr_bases,
+                             std::shared_ptr<Screener> shr_screen,
+                             std::function<Tile(TA::TensorD &&)> op,
+                             std::shared_ptr<const math::PetiteList> plist =
+                                 math::PetiteList::make_trivial()) {
   return std::make_shared<DirectIntegralBuilder<Tile, Engine>>(
       world, std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
-      std::move(op));
+      std::move(op), std::move(plist));
 }
 
 }  // namespace gaussian

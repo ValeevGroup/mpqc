@@ -38,7 +38,7 @@ cmake ta_src \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \
       -DMPI_C_COMPILER=$MPICC \
-      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
 # Build all libraries, examples, and applications
 make -j2 VERBOSE=1

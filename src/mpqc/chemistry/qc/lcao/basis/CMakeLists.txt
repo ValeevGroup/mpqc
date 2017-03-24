@@ -1,7 +1,6 @@
 set(sources
 basis_registry.cpp
 basis_registry.h
-basis_set_maps.h
 basis.cpp
 basis.h
 cluster_shells.cpp

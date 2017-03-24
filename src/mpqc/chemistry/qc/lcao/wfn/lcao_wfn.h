@@ -14,6 +14,7 @@
 #include "mpqc/util/keyval/keyval.h"
 #include <mpqc/chemistry/qc/lcao/scf/mo_build.h>
 
+
 namespace mpqc {
 namespace lcao {
 
@@ -27,8 +28,8 @@ class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
   using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
-  using LCAOFactoryType = Factory<ArrayType>;
-  using AOFactoryType = Factory<ArrayType, DirectArrayType>;
+  using LCAOFactoryType = LCAOFactoryBase<Tile,Policy>;
+  using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
 
   // clang-format off
   /**

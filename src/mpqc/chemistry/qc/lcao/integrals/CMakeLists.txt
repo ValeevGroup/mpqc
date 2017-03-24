@@ -1,4 +1,6 @@
 set(sources
+        density_fitting/cadf_coeffs.h
+        density_fitting/cadf_coeffs.cpp
         direct_task_integrals.h
         direct_tile.h
         f12_utility.cpp
@@ -10,11 +12,12 @@ set(sources
         task_integral_kernels.h
         task_integral_kernels.cpp
         screening/screen_base.h
+        screening/screen_base.cpp
         screening/schwarz_screen.h
         screening/schwarz_screen.cpp
         task_integrals_common.h
         task_integrals.h
 )
 
-add_mpqc_library(lcao_integrals sources sources "MPQClcao_expression;MPQClcao_basis" "mpqc/chemistry/qc/lcao/integrals")
+add_mpqc_library(lcao_integrals sources sources "MPQClcao_expression;MPQClcao_basis;MPQCmath_groups;MPQCutil_misc" "mpqc/chemistry/qc/lcao/integrals")
 

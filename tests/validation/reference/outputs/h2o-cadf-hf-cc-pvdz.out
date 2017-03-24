@@ -1,0 +1,201 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 0a1cc3fb0a620b09109fe38ef094010bcc15b33d
+
+  Machine:          
+  User:             
+  Start Time:       Sat Mar 11 14:37:33 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "3-21g",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "wfn": {
+        "type": "Cadf-RHF",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 3-21g
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis = cc-pVDZ
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  Threshold = 1e-10
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+    Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.005828388 s
+      Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.002347902 s
+      Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000152451 s
+    Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.001457602 s
+    Computed CADF fitting Coefficients: ( Κ |Cadf| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.033894456 s
+    Computed Direct Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.011841205 s
+    Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.000359844 s
+overlap condition number = 29.2649973834146Starting SCF:
+	Threshold: 1e-09
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -75.7551465651476
+	abs(Energy Change)/energy: 0.00316715208680689
+	(Gradient Norm)/n^2: 0.00287492732005896
+	Scf Time: 0.007114866
+		Density Time: 0.000576245
+		Fock Build Time: 0.006103752
+  J time: 0.003254214, Energy J: 23.1315709253388
+  K time: 0.002271334, Energy K: 8.33540394319591
+iteration: 1
+	Energy: -75.8057342796915
+	abs(Energy Change)/energy: 0.000667333613011629
+	(Gradient Norm)/n^2: 0.00109109920435411
+	Scf Time: 0.00438321
+		Density Time: 0.000592445
+		Fock Build Time: 0.003204594
+  J time: 0.001651094, Energy J: 22.1697417107838
+  K time: 0.001334668, Energy K: 8.18912146801731
+iteration: 2
+	Energy: -75.8134406084536
+	abs(Energy Change)/energy: 0.00010164858236621
+	(Gradient Norm)/n^2: 0.000140289130847678
+	Scf Time: 0.003897352
+		Density Time: 0.000560822
+		Fock Build Time: 0.002780287
+  J time: 0.001455923, Energy J: 22.5160333187727
+  K time: 0.001121537, Energy K: 8.2552510242409
+iteration: 3
+	Energy: -75.8136459316651
+	abs(Energy Change)/energy: 2.70826193596067e-06
+	(Gradient Norm)/n^2: 1.9724594457189e-05
+	Scf Time: 0.004267346
+		Density Time: 0.000598585
+		Fock Build Time: 0.003048619
+  J time: 0.001636838, Energy J: 22.4844177062348
+  K time: 0.001205511, Energy K: 8.25103024704699
+iteration: 4
+	Energy: -75.8136487125308
+	abs(Energy Change)/energy: 3.66802780360486e-08
+	(Gradient Norm)/n^2: 1.23513737889541e-06
+	Scf Time: 0.004306305
+		Density Time: 0.00059245
+		Fock Build Time: 0.003057419
+  J time: 0.001737489, Energy J: 22.4873920389571
+  K time: 0.001122975, Energy K: 8.25167597607603
+iteration: 5
+	Energy: -75.8136487282946
+	abs(Energy Change)/energy: 2.07928294865741e-10
+	(Gradient Norm)/n^2: 1.39367242527313e-07
+	Scf Time: 0.004069603
+		Density Time: 0.000563412
+		Fock Build Time: 0.002829477
+  J time: 0.001488143, Energy J: 22.4875308901802
+  K time: 0.001136945, Energy K: 8.2516875621336
+iteration: 6
+	Energy: -75.8136487287456
+	abs(Energy Change)/energy: 5.94780278392144e-12
+	(Gradient Norm)/n^2: 5.46953444205654e-08
+	Scf Time: 0.004015966
+		Density Time: 0.000599565
+		Fock Build Time: 0.002783704
+  J time: 0.001462671, Energy J: 22.4875284822515
+  K time: 0.001122234, Energy K: 8.25168628549459
+iteration: 7
+	Energy: -75.8136487288234
+	abs(Energy Change)/energy: 1.02607142665383e-12
+	(Gradient Norm)/n^2: 3.01459582750101e-09
+	Scf Time: 0.004032963
+		Density Time: 0.000567511
+		Fock Build Time: 0.002788965
+  J time: 0.00145195, Energy J: 22.4875250015544
+  K time: 0.001169975, Energy K: 8.25168564921725
+iteration: 8
+	Energy: -75.8136487288235
+	abs(Energy Change)/energy: 2.24933451221152e-15
+	(Gradient Norm)/n^2: 5.40885160106795e-10
+	Scf Time: 0.004073345
+		Density Time: 0.000598177
+		Fock Build Time: 0.002837175
+  J time: 0.00147393, Energy J: 22.487524963609
+  K time: 0.001170677, Energy K: 8.25168566521517
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "3-21g",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "wfn": {
+        "type": "Cadf-RHF",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-75.813648728823523"
+        }
+    }
+}
+

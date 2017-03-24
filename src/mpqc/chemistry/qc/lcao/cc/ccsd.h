@@ -220,7 +220,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
+        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -1488,7 +1488,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
  private:
   /// AO integral-direct computation of (ab|cd) ints contributions to the
-  /// doubles resudual
+  /// doubles residual
 
   /// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} +
   /// t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
@@ -1504,11 +1504,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
+      u2_u11("p, r, i, j") = 0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
-      throw std::runtime_error(
+      throw ProgrammingError(
           "CCSD: integral-direct implementation used, but direct integral not "
-          "initialized");
+          "initialized", __FILE__, __LINE__);
     }
   }
 };  // class CCSD

@@ -57,7 +57,7 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   // get all trange1s
   auto tr_obs = obs_basis->create_trange1();
   auto tr_corr_occ = tre->get_active_occ_tr1();
-  auto tr_occ = tre->compute_range(occ, occ_block);
+  auto tr_occ = utility::compute_trange1(occ, occ_block);
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 

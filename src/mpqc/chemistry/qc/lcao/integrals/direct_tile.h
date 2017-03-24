@@ -3,6 +3,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
 
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
+#include "mpqc/chemistry/qc/lcao/integrals/integral_builder.h"
 
 #include <madness/world/worldptr.h>
 
@@ -49,13 +50,15 @@ class DirectTile {
 
   operator eval_type() const { return builder_->operator()(idx_, range_); }
 
-#if 0
-    template <typename Archive>
-    void serialize(Archive &) {
-        assert(false);
-    }
-
-#else
+  /*! \brief Allows for truncate to be called on direct tiles
+   * 
+   * \note In reduced scaling code this could lead to expensive higher order
+   * operations depending on the size of the array.
+   */
+  value_type norm() const {
+    auto tile = builder_->operator()(idx_, range_);
+    return tile.norm();
+  }
 
   template <typename Archive>
   std::enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
@@ -81,7 +84,6 @@ class DirectTile {
         world->template shared_ptr_from_id<BaseBuilder>(id));
     assert(builder_ != nullptr);
   }
-#endif
 };
 
 /*! Class to hold a direct tile builder with its array. */
@@ -104,6 +106,8 @@ class DirectArray {
       : builder_(std::move(b)), array_(std::move(a)) {}
 
   DirectArray(std::shared_ptr<Builder> b) : builder_(std::move(b)), array_() {}
+
+  bool is_initialized() const { return builder_ && array_.is_initialized(); }
 
   template <typename... Args>
   auto operator()(Args &&... args)

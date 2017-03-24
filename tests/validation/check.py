@@ -15,6 +15,12 @@ import json
 # reload(sys)
 # sys.setdefaultencoding("utf-8")
 
+default_precision = {
+    "Energy" : 1.0e-9,
+    "GFRealPole" : 1.0e-4,
+    "ExcitationEnergy" : 1.0e-5
+}
+
 def validate(label, data, refdata, tolerance):
     if not isinstance(data,list):
         data = [data]
@@ -26,6 +32,8 @@ def validate(label, data, refdata, tolerance):
         datum = float(data[i])
         refdatum = float(refdata[i])
         if (math.fabs(refdatum - datum) > tolerance):
+            print(refdatum)
+            print(datum)
             ok = False
             break
     return ok
@@ -50,26 +58,30 @@ def parse_json(file_name):
     return result
 
 
-def total_energy(file_name):
-    json = parse_json(file_name)
+def total_energy(json):
     return json["property"]["value"]["value"]
-    # with open(file_name, 'r') as file:
-    #     ifile = iter(file)
-    #     for line in ifile:
-    #         match1 = re.match('\A\s*Property "Energy" computed with Wavefunction ".*":', line)
-    #         if match1:
-    #             line = next(ifile)
-    #             match1 = re.match('\s*value:\s*' + pat_numbers(1), line)
-    #             return match1.groups()
 
+
+def get_precision(json):
+    if "precision" not in json["property"]:
+        property = json["property"]["type"]
+        return default_precision[property]
+    else:
+        return float(json["property"]["precision"])
 ##########################################################
 # main
 ##########################################################
 file_name = sys.argv[1]
-energy = total_energy(file_name)
-ref_file_name = sys.argv[2]
-ref_energy = total_energy(ref_file_name)
+output_json = parse_json(file_name)
+value = total_energy(output_json)
 
-eok = validate("total energy", energy, ref_energy, 1e-10)
+ref_file_name = sys.argv[2]
+ref_json = parse_json(ref_file_name)
+ref_value = total_energy(ref_json)
+
+precision = get_precision(ref_json)
+
+
+eok = validate("value", value, ref_value, precision)
 ok = eok
 if not ok: sys.exit(1)

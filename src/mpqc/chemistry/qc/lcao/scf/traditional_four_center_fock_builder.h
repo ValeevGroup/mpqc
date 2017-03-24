@@ -176,17 +176,17 @@ class FourCenterFockBuilder
             // TODO screen D blocks using schwarz estimate for this Coulomb
             // operator tile
             auto D01 =
-                D.is_zero({tile0, tile1}) ? empty : D.find({tile0, tile1});
+                (!compute_J_ || D.is_zero({tile0, tile1})) ? empty : D.find({tile0, tile1});
             auto D23 =
-                D.is_zero({tile2, tile3}) ? empty : D.find({tile2, tile3});
+                (!compute_J_ || D.is_zero({tile2, tile3})) ? empty : D.find({tile2, tile3});
             auto D02 =
-                D.is_zero({tile0, tile2}) ? empty : D.find({tile0, tile2});
+                (!compute_K_ || D.is_zero({tile0, tile2})) ? empty : D.find({tile0, tile2});
             auto D03 =
-                D.is_zero({tile0, tile3}) ? empty : D.find({tile0, tile3});
+                (!compute_K_ || D.is_zero({tile0, tile3})) ? empty : D.find({tile0, tile3});
             auto D12 =
-                D.is_zero({tile1, tile2}) ? empty : D.find({tile1, tile2});
+                (!compute_K_ || D.is_zero({tile1, tile2})) ? empty : D.find({tile1, tile2});
             auto D13 =
-                D.is_zero({tile1, tile3}) ? empty : D.find({tile1, tile3});
+                (!compute_K_ || D.is_zero({tile1, tile3})) ? empty : D.find({tile1, tile3});
 
             if (pmap->is_local(tile0123))
               WorldObject_::task(
@@ -293,34 +293,34 @@ class FourCenterFockBuilder
     const auto rng3_size = rng3.second - rng3.first;
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this
-    auto rng01 = TA::Range({rng0, rng1});
-    auto rng23 = TA::Range({rng2, rng3});
-    auto rng02 = TA::Range({rng0, rng2});
-    auto rng03 = TA::Range({rng0, rng3});
-    auto rng12 = TA::Range({rng1, rng2});
-    auto rng13 = TA::Range({rng1, rng3});
+    auto rng01 = compute_J_ ? TA::Range({rng0, rng1}) : TA::Range();
+    auto rng23 = compute_J_ ? TA::Range({rng2, rng3}) : TA::Range();
+    auto rng02 = compute_K_ ? TA::Range({rng0, rng2}) : TA::Range();
+    auto rng03 = compute_K_ ? TA::Range({rng0, rng3}) : TA::Range();
+    auto rng12 = compute_K_ ? TA::Range({rng1, rng2}) : TA::Range();
+    auto rng13 = compute_K_ ? TA::Range({rng1, rng3}) : TA::Range();
 
     // initialize contribution to the Fock matrices
-    auto F01 = Tile(std::move(rng01), 0.0);
-    auto F23 = Tile(std::move(rng23), 0.0);
-    auto F02 = Tile(std::move(rng02), 0.0);
-    auto F03 = Tile(std::move(rng03), 0.0);
-    auto F12 = Tile(std::move(rng12), 0.0);
-    auto F13 = Tile(std::move(rng13), 0.0);
+    auto F01 = compute_J_ ? Tile(std::move(rng01), 0.0) : Tile();
+    auto F23 = compute_J_ ? Tile(std::move(rng23), 0.0) : Tile();
+    auto F02 = compute_K_ ? Tile(std::move(rng02), 0.0) : Tile();
+    auto F03 = compute_K_ ? Tile(std::move(rng03), 0.0) : Tile();
+    auto F12 = compute_K_ ? Tile(std::move(rng12), 0.0) : Tile();
+    auto F13 = compute_K_ ? Tile(std::move(rng13), 0.0) : Tile();
 
     // grab ptrs to tile data to make addressing more efficient
-    auto* F01_ptr = F01.data();
-    auto* F02_ptr = F02.data();
-    auto* F03_ptr = F03.data();
-    auto* F12_ptr = F12.data();
-    auto* F13_ptr = F13.data();
-    auto* F23_ptr = F23.data();
-    const auto* D01_ptr = D01.data();
-    const auto* D02_ptr = D02.data();
-    const auto* D03_ptr = D03.data();
-    const auto* D12_ptr = D12.data();
-    const auto* D13_ptr = D13.data();
-    const auto* D23_ptr = D23.data();
+    auto* F01_ptr = compute_J_ ? F01.data() : nullptr;
+    auto* F23_ptr = compute_J_ ? F23.data() : nullptr;
+    auto* F02_ptr = compute_K_ ? F02.data() : nullptr;
+    auto* F03_ptr = compute_K_ ? F03.data() : nullptr;
+    auto* F12_ptr = compute_K_ ? F12.data() : nullptr;
+    auto* F13_ptr = compute_K_ ? F13.data() : nullptr;
+    const auto* D01_ptr = compute_J_ ? D01.data() : nullptr;
+    const auto* D23_ptr = compute_J_ ? D23.data() : nullptr;
+    const auto* D02_ptr = compute_K_ ? D02.data() : nullptr;
+    const auto* D03_ptr = compute_K_ ? D03.data() : nullptr;
+    const auto* D12_ptr = compute_K_ ? D12.data() : nullptr;
+    const auto* D13_ptr = compute_K_ ? D13.data() : nullptr;
 
     // compute contributions to all Fock matrices
     {
@@ -400,12 +400,20 @@ class FourCenterFockBuilder
 
                       const auto value_scaled_by_multiplicity = value * multiplicity;
 
-                      F01_ptr[cf01] += D23_ptr[cf23] * value_scaled_by_multiplicity;
-                      F23_ptr[cf23] += D01_ptr[cf01] * value_scaled_by_multiplicity;
-                      F02_ptr[cf02] -= 0.25 * D13_ptr[cf13] * value_scaled_by_multiplicity;
-                      F13_ptr[cf13] -= 0.25 * D02_ptr[cf02] * value_scaled_by_multiplicity;
-                      F03_ptr[cf03] -= 0.25 * D12_ptr[cf12] * value_scaled_by_multiplicity;
-                      F12_ptr[cf12] -= 0.25 * D03_ptr[cf03] * value_scaled_by_multiplicity;
+                      if (compute_J_) {
+                        F01_ptr[cf01] += D23_ptr[cf23] * value_scaled_by_multiplicity;
+                        F23_ptr[cf23] += D01_ptr[cf01] * value_scaled_by_multiplicity;
+                      }
+                      if (compute_K_) {
+                        F02_ptr[cf02] -=
+                            0.25 * D13_ptr[cf13] * value_scaled_by_multiplicity;
+                        F13_ptr[cf13] -=
+                            0.25 * D02_ptr[cf02] * value_scaled_by_multiplicity;
+                        F03_ptr[cf03] -=
+                            0.25 * D12_ptr[cf12] * value_scaled_by_multiplicity;
+                        F12_ptr[cf12] -=
+                            0.25 * D03_ptr[cf03] * value_scaled_by_multiplicity;
+                      }
                     }
                   }
                 }
@@ -431,24 +439,34 @@ class FourCenterFockBuilder
     assert(me == pmap_D_->rank());
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
-    const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
-    const auto proc23 = pmap_D_->owner(tile_idx[2] * ntiles + tile_idx[3]);
-    const auto proc02 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[2]);
-    const auto proc03 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
-    const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
-    const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
-    WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
-                       tile_idx[0], tile_idx[1], madness::TaskAttributes::hipri());
-    WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
-                       tile_idx[2], tile_idx[3], madness::TaskAttributes::hipri());
-    WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
-                       tile_idx[0], tile_idx[2], madness::TaskAttributes::hipri());
-    WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
-                       tile_idx[0], tile_idx[3], madness::TaskAttributes::hipri());
-    WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
-                       tile_idx[1], tile_idx[2], madness::TaskAttributes::hipri());
-    WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
-                       tile_idx[1], tile_idx[3], madness::TaskAttributes::hipri());
+    if (compute_J_) {
+      const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
+      const auto proc23 = pmap_D_->owner(tile_idx[2] * ntiles + tile_idx[3]);
+      WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
+                         tile_idx[0], tile_idx[1],
+                         madness::TaskAttributes::hipri());
+      WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
+                         tile_idx[2], tile_idx[3],
+                         madness::TaskAttributes::hipri());
+    }
+    if (compute_K_) {
+      const auto proc02 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[2]);
+      const auto proc03 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
+      const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
+      const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
+      WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
+                         tile_idx[0], tile_idx[2],
+                         madness::TaskAttributes::hipri());
+      WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
+                         tile_idx[0], tile_idx[3],
+                         madness::TaskAttributes::hipri());
+      WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
+                         tile_idx[1], tile_idx[2],
+                         madness::TaskAttributes::hipri());
+      WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
+                         tile_idx[1], tile_idx[3],
+                         madness::TaskAttributes::hipri());
+    }
   }
 };
 

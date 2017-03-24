@@ -252,6 +252,12 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// This computes integral direct by Formula
   TArray compute_direct(const Formula &formula) override;
 
+  /// wrapper to compute_direct_vector
+  std::vector<DirectTArray> compute_direct_vector(const std::wstring &);
+
+  /// This computes a vector of direct integrals for periodic systems
+  std::vector<DirectTArray> compute_direct_vector(const Formula &formula);
+
   /*!
    * \brief This computes sparse complex array
    *
@@ -328,9 +334,6 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   /// compute integrals that has four dimension for periodic systems
   TArray compute4(const Formula &formula);
-
-  /// compute integrals that has three dimension for periodic systems
-  TArray compute_direct3(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
   TArray compute_direct4(const Formula &formula);
@@ -427,6 +430,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   double screen_threshold_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
+  std::vector<DirectTArray> g_3idx_;
 };
 
 template <typename Tile, typename Policy>
@@ -567,10 +571,15 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
       parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
                                            vec_RJ, p_screener);
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
+      if (print_detail_) {
+        double size = mpqc::detail::array_size(g.array());
+        ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
+                      << std::endl;
+      }
       if (RJ == 0)
-        result("K, mu, nu") = g("K, mu, nu");
+        result("K") = g("K, mu, nu") * D_("mu, nu");
       else
-        result("K, mu, nu") += g("K, mu, nu");
+        result("K") += g("K, mu, nu") * D_("mu, nu");
     }
   } else
     throw std::runtime_error("Rank-3 operator type not supported");
@@ -719,6 +728,58 @@ PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
     } else
       throw std::runtime_error("Operator rank not supported");
   }
+
+  return result;
+}
+
+template <typename Tile, typename Policy>
+std::vector<typename PeriodicAOFactory<Tile, Policy>::DirectTArray>
+PeriodicAOFactory<Tile, Policy>::compute_direct_vector(const std::wstring &formula_string) {
+  auto formula = Formula(formula_string);
+  return compute_direct_vector(formula);
+}
+
+template <typename Tile, typename Policy>
+std::vector<typename PeriodicAOFactory<Tile, Policy>::DirectTArray>
+PeriodicAOFactory<Tile, Policy>::compute_direct_vector(const Formula &formula) {
+  BasisVector bs_array;
+  auto result = std::vector<DirectTArray>(RJ_size_, DirectTArray());
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
+  auto &world = this->world();
+  std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+
+  double size = 0.0;
+
+  ExEnv::out0() << "\nComputing Vector of Three Center Direct Integral for Periodic System: "
+                << utility::to_string(formula.string()) << std::endl;
+  auto time0 = mpqc::now(world, this->accurate_time());
+  if (formula.oper().type() == Operator::Type::Coulomb) {
+
+      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+          using ::mpqc::lcao::detail::direct_vector;
+
+          DirectTArray &g = result[RJ];
+          if (!g.array().is_initialized()) {
+              auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+              parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
+                                                   vec_RJ, p_screener);
+              auto g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+              size += mpqc::detail::array_size(g.array());
+
+              if (print_detail_) {
+                double size = mpqc::detail::array_size(g.array());
+                ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
+                              << std::endl;
+              }
+          }
+      }
+  } else
+      throw std::runtime_error("Rank-3 operator type not supported");
+  auto time1 = mpqc::now(world, this->accurate_time());
+  auto time = mpqc::duration_in_s(time0, time1);
+
+  utility::print_par(world, " Size: ", size, " GB");
+  utility::print_par(world, " Time: ", time, " s\n");
 
   return result;
 }

@@ -409,7 +409,7 @@ void RIJEXACTKRHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)[a_bb]");
   auto basis =
       this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
 

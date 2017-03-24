@@ -48,6 +48,8 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
     J("m, n") =
         eri3_("Z, m, n") *
         (L_inv_("X, Z") * (L_inv_("X, Y") * (eri3_("Y, r, s") * D("r, s"))));
+    // symmetrize to account for permutational symmetry
+    J("m, n") = 0.5 * (J("m, n") + J("n, m"));
     auto j1 = mpqc::fenced_now(world);
     time_J_ = mpqc::duration_in_s(j0, j1);
 

@@ -1,6 +1,6 @@
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_CLUSTER_SHELLS_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_CLUSTER_SHELLS_H_
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 
@@ -52,4 +52,4 @@ class ClusterShells {
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_CLUSTER_SHELLS_H_

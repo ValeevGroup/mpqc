@@ -59,8 +59,8 @@ class DFFockBuilder : public FockBuilder<Tile,Policy> {
        * Integral is a type that can be used in a TiledArray expression, the
        * template is to allow for Direct Integral wrappers or other options.
        */
-  array_type operator()(array_type const &D, array_type const &C) override {
-    auto &world = D.world();
+  array_type operator()(array_type const &, array_type const &C, double) override {
+    auto &world = C.world();
 
     array_type G;
     madness::print_meminfo(world.rank(), "DFFockBuilder:0");

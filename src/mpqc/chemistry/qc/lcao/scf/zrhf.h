@@ -103,6 +103,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
  protected:
   TArray S_;
   TArray D_;
+  bool print_detail_;
 
  private:
   TArray T_;
@@ -123,7 +124,6 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
   const KeyVal kv_;
   int64_t maxiter_;
-  bool print_detail_;
   double max_condition_num_;
 
   Vector3i R_max_;
@@ -158,6 +158,8 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   virtual TArray J_builder();
   /// returns Exchange term K_μν
   virtual TArray K_builder();
+  /// returns Hartree-Fock energy
+  virtual double compute_energy();
   /// initializes other stuff (may be used by derived class)
   virtual void init_other() {}
 };

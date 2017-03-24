@@ -140,7 +140,7 @@ void zRHF::solve(double thresh) {
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute zRHF energy
-    ezrhf = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
+    ezrhf = compute_energy();
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
@@ -378,6 +378,11 @@ void zRHF::evaluate(Energy* result) {
     this->computed_ = true;
     set_value(result, energy_);
   }
+}
+
+double zRHF::compute_energy() {
+    double ezrhf = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
+    return ezrhf;
 }
 
 zRHF::TArray zRHF::J_builder() {

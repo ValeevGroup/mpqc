@@ -44,25 +44,43 @@ DFzRHF::TArray DFzRHF::J_builder() {
     auto &ao_factory = this->ao_factory();
     auto &world = ao_factory.world();
 
+    mpqc::time_point t0, t1;
     // DF coeffs parallel to charge vector
+    t0 = mpqc::fenced_now(world);
     C_para_("X, mu, nu") =
         (1.0 / q_) * M_("mu, nu") * n_("X");
+    t1 = mpqc::fenced_now(world);
+    auto t_c_para = mpqc::duration_in_s(t0, t1);
 
     // perpendicular part of 3-body 2-center integrals
+    t0 = mpqc::fenced_now(world);
     TArray Gamma_perp;
     Gamma_perp("X, mu, nu") = P_perp_("X, Y") * Gamma_("Y, mu, nu");
+    t1 = mpqc::fenced_now(world);
+    auto t_gamma_perp = mpqc::duration_in_s(t0, t1);
 
     // perpendicular part of 2-body 2-center integrals
+    t0 = mpqc::fenced_now(world);
     TArray V_perp;
     V_perp("X, Y") = P_perp_("X, Z") * V_("Z, W") * P_perp_("W, Y");
+    t1 = mpqc::fenced_now(world);
+    auto t_v_perp = mpqc::duration_in_s(t0, t1);
 
     // perpendicular η
+    t0 = mpqc::fenced_now(world);
     TArray Eta_perp;
     Eta_perp("X, mu, nu") = P_perp_("X, Y") * V_("Y, Z") * C_para_("Z, mu, nu");
+    t1 = mpqc::fenced_now(world);
+    auto t_eta_perp = mpqc::duration_in_s(t0, t1);
 
-    // A inverse. A = V_perp + P_para
+    // A inverse. A = V_perp + P_para 
+    t0 = mpqc::fenced_now(world);
     TArray A;
     A("X, Y") = V_perp("X, Y") + P_para_("X, Y");
+    t1 = mpqc::fenced_now(world);
+    auto t_a = mpqc::duration_in_s(t0, t1);
+
+    t0 = mpqc::fenced_now(world);
     auto A_eig = array_ops::array_to_eigen(A);
     using MatType = decltype(A_eig);
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(A_eig).matrixL()).inverse();
@@ -71,22 +89,66 @@ DFzRHF::TArray DFzRHF::J_builder() {
     assert(tr0 == tr1 && "Matrix A = LLT must be symmetric!");
     TArray L_inv =
         array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
+    t1 = mpqc::fenced_now(world);
+    auto t_l_inv = mpqc::duration_in_s(t0, t1);
+
+    t0 = mpqc::fenced_now(world);
     TArray A_inv;
     A_inv("X, Y") = L_inv("Z, X") * L_inv("Z, Y");
+    t1 = mpqc::fenced_now(world);
+    auto t_a_inv = mpqc::duration_in_s(t0, t1);
 
     // DF coeffs orthogonal to charge vector
+    t0 = mpqc::fenced_now(world);
     C_perp_("X, mu, nu") =
         A_inv("X, Y") * (Gamma_perp("Y, mu, nu") - Eta_perp("Y, mu, nu"));
+    t1 = mpqc::fenced_now(world);
+    auto t_c_perp = mpqc::duration_in_s(t0, t1);
 
     // total DF coeffs
+    t0 = mpqc::fenced_now(world);
     C_df_("X, mu, nu") = C_para_("X, mu, nu") + C_perp_("X, mu, nu");
+    t1 = mpqc::fenced_now(world);
+    auto t_c = mpqc::duration_in_s(t0, t1);
 
     // build DF Coulomb term
-    TArray J, J_part1, J_part2;
-    J_part1("mu, nu") = 2.0 * Gamma_("X, mu, nu") * C_df_("X, rho, sig") * this->D_("rho, sig");
-    J_part2("mu, nu") = C_df_("X, mu, nu") * V_("X, Y") * C_df_("Y, rho, sig") * this->D_("rho, sig");
+    TArray J, J_part1, J_part2, CD;
+    t0 = mpqc::fenced_now(world);
+    CD("X") = C_df_("X, rho, sig") * this->D_("rho, sig");
+    t1 = mpqc::fenced_now(world);
+    auto t_cd = mpqc::duration_in_s(t0, t1);
+
+    t0 = mpqc::fenced_now(world);
+    J_part1("mu, nu") = 2.0 * Gamma_("X, mu, nu") * CD("X");
+    t1 = mpqc::fenced_now(world);
+    auto t_j1 = mpqc::duration_in_s(t0, t1);
+
+    t0 = mpqc::fenced_now(world);
+    TArray VCD;
+    VCD("X") = V_("X, Y") * CD("Y");
+    J_part2("mu, nu") = C_df_("X, mu, nu") * VCD("X");
+    t1 = mpqc::fenced_now(world);
+    auto t_j2 = mpqc::duration_in_s(t0, t1);
+
+//    J_part1("mu, nu") = 2.0 * Gamma_("X, mu, nu") * C_df_("X, rho, sig") * this->D_("rho, sig");
+//    J_part2("mu, nu") = C_df_("X, mu, nu") * V_("X, Y") * C_df_("Y, rho, sig") * this->D_("rho, sig");
     J("mu, nu") = J_part1("mu, nu") - J_part2("mu, nu");
 
+    if (this->print_detail_) {
+        ExEnv::out0() << "\nRI-J timing decomposition:" << std::endl;
+        ExEnv::out0() << "\tC para:              " << t_c_para << " s" << std::endl;
+        ExEnv::out0() << "\tGamma perp:          " << t_gamma_perp << " s" << std::endl;
+        ExEnv::out0() << "\tV perp:              " << t_v_perp << " s" << std::endl;
+        ExEnv::out0() << "\tEta perp:            " << t_eta_perp << " s" << std::endl;
+        ExEnv::out0() << "\tA = V_perp + P_para: " << t_a << " s" << std::endl;
+        ExEnv::out0() << "\tL inv:               " << t_l_inv << " s" << std::endl;
+        ExEnv::out0() << "\tA inv:               " << t_a_inv << " s" << std::endl;
+        ExEnv::out0() << "\tC perp:              " << t_c_perp << " s" << std::endl;
+        ExEnv::out0() << "\tC = C_para + C_perp: " << t_c << " s" << std::endl;
+        ExEnv::out0() << "\tCD = C_Xμν D_μν:     " << t_cd << " s" << std::endl;
+        ExEnv::out0() << "\tJ_part1:             " << t_j1 << " s" << std::endl;
+        ExEnv::out0() << "\tJ_part2:             " << t_j2 << " s" << std::endl;
+    }
     return J;
 }
 

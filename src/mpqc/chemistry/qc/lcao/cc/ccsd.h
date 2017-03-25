@@ -1248,10 +1248,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         if (print_detail_) {
           mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
         }
-
-        d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
-
-        r2("a,b,i,j") -= t2("a,b,i,j");
       }
 
       auto t2_time1 = mpqc::now(world, accurate_time);

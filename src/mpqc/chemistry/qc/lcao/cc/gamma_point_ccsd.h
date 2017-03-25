@@ -1,7 +1,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_GAMMA_POINT_CCSD_H
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_GAMMA_POINT_CCSD_H
 
-#include "mpqc/chemistry/qc/cc/diis_ccsd.h"
+#include "mpqc/chemistry/qc/cc/diis.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/gamma_point_mp2.h"
 #include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
 

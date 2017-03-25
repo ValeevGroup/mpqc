@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/7/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
 
 #include <cmath>
 #include <utility>
@@ -11,7 +11,10 @@
 namespace mpqc {
 namespace cc {
 
-/// {T1,T2} amplitude pair
+/// the {T1,T2} amplitude pair
+
+/// @tparam T1 the type representing the set of 1-body amplitudes
+/// @tparam T2 the type representing the set of 2-body amplitudes
 template <typename T1, typename T2>
 struct T1T2 {
   typedef typename T1::element_type element_type;
@@ -49,4 +52,4 @@ inline void axpy(T1T2<T1, T2> &y, Scalar a, const T1T2<T1, T2> &x) {
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_

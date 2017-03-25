@@ -41,6 +41,7 @@
   },
   "property" : {
     "type" : "Energy",
+    "precision" : "1e-11",
     "wfn" : "$:wfn"
   }
 }

@@ -101,8 +101,8 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     auto ord = 0ul;
     for (auto a = 0ul; a < Ta.size(); ++a) {
       const float a_val = Ta(a);
-      for (auto b = 0ul; b < Tbc.cols(); ++b) {
-        for (auto c = 0ul; c < Tbc.rows(); ++c, ++ord) {
+      for (auto b = 0ul; b < Tbc.rows(); ++b) {
+        for (auto c = 0ul; c < Tbc.cols(); ++c, ++ord) {
 
           if (pmap.is_local(ord)){ 
             norms[ord] = std::sqrt(a_val * Tbc(b, c));

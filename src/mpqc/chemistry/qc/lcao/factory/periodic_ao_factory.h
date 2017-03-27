@@ -567,7 +567,6 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
 
   auto time0 = mpqc::now(world, this->accurate_time());
   if (formula.oper().type() == Operator::Type::Coulomb) {
-
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
 
@@ -790,71 +789,71 @@ PeriodicAOFactory<Tile, Policy>::compute_direct_vector(const Formula &formula) {
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute_direct3(const Formula &formula) {
-    TArray result;
-    BasisVector bs_array;
-    std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-    auto &world = this->world();
-    std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+  TArray result;
+  BasisVector bs_array;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
+  auto &world = this->world();
+  std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
-    double size = 0.0;
-    auto time_3idx = 0.0;
-    auto time_contr = 0.0;
+  double size = 0.0;
+  auto time_3idx = 0.0;
+  auto time_contr = 0.0;
 
-    if (print_detail_) {
-      utility::print_par(world,
-                         "\nComputing Three Body Integral for Periodic System: ",
-                         utility::to_string(formula.string()), "\n");
+  if (print_detail_) {
+    utility::print_par(world,
+                       "\nComputing Three Body Integral for Periodic System: ",
+                       utility::to_string(formula.string()), "\n");
+  }
+
+  auto time0 = mpqc::now(world, this->accurate_time());
+  if (formula.oper().type() == Operator::Type::Coulomb) {
+    if (g_3idx_.empty()) {
+      g_3idx_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
     }
 
-    auto time0 = mpqc::now(world, this->accurate_time());
-    if (formula.oper().type() == Operator::Type::Coulomb) {
-      if (g_3idx_.empty()) {
-        g_3idx_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
-      }
+    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+      using ::mpqc::lcao::detail::direct_vector;
+      DirectTArray &g = g_3idx_[RJ];
 
-      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        using ::mpqc::lcao::detail::direct_vector;
-        DirectTArray &g = g_3idx_[RJ];
+      if (!g.array().is_initialized()) {
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+        parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
+                                             vec_RJ, p_screener);
+        auto time_g0 = mpqc::now(world, this->accurate_time());
+        g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+        auto time_g1 = mpqc::now(world, this->accurate_time());
 
-        if (!g.array().is_initialized()) {
-          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-          parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
-                                               vec_RJ, p_screener);
-          auto time_g0 = mpqc::now(world, this->accurate_time());
-          g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
-          auto time_g1 = mpqc::now(world, this->accurate_time());
-
-          if (print_detail_) {
-            double size = mpqc::detail::array_size(g.array());
-            ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
-                          << std::endl;
-          }
-
-          time_3idx += mpqc::duration_in_s(time_g0, time_g1);
+        if (print_detail_) {
+          double size = mpqc::detail::array_size(g.array());
+          ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
+                        << std::endl;
         }
 
-        auto time_contr0 = mpqc::now(world, this->accurate_time());
-        if (RJ == 0)
-          result("K") = g("K, mu, nu") * D_("mu, nu");
-        else
-          result("K") += g("K, mu, nu") * D_("mu, nu");
-        auto time_contr1 = mpqc::now(world, this->accurate_time());
-        time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
+        time_3idx += mpqc::duration_in_s(time_g0, time_g1);
       }
-    } else
-      throw std::runtime_error("Rank-3 operator type not supported");
-    auto time1 = mpqc::now(world, this->accurate_time());
-    auto time = mpqc::duration_in_s(time0, time1);
 
-    if (print_detail_) {
-      size = mpqc::detail::array_size(result);
-      utility::print_par(world, " Size: ", size, " GB\n");
-      utility::print_par(world, " \t3-index g tensor time: ", time_3idx, " s\n");
-      utility::print_par(world, " \tg*D contraction time: ", time_contr, " s\n");
-      utility::print_par(world, " \ttotal time: ", time, " s\n");
+      auto time_contr0 = mpqc::now(world, this->accurate_time());
+      if (RJ == 0)
+        result("K") = g("K, mu, nu") * D_("mu, nu");
+      else
+        result("K") += g("K, mu, nu") * D_("mu, nu");
+      auto time_contr1 = mpqc::now(world, this->accurate_time());
+      time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
+  } else
+    throw std::runtime_error("Rank-3 operator type not supported");
+  auto time1 = mpqc::now(world, this->accurate_time());
+  auto time = mpqc::duration_in_s(time0, time1);
 
-    return result;
+  if (print_detail_) {
+    size = mpqc::detail::array_size(result);
+    utility::print_par(world, " Size: ", size, " GB\n");
+    utility::print_par(world, " \t3-index g tensor time: ", time_3idx, " s\n");
+    utility::print_par(world, " \tg*D contraction time: ", time_contr, " s\n");
+    utility::print_par(world, " \ttotal time: ", time, " s\n");
+  }
+
+  return result;
 }
 
 template <typename Tile, typename Policy>
@@ -998,10 +997,11 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_one_center(
 
   TA_ASSERT(bra_index == OrbitalIndex(L"U") || ket_index == OrbitalIndex(L"U"));
 
-  if (bra_index == OrbitalIndex(L"U"))
+  if (bra_index == OrbitalIndex(L"U")) {
     TA_ASSERT(ket_index.is_ao());
-  else
+  } else {
     TA_ASSERT(bra_index.is_ao());
+  }
 
   const auto &basis_registry = *this->basis_registry();
 

@@ -1,0 +1,252 @@
+MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 30bb8115f19bc60c8d65339f9ccef487c243a48e
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Mon Mar 27 20:31:25 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "3.7"
+        ]
+    },
+    "basis": {
+        "name": "cc-pvdz",
+        "molecule": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz-ri",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "0"
+        ]
+    },
+    "wfn": {
+        "type": "DF-zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "false",
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "1"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9"
+    }
+}
+
+  Using fundamental constants system 2006CODATA
+
+
+ Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
+
+
+Constructing Basis Registry: 
+OBS Basis = cc-pvdz
+( tiles = [ 0, 3 ), elements = [ 0, 24 ) )
+Min and Max block size: 5 14
+Average: 8
+
+DF Basis = cc-pvdz-ri
+( tiles = [ 0, 3 ), elements = [ 0, 84 ) )
+Min and Max block size: 14 56
+Average: 28
+
+
+
+ Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
+
+  Precision = 2.22044604925031e-16
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 0]
+	Rj_max (range of Coulomb operation): [0 0 0]
+	Rd_max (Range of density representation): [0 0 0]
+
+Molecule info:
+	C.O.M:     -1.25931154032024 -8.66750038861037e-05    0.0160224924478108
+	Mass: 18.01056468406
+
+Elements:
+	Atom: {Z: 8, charge: 8, mass: 15.9949146196, pos:  -1.32695823365298 -0.105938530779459 0.0187881523213959}
+	Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:   -1.93166524825143    1.60017432394008 -0.0217105230790492}
+	Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:   0.486644280629864  0.0795980917474381 0.00986247879780404}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 6.99198669167688]
+
+zRHF computational parameters:
+  # of k points in each direction: [1 1 1]
+
+Computing Two Center Integral for Periodic System: < κ |T| λ >
+ Size: 4.29153442382812e-06 GB Time: 0.00256018 s
+
+Computing Two Center Integral for Periodic System: < κ |V| λ >
+ Size: 4.29153442382812e-06 GB Time: 0.017843448 s
+
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 4.29153442382812e-06 GB Time: 0.001530298 s
+
+Building Fock Matrix from SOAD Guess ...
+ Time: 0.181295684 s
+
+	overlap condition number = 107.909711581038 at k = 0
+Computing Two Center Integral for Periodic System: < U | Κ >
+ Size: 6.25848770141602e-07 GB Time: 0.000405048 s
+
+Computing Two Center Integral for Periodic System: < Κ |I| Λ >
+ Size: 2.62856483459473e-05 GB Time: 0.000600108 s
+
+Computing Two Center Integral for Periodic System: ( Κ |G| Λ )
+ Size: 5.25712966918945e-05 GB Time: 0.001860581 s
+
+Computing Vector of Three Center Direct Integral for Periodic System: ( Κ |G| κ λ )
+ Size: 0.000360488891601562 GB Time: 0.030406395 s
+
+Init RI-J time:      0.063442988 s
+
+
+Nuclear Repulsion Energy: 9.15671409307905
+
+
+ Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
+    0     -85.168380499417     -76.011666406338     -85.168380499417       0.000208641894                0.305
+    1     -85.184007319990     -76.027293226911      -0.015626820574       0.000063539441                0.311
+    2     -85.184164031912     -76.027449938833      -0.000156711922       0.000030827760                0.213
+    3     -85.184272718884     -76.027558625805      -0.000108686972       0.000016654495                0.217
+    4     -85.184184160515     -76.027470067436       0.000088558369       0.000009582072                0.246
+    5     -85.184204075931     -76.027489982852      -0.000019915416       0.000005422606                0.240
+    6     -85.184173648364     -76.027459555285       0.000030427567       0.000003147989                0.291
+    7     -85.184180709281     -76.027466616201      -0.000007060916       0.000001807303                0.282
+    8     -85.184171140457     -76.027457047378       0.000009568823       0.000001047317                0.205
+    9     -85.184173895668     -76.027459802589      -0.000002755211       0.000000604616                0.223
+   10     -85.184170922476     -76.027456829397       0.000002973192       0.000000349940                0.270
+   11     -85.184171968728     -76.027457875649      -0.000001046252       0.000000202447                0.250
+   12     -85.184171036622     -76.027456943543       0.000000932107       0.000000117118                0.323
+   13     -85.184171419123     -76.027457326044      -0.000000382501       0.000000067805                0.233
+   14     -85.184171122456     -76.027457029377       0.000000296667       0.000000039223                0.198
+   15     -85.184171258348     -76.027457165269      -0.000000135892       0.000000022713                0.235
+   16     -85.184171162649     -76.027457069570       0.000000095699       0.000000013139                0.222
+   17     -85.184171209896     -76.027457116817      -0.000000047247       0.000000007608                0.214
+   18     -85.184171178764     -76.027457085685       0.000000031132       0.000000004402                0.208
+   19     -85.184171194921     -76.027457101842      -0.000000016157       0.000000002549                0.289
+   20     -85.184171184747     -76.027457091668       0.000000010173       0.000000001475                0.236
+   21     -85.184171190243     -76.027457097164      -0.000000005495       0.000000000854                0.281
+
+Periodic Hartree-Fock iterations have converged!
+
+Total Periodic Hartree-Fock energy = -76.0274570971637
+
+Time(s):
+	Init:                               0.307
+	Coulomb term:                       1.059
+	Exchange term:                      4.085
+	Real->Recip trans:                  0.019
+	Diag + Density:                     0.281
+	Total:                              5.491
+
+  Output KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "3.7"
+        ]
+    },
+    "basis": {
+        "name": "cc-pvdz",
+        "molecule": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz-ri",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "0"
+        ]
+    },
+    "wfn": {
+        "type": "DF-zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "false",
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "1"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9",
+        "value": {
+            "value": "-76.027457097163676"
+        }
+    }
+}
+

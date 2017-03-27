@@ -75,6 +75,48 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   return INFO;
 }
 
+integer svd(double *data, double *s, double *u, double *vt, integer rows,
+            integer cols, const char JOBZ) {
+  double work_dummy;
+  integer LWORK = -1;  // Ask for space computation
+  integer INFO;
+  integer LDA = rows;
+  integer LDU, LDVT;
+  switch (JOBZ) {
+  case 'A':
+    LDU = rows;
+    LDVT = cols;
+    break;
+  case 'S':
+    LDU = std::min(rows, cols);
+    LDVT = LDU;
+    break;
+  case 'O':
+    LDU = 1;
+    LDVT = cols;
+    break;
+  case 'N':
+    LDU = 1;
+    LDVT = 1;
+    break;
+  default:
+    std::cout << "Invalid input for JOBZ" << std::endl;
+  }
+
+  std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
+
+  // Call routine
+  dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
+          &LWORK, iwork.get(), &INFO);
+  assert(INFO == 0);
+  LWORK = work_dummy;
+  std::unique_ptr<double[]> W{new double[LWORK]};
+  dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
+          iwork.get(), &INFO);
+
+  return INFO;
+}
+
 integer form_q(double *data, double *Tau, integer rows, integer rank) {
   double work_dummy = 0.0;
   integer LWORK = -1;

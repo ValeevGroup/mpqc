@@ -1,7 +1,7 @@
 
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_SHELL_VEC_FUNCTIONS_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_SHELL_VEC_FUNCTIONS_H_
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 
@@ -30,4 +30,4 @@ std::vector<std::vector<libint2::Shell>> reblock_basis(
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_SHELL_VEC_FUNCTIONS_H_

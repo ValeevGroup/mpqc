@@ -114,7 +114,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
   }
 
-  ArrayType operator()(ArrayType const &D, ArrayType const &LMO) override {
+  ArrayType operator()(ArrayType const &D, ArrayType const &LMO,
+                       double target_precision = std::numeric_limits<double>::epsilon()) override {
     ArrayType G;
     G("m, n") = 2 * compute_J(D)("m, n") - compute_K(LMO, D)("m, n");
     return G;

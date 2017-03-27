@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_CHEMISTRY_QC_BASIS_LINKAGE_H_
-#define SRC_MPQC_CHEMISTRY_QC_BASIS_LINKAGE_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_LINKAGE_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_LINKAGE_H_
 
 #include "mpqc/util/keyval/forcelink.h"
 
@@ -14,4 +14,4 @@ mpqc::detail::ForceLink<AtomicBasis> fl1;
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif /* SRC_MPQC_CHEMISTRY_QC_BASIS_LINKAGE_H_ */
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_LINKAGE_H_

@@ -5,13 +5,26 @@ compiler:
 - gcc
 - clang
 env:
+- GCC_VERSION=4.8 BUILD_TYPE=Debug
+- GCC_VERSION=4.8 BUILD_TYPE=Release
+- GCC_VERSION=4.9 BUILD_TYPE=Debug
+- GCC_VERSION=4.9 BUILD_TYPE=Release
 - GCC_VERSION=5 BUILD_TYPE=Debug
 - GCC_VERSION=5 BUILD_TYPE=Release
+- GCC_VERSION=6 BUILD_TYPE=Debug
+- GCC_VERSION=6 BUILD_TYPE=Release
 branches:
   only:
   - master
 sudo: false
 matrix:
+  exclude:
+    - compiler: clang
+      env: GCC_VERSION=4.8
+    - compiler: clang
+      env: GCC_VERSION=4.9
+    - compiler: clang
+      env: GCC_VERSION=6
   # Currently clang is unusable for even TiledArray; OK on recent Ubuntu installs though
   allow_failures:
   - compiler: clang
@@ -24,7 +37,10 @@ addons:
     - kubuntu-backports
     - llvm-toolchain-precise-3.8
     packages:
+    - g++-4.8
+    - g++-4.9
     - g++-5
+    - g++-6
     - libeigen3-dev
     - libboost1.55-all-dev
     - libblas-dev

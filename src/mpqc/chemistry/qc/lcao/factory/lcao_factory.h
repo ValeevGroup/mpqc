@@ -82,7 +82,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
       prefix = "wfn_world:";
     }
     keep_partial_transforms_ =
-        kv.value<bool>(prefix + "keep_partial_transform", false);
+        kv.value<bool>(prefix + "keep_partial_transform", true);
 
     auto orbital_space_registry =
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
@@ -256,7 +256,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     // get AO
     auto ao_formula =
         detail::lcao_to_ao(formula_string, this->orbital_registry());
-    auto ao_factory = ao_factory_.compute(ao_formula);
+    auto ao_integral = ao_factory_.compute_direct(ao_formula);
 
     time0 = mpqc::now(world, this->accurate_time_);
 
@@ -266,7 +266,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     auto right_index1 = formula_string.ket_indices()[0];
     if (right_index1.is_lcao()) {
       auto& right1 = this->orbital_registry().retrieve(right_index1);
-      result("K,i,q") = ao_factory("K,p,q") * right1("p,i");
+      result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
     }
     auto right_index2 = formula_string.ket_indices()[1];
     if (right_index2.is_lcao()) {
@@ -281,13 +281,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     std::pair<Formula::Position, size_t> reduced_index_coord;
     std::tie(reduced_formula, reduced_index_coord) =
         reduce_formula(formula_string);
-    auto reduced_integral =
-        reduced_formula.is_ao()
-            ? ao_factory_.compute(reduced_formula)
-            : (keep_partial_transforms() ? this->compute(reduced_formula)
-                                         : this->compute3(reduced_formula));
 
-    time0 = mpqc::now(world, this->accurate_time_);
 
     const auto reduced_index_position = reduced_index_coord.first;
     const auto reduced_index_rank = reduced_index_coord.second;
@@ -313,8 +307,20 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
                      std::to_string(reduced_index_absrank) + ", " +
                      reduced_index.to_ta_expression() +
                      std::to_string(reduced_index_absrank);
-    result(result_key) =
-        reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
+
+    // compute direct three center AO
+    if(reduced_formula.is_ao()){
+      auto reduced_integral = ao_factory_.compute_direct(reduced_formula);
+      time0 = mpqc::now(world, this->accurate_time_);
+      result(result_key) =
+          reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
+    }
+    else{
+      auto reduced_integral = this->compute(reduced_formula);
+      time0 = mpqc::now(world, this->accurate_time_);
+      result(result_key) =
+          reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
+    }
   }
 
   result.truncate();

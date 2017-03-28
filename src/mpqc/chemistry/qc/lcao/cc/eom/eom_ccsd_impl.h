@@ -211,12 +211,14 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSSC(TArray Cai) {
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSDC(TArray Cabij) {
   TArray HSDC;
+  TArray C;
+  C("a,c,i,k") = 2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k");
   HSDC("a,i") =  //   Fkc C^ac_ik
-      FIA_("k,c") * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k"))
-      // + 1/2 Wakcd C^cd_ik
-      + WAkCd_("a,k,c,d") * (2.0 * Cabij("c,d,i,k") - Cabij("d,c,i,k"))
-      // - 1/2 Wklic C^ac_kl
-      - WKlIc_("k,l,i,c") * (2.0 * Cabij("a,c,k,l") - Cabij("a,c,l,k"));
+      FIA_("k,c") * C("a,c,i,k")
+          // + 1/2 Wakcd C^cd_ik
+          + WAkCd_("a,k,c,d") * C("c,d,i,k")
+              // - 1/2 Wklic C^ac_kl
+          - WKlIc_("k,l,i,c") * C("a,c,k,l");
   return HSDC;
 }
 

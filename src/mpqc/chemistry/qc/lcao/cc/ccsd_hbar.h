@@ -193,7 +193,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
       + g_ijka("l,k,i,c") * tau("a,b,k,l")
 
       - g_iabc("k,b,c,d") * t2("a,d,k,i") +
-      (g_iabc("k,a,d,c") * t22("b,d,i,k") - g_iabc("k,a,c,d") * t2("b,d,i,k"))
+      g_iabc("k,a,d,c") * t22("b,d,i,k") - g_iabc("k,a,c,d") * t2("b,d,i,k")
 
       -
       t1("a,k") * (g_ijab("i,k,b,c") + (t22("d,b,l,i") * g_ijab("k,l,c,d") -

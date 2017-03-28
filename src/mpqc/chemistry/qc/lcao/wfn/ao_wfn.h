@@ -98,7 +98,7 @@ class PeriodicAOWavefunction : public Wavefunction {
   PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
   }
-  virtual ~PeriodicAOWavefunction() = default;
+  virtual ~PeriodicAOWavefunction(){};
 
   virtual MatrixzVec co_coeff() = 0;
   virtual VectordVec co_energy() = 0;

@@ -134,8 +134,33 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
   }
   world.gop.fence();
 
+  // If we want to replicate and the size of the tensor is larger than max_int
+  // then we will have to do it using multiple sums.  This is necessary because
+  // MPI_ISend can only send an integer (int) number of things in a single
+  // message. 
   if (replicate) {  // construct the sum
-    world.gop.sum(norms.data(), norms.size());
+    // First get the size in a 64 bit int, if that overflows then it probably
+    // wasn't going to fit on 1 node anyways (2017, maybe one day I'll be wrong)
+    int64_t size = norms.size(); 
+
+    const int64_t int_max = std::numeric_limits<int>::max();
+    if(size < int_max){ // If size fits into an int then life is easy
+      world.gop.sum(norms.data(), size);
+    } else { 
+      // This loop sums int_max elements at a time, it might be a better idea
+      // to try and split the sums up into relatively equal size chunks, but it
+      // overhead of doing 1 really small sum shouldn't matter.
+      auto i = 0; 
+      while(size > int_max){
+        const auto next_ptr = norms.data() + i * int_max;
+        world.gop.sum(next_ptr, int_max);
+        size -= int_max; 
+        ++i;
+      }
+      
+      // get the remaining elements
+      world.gop.sum(norms.data() + i * int_max, size);
+    }
   }
   world.gop.fence();
 

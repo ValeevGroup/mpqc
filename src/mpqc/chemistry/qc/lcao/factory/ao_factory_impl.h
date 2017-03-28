@@ -66,8 +66,8 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
     ExEnv::out0() << std::endl;
   }
   // other initialization
-  screen_ = kv.value<std::string>(prefix + "screen", "");
-  screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
+  screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
+  screen_threshold_ = kv.value<double>(prefix + "screen_threshold", 1.0e-12);
   auto default_precision = std::numeric_limits<double>::epsilon();
   precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
@@ -75,7 +75,7 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   ExEnv::out0() << indent << "Screen = " << (screen_.empty() ? "none" : screen_)
                 << "\n";
   if (!screen_.empty()) {
-    ExEnv::out0() << indent << "Threshold = " << screen_threshold_ << "\n";
+    ExEnv::out0() << indent << "ScreenThreshold = " << screen_threshold_ << "\n";
   }
   ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);

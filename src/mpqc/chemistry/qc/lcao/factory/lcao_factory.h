@@ -75,7 +75,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
    *
    */
   LCAOFactory(const KeyVal& kv)
-      : LCAOFactoryBase<Tile,Policy>(kv),
+      : LCAOFactoryBase<Tile, Policy>(kv),
         ao_factory_(*gaussian::construct_ao_factory<Tile, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
@@ -91,14 +91,14 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
     ao_factory_.set_orbital_registry(orbital_space_registry);
     ExEnv::out0() << "\nConstructing LCAOFactory: \n"
                   << indent << "Keep partial transform = "
-                  << (keep_partial_transforms_ ? "true" : "false")
-                  << "\n" << indent << "Accurate time = "
+                  << (keep_partial_transforms_ ? "true" : "false") << "\n"
+                  << indent << "Accurate time = "
                   << (this->accurate_time_ ? "true" : "false") << "\n\n";
   }
 
   void obsolete() override {
     // obsolete self
-    LCAOFactoryBase<Tile,Policy>::obsolete();
+    LCAOFactoryBase<Tile, Policy>::obsolete();
     // obsolete AOFactory
     ao_factory_.obsolete();
   }
@@ -128,20 +128,20 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
     throw ProgrammingError("Not Implemented!", __FILE__, __LINE__);
   }
 
-  using LCAOFactoryBase<Tile,Policy>::compute;
-  using LCAOFactoryBase<Tile,Policy>::compute_direct;
+  using LCAOFactoryBase<Tile, Policy>::compute;
+  using LCAOFactoryBase<Tile, Policy>::compute_direct;
 
   /// purge formula that contain Operator described by string \c str
   /// from mo_registry and ao_registry
   void purge_operator(const std::wstring& str) override {
-    LCAOFactoryBase<Tile,Policy>::purge_operator(str);
+    LCAOFactoryBase<Tile, Policy>::purge_operator(str);
     ao_factory().purge_operator(str);
   }
 
   /// purge formulae that contain index described by string \c idx_str
   /// from mo_registry and ao_registry
   void purge_index(const std::wstring& idx_str) override {
-    LCAOFactoryBase<Tile,Policy>::purge_index(idx_str);
+    LCAOFactoryBase<Tile, Policy>::purge_index(idx_str);
     ao_factory().purge_index(idx_str);
   }
 
@@ -282,7 +282,6 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     std::tie(reduced_formula, reduced_index_coord) =
         reduce_formula(formula_string);
 
-
     const auto reduced_index_position = reduced_index_coord.first;
     const auto reduced_index_rank = reduced_index_coord.second;
     const auto reduced_index_absrank =
@@ -309,14 +308,16 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
                      std::to_string(reduced_index_absrank);
 
     // compute direct three center AO
-    if(reduced_formula.is_ao()){
+    if (reduced_formula.is_ao() &&
+        !ao_factory_.registry().have(reduced_formula)) {
       auto reduced_integral = ao_factory_.compute_direct(reduced_formula);
       time0 = mpqc::now(world, this->accurate_time_);
       result(result_key) =
           reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
-    }
-    else{
-      auto reduced_integral = this->compute(reduced_formula);
+    } else {
+      auto reduced_integral = reduced_formula.is_ao()
+                                  ? ao_factory_.compute(reduced_formula)
+                                  : this->compute(reduced_formula);
       time0 = mpqc::now(world, this->accurate_time_);
       result(result_key) =
           reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);

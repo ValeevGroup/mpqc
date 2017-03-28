@@ -1,5 +1,5 @@
 set(sources 
-    diis_ccsd.h
+    diis.h
     solvers.h
 )
 

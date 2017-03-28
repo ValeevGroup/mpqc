@@ -147,19 +147,21 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     if(size < int_max){ // If size fits into an int then life is easy
       world.gop.sum(norms.data(), size);
     } else { 
-      // This loop sums int_max elements at a time, it might be a better idea
-      // to try and split the sums up into relatively equal size chunks, but it
-      // overhead of doing 1 really small sum shouldn't matter.
+      // Blah, testing on NewRiver gave failures when trying to write in chunks
+      // of both int_max and int_max/2.  For now I'll be conservative and just
+      // write in small chunks.  Writing in chunks of int_max/10 is slow, but
+      // worked on NR. 
+      const int64_t write_size = int_max/10;
       auto i = 0; 
-      while(size > int_max){
-        const auto next_ptr = norms.data() + i * int_max;
-        world.gop.sum(next_ptr, int_max);
-        size -= int_max; 
+      while(size > write_size){
+        const auto next_ptr = norms.data() + i * write_size;
+        world.gop.sum(next_ptr, write_size);
+        size -= write_size; 
         ++i;
       }
       
       // get the remaining elements
-      world.gop.sum(norms.data() + i * int_max, size);
+      world.gop.sum(norms.data() + i * write_size, size);
     }
   }
   world.gop.fence();

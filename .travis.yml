@@ -25,9 +25,6 @@ matrix:
       env: GCC_VERSION=5 BUILD_TYPE=Debug
     - compiler: clang
       env: GCC_VERSION=5 BUILD_TYPE=Release
-  # Currently clang is unusable for even TiledArray; OK on recent Ubuntu installs though
-  allow_failures:
-  - compiler: clang
 addons:
   apt:
     sources:

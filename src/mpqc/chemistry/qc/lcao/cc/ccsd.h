@@ -614,6 +614,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray g_abij = this->get_abij();
     TArray g_ijkl = this->get_ijkl();
     auto g_abcd = this->lcao_factory().compute_direct(L"(a b|G|c d)[df]");
+//    auto g_abcd = this->lcao_factory().compute(L"(a b|G|c d)[df]");
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
     TArray g_iabc = this->get_iabc();
@@ -663,8 +664,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
-      std::cout << "Reduced ABCD Memory Approach: "
-                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
 
     while (iter < max_iter_) {

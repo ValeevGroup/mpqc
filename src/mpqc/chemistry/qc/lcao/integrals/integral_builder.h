@@ -182,46 +182,35 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     // create tile
     Tile result(range);
 
-    // construct lowbound and upbound
-    std::array<std::size_t, 3> bralow;
-    std::array<std::size_t, 3> braup;
-    std::array<std::size_t, 3> ketlow;
-    std::array<std::size_t, 3> ketup;
+    std::vector<std::size_t> bra_idx(3);
+    bra_idx[1] = idx[0];
+    bra_idx[2] = idx[1];
+    std::vector<std::size_t> ket_idx(3);
+    ket_idx[1] = idx[2];
+    ket_idx[2] = idx[3];
 
-    // df dimension is all tiles
-    bralow[0] = df_lobound_;
-    ketlow[0] = df_lobound_;
-    braup[0] = df_upbound_;
-    ketup[0] = df_upbound_;
+    // loop over density fitting space
 
-    bralow[1] = idx[0];
-    bralow[2] = idx[1];
-    ketlow[1] = idx[2];
-    ketlow[2] = idx[3];
+    for (std::size_t i = df_lobound_; i < df_upbound_; ++i){
 
-    braup[1] = idx[0] + 1;
-    braup[2] = idx[1] + 1;
-    ketup[1] = idx[2] + 1;
-    ketup[2] = idx[3] + 1;
+      bra_idx[0] = i;
+      ket_idx[0] = i;
+      auto future_bra_tile = bra_.find(bra_idx);
+      auto future_ket_tile = ket_.find(ket_idx);
 
-    // do the block contraction
-    TA::DistArray<Tile, Policy> integral_block;
+      TA::math::GemmHelper gemm_helper(madness::cblas::Trans, madness::cblas::NoTrans, 4, 3, 3);
 
-    // not symmetric case
-    if (ket_.is_initialized()) {
-      integral_block("p,q,r,s") = bra_("X,p,q").block(bralow, braup) *
-                                  ket_("X,r,s").block(ketlow, ketup);
-    }
-    // symmetric case
-    else {
-      integral_block("p,q,r,s") = bra_("X,p,q").block(bralow, braup) *
-                                  bra_("X,r,s").block(ketlow, ketup);
+      if(i == df_upbound_){
+        auto tile = future_bra_tile.get().gemm(future_ket_tile.get(),1.0, gemm_helper);
+        result = tile;
+      }
+      else{
+        auto tile = future_bra_tile.get().gemm(future_ket_tile.get(),1.0, gemm_helper);
+        result.add_to(tile);
+      }
+
     }
 
-    // get the tile
-    std::vector<std::size_t> first{0, 0, 0, 0};
-    auto future_tile = integral_block.find(first);
-    result = future_tile.get();
     return result;
   }
 

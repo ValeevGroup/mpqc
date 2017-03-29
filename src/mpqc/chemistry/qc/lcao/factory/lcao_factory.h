@@ -575,6 +575,7 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
 
   TA_ASSERT(formula.rank() == 4);
   TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
+  TA_ASSERT(formula.notation() == Formula::Notation::Chemical);
 
   ExEnv::out0() << incindent;
   double time = 0.0;

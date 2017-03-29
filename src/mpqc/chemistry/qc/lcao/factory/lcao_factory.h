@@ -15,7 +15,9 @@ template <typename Tile, typename Policy>
 class LCAOFactory;
 
 template <typename Tile, typename Policy>
-using LCAOFactoryBase = Factory<TA::DistArray<Tile, Policy>>;
+using LCAOFactoryBase =
+    Factory<TA::DistArray<Tile, Policy>,
+            TA::DistArray<gaussian::DirectDFTile<Tile, Policy>, Policy>>;
 
 template <typename Tile, typename Policy>
 std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
@@ -60,6 +62,8 @@ template <typename Tile, typename Policy>
 class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
+  using DirectTArray =
+      TA::DistArray<gaussian::DirectDFTile<Tile, Policy>, Policy>;
   // for now hardwire to Gaussians
   // TODO generalize to non-gaussian AO operators
   using AOFactoryType = gaussian::AOFactory<Tile, Policy>;
@@ -124,9 +128,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
    */
   TArray compute(const Formula&) override;
 
-  TArray compute_direct(const Formula& formula) override {
-    throw ProgrammingError("Not Implemented!", __FILE__, __LINE__);
-  }
+  DirectTArray compute_direct(const Formula& formula) override;
 
   using LCAOFactoryBase<Tile, Policy>::compute;
   using LCAOFactoryBase<Tile, Policy>::compute_direct;
@@ -155,7 +157,6 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);
 
- protected:
   /// "reduce" by converting to AO at most 1 index in the formula,
   /// the index is chosen to minimize strength reduction (thus recursive
   /// reduction ensures maximum strength reduction)
@@ -567,6 +568,56 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
   ExEnv::out0() << decindent;
   return result;
 }
+
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::compute_direct(
+    const Formula& formula) {
+
+  TA_ASSERT(formula.rank() == 4);
+  TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
+
+  double time = 0.0;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
+  auto& world = this->world();
+  DirectTArray result;
+
+  auto iter = this->direct_registry_.find(formula);
+
+  if(iter != this->direct_registry_.end()){
+    result = iter->second;
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
+                  << utility::to_string(formula.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB\n";
+  }
+  else {
+    // get three center integral
+    auto df_formulas = gaussian::detail::get_df_formula(formula);
+    TArray left = compute(df_formulas[0]);
+    TArray right = compute(df_formulas[2]);
+    TArray center = compute(df_formulas[1]);
+
+    time0 = mpqc::now(world, this->accurate_time_);
+
+    left("K,i,j") = center("K,Q")*left("Q,i,j");
+    result = gaussian::df_direct_integrals(left, right);
+
+    time1 = mpqc::now(world, this->accurate_time_);
+    time = mpqc::duration_in_s(time0, time1);
+    this->direct_registry_.insert(formula, result);
+  }
+
+  ExEnv::out0() << indent;
+  ExEnv::out0() << "Computed LCAO Direct Integral From Density-Fitting: "
+                << utility::to_string(formula.string());
+  double size = mpqc::detail::array_size(result);
+  ExEnv::out0() << " Size: " << size << " GB"
+                << " Time: " << time << " s\n";
+  return result;
+
+};
 
 #if TA_DEFAULT_POLICY == 0
 extern template class LCAOFactory<TA::TensorD, TA::DensePolicy>;

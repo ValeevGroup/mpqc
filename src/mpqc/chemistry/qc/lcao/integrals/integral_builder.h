@@ -158,11 +158,11 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
       const TA::DistArray<Tile, Policy> &left,
       const TA::DistArray<Tile, Policy> &right = TA::DistArray<Tile, Policy>())
       : bra_(left), ket_(right), id_(left.world().register_ptr(this)) {
-    df_lobound_ = bra_.trange().data().front().tiles().first;
-    df_upbound_ = bra_.trange().data().front().tiles().second;
+    df_lobound_ = bra_.trange().data().front().tiles_range().first;
+    df_upbound_ = bra_.trange().data().front().tiles_range().second;
 
-    TA_ASSERT(df_lobound_ == ket_.trange().data().front().tiles().first);
-    TA_ASSERT(df_upbound_ == ket_.trange().data().front().tiles().second);
+    TA_ASSERT(df_lobound_ == ket_.trange().data().front().tiles_range().first);
+    TA_ASSERT(df_upbound_ == ket_.trange().data().front().tiles_range().second);
   }
 
   DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = default;

@@ -95,7 +95,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
     solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
     if (solver_str_ != "jacobi_diis" && solver_str_ != "pno")
-      throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
+      throw InputError("invalid value for solver keyword", __FILE__, __LINE__,
+                       "solver");
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
 
@@ -112,7 +113,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
   /// private members
  protected:
-  const KeyVal kv_;  // the input keyval is kept to avoid heavy initialization in ctor
+  const KeyVal
+      kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
   std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
@@ -202,9 +204,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         solver_ = std::make_shared<cc::JacobiDIISSolver<TArray>>(
             kv_, f_pq_diagonal_->segment(n_frozen, n_act_occ),
             f_pq_diagonal_->segment(n_occ, n_uocc));
-      }
-      else if (solver_str_ == "pno")
-        solver_ = std::make_shared<cc::PNOSolver<TArray>>(kv_, this->lcao_factory());
+      } else if (solver_str_ == "pno")
+        solver_ = std::make_shared<
+            cc::PNOSolver<TArray, typename LCAOFactory<Tile,Policy>::DirectTArray>>(
+            kv_, this->lcao_factory());
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 
@@ -220,7 +223,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
+        direct_ao_array_ =
+            this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -280,9 +284,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
     double E0 = 0.0;
-    double E1 =
-        2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
+    double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+                TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double mp2 = E1;
     double dE = std::abs(E1 - E0);
 
@@ -324,13 +327,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         r1("a,i") = f_ai("a,i") - 2.0 * (f_ai("c,k") * t1("c,i")) * t1("a,k");
 
         {
-          h_ac("a,c") = f_ab("a,c")
-              -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
+          h_ac("a,c") =
+              f_ab("a,c") -
+              (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 
         {
-          h_ki("k,i") = f_ij("k,i") +
+          h_ki("k,i") =
+              f_ij("k,i") +
               (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
           r1("a,i") -= t1("a,k") * h_ki("k,i");
         }
@@ -534,7 +539,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
 
       // error = residual norm per element
-      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+      error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2))) /
               (size(r1) + size(r2));
 
       // recompute energy
@@ -639,9 +644,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
     double E0 = 0.0;
-    double E1 =
-        2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
+    double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+                TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double mp2 = E1;
     double dE = std::abs(E1 - E0);
 
@@ -683,13 +687,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
 
         {
-          h_ac("a,c") = f_ab("a,c")
-              -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
+          h_ac("a,c") =
+              f_ab("a,c") -
+              (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 
         {
-          h_ki("k,i") = f_ij("k,i") +
+          h_ki("k,i") =
+              f_ij("k,i") +
               (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
           r1("a,i") -= t1("a,k") * h_ki("k,i");
         }
@@ -893,7 +899,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
 
       // error = residual norm per element
-      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+      error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2))) /
               (size(r1) + size(r2));
 
       // recompute energy
@@ -1005,9 +1011,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
     double E0 = 0.0;
-    double E1 =
-        2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
-        TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
+    double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+                TA::dot(g_abij("a,b,i,j"), 2 * tau("a,b,i,j") - tau("b,a,i,j"));
     double dE = std::abs(E1 - E0);
     double mp2 = E1;
 
@@ -1053,10 +1058,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // external index i and a
 
         tmp_time0 = mpqc::now(world, accurate_time);
-        h_ac("a,c") = f_ab("a,c")
-            -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
+        h_ac("a,c") =
+            f_ab("a,c") -
+            (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
-        h_ki("k,i") = f_ij("k,i") +
+        h_ki("k,i") =
+            f_ij("k,i") +
             (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
 
         // compute residual r1(n) (at convergence r1 = 0)
@@ -1257,7 +1264,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
 
       // error = residual norm per element
-      error = std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+      error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2))) /
               (size(r1) + size(r2));
 
       // recompute energy
@@ -1500,12 +1507,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
-      u2_u11("p, r, i, j") = 0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
+      u2_u11("p, r, i, j") =
+          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
       throw ProgrammingError(
           "CCSD: integral-direct implementation used, but direct integral not "
-          "initialized", __FILE__, __LINE__);
+          "initialized",
+          __FILE__, __LINE__);
     }
   }
 };  // class CCSD

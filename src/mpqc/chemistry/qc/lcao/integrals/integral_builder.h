@@ -191,24 +191,22 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
 
     // loop over density fitting space
 
-    for (std::size_t i = df_lobound_; i < df_upbound_; ++i){
-
+    for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
       bra_idx[0] = i;
       ket_idx[0] = i;
       auto future_bra_tile = bra_.find(bra_idx);
       auto future_ket_tile = ket_.find(ket_idx);
 
-      TA::math::GemmHelper gemm_helper(madness::cblas::Trans, madness::cblas::NoTrans, 4, 3, 3);
+      TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
+                                       madness::cblas::NoTrans, 4, 3, 3);
 
-      if(i == df_upbound_){
-        auto tile = future_bra_tile.get().gemm(future_ket_tile.get(),1.0, gemm_helper);
-        result = tile;
+      if (i == df_lobound_) {
+        result =
+            future_bra_tile.get().gemm(future_ket_tile.get(), 1.0, gemm_helper);
+      } else {
+        result.add_to(future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
+                                                 gemm_helper));
       }
-      else{
-        auto tile = future_bra_tile.get().gemm(future_ket_tile.get(),1.0, gemm_helper);
-        result.add_to(tile);
-      }
-
     }
 
     return result;

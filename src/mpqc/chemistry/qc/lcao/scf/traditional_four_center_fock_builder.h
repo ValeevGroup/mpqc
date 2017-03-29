@@ -1,7 +1,7 @@
 
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
-// clang-format off
+
 #include <cassert>
 
 #include <tiledarray.h>
@@ -327,6 +327,7 @@ class FourCenterFockBuilder
     const auto* D03_ptr = compute_K_ ? D03.data() : nullptr;
     const auto* D12_ptr = compute_K_ ? D12.data() : nullptr;
     const auto* D13_ptr = compute_K_ ? D13.data() : nullptr;
+
     // compute contributions to all Fock matrices
     {
       auto& screen = *p_screener_;

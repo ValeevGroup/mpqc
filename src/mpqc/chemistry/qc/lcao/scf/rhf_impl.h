@@ -233,12 +233,7 @@ void RHF<Tile, Policy>::compute_density() {
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::build_F() {
-  auto &world = F_.world();
-  auto t0 = mpqc::fenced_now(world);
   auto G = f_builder_->operator()(D_, C_);
-  auto t1 = mpqc::fenced_now(world);
-  auto t_fock = mpqc::duration_in_s(t0, t1);
-  ExEnv::out0() << "\n\nTwo-body Fock Build Time: " << t_fock << std::endl << std::endl;
   F_("i,j") = H_("i,j") + G("i,j");
 }
 

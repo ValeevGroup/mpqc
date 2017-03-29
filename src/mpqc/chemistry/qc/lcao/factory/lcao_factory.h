@@ -576,6 +576,7 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
   TA_ASSERT(formula.rank() == 4);
   TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
 
+  ExEnv::out0() << incindent;
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -597,7 +598,7 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
     auto df_formulas = gaussian::detail::get_df_formula(formula);
     TArray left = compute(df_formulas[0]);
     TArray right = compute(df_formulas[2]);
-    TArray center = compute(df_formulas[1]);
+    TArray center = ao_factory_.compute(df_formulas[1]);
 
     time0 = mpqc::now(world, this->accurate_time_);
 
@@ -615,6 +616,7 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
   double size = mpqc::detail::array_size(result);
   ExEnv::out0() << " Size: " << size << " GB"
                 << " Time: " << time << " s\n";
+  ExEnv::out0() << decindent;
   return result;
 
 };

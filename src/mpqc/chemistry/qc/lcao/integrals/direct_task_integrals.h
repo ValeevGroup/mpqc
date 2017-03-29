@@ -252,7 +252,7 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
       std::make_shared<DirectDFIntegralBuilder<Tile, TA::DensePolicy>>(bra,
                                                                        ket);
 
-  auto world = bra.world();
+  auto& world = bra.world();
 
   TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy> result(
       world, trange);

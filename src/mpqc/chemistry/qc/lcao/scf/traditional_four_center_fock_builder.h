@@ -1,13 +1,14 @@
 
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
-
+// clang-format off
 #include <cassert>
 
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
+#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 
 namespace mpqc {
 namespace scf {
@@ -93,13 +94,17 @@ class FourCenterFockBuilder
                         std::shared_ptr<const Basis> bra_basis,
                         std::shared_ptr<const Basis> ket_basis,
                         std::shared_ptr<const Basis> density_basis,
-                        bool compute_J, bool compute_K)
+                        bool compute_J, bool compute_K,
+                        std::string screen = "schwarz",
+                        double screen_threshold = 1.0e-10)
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
         bra_basis_(std::move(bra_basis)),
         ket_basis_(std::move(ket_basis)),
-        density_basis_(std::move(density_basis)) {
+        density_basis_(std::move(density_basis)),
+        screen_(screen),
+        screen_threshold_(screen_threshold) {
     // same basis on each center only
     assert(bra_basis_ == ket_basis_ && bra_basis_ == density_basis_ &&
            "not yet implemented");
@@ -155,6 +160,9 @@ class FourCenterFockBuilder
         oper_type,
         utility::make_array_of_refs(basis, basis, basis, basis),
         libint2::BraKet::xx_xx);
+    // make screener
+    auto bases = ::mpqc::lcao::gaussian::BasisVector{{basis, basis, basis, basis}};
+    p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(compute_world, engines_, bases, screen_, screen_threshold_);
 
     // compute shell-level schwarz matrices Q
     //auto Q = make_schwarz_Q_shells(compute_world, bra_basis_, bra_basis_);
@@ -245,8 +253,11 @@ class FourCenterFockBuilder
   std::shared_ptr<const Basis> bra_basis_;
   std::shared_ptr<const Basis> ket_basis_;
   std::shared_ptr<const Basis> density_basis_;
+  const std::string screen_;
+  const double screen_threshold_;
 
   // mutated by compute_ functions
+  mutable std::shared_ptr<lcao::Screener> p_screener_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile>
       local_fock_tiles_;
   mutable TA::TiledRange trange_D_;
@@ -316,13 +327,13 @@ class FourCenterFockBuilder
     const auto* D03_ptr = compute_K_ ? D03.data() : nullptr;
     const auto* D12_ptr = compute_K_ ? D12.data() : nullptr;
     const auto* D13_ptr = compute_K_ ? D13.data() : nullptr;
-
     // compute contributions to all Fock matrices
     {
+      auto& screen = *p_screener_;
       auto engine = engines_->local();
       const auto engine_precision = target_precision_;
       engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
+      const auto& computed_shell_sets = engine.results();
 
       const auto& basis = bra_basis_;
       // shell clusters for this tile
@@ -338,92 +349,115 @@ class FourCenterFockBuilder
 
       // loop over unique shell sets
       // N.B. skip nonunique shell sets that did not get eliminated by unique cluster set iteration
-      for(const auto& shell0: cluster0) {
+      for (const auto& shell0 : cluster0) {
         const auto nf0 = shell0.size();
         auto cf1_offset = 0;
         auto bf1_offset = rng1.first;
-        for(const auto& shell1: cluster1) {
-          // skip if shell set is nonunique
-          if (bf0_offset < bf1_offset)
-            break;  // assuming basis functions increase monotonically in the basis
-          const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
-
-          const auto nf1 = shell1.size();
-          auto cf2_offset = 0;
-          auto bf2_offset = rng2.first;
-          for(const auto& shell2: cluster2) {
+        if (!screen.skip(bf0_offset)) {
+          for (const auto& shell1 : cluster1) {
             // skip if shell set is nonunique
-            if (bf0_offset < bf2_offset)
-              break;
+            if (bf0_offset < bf1_offset)
+              break;  // assuming basis functions increase monotonically in the basis
+            const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
-            const auto nf2 = shell2.size();
-            auto cf3_offset = 0;
-            auto bf3_offset = rng3.first;
-            for(const auto& shell3: cluster3) {
-              const auto nf3 = shell3.size();
+            const auto nf1 = shell1.size();
+            auto cf2_offset = 0;
+            auto bf2_offset = rng2.first;
+            if (!screen.skip(bf0_offset, bf1_offset)) {
+              for (const auto& shell2 : cluster2) {
+                // skip if shell set is nonunique
+                if (bf0_offset < bf2_offset) break;
 
-              // skip if shell set is nonunique
-              if (bf2_offset < bf3_offset || (bf0_offset == bf2_offset && bf1_offset < bf3_offset))
-                break;
+                const auto nf2 = shell2.size();
+                auto cf3_offset = 0;
+                auto bf3_offset = rng3.first;
+                if (!screen.skip(bf0_offset, bf1_offset, bf2_offset)) {
+                  for (const auto& shell3 : cluster3) {
+                    const auto nf3 = shell3.size();
 
-              const auto multiplicity23 = bf2_offset == bf3_offset ? 1.0 : 2.0;
-              const auto multiplicity0213 = (bf0_offset == bf2_offset && bf1_offset == bf3_offset) ? 1.0 : 2.0;
-              const auto multiplicity = multiplicity01 * multiplicity23 * multiplicity0213;
+                    // skip if shell set is nonunique
+                    if (bf2_offset < bf3_offset ||
+                        (bf0_offset == bf2_offset && bf1_offset < bf3_offset))
+                      break;
 
-              // compute shell set
-              engine.compute2<libint2::Operator::coulomb, libint2::BraKet::xx_xx, 0>(
-                  shell0, shell1, shell2, shell3);
-              const auto* eri_0123 = computed_shell_sets[0];
-              if (eri_0123 != nullptr) { // if the shell set is not screened out
+                    const auto multiplicity23 =
+                        bf2_offset == bf3_offset ? 1.0 : 2.0;
+                    const auto multiplicity0213 =
+                        (bf0_offset == bf2_offset && bf1_offset == bf3_offset)
+                            ? 1.0
+                            : 2.0;
+                    const auto multiplicity =
+                        multiplicity01 * multiplicity23 * multiplicity0213;
 
-              for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-                const auto cf0 = f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
-                for (auto f1 = 0; f1 != nf1; ++f1) {
-                  const auto cf1 = f1 + cf1_offset;
-                  const auto cf01 = cf0 * rng1_size + cf1;  // index of {cf0,cf1} in D01 or F01
-                  for (auto f2 = 0; f2 != nf2; ++f2) {
-                    const auto cf2 = f2 + cf2_offset;
-                    const auto cf02 = cf0 * rng2_size + cf2;  // index of {cf0,cf2} in D02 or F02
-                    const auto cf12 = cf1 * rng2_size + cf2;  // index of {cf1,cf2} in D12 or F12
-                    for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-                      const auto cf3 = f3 + cf3_offset;
-                      const auto cf03 = cf0 * rng3_size + cf3;  // index of {cf0,cf3} in D03 or F03
-                      const auto cf13 = cf1 * rng3_size + cf3;  // index of {cf1,cf3} in D13 or F13
-                      const auto cf23 = cf2 * rng3_size + cf3;  // index of {cf2,cf3} in D23 or F23
+                    if (!screen.skip(bf0_offset, bf1_offset, bf2_offset,
+                                     bf3_offset)) {
+                      // compute shell set
+                      engine.compute2<libint2::Operator::coulomb,
+                                      libint2::BraKet::xx_xx, 0>(
+                          shell0, shell1, shell2, shell3);
+                      const auto* eri_0123 = computed_shell_sets[0];
+                      if (eri_0123 != nullptr) {  // if the shell set is not screened out
 
-                      const auto value = eri_0123[f0123];
+                        for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+                          const auto cf0 =
+                              f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
+                          for (auto f1 = 0; f1 != nf1; ++f1) {
+                            const auto cf1 = f1 + cf1_offset;
+                            const auto cf01 =
+                                cf0 * rng1_size + cf1;  // index of {cf0,cf1} in D01 or F01
+                            for (auto f2 = 0; f2 != nf2; ++f2) {
+                              const auto cf2 = f2 + cf2_offset;
+                              const auto cf02 =
+                                  cf0 * rng2_size + cf2;  // index of {cf0,cf2} in D02 or F02
+                              const auto cf12 =
+                                  cf1 * rng2_size + cf2;  // index of {cf1,cf2} in D12 or F12
+                              for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+                                const auto cf3 = f3 + cf3_offset;
+                                const auto cf03 =
+                                    cf0 * rng3_size + cf3;  // index of {cf0,cf3} in D03 or F03
+                                const auto cf13 =
+                                    cf1 * rng3_size + cf3;  // index of {cf1,cf3} in D13 or F13
+                                const auto cf23 =
+                                    cf2 * rng3_size + cf3;  // index of {cf2,cf3} in D23 or F23
 
-                      const auto value_scaled_by_multiplicity = value * multiplicity;
+                                const auto value = eri_0123[f0123];
 
-                      if (compute_J_) {
-                        F01_ptr[cf01] += D23_ptr[cf23] * value_scaled_by_multiplicity;
-                        F23_ptr[cf23] += D01_ptr[cf01] * value_scaled_by_multiplicity;
-                      }
-                      if (compute_K_) {
-                        F02_ptr[cf02] -=
-                            0.25 * D13_ptr[cf13] * value_scaled_by_multiplicity;
-                        F13_ptr[cf13] -=
-                            0.25 * D02_ptr[cf02] * value_scaled_by_multiplicity;
-                        F03_ptr[cf03] -=
-                            0.25 * D12_ptr[cf12] * value_scaled_by_multiplicity;
-                        F12_ptr[cf12] -=
-                            0.25 * D03_ptr[cf03] * value_scaled_by_multiplicity;
+                                const auto value_scaled_by_multiplicity =
+                                    value * multiplicity;
+
+                                if (compute_J_) {
+                                  F01_ptr[cf01] += D23_ptr[cf23] *
+                                                   value_scaled_by_multiplicity;
+                                  F23_ptr[cf23] += D01_ptr[cf01] *
+                                                   value_scaled_by_multiplicity;
+                                }
+                                if (compute_K_) {
+                                  F02_ptr[cf02] -= 0.25 * D13_ptr[cf13] *
+                                                   value_scaled_by_multiplicity;
+                                  F13_ptr[cf13] -= 0.25 * D02_ptr[cf02] *
+                                                   value_scaled_by_multiplicity;
+                                  F03_ptr[cf03] -= 0.25 * D12_ptr[cf12] *
+                                                   value_scaled_by_multiplicity;
+                                  F12_ptr[cf12] -= 0.25 * D03_ptr[cf03] *
+                                                   value_scaled_by_multiplicity;
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
+                    cf3_offset += nf3;
+                    bf3_offset += nf3;
                   }
                 }
+                cf2_offset += nf2;
+                bf2_offset += nf2;
               }
-
-              }
-
-              cf3_offset += nf3;
-              bf3_offset += nf3;
             }
-            cf2_offset += nf2;
-            bf2_offset += nf2;
+            cf1_offset += nf1;
+            bf1_offset += nf1;
           }
-          cf1_offset += nf1;
-          bf1_offset += nf1;
         }
         cf0_offset += nf0;
         bf0_offset += nf0;

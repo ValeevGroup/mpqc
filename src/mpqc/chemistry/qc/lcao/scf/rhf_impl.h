@@ -233,7 +233,12 @@ void RHF<Tile, Policy>::compute_density() {
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::build_F() {
+  auto &world = F_.world();
+  auto t0 = mpqc::fenced_now(world);
   auto G = f_builder_->operator()(D_, C_);
+  auto t1 = mpqc::fenced_now(world);
+  auto t_fock = mpqc::duration_in_s(t0, t1);
+  ExEnv::out0() << "\n\nTwo-body Fock Build Time: " << t_fock << std::endl << std::endl;
   F_("i,j") = H_("i,j") + G("i,j");
 }
 
@@ -390,11 +395,15 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto& world = this->ao_factory().world();
+  auto& factory = this->ao_factory();
+  auto& world = factory.world();
+  auto& ao_factory = ::mpqc::lcao::gaussian::to_ao_factory(factory);
+  auto screen = ao_factory.screen();
+  auto screen_threshold = ao_factory.screen_threshold();
   auto basis =
       this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   this->f_builder_ = std::make_unique<scf::FourCenterFockBuilder<Tile, Policy>>(
-      world, basis, basis, basis, true, true);
+      world, basis, basis, basis, true, true, screen, screen_threshold);
 }
 
 /**

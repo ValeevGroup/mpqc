@@ -2,8 +2,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integral_builder.h"
+#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 
 #include <madness/world/worldptr.h>
 
@@ -32,7 +32,7 @@ class DirectTile {
   std::shared_ptr<Builder> builder_;
 
  public:
-  using value_type = double;
+  using value_type = typename Tile::numeric_type;
   using eval_type = Tile;
   using range_type = TA::Range;
 
@@ -51,7 +51,7 @@ class DirectTile {
   operator eval_type() const { return builder_->operator()(idx_, range_); }
 
   /*! \brief Allows for truncate to be called on direct tiles
-   * 
+   *
    * \note In reduced scaling code this could lead to expensive higher order
    * operations depending on the size of the array.
    */
@@ -130,6 +130,66 @@ class DirectArray {
   std::shared_ptr<Builder> builder() { return builder_; }
 
   const std::shared_ptr<Builder> builder() const { return builder_; }
+};
+
+/*
+ * A Direct Integral Tile that computes Tile on the fly using Density Fitting
+ * three center integral
+ */
+template <typename Tile, typename Policy>
+class DirectDFTile {
+ public:
+  using Builder = DirectDFIntegralBuilder<Tile, Policy>;
+  using value_type = typename Tile::numeric_type;
+  using eval_type = Tile;
+  using range_type = TA::Range;
+
+  DirectDFTile() = default;
+  DirectDFTile(DirectDFTile const &) = default;
+  DirectDFTile(DirectDFTile &&) = default;
+  DirectDFTile &operator=(DirectDFTile const &) = default;
+  DirectDFTile &operator=(DirectDFTile &&) = default;
+
+  DirectDFTile(std::vector<std::size_t> index, TA::Range range,
+               std::shared_ptr<Builder> builder)
+      : idx_(std::move(index)),
+        range_(std::move(range)),
+        builder_(std::move(builder)) {}
+
+  /// compute and return Tile
+  operator eval_type() const { return builder_->operator()(idx_, range_); }
+
+  /// output serialize
+  template <typename Archive>
+  std::enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
+  serialize(Archive &ar) {
+    ar &idx_;
+    ar &range_;
+    TA_ASSERT(builder_ != nullptr);
+    ar & builder_->id();
+  }
+
+  /// input serialize
+  template <typename Archive>
+  std::enable_if_t<madness::archive::is_input_archive<Archive>::value, void>
+  serialize(Archive &ar) {
+    ar &idx_;
+    ar &range_;
+    madness::uniqueidT id;
+    ar &id;
+
+    TA_ASSERT(builder_ == nullptr);
+    madness::World *world = madness::World::world_from_id(id.get_world_id());
+    // dynamic cast
+    builder_ = std::dynamic_pointer_cast<Builder>(
+        world->template shared_ptr_from_id<Builder>(id));
+    TA_ASSERT(builder_ != nullptr);
+  }
+
+ private:
+  std::vector<std::size_t> idx_;
+  TA::Range range_;
+  std::shared_ptr<Builder> builder_;
 };
 
 }  // namespace gaussian

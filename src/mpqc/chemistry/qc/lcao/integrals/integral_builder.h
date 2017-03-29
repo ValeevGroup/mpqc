@@ -12,8 +12,8 @@
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
-#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
+#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/math/groups/petite_list.h"
 
 namespace mpqc {
@@ -51,7 +51,8 @@ class IntegralBuilder
    * \param screen is a shared pointer to a Screener type
    * \param op should be a thread safe function or functor that takes a
    *  rvalue of a TA::TensorD and returns a valid TA::Array tile.
-   * \param plist the PetiteList object describing the symmetry properties of the set of AO integrals
+   * \param plist the PetiteList object describing the symmetry properties of
+   * the set of AO integrals
    */
   IntegralBuilder(ShrPool<Engine> shr_epool,
                   std::shared_ptr<BasisVector> shr_bases,
@@ -121,7 +122,7 @@ class IntegralBuilder
 template <typename Tile, typename Engine = libint2::Engine>
 class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
  public:
-  using Op = typename IntegralBuilder<Tile,Engine>::Op;
+  using Op = typename IntegralBuilder<Tile, Engine>::Op;
 
   DirectIntegralBuilder(madness::World &world, ShrPool<Engine> shr_epool,
                         std::shared_ptr<BasisVector> shr_bases,
@@ -139,11 +140,101 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
     }
   }
 
-  using IntegralBuilder<Tile,Engine>::operator();
-  using IntegralBuilder<Tile,Engine>::integrals;
-  using IntegralBuilder<Tile,Engine>::op;
+  using IntegralBuilder<Tile, Engine>::operator();
+  using IntegralBuilder<Tile, Engine>::integrals;
+  using IntegralBuilder<Tile, Engine>::op;
 
  private:
+  madness::uniqueidT id_;
+};
+
+template <typename Tile, typename Policy>
+class DirectDFIntegralBuilder : public std::enable_shared_from_this<
+                                    DirectDFIntegralBuilder<Tile, Policy>> {
+ public:
+  // constructor
+  DirectDFIntegralBuilder() = default;
+  DirectDFIntegralBuilder(
+      const TA::DistArray<Tile, Policy> &left,
+      const TA::DistArray<Tile, Policy> &right = TA::DistArray<Tile, Policy>())
+      : bra_(left), ket_(right), id_(left.world().register_ptr(this)) {
+    df_lobound_ = bra_.trange().data().front().tiles().first;
+    df_upbound_ = bra_.trange().data().front().tiles().second;
+
+    TA_ASSERT(df_lobound_ == ket_.trange().data().front().tiles().first);
+    TA_ASSERT(df_upbound_ == ket_.trange().data().front().tiles().second);
+  }
+
+  DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = default;
+
+  ~DirectDFIntegralBuilder() {
+    if (madness::initialized()) {
+      madness::World *world = madness::World::world_from_id(id_.get_world_id());
+      world->unregister_ptr(this);
+    }
+  }
+
+  madness::uniqueidT id() const { return id_; }
+
+  // compute Tile for particular block
+  Tile operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
+    TA_ASSERT(idx.size() == 4);
+    // create tile
+    Tile result(range);
+
+    // construct lowbound and upbound
+    std::array<std::size_t, 3> bralow;
+    std::array<std::size_t, 3> braup;
+    std::array<std::size_t, 3> ketlow;
+    std::array<std::size_t, 3> ketup;
+
+    // df dimension is all tiles
+    bralow[0] = df_lobound_;
+    ketlow[0] = df_lobound_;
+    braup[0] = df_upbound_;
+    ketup[0] = df_upbound_;
+
+    bralow[1] = idx[0];
+    bralow[2] = idx[1];
+    ketlow[1] = idx[2];
+    ketlow[2] = idx[3];
+
+    braup[1] = idx[0] + 1;
+    braup[2] = idx[1] + 1;
+    ketup[1] = idx[2] + 1;
+    ketup[2] = idx[3] + 1;
+
+    // do the block contraction
+    TA::DistArray<Tile, Policy> integral_block;
+
+    // not symmetric case
+    if (ket_.is_initialized()) {
+      integral_block("p,q,r,s") = bra_("X,p,q").block(bralow, braup) *
+                                  ket_("X,r,s").block(ketlow, ketup);
+    }
+    // symmetric case
+    else {
+      integral_block("p,q,r,s") = bra_("X,p,q").block(bralow, braup) *
+                                  bra_("X,r,s").block(ketlow, ketup);
+    }
+
+    // get the tile
+    std::vector<std::size_t> first{0, 0, 0, 0};
+    auto future_tile = integral_block.find(first);
+    result = future_tile.get();
+    return result;
+  }
+
+ private:
+  // left hand size three center integral
+  TA::DistArray<Tile, Policy> bra_;
+  // right hand size three center integral
+  TA::DistArray<Tile, Policy> ket_;
+  // low bound for density fitting dimension, should be zero
+  std::size_t df_lobound_;
+  // up bound for density fitting dimension, should be the max
+  std::size_t df_upbound_;
+  // madness id for serailization
   madness::uniqueidT id_;
 };
 
@@ -156,7 +247,8 @@ std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
     ShrPool<Engine> shr_epool, std::shared_ptr<BasisVector> shr_bases,
     std::shared_ptr<Screener> shr_screen,
     std::function<Tile(TA::TensorD &&)> op,
-    std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
+    std::shared_ptr<const math::PetiteList> plist =
+        math::PetiteList::make_trivial()) {
   return std::make_shared<IntegralBuilder<Tile, Engine>>(
       std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
       std::move(op), std::move(plist));

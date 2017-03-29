@@ -69,7 +69,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
-   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
+   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard method |
    */
 
   // clang-format on
@@ -205,8 +205,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
             kv_, f_pq_diagonal_->segment(n_frozen, n_act_occ),
             f_pq_diagonal_->segment(n_occ, n_uocc));
       } else if (solver_str_ == "pno")
-        solver_ = std::make_shared<
-            cc::PNOSolver<TArray, typename LCAOFactory<Tile,Policy>::DirectTArray>>(
+        solver_ = std::make_shared<cc::PNOSolver<
+            TArray, typename LCAOFactory<Tile, Policy>::DirectTArray>>(
             kv_, this->lcao_factory());
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
@@ -613,7 +613,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     // get all two electron integrals
     TArray g_abij = this->get_abij();
     TArray g_ijkl = this->get_ijkl();
-    TArray g_abcd = this->get_abcd();
+    auto g_abcd = this->lcao_factory().compute_direct(L"(a b|G|c d)[df]");
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
     TArray g_iabc = this->get_iabc();
@@ -858,33 +858,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       tmp_time0 = mpqc::now(world, accurate_time);
       {
         // compute b intermediate
-        if (reduced_abcd_memory_) {
-          // avoid store b_abcd
-          TArray b_abij;
-          b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
+        // avoid store b_abcd
+        TArray b_abij;
+        b_abij("a,b,i,j") =  tau("c,d,i,j") * g_abcd("a,c,b,d");
 
-          b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
+        b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
 
-          b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
+        b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
-          if (print_detail_) {
-            mpqc::detail::print_size_info(b_abij, "B_abij");
-          }
-
-          r2("a,b,i,j") += b_abij("a,b,i,j");
-        } else {
-          TArray b_abcd;
-
-          b_abcd("a,b,c,d") = g_abcd("a,b,c,d") -
-                              g_aibc("a,k,c,d") * t1("b,k") -
-                              g_iabc("k,b,c,d") * t1("a,k");
-
-          if (print_detail_) {
-            mpqc::detail::print_size_info(b_abcd, "B_abcd");
-          }
-
-          r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
+        if (print_detail_) {
+          mpqc::detail::print_size_info(b_abij, "B_abij");
         }
+
+        r2("a,b,i,j") += b_abij("a,b,i,j");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
       tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);

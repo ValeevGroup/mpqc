@@ -257,19 +257,21 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
   TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy> result(
       world, trange);
 
-  auto task_f = [builder_ptr](detail::IdxVec idx, TA::Range &range) {
-    return DirectDFTile<Tile, TA::DensePolicy>(std::move(idx), std::move(range),
-                                               std::move(builder_ptr));
-  };
-
-  auto pmap = result.pmap();
-  for (const auto &ord : *pmap) {
+  auto task_f = [builder_ptr,&trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    auto tile_future = world.taskq.add(task_f, idx, range);
-    result.set(ord, tile_future);
-  }
+    return DirectDFTile<Tile, TA::SparsePolicy>(
+        std::move(idx), std::move(range), builder_ptr);
+  };
 
+  // set all tiles
+  auto pmap = result.pmap();
+  for (const auto &ord : *pmap) {
+    if (!result.is_zero(ord)) {
+      auto tile_future = world.taskq.add(task_f, ord);
+      result.set(ord, tile_future);
+    }
+  }
   world.gop.fence();
 
   return result;
@@ -328,17 +330,17 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
   TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy> result(
       world, trange, shape, pmap);
 
-  auto task_f = [builder_ptr](detail::IdxVec idx, TA::Range &range) {
+  auto task_f = [builder_ptr,&trange](int64_t ord) {
+    auto idx = trange.tiles_range().idx(ord);
+    auto range = trange.make_tile_range(ord);
     return DirectDFTile<Tile, TA::SparsePolicy>(
-        std::move(idx), std::move(range), std::move(builder_ptr));
+        std::move(idx), std::move(range), builder_ptr);
   };
 
   // set all tiles
   for (const auto &ord : *pmap) {
     if (!result.is_zero(ord)) {
-      auto idx = trange.tiles_range().idx(ord);
-      auto range = trange.make_tile_range(ord);
-      auto tile_future = world.taskq.add(task_f, idx, range);
+      auto tile_future = world.taskq.add(task_f, ord);
       result.set(ord, tile_future);
     }
   }

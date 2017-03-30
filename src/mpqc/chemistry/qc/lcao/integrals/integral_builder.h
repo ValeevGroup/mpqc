@@ -179,8 +179,10 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   // compute Tile for particular block
   Tile operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
     TA_ASSERT(idx.size() == 4);
+
+    auto &world = bra_.world();
     // create tile
-    Tile result(range);
+    Tile result(range, 0.0);
 
     std::vector<std::size_t> bra_idx(3);
     bra_idx[1] = idx[0];
@@ -188,6 +190,18 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     std::vector<std::size_t> ket_idx(3);
     ket_idx[1] = idx[2];
     ket_idx[2] = idx[3];
+
+    TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
+                                     madness::cblas::NoTrans, 4, 3, 3);
+
+    auto task_gemm = [gemm_helper](madness::Future<Tile> &bra,
+                                    madness::Future<Tile> &ket) {
+      return bra.get().gemm(ket.get(), 1.0, gemm_helper);
+    };
+
+    auto task_add =[] (madness::Future<Tile>& tile, Tile& result){
+      result.add_to(tile.get());
+    };
 
     // loop over density fitting space
 
@@ -197,17 +211,33 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
       auto future_bra_tile = bra_.find(bra_idx);
       auto future_ket_tile = ket_.find(ket_idx);
 
-      TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
-                                       madness::cblas::NoTrans, 4, 3, 3);
+      madness::Future<Tile> tile =
+          world.taskq.add(task_gemm, future_bra_tile, future_ket_tile);
 
-      if (i == df_lobound_) {
-        result =
-            future_bra_tile.get().gemm(future_ket_tile.get(), 1.0, gemm_helper);
-      } else {
-        result.add_to(future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
-                                                 gemm_helper));
-      }
+      world.taskq.add(task_add, tile, result);
     }
+
+//    world.gop.fence();
+
+    //    for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
+    //      bra_idx[0] = i;
+    //      ket_idx[0] = i;
+    //      auto future_bra_tile = bra_.find(bra_idx);
+    //      auto future_ket_tile = ket_.find(ket_idx);
+    //
+    //      TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
+    //                                       madness::cblas::NoTrans, 4, 3, 3);
+    //
+    //      if (i == df_lobound_) {
+    //        result =
+    //            future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
+    //            gemm_helper);
+    //      } else {
+    //        result.add_to(future_bra_tile.get().gemm(future_ket_tile.get(),
+    //        1.0,
+    //                                                 gemm_helper));
+    //      }
+    //    }
 
     return result;
   }

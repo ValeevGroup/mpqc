@@ -30,7 +30,7 @@ class Function {
   template <typename X> using Timestampable = ::mpqc::utility::Timestampable<X>;
 
   Function() = default;
-  virtual ~Function() = default;
+  virtual ~Function() { }
 
   explicit Function(std::shared_ptr<Parameters> params)
       : value_(), params_(params), obsolete_(true) {}

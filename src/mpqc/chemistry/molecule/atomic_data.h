@@ -21,7 +21,7 @@ class AtomicData {
     double abundance;   // natural abundance (0..1), (quiet) NAN if not defined
   };
 
-  virtual ~AtomicData() = default;
+  virtual ~AtomicData() { }
 
   static std::shared_ptr<const AtomicData> get_default();
   static void set_default(std::string version);

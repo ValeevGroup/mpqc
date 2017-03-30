@@ -17,7 +17,7 @@ template <typename Tile, typename Policy>
 class FockBuilder {
  public:
   using array_type = TA::DistArray<Tile,Policy>;
-  virtual ~FockBuilder() = default;
+  virtual ~FockBuilder() { }
 
   /// @brief computes the 2-e part of the Fock matrix
   /// @param D the (1-particle) density matrix

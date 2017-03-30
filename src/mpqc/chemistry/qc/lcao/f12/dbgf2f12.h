@@ -27,7 +27,7 @@ class DBGF2F12 : public GF2F12<Tile> {
   using typename GF2F12<Tile>::real_t;
 
   DBGF2F12() = default;
-  virtual ~DBGF2F12() = default;
+  virtual ~DBGF2F12() { }
 
   // clang-format off
   /**

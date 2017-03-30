@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream &os, Basis::Factory const &f) {
 ////////////////////
 
 Basis::Basis() = default;
-Basis::~Basis() = default;
+Basis::~Basis() { }
 Basis::Basis(Basis const &) = default;
 Basis::Basis(Basis &&) = default;
 

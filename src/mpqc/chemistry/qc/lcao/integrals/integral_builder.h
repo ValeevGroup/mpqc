@@ -67,7 +67,7 @@ class IntegralBuilder
     TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
 
-  virtual ~IntegralBuilder() = default;
+  virtual ~IntegralBuilder() { }
 
   Tile operator()(std::vector<std::size_t> const &idx, TA::Range range) {
     return op_(integrals(idx, std::move(range)));

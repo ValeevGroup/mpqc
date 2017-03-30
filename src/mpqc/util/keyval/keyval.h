@@ -117,7 +117,7 @@ using Describable = std::is_base_of<DescribedClass, T>;
 class DescribedClass {
  public:
   DescribedClass() = default;
-  virtual ~DescribedClass() = default;
+  virtual ~DescribedClass() { }
 
   ///
   typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(

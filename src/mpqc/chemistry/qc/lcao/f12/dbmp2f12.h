@@ -33,7 +33,7 @@ class RIDBRMP2F12 : public RIRMP2F12<Tile> {
    * | mp2 | string | none | if to recompute mp2 energy(redo) or update  |
    */
   RIDBRMP2F12(const KeyVal& kv);
-  virtual ~RIDBRMP2F12() = default;
+  virtual ~RIDBRMP2F12() { }
 
   /// override the evaluate function in RMP2F12
   void evaluate(Energy* result) override;

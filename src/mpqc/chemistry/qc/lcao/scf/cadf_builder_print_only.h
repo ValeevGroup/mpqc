@@ -106,7 +106,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     util::write_shape_tuple3D(C_df_, std::string("C_df_shape.txt"));
   }
 
-  ~PrintOnlyCADFFockBuilder() = default;
+  ~PrintOnlyCADFFockBuilder() { }
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {

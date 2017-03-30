@@ -66,7 +66,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
     singles_energy_ = 0.0;
   }
 
-  virtual ~CCSD_F12() = default;
+  virtual ~CCSD_F12() { }
 
   void evaluate(Energy* result) override {
     if (!this->computed()) {

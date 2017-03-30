@@ -218,7 +218,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
     op_ = TA::Noop<TA::TensorZ, true>();
   }
 
-  ~PeriodicAOFactory() noexcept = default;
+  ~PeriodicAOFactory() noexcept {}
 
   /// wrapper to compute function
   TArray compute(const std::wstring &);

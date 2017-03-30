@@ -17,6 +17,6 @@ Wavefunction::Wavefunction(const KeyVal &kv) {
   });
 }
 
-Wavefunction::~Wavefunction() = default;
+Wavefunction::~Wavefunction() { }
 
 }  // namespace mpqc

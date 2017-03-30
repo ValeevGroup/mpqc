@@ -74,7 +74,7 @@ class UnitCell : public Molecule {
    */
   double nuclear_repulsion_energy(Vector3i RJ_max) const;
 
-  ~UnitCell() = default;
+  ~UnitCell() { }
 
   /*!
    * \brief This returns direct unit cell params

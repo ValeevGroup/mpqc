@@ -176,13 +176,49 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
 
   madness::uniqueidT id() const { return id_; }
 
+  struct TaskGemm {
+    typedef Tile result_type;
+    typedef Tile first_argument_type;
+    typedef Tile second_argument_type;
+
+    TA::Range range;
+    TA::math::GemmHelper gemm_helper;
+
+    TaskGemm(const TA::Range &range, const TA::math::GemmHelper &helper)
+        : range(range), gemm_helper(helper) {}
+
+    result_type operator()() const { return Tile(range, 0.0); }
+
+    const result_type &operator()(const result_type &result) const {
+      return result;
+    }
+
+    void add(result_type &result, const result_type &arg) const {
+      TA::math::inplace_vector_op_serial(
+          [](TA::detail::numeric_t<Tile> &l,
+             const TA::detail::numeric_t<Tile> r) { l += r; },
+          result.range().volume(), result.data(), arg.data());
+    }
+
+    void operator()(result_type &result, const result_type &arg) const {
+      add(result, arg);
+    }
+
+    void operator()(result_type &result, const first_argument_type &first,
+                    const second_argument_type &second) const {
+      Tile tmp = first.gemm(second, 1.0, gemm_helper);
+      add(result, tmp);
+    }
+  };
+
   // compute Tile for particular block
   Tile operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
     TA_ASSERT(idx.size() == 4);
 
     auto &world = bra_.world();
     // create tile
-    Tile result(range, 0.0);
+    //    madness::Future<Tile> result(Tile(range, 0.0));
+//        Tile result(range, 0.0);
 
     std::vector<std::size_t> bra_idx(3);
     bra_idx[1] = idx[0];
@@ -194,45 +230,46 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
                                      madness::cblas::NoTrans, 4, 3, 3);
 
-    auto task_gemm = [gemm_helper](Tile &bra,
-                                   Tile &ket) {
-      return bra.gemm(ket, 1.0, gemm_helper);
-    };
-
-    auto task_add = [](std::vector<madness::Future<Tile>> &tiles, Tile &result) {
-      for(const auto& tile : tiles){
-        result.add_to(tile.get());
-      }
-    };
+    //    auto task_gemm = [gemm_helper](Tile bra, Tile ket) {
+    //      return bra.gemm(ket, 1.0, gemm_helper);
+    //    };
+    //
+    //    auto task_add = [](Tile tile, Tile& result) {
+    //      // need to lock
+    ////      std::scoped_lock lock();
+    //      result.add_to(tile);
+    //    };
 
     // loop over density fitting space
-    std::size_t n_tiles = df_upbound_ - df_lobound_;
-    std::vector<madness::Future<Tile>> tiles(n_tiles);
 
+    TaskGemm task_gemm(range, gemm_helper);
+
+    TA::detail::ReducePairTask<decltype(task_gemm)> reduce_pair_task(world,
+                                                                     task_gemm);
     for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
       bra_idx[0] = i;
       ket_idx[0] = i;
       madness::Future<Tile> future_bra_tile = bra_.find(bra_idx);
       madness::Future<Tile> future_ket_tile = ket_.find(ket_idx);
 
-      tiles[i] =
-          world.taskq.add(task_gemm, future_bra_tile, future_ket_tile);
-
+      //      auto tile = world.taskq.add(task_gemm, future_bra_tile,
+      //      future_ket_tile);
+      reduce_pair_task.add(future_bra_tile, future_ket_tile);
     }
-    world.taskq.add(task_add, tiles, result);
+    return reduce_pair_task.submit();
 
-    //    for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
-    //      bra_idx[0] = i;
-    //      ket_idx[0] = i;
-    //      auto future_bra_tile = bra_.find(bra_idx);
-    //      auto future_ket_tile = ket_.find(ket_idx);
-    //
-    //      result.add_to(
-    //          future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
-    //          gemm_helper));
-    //    }
-
-    return result;
+//            for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
+//              bra_idx[0] = i;
+//              ket_idx[0] = i;
+//              auto future_bra_tile = bra_.find(bra_idx);
+//              auto future_ket_tile = ket_.find(ket_idx);
+//
+//              result.add_to(
+//                  future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
+//                  gemm_helper));
+//            }
+//
+//        return result;
   }
 
  private:

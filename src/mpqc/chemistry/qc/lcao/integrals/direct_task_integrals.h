@@ -292,6 +292,7 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
 
   TA::TiledRange trange(vec_tr1.begin(), vec_tr1.end());
 
+
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
@@ -301,29 +302,36 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
 
   auto& world = bra.world();
 
-  auto task_norm = [builder_ptr](int64_t ord, const detail::IdxVec &idx,
+  // set norm to a large enough value
+  auto task_norm = [builder_ptr](int64_t ord,
                                  const TA::Range &range,
                                  TA::TensorF &tile_norm) {
-    auto tile = builder_ptr->operator()(idx, range);
-    const auto tile_volume = tile.range().volume();
-    const auto norm = tile.norm();
+    const auto tile_volume = range.volume();
+//    Tile tile = builder_ptr->operator()(idx, range);
+//    const auto tile_volume = tile.range().volume();
+//    const auto norm = tile.norm();
 
-    bool save_norm =
-        norm >= tile_volume * TA::SparseShape<float>::threshold();
-    if (save_norm) {
-      tile_norm[ord] = norm;
-    }
+//    std::cout << "idx: " << idx <<  "norm: " << norm << std::endl;
+
+//    bool save_norm =
+//        norm >= tile_volume * TA::SparseShape<float>::threshold();
+//    if (save_norm) {
+//      tile_norm[ord] = norm;
+    //TODO better way to estimate norm
+    tile_norm[ord] = tile_volume;
+//    }
 
   };
 
-  // initialize norm by compute all tiles once
+  // initialize norm
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (const auto &ord : *pmap) {
-    detail::IdxVec idx = trange.tiles_range().idx(ord);
+//    detail::IdxVec idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    world.taskq.add(task_norm, ord, idx, range, tile_norms);
+//    world.taskq.add(task_norm, ord, range, tile_norms);
+    task_norm(ord, range, tile_norms);
   }
-  world.gop.fence();
+//  world.gop.fence();
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
 
@@ -340,11 +348,15 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
   // set all tiles
   for (const auto &ord : *pmap) {
     if (!result.is_zero(ord)) {
-      auto tile_future = world.taskq.add(task_f, ord);
-      result.set(ord, tile_future);
+//      auto tile_future = world.taskq.add(task_f, ord);
+//      result.set(ord, tile_future);
+      auto idx = trange.tiles_range().idx(ord);
+      auto range = trange.make_tile_range(ord);
+      result.set(ord, DirectDFTile<Tile, TA::SparsePolicy>(
+          std::move(idx), std::move(range), builder_ptr) ) ;
     }
   }
-  world.gop.fence();
+//  world.gop.fence();
 
   return result;
 };

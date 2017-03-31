@@ -41,8 +41,11 @@ class AOWavefunction : public Wavefunction {
    * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
    */
   // clang-format on
-  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) { init_factory(kv); }
-  virtual ~AOWavefunction() = default;
+
+  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
+    init_factory(kv);
+  }
+  virtual ~AOWavefunction() { }
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
@@ -98,7 +101,8 @@ class PeriodicAOWavefunction : public Wavefunction {
   PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
   }
-  virtual ~PeriodicAOWavefunction(){};
+
+  virtual ~PeriodicAOWavefunction() { }
 
   virtual MatrixzVec co_coeff() = 0;
   virtual VectordVec co_energy() = 0;

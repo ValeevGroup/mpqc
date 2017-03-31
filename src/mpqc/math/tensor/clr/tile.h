@@ -25,7 +25,7 @@ class TileModel {
   using size_type = std::size_t;
 
   TileModel() = default;
-  ~TileModel() = default;
+  ~TileModel() { }
   TileModel(TileModel const &) = default;
   TileModel(TileModel &&) = default;
   TileModel &operator=(TileModel &&) = default;
@@ -159,7 +159,7 @@ class Tile {
   using size_type = std::size_t;
 
   Tile() = default;
-  ~Tile() = default;
+  ~Tile() { }
   Tile(Tile const &) = default;
   Tile(Tile &&) = default;
   Tile &operator=(Tile &&) = default;

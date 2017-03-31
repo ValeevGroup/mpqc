@@ -107,7 +107,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
                                                          trange1_M, trange1_M);
   }
 
-  ~CADFFockBuilder() = default;
+  ~CADFFockBuilder() { }
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {

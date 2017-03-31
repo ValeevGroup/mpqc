@@ -41,7 +41,7 @@ class GetLongOpt {
           type(t),
           description(std::move(descr)),
           value(std::move(val)) {}
-    ~Cell() = default;
+    ~Cell() { }
   };
 
  private:
@@ -62,7 +62,7 @@ class GetLongOpt {
   /// Initialize the object.
   /// @param optmark the option flag marker (default is <tt>-</tt>).
   GetLongOpt(const char optmark = '-');
-  ~GetLongOpt() = default;
+  ~GetLongOpt() { }
 
   /// Parse command line options.
   /// @note call this once, after all options have been enrolled

@@ -21,7 +21,7 @@ namespace mpqc {
  */
 class ClusterConcept {
  public:
-  virtual ~ClusterConcept() = default;
+  virtual ~ClusterConcept() { }
 
   virtual ClusterConcept *clone_() const = 0;
   virtual Vector3d const &center_() const = 0;

@@ -25,7 +25,7 @@ class MPQCTask {
  public:
   MPQCTask(madness::World &world, std::shared_ptr<KeyVal> kv)
       : world_(world), keyval_(kv) {}
-  ~MPQCTask() = default;
+  ~MPQCTask() { }
 
   madness::World& world() const {
     return world_;

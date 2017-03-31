@@ -54,7 +54,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
    */
   zRHF(const KeyVal& kv);
 
-  ~zRHF() = default;
+  ~zRHF() { }
 
   void obsolete() override;
 

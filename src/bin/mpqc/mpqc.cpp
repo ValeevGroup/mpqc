@@ -57,8 +57,11 @@ void announce(madness::World &world) {
                                     ExEnv::hostname())
                 << std::endl;
   std::time_t tm = std::time(nullptr);
-  ExEnv::out0() << indent << "Start Time:       "
-                << std::put_time(std::gmtime(&tm), "%c %Z") << std::endl;
+  char tm_str[256];
+  std::strftime(tm_str, 256, "%c %Z", std::gmtime(&tm));
+  ExEnv::out0() << indent << "Start Time:       " << tm_str
+                // << std::put_time(std::gmtime(&tm), "%c %Z")
+                << std::endl;
 
   auto nproc = world.size();
   ExEnv::out0() << indent << "Default World:    " << nproc

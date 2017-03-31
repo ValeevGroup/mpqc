@@ -39,7 +39,7 @@ class Registry {
   Registry(Registry&&) = default;
   Registry& operator=(Registry&&) = default;
 
-  virtual ~Registry() = default;
+  virtual ~Registry() { }
 
   /// return the registry
   const container_type& registry() const { return registry_; }

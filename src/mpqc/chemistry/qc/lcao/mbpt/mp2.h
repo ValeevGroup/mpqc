@@ -104,7 +104,7 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy>
    */
   // clang-format on
   RMP2(const KeyVal &kv);
-  virtual ~RMP2() = default;
+  virtual ~RMP2() { }
 
   void obsolete() override;
 
@@ -143,7 +143,7 @@ class RIRMP2 : public RMP2<Tile, Policy> {
   * keywords: inherit all keywords from RMP2
   */
   RIRMP2(const KeyVal &kv);
-  ~RIRMP2() = default;
+  ~RIRMP2() { }
 
  protected:
   /// override the compute function from RMP2

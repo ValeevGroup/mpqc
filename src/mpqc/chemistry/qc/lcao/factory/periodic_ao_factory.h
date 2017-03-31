@@ -229,7 +229,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     this->set_orbital_registry(orbital_space_registry);
   }
 
-  ~PeriodicAOFactory() noexcept = default;
+  ~PeriodicAOFactory() noexcept {}
 
   /// wrapper to compute function
   TArray compute(const std::wstring &);

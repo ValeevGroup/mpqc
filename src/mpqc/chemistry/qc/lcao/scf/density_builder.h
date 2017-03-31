@@ -21,7 +21,7 @@ class DensityBuilder {
   DensityBuilder(DensityBuilder &&) = default;
   DensityBuilder &operator=(DensityBuilder const &) = default;
   DensityBuilder &operator=(DensityBuilder &&) = default;
-  virtual ~DensityBuilder() = default;
+  virtual ~DensityBuilder() { }
 
   virtual std::pair<array_type, array_type> operator()(array_type const &) = 0;
 

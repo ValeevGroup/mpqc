@@ -60,6 +60,14 @@ bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) const {
   return skip_(a, b, c, d);
 }
 
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d, double D) {
+	return skip_(D, a, b, c, d);
+}
+
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d, double D) const {
+	return skip_(D, a, b, c, d);
+}
+
 boost::optional<double> SchwarzScreen::estimate(int64_t a) const {
   return Qbra()(a) * Qket()();
 }

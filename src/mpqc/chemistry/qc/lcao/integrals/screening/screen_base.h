@@ -48,6 +48,9 @@ class Screener {
   virtual bool skip(int64_t, int64_t, int64_t, int64_t);
   virtual bool skip(int64_t, int64_t, int64_t, int64_t) const;
 
+	virtual bool skip(int64_t, int64_t, int64_t, int64_t, double);
+	virtual bool skip(int64_t, int64_t, int64_t, int64_t, double) const;
+
   /*! \brief returns an estimate of shape norms for the given basis vector, in
    * presence of symmetry described by a math::PetiteList object.
    *

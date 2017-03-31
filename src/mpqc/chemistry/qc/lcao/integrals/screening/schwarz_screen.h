@@ -320,6 +320,28 @@ class SchwarzScreen : public Screener {
     }
   }
 
+	/* skip_ takes norm of a density block and a list of indices.
+	 * This returns true when the product of density norm and integral estimate
+	 * is below the threshold and false when it is greater than or equal to the
+	 * threshold. See function estimate for the implementation.
+	 *
+	 * \param D is infinity norm of the corresponding density block
+	 * \param idx is a series of indices from which to generate an integral
+	 * estimate
+	 *
+	 * This is a one stop catch all for the overloads of the skip functions
+	 */
+	template <typename... IDX>
+	bool skip_(double D, IDX... idx) const {
+		auto est =
+				estimate(std::forward<IDX>(idx)...);  // optional estimation for set idx
+		if (est && D != 0.0) {  // Check that we were able to estimate the integral set AND density norm is large than zero
+			return (D * D * est.get()) < thresh2_;  // If D^2 * est below threshold then skip this set
+		} else {         // We were unable to estimate this set for some reason
+			return false;  // thus we should compute the integral
+		}
+	}
+
  public:
   SchwarzScreen() = default;
   SchwarzScreen(SchwarzScreen const &) = default;
@@ -365,6 +387,9 @@ class SchwarzScreen : public Screener {
 
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
+
+	bool skip(int64_t, int64_t, int64_t, int64_t, double) override;
+	bool skip(int64_t, int64_t, int64_t, int64_t, double) const override;
 
   /*! \brief returns an estimate of shape norms for the given basis vector, in
    * presence of symmetry described by a math::PetiteList object.

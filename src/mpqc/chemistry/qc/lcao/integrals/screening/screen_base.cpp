@@ -21,6 +21,9 @@ bool Screener::skip(int64_t, int64_t, int64_t) const { return false; }
 bool Screener::skip(int64_t, int64_t, int64_t, int64_t) { return false; }
 bool Screener::skip(int64_t, int64_t, int64_t, int64_t) const { return false; }
 
+bool Screener::skip(int64_t, int64_t, int64_t, int64_t, double) { return false; }
+bool Screener::skip(int64_t, int64_t, int64_t, int64_t, double) const { return false; }
+
 TA::Tensor<float> Screener::norm_estimate(
     madness::World &world, std::vector<gaussian::Basis> const &bs_array,
     TA::Pmap const &pmap, bool replicate) const {

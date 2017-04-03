@@ -168,6 +168,8 @@ class FourCenterFockBuilder
 		// make shell block norm of D
 		shblk_norm_D_ = compute_shellblock_norm(basis, D);
 
+		num_ints_computed_ = 0;
+
     // compute shell-level schwarz matrices Q
     //auto Q = make_schwarz_Q_shells(compute_world, bra_basis_, bra_basis_);
 
@@ -195,25 +197,7 @@ class FourCenterFockBuilder
             auto D13 =
                 (!compute_K_ || D.is_zero({tile1, tile3})) ? empty : D.find({tile1, tile3});
 
-						// find shell block norm of D
-//						auto norm_D01 =
-//								(!compute_J_ || D.is_zero({tile0, tile1})) ? empty : shblk_norm_D_.find({tile0, tile1});
-//						auto norm_D23 =
-//								(!compute_J_ || D.is_zero({tile2, tile3})) ? empty : shblk_norm_D_.find({tile2, tile3});
-//						auto norm_D02 =
-//								(!compute_K_ || D.is_zero({tile0, tile2})) ? empty : shblk_norm_D_.find({tile0, tile2});
-//						auto norm_D03 =
-//								(!compute_K_ || D.is_zero({tile0, tile3})) ? empty : shblk_norm_D_.find({tile0, tile3});
-//						auto norm_D12 =
-//								(!compute_K_ || D.is_zero({tile1, tile2})) ? empty : shblk_norm_D_.find({tile1, tile2});
-//						auto norm_D13 =
-//								(!compute_K_ || D.is_zero({tile1, tile3})) ? empty : shblk_norm_D_.find({tile1, tile3});
-
 						if (pmap->is_local(tile0123))
-//							WorldObject_::task(
-//									me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03, D12, D13,
-//									norm_D01, norm_D23, norm_D02, norm_D03, norm_D12, norm_D13,
-//									std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
 							WorldObject_::task(
 									me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03, D12, D13,
 									std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
@@ -229,6 +213,7 @@ class FourCenterFockBuilder
     // cleanup
     engines_.reset();
 
+		ExEnv::out0() << "\n# of integrals = " << num_ints_computed_ << std::endl;
     typename Policy::shape_type shape;
     // compute the shape, if sparse
     if (!decltype(shape)::is_dense()) {
@@ -287,6 +272,7 @@ class FourCenterFockBuilder
   mutable double target_precision_ = 0.0;
   mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
 	mutable array_type shblk_norm_D_;
+	mutable std::atomic<size_t> num_ints_computed_{0};
 
   void accumulate_task(Tile fock_matrix_tile, long tile0, long tile1) {
     const auto ntiles = trange_D_.dim(0).tile_extent();
@@ -337,7 +323,6 @@ class FourCenterFockBuilder
     auto F12 = compute_K_ ? Tile(std::move(rng12), 0.0) : Tile();
     auto F13 = compute_K_ ? Tile(std::move(rng13), 0.0) : Tile();
 
-		// TODO move this chunk to arguments of compute_task(). Need to increase max # of arguments of task
 		// find shell block norm of D
 		auto norm_D01 =
 				compute_J_ ? shblk_norm_D_.find({tile_idx[0], tile_idx[1]}) : Tile();
@@ -446,10 +431,20 @@ class FourCenterFockBuilder
 							const auto sh03 = sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
 							const auto sh13 = sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
 							const auto sh23 = sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
-							const auto Dnorm0123 = std::max(norm_D03_ptr[sh03], std::max(norm_D13_ptr[sh13], std::max(norm_D23_ptr[sh23], Dnorm012)));
 
-							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123))
+							const auto Dnorm0123 =
+									std::max(norm_D03_ptr[sh03],
+													 std::max(norm_D13_ptr[sh13],
+																		std::max(norm_D23_ptr[sh23], Dnorm012)));
+
+							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123)) {
+								cf3_offset += nf3;
+								bf3_offset += nf3;
+								sh3++;
 								continue;
+							}
+
+							num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
 
 							const auto multiplicity23 =
 									bf2_offset == bf3_offset ? 1.0 : 2.0;
@@ -604,8 +599,8 @@ class FourCenterFockBuilder
 		}
 
 		return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, trange1, trange1);
-
 	}
+
 
 };
 

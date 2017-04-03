@@ -24,7 +24,7 @@ struct T1T2 {
   T1 t1;
   T2 t2;
 
-  auto norm() -> decltype(norm2(std::declval<T1>())) {
+  auto norm() {
     auto t1_norm = norm2(t1);
     auto t2_norm = norm2(t2);
     return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm));
@@ -38,8 +38,7 @@ inline void zero(T1T2<T1, T2> &a) {
 }
 
 template <typename T1, typename T2>
-inline auto dot_product(const T1T2<T1, T2> &a, const T1T2<T1, T2> &b)
-    -> decltype(dot_product(std::declval<T1>(), std::declval<T1>())) {
+inline auto dot_product(const T1T2<T1, T2> &a, const T1T2<T1, T2> &b) {
   return dot_product(a.t1, b.t1) + dot_product(a.t2, b.t2);
 }
 

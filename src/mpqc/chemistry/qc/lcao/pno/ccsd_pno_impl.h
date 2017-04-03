@@ -101,7 +101,7 @@ namespace mpqc {
       double threshold = tcut_;
 
       // decompose and reconstruct T2
-      auto decom = [&](Tile &in_tile) -> float {
+      auto decom = [&](Tile &in_tile) {
 
         // copy in_tile which is ab matrix of T^ij
         Tile tab_tile = in_tile.clone();

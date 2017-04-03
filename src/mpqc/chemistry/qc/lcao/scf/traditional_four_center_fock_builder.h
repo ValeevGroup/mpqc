@@ -325,17 +325,17 @@ class FourCenterFockBuilder
 
 		// find shell block norm of D
 		auto norm_D01 =
-				compute_J_ ? shblk_norm_D_.find({tile_idx[0], tile_idx[1]}) : Tile();
+				(!compute_J_ || shblk_norm_D_.is_zero({tile_idx[0], tile_idx[1]})) ? Tile() : shblk_norm_D_.find({tile_idx[0], tile_idx[1]});
 		auto norm_D23 =
-				compute_J_ ? shblk_norm_D_.find({tile_idx[2], tile_idx[3]}) : Tile();
+				(!compute_J_ || shblk_norm_D_.is_zero({tile_idx[2], tile_idx[3]})) ? Tile() : shblk_norm_D_.find({tile_idx[2], tile_idx[3]});
 		auto norm_D02 =
-				compute_K_ ? shblk_norm_D_.find({tile_idx[0], tile_idx[2]}) : Tile();
+				(!compute_K_ || shblk_norm_D_.is_zero({tile_idx[0], tile_idx[2]})) ? Tile() : shblk_norm_D_.find({tile_idx[0], tile_idx[2]});
 		auto norm_D03 =
-				compute_K_ ? shblk_norm_D_.find({tile_idx[0], tile_idx[3]}) : Tile();
+				(!compute_K_ || shblk_norm_D_.is_zero({tile_idx[0], tile_idx[3]})) ? Tile() : shblk_norm_D_.find({tile_idx[0], tile_idx[3]});
 		auto norm_D12 =
-				compute_K_ ? shblk_norm_D_.find({tile_idx[1], tile_idx[2]}) : Tile();
+				(!compute_K_ || shblk_norm_D_.is_zero({tile_idx[1], tile_idx[2]})) ? Tile() : shblk_norm_D_.find({tile_idx[1], tile_idx[2]});
 		auto norm_D13 =
-				compute_K_ ? shblk_norm_D_.find({tile_idx[1], tile_idx[3]}) : Tile();
+				(!compute_K_ || shblk_norm_D_.is_zero({tile_idx[1], tile_idx[3]})) ? Tile() : shblk_norm_D_.find({tile_idx[1], tile_idx[3]});
 
     // grab ptrs to tile data to make addressing more efficient
     auto* F01_ptr = compute_J_ ? F01.data() : nullptr;
@@ -400,7 +400,8 @@ class FourCenterFockBuilder
 					const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
 					const auto sh01 = sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
-					const auto Dnorm01 = norm_D01_ptr[sh01];
+					const auto Dnorm01 =
+							(norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
 
 					const auto nf1 = shell1.size();
 					auto cf2_offset = 0;
@@ -413,7 +414,11 @@ class FourCenterFockBuilder
 
 						const auto sh02 = sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
 						const auto sh12 = sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-						const auto Dnorm012 = std::max(norm_D02_ptr[sh02], std::max(norm_D12_ptr[sh12], Dnorm01));
+						const auto Dnorm02 =
+								(norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
+						const auto Dnorm12 =
+								(norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
+						const auto Dnorm012 = std::max(Dnorm02, std::max(Dnorm12, Dnorm01));
 
 						const auto nf2 = shell2.size();
 						auto cf3_offset = 0;
@@ -431,11 +436,14 @@ class FourCenterFockBuilder
 							const auto sh03 = sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
 							const auto sh13 = sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
 							const auto sh23 = sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
-
-							const auto Dnorm0123 =
-									std::max(norm_D03_ptr[sh03],
-													 std::max(norm_D13_ptr[sh13],
-																		std::max(norm_D23_ptr[sh23], Dnorm012)));
+							const auto Dnorm03 =
+									(norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
+							const auto Dnorm13 =
+									(norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
+							const auto Dnorm23 =
+									(norm_D23_ptr != nullptr) ? norm_D23_ptr[sh23] : 0.0;
+							const auto Dnorm0123 = std::max(
+									Dnorm03, std::max(Dnorm13, std::max(Dnorm23, Dnorm012)));
 
 							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123)) {
 								cf3_offset += nf3;
@@ -490,20 +498,36 @@ class FourCenterFockBuilder
 														value * multiplicity;
 
 												if (compute_J_) {
-													F01_ptr[cf01] += D23_ptr[cf23] *
-																					 value_scaled_by_multiplicity;
-													F23_ptr[cf23] += D01_ptr[cf01] *
-																					 value_scaled_by_multiplicity;
+													F01_ptr[cf01] +=
+															(D23_ptr != nullptr)
+																	? D23_ptr[cf23] * value_scaled_by_multiplicity
+																	: 0.0;
+													F23_ptr[cf23] +=
+															(D01_ptr != nullptr)
+																	? D01_ptr[cf01] * value_scaled_by_multiplicity
+																	: 0.0;
 												}
 												if (compute_K_) {
-													F02_ptr[cf02] -= 0.25 * D13_ptr[cf13] *
-																					 value_scaled_by_multiplicity;
-													F13_ptr[cf13] -= 0.25 * D02_ptr[cf02] *
-																					 value_scaled_by_multiplicity;
-													F03_ptr[cf03] -= 0.25 * D12_ptr[cf12] *
-																					 value_scaled_by_multiplicity;
-													F12_ptr[cf12] -= 0.25 * D03_ptr[cf03] *
-																					 value_scaled_by_multiplicity;
+													F02_ptr[cf02] -=
+															(D13_ptr != nullptr)
+																	? 0.25 * D13_ptr[cf13] *
+																				value_scaled_by_multiplicity
+																	: 0.0;
+													F13_ptr[cf13] -=
+															(D02_ptr != nullptr)
+																	? 0.25 * D02_ptr[cf02] *
+																				value_scaled_by_multiplicity
+																	: 0.0;
+													F03_ptr[cf03] -=
+															(D12_ptr != nullptr)
+																	? 0.25 * D12_ptr[cf12] *
+																				value_scaled_by_multiplicity
+																	: 0.0;
+													F12_ptr[cf12] -=
+															(D03_ptr != nullptr)
+																	? 0.25 * D03_ptr[cf03] *
+																				value_scaled_by_multiplicity
+																	: 0.0;
 												}
 											}
 										}

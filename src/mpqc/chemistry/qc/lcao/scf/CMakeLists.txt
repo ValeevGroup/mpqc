@@ -28,6 +28,7 @@ util.h
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
         zrhf.h
+				zrhf_impl.h
         zrhf.cpp
         df_zrhf.cpp
         decomposed_rij.h

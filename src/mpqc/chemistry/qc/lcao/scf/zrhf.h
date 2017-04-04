@@ -24,16 +24,14 @@ using Matrix = RowMatrixXd;
 /**
  * complex-valued Restricted Hartree-Fock class
  */
-
-class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
+template<typename Tile, typename Policy>
+class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
              public Provides<Energy /*,
           CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
-  using Tile = TA::TensorD;
-  using Policy = TA::SparsePolicy;
-  using TArray = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
-  using TArrayZ = TA::DistArray<TA::TensorZ, Policy>;
+	using array_type = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+	using array_type_z = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
 
@@ -84,14 +82,14 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
    * \brief This diagonalizes Fock matrix in reciprocal space and
    * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
    */
-  TArray compute_density();
+	array_type compute_density();
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
    * \param matrix the real-space integral matrix
    * \return the reciprocal-space integral matrix
    */
-  TArrayZ transform_real2recip(TArray& matrix);
+	array_type_z transform_real2recip(array_type& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value
@@ -101,19 +99,19 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   MatrixZ reverse_phase_factor(MatrixZ& mat0);
 
  protected:
-  TArray S_;
-  TArray D_;
+	array_type S_;
+	array_type D_;
   bool print_detail_;
 
  private:
-  TArray T_;
-  TArray V_;
-  TArrayZ Sk_;
-  TArray H_;
-  TArray J_;
-  TArray K_;
-  TArray F_;
-  TArrayZ Fk_;
+	array_type T_;
+	array_type V_;
+	array_type_z Sk_;
+	array_type H_;
+	array_type J_;
+	array_type K_;
+	array_type F_;
+	array_type_z Fk_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -155,9 +153,9 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
   void evaluate(Energy* result) override;
 
   /// returns Coulomb term J_μν
-  virtual TArray J_builder();
+	virtual array_type J_builder();
   /// returns Exchange term K_μν
-  virtual TArray K_builder();
+	virtual array_type K_builder();
   /// returns Hartree-Fock energy
   virtual double compute_energy();
   /// initializes other stuff (may be used by derived class)
@@ -177,26 +175,32 @@ class DFzRHF : public zRHF {
 
  private:
 
-    TArray M_;  // charge matrix of product density <μ|ν>
-    TArray n_;  // normalized charge vector <Κ>
+		array_type M_;  // charge matrix of product density <μ|ν>
+		array_type n_;  // normalized charge vector <Κ>
     double q_;  // total charge of auxiliary basis functions
-    TArray P_para_;  // projection matrix that projects X onto auxiliary charge vector
-    TArray P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
-    TArray V_;  // 2-center 2-electron integrals
-    TArray V_perp_;  // part of 2-center 2-electron integrals that is orthogonal to auxiliary charge vector
-    TArray G_;  // 3-center 2-electron direct integrals contracted with density matrix
-    TArray inv_;  // A inverse where A = V_perp + P_para
-    TArray identity_;  // idensity matrix
+		array_type P_para_;  // projection matrix that projects X onto auxiliary charge vector
+		array_type P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
+		array_type V_;  // 2-center 2-electron integrals
+		array_type V_perp_;  // part of 2-center 2-electron integrals that is orthogonal to auxiliary charge vector
+		array_type G_;  // 3-center 2-electron direct integrals contracted with density matrix
+		array_type inv_;  // A inverse where A = V_perp + P_para
+		array_type identity_;  // idensity matrix
     std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct integrals. vector size = RJ_size_
-    TArray CD_;  // intermediate for C_Xμν D_μν
-    TArray IP_;  // intermediate for inv_XY P_perp_YZ
+		array_type CD_;  // intermediate for C_Xμν D_μν
+		array_type IP_;  // intermediate for inv_XY P_perp_YZ
 
     /// returns DF Coulomb term J_μν
-    TArray J_builder() override;
+		array_type J_builder() override;
 
     /// initializes necessary arrays for J builder
     void init_other() override;
 };
+
+#if TA_DEFAULT_POLICY == 0
+
+#elif TA_DEFAULT_POLICY == 1
+extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace  lcao
 }  // namespace  mpqc

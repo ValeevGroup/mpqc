@@ -46,7 +46,7 @@ void DFzRHF::init_other() {
 
   // A inverse where A = V_perp + P_para
   t0 = mpqc::fenced_now(world);
-  TArray A;
+  array_type A;
   A("X, Y") = V_perp_("X, Y") + P_para_("X, Y");
   t1 = mpqc::fenced_now(world);
   auto t_a = mpqc::duration_in_s(t0, t1);
@@ -58,7 +58,7 @@ void DFzRHF::init_other() {
   auto tr0 = A.trange().data()[0];
   auto tr1 = A.trange().data()[1];
   assert(tr0 == tr1 && "Matrix A = LLT must be symmetric!");
-  TArray L_inv =
+  array_type L_inv =
       array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
   t1 = mpqc::fenced_now(world);
   auto t_l_inv = mpqc::duration_in_s(t0, t1);
@@ -90,7 +90,7 @@ void DFzRHF::init_other() {
                 << std::endl;
 }
 
-DFzRHF::TArray DFzRHF::J_builder() {
+DFzRHF::array_type DFzRHF::J_builder() {
   auto &ao_factory = this->ao_factory();
   auto &world = ao_factory.world();
 
@@ -105,7 +105,7 @@ DFzRHF::TArray DFzRHF::J_builder() {
   {
     // intermediate for C_para_Xμν D_μν
     t0 = mpqc::fenced_now(world);
-    TArray interm;
+    array_type interm;
     interm("X") = (1.0 / q_) * M_("mu, nu") * n_("X") * this->D_("mu, nu");
     t1 = mpqc::fenced_now(world);
     t_w_para = mpqc::duration_in_s(t0, t1);
@@ -119,8 +119,8 @@ DFzRHF::TArray DFzRHF::J_builder() {
   }
 
   // Build DF Coulomb term J_μν
-  TArray J, J_part1, J_part2;
-  TArray VCD;  // just an intermediate
+  array_type J, J_part1, J_part2;
+  array_type VCD;  // just an intermediate
   VCD("X") = V_("X, Y") * CD_("Y");
 
   // Build Part #1 of J_μν
@@ -129,7 +129,7 @@ DFzRHF::TArray DFzRHF::J_builder() {
     t0 = mpqc::fenced_now(world);
 
     auto t0_j1_interm = mpqc::fenced_now(world);
-    TArray interm;
+    array_type interm;
     interm("X") = 2.0 * CD_("X") - IP_("Y, X") * VCD("Y");
     auto t1_j1_interm = mpqc::fenced_now(world);
     t_j1_interm = mpqc::duration_in_s(t0_j1_interm, t1_j1_interm);
@@ -156,7 +156,7 @@ DFzRHF::TArray DFzRHF::J_builder() {
     t0 = mpqc::fenced_now(world);
 
     auto t0_j2_interm = mpqc::fenced_now(world);
-    TArray interm;
+    array_type interm;
     interm("X, Y") = IP_("X, Z") * V_("Z, Y") - identity_("X, Y");
     auto t1_j2_interm = mpqc::fenced_now(world);
     t_j2_interm = mpqc::duration_in_s(t0_j2_interm, t1_j2_interm);

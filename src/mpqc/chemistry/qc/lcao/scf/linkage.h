@@ -24,6 +24,7 @@ class DirectRHF;
 template <typename Tile, typename Policy>
 class DirectRIRHF;
 
+template <typename Tile, typename Policy>
 class zRHF;
 
 class DFzRHF;
@@ -39,7 +40,7 @@ mpqc::detail::ForceLink<RHF<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
-mpqc::detail::ForceLink<zRHF> fl5;
+mpqc::detail::ForceLink<zRHF<TA::TensorD, TA::SparsePolicy>> fl5;
 mpqc::detail::ForceLink<DFzRHF> fl6;
 #endif
 }

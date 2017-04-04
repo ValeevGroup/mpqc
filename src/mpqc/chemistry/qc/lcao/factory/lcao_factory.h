@@ -375,22 +375,72 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     // get AO
     auto ao_formula =
         detail::lcao_to_ao(formula_string, this->orbital_registry());
-    auto ao_factory = ao_factory_.compute(ao_formula);
 
     // convert to MO
     time0 = mpqc::now(world, this->accurate_time_);
 
     // get coefficient
     auto left_index1 = formula_string.bra_indices()[0];
-    if (left_index1.is_lcao()) {
+
+    // if first index is occupied, store half transformed integral
+    TA_ASSERT(left_index1.is_lcao());
+    if (left_index1 == OrbitalIndex(L"i") ||
+        left_index1 == OrbitalIndex(L"m")) {
+      // make ( i rho | sigma mu )
+      auto half_transformed_formula = ao_formula;
+      auto bra_ind = half_transformed_formula.bra_indices();
+      bra_ind[0] = left_index1;
+      half_transformed_formula.set_bra_indices(bra_ind);
+      if (half_transformed_formula.notation() == Formula::Notation::Physical) {
+        half_transformed_formula.set_notation(Formula::Notation::Chemical);
+        ao_formula.set_notation(Formula::Notation::Chemical);
+      }
+
+      auto iter = this->registry_.find(half_transformed_formula);
+      if (iter != this->registry_.end()) {
+        result = this->compute(half_transformed_formula);
+      } else {
+        auto direct_ao = ao_factory_.compute_direct(ao_formula);
+        auto& left1 = this->orbital_registry().retrieve(left_index1);
+        result("i, rho, mu, nu") =
+            left1("sigma, i") * direct_ao("sigma, rho, mu, nu");
+
+        this->registry_.insert(half_transformed_formula, result);
+      }
+    }
+    // if first index not occupied, intermediate too large, not store
+    // intermediate
+    else {
+      auto half_transformed_formula = ao_formula;
+      auto bra_ind = half_transformed_formula.bra_indices();
+      bra_ind[0] = left_index1;
+      half_transformed_formula.set_bra_indices(bra_ind);
+      if (half_transformed_formula.notation() == Formula::Notation::Physical) {
+        half_transformed_formula.set_notation(Formula::Notation::Chemical);
+        ao_formula.set_notation(Formula::Notation::Chemical);
+      }
+      if (ao_formula.notation() == Formula::Notation::Physical) {
+        ao_formula.set_notation(Formula::Notation::Chemical);
+      }
+      auto direct_ao = ao_factory_.compute_direct(ao_formula);
       auto& left1 = this->orbital_registry().retrieve(left_index1);
-      result("i,q,r,s") = ao_factory("p,q,r,s") * left1("p,i");
+      result("a, rho, mu, nu") =
+          left1("sigma, a") * direct_ao("sigma, rho, mu, nu");
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Waring! Transformation creates large intermediate:  ";
+      ExEnv::out0() << utility::to_string(half_transformed_formula.string());
+      double size = mpqc::detail::array_size(result);
+      ExEnv::out0() << " Size: " << size << " GB\n";
     }
 
     auto left_index2 = formula_string.bra_indices()[1];
     if (left_index2.is_lcao()) {
       auto& left2 = this->orbital_registry().retrieve(left_index2);
-      result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
+      if (formula_string.notation() == Formula::Notation::Physical) {
+        result("p,i,q,s") = result("p,q,r,s") * left2("r,i");
+      } else {
+        result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
+      }
     }
 
     auto right_index1 = formula_string.ket_indices()[0];
@@ -570,9 +620,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 }
 
 template <typename Tile, typename Policy>
-typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::compute_direct(
-    const Formula& formula) {
-
+typename LCAOFactory<Tile, Policy>::DirectTArray
+LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
   TA_ASSERT(formula.rank() == 4);
   TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
   TA_ASSERT(formula.notation() == Formula::Notation::Chemical);
@@ -586,15 +635,14 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
 
   auto iter = this->direct_registry_.find(formula);
 
-  if(iter != this->direct_registry_.end()){
+  if (iter != this->direct_registry_.end()) {
     result = iter->second;
     ExEnv::out0() << indent;
     ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
     ExEnv::out0() << " Size: " << size << " GB\n";
-  }
-  else {
+  } else {
     // get three center integral
     auto df_formulas = gaussian::detail::get_df_formula(formula);
     TArray left = compute(df_formulas[0]);
@@ -603,7 +651,7 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
 
     time0 = mpqc::now(world, this->accurate_time_);
 
-    left("K,i,j") = center("K,Q")*left("Q,i,j");
+    left("K,i,j") = center("K,Q") * left("Q,i,j");
     result = gaussian::df_direct_integrals(left, right);
 
     time1 = mpqc::now(world, this->accurate_time_);
@@ -619,7 +667,6 @@ typename LCAOFactory<Tile, Policy>::DirectTArray LCAOFactory<Tile, Policy>::comp
                 << " Time: " << time << " s\n";
   ExEnv::out0() << decindent;
   return result;
-
 };
 
 #if TA_DEFAULT_POLICY == 0

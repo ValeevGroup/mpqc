@@ -8,7 +8,6 @@ diagonalize_for_coeffs.h
 eigen_solve_density_builder.h
 eigen_solve_density_builder_impl.h
 linear_cadf_builder.h
-linkage.cpp
 linkage.h
 mo_build.h
 orbital_localization.cpp
@@ -30,12 +29,11 @@ list(APPEND sources
         zrhf.h
 				zrhf_impl.h
         zrhf.cpp
-        df_zrhf.cpp
         decomposed_rij.h
         decomposed_rij.cpp
         pbc/periodic_cond_ortho.h
         pbc/periodic_soad.h
-        )
+				)
 endif()
 
 add_mpqc_library(lcao_scf sources sources "MPQCproperties;MPQClcao_expression;MPQClcao_wfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/lcao/scf")

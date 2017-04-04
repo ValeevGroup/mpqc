@@ -24,13 +24,13 @@ using Matrix = RowMatrixXd;
 /**
  * complex-valued Restricted Hartree-Fock class
  */
-template<typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
              public Provides<Energy /*,
           CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
-	using array_type = PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+	using array_type = typename PeriodicAOWavefunction<Tile, Policy>::ArrayType;
 	using array_type_z = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
@@ -52,7 +52,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    */
   zRHF(const KeyVal& kv);
 
-  ~zRHF() { }
+	~zRHF() {}
 
   void obsolete() override;
 
@@ -167,41 +167,51 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
  *
  * Refs: Burow, A. M.; Sierka, M.; Mohamed, F. JCP. 131, 214101 (2009)
  */
-class DFzRHF : public zRHF {
+template <typename Tile, typename Policy>
+class DFzRHF : public zRHF<Tile, Policy> {
  public:
-    using DirectTArray = PeriodicAOWavefunction<Tile, Policy>::DirectTArray;
+	using array_type = typename zRHF<Tile, Policy>::array_type;
+	using DirectTArray =
+			typename PeriodicAOWavefunction<Tile, Policy>::DirectTArray;
 
-    DFzRHF(const KeyVal& kv);
+	DFzRHF(const KeyVal& kv);
 
  private:
+	array_type M_;         // charge matrix of product density <μ|ν>
+	array_type n_;         // normalized charge vector <Κ>
+	double q_;             // total charge of auxiliary basis functions
+	array_type P_para_;    // projection matrix that projects X onto auxiliary
+												 // charge vector
+	array_type P_perp_;    // projection matrix that projects X onto the subspace
+												 // orthogonal to auxiliary charge vector
+	array_type V_;         // 2-center 2-electron integrals
+	array_type V_perp_;    // part of 2-center 2-electron integrals that is
+												 // orthogonal to auxiliary charge vector
+	array_type G_;         // 3-center 2-electron direct integrals contracted with
+												 // density matrix
+	array_type inv_;       // A inverse where A = V_perp + P_para
+	array_type identity_;  // idensity matrix
+	std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
+																				 // integrals. vector size = RJ_size_
+	array_type CD_;                        // intermediate for C_Xμν D_μν
+	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 
-		array_type M_;  // charge matrix of product density <μ|ν>
-		array_type n_;  // normalized charge vector <Κ>
-    double q_;  // total charge of auxiliary basis functions
-		array_type P_para_;  // projection matrix that projects X onto auxiliary charge vector
-		array_type P_perp_;  // projection matrix that projects X onto the subspace orthogonal to auxiliary charge vector
-		array_type V_;  // 2-center 2-electron integrals
-		array_type V_perp_;  // part of 2-center 2-electron integrals that is orthogonal to auxiliary charge vector
-		array_type G_;  // 3-center 2-electron direct integrals contracted with density matrix
-		array_type inv_;  // A inverse where A = V_perp + P_para
-		array_type identity_;  // idensity matrix
-    std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct integrals. vector size = RJ_size_
-		array_type CD_;  // intermediate for C_Xμν D_μν
-		array_type IP_;  // intermediate for inv_XY P_perp_YZ
+	/// returns DF Coulomb term J_μν
+	array_type J_builder() override;
 
-    /// returns DF Coulomb term J_μν
-		array_type J_builder() override;
-
-    /// initializes necessary arrays for J builder
-    void init_other() override;
+	/// initializes necessary arrays for J builder
+	void init_other() override;
 };
 
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
 extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao
 }  // namespace  mpqc
+
+#include "zrhf_impl.h"
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_

@@ -86,7 +86,7 @@ class OrbitalIndex {
     abs = -3,
     ribs = -4,
     dfbs = -5,
-    ubs = 0
+		ubs = -6
   };
 
   ///

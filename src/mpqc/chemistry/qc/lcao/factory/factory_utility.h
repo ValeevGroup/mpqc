@@ -121,50 +121,39 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula);
 OrbitalIndex get_jk_orbital_space(const Operator &operation);
 
 /*!
- * \brief This is the implementation of tensorZ_to_tensorD for 4D tensor
- * \param result_tile
- * \param arg_tile
- * \return
- */
-float take_real_4D(TA::TensorD &result_tile, const TA::TensorZ &arg_tile);
-
-/*!
- * \brief This is the implementation of tensorZ_to_tensorD for 2D tensor
- * \param result_tile
- * \param arg_tile
- * \return
- */
-float take_real_2D(TA::TensorD &result_tile, const TA::TensorZ &arg_tile);
-
-/*!
  * \brief This takes real or imaginary part from a complex array
+ * \tparam Policy can be TA::SparsePolicy or TA::DensePolicy
+ * \tparam Is_real true if real part, false if imaginary part
+ * \param a TensorZ array
+ * \return a TensorD array
  */
-template <typename Policy>
+template <typename Policy, bool Is_real = true>
 TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
-    const TA::DistArray<TA::TensorZ, Policy> &complex_array, bool if_real) {
+		const TA::DistArray<TA::TensorZ, Policy> &complex_array) {
   TA::DistArray<TA::TensorD, Policy> result_array;
 
-  if (!if_real)
-    throw FeatureNotImplemented(
-        "Taking imaginary parts of complex arrays has not been implemented.",
-        __FILE__, __LINE__);
+	auto take_part_from_tile =
+			[=](TA::TensorD &result_tile, const TA::TensorZ &arg_tile) {
+				const auto &range = arg_tile.range();
+				const auto volume = range.volume();
+				result_tile = TA::TensorD(range);
 
-  const auto rank = complex_array.trange().tiles_range().rank();
+				float norm = 0.0;
+				for (auto ord = 0; ord < volume; ++ord) {
+					const auto z = arg_tile[ord];
+					auto result_el = (Is_real) ? z.real() : z.imag();
+					norm += result_el * result_el;
+					result_tile[ord] = result_el;
+				}
 
-  if (rank == 4u) {
-    result_array =
-        TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_real_4D)>(
-            complex_array, take_real_4D);
-    complex_array.world().gop.fence();
-  } else if (rank == 2u) {
-    result_array =
-        TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_real_2D)>(
-            complex_array, take_real_2D);
-    complex_array.world().gop.fence();
-  } else {
-    throw FeatureNotImplemented("The array dimmension must be equal to 2 or 4.",
-                                __FILE__, __LINE__);
-  }
+				return std::sqrt(norm);
+			}
+
+	result_array =
+			TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_part_from_tile)>(
+					complex_array, take_part_from_tile);
+
+	complex_array.world().gop.fence();
 
   return result_array;
 }

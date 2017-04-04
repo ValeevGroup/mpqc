@@ -613,8 +613,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     // get all two electron integrals
     TArray g_abij = this->get_abij();
     TArray g_ijkl = this->get_ijkl();
-    auto g_abcd = this->lcao_factory().compute_direct(L"(a b|G|c d)[df]");
-//    auto g_abcd = this->lcao_factory().compute(L"(a b|G|c d)[df]");
+//    auto g_abcd = this->lcao_factory().compute_direct(L"(a b|G|c d)[df]");
+    auto g_abcd = this->lcao_factory().compute(L"(a b|G|c d)[df]");
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
     TArray g_iabc = this->get_iabc();

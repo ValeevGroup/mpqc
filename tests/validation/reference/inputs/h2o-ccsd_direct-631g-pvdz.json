@@ -36,7 +36,7 @@
     "ref": "$:scf",
     "method" : "direct_df",
     "occ_block_size" : 4,
-    "unocc_block_size" : 8
+    "unocc_block_size" : 4
   },
   "property" : {
     "type" : "Energy",

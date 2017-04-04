@@ -32,6 +32,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
 	using array_type = typename PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+	using factory_type = typename PeriodicAOWavefunction<Tile, Policy>::AOIntegral;
 	using array_type_z = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
@@ -155,14 +156,14 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   bool can_evaluate(Energy* energy) override;
   void evaluate(Energy* result) override;
 
-  /// returns Coulomb term J_μν
-	virtual array_type J_builder();
-  /// returns Exchange term K_μν
-	virtual array_type K_builder();
+//  /// returns Coulomb term J_μν
+//	virtual array_type J_builder();
+//  /// returns Exchange term K_μν
+//	virtual array_type K_builder();
   /// returns Hartree-Fock energy
   virtual double compute_energy();
-  /// initializes other stuff (may be used by derived class)
-  virtual void init_other() {}
+//  /// initializes other stuff (may be used by derived class)
+//  virtual void init_other() {}
 	/// initializes periodic four-center Fock builder
 	virtual void init_fock_builder();
 	/// builds Fock
@@ -203,11 +204,14 @@ class DFzRHF : public zRHF<Tile, Policy> {
 	array_type CD_;                        // intermediate for C_Xμν D_μν
 	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 
-	/// returns DF Coulomb term J_μν
-	array_type J_builder() override;
+//	/// returns DF Coulomb term J_μν
+//	array_type J_builder() override;
 
-	/// initializes necessary arrays for J builder
-	void init_other() override;
+//	/// initializes necessary arrays for J builder
+//	void init_other() override;
+
+	/// initializes necessary arrays for DFzRHF Fock builder
+	void init_fock_builder() override;
 };
 
 #if TA_DEFAULT_POLICY == 0

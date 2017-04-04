@@ -14,6 +14,8 @@ class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 	PeriodicFourCenterFockBuilder(Factory &ao_factory)
 			: ao_factory_(std::make_shared<Factory>(ao_factory)) {}
 
+	~PeriodicFourCenterFockBuilder() {}
+
 	array_type operator()(array_type const &D, array_type const &,
 												double) override {
 		// feed density matrix to Factory

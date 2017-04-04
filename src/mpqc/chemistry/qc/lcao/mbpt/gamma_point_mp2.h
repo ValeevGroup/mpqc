@@ -3,7 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/mp2.h"
-#include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
+#include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 
 namespace mpqc {
 namespace lcao {

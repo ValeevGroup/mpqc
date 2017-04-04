@@ -4,6 +4,7 @@
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
 #include <memory>
 
@@ -113,6 +114,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 	array_type F_;
 	array_type_z Fk_;
 
+	std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
+
   MatrixzVec C_;
   VectordVec eps_;
   MatrixzVec X_;
@@ -160,6 +163,10 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   virtual double compute_energy();
   /// initializes other stuff (may be used by derived class)
   virtual void init_other() {}
+	/// initializes periodic four-center Fock builder
+	virtual void init_fock_builder();
+	/// builds Fock
+	void build_F();
 };
 
 /*!

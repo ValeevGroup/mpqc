@@ -20,9 +20,9 @@
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
-    Matrixz;
-typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorz;
-typedef Eigen::Matrix<double, Eigen::Dynamic, 1> Vectord;
+		MatrixZ;
+typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> VectorZ;
+typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorD;
 
 // constant
 const std::complex<double> I(0.0, 1.0);
@@ -47,7 +47,7 @@ TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
  * \param eigVal the vector of complex eigenvalues
  * \param eigVec the complex matrix consisting of complex eigenvectors
  */
-void sort_eigen(Vectorz &eigVal, Matrixz &eigVec);
+void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec);
 
 /*!
  * \brief This takes the ordinal index of a lattice
@@ -151,7 +151,7 @@ namespace detail {
  * \param shift the 3D vector of the shift
  * \return the shared pointer of shifted Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift);
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift);
 
 /*!
  * \brief This shifts the origin of a Basis object by multiple vectors,
@@ -163,8 +163,10 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift);
  * \param dcell the direct unit cell params
  * \return the shared pointer of the compound Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
-                                          Vector3i nshift, Vector3d dcell);
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
+																					const Vector3d &shift_base,
+																					const Vector3i &nshift,
+																					const Vector3d &dcell);
 
 }  // namespace detail
 
@@ -318,8 +320,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return UnitCell object
   UnitCell &unitcell() { return *unitcell_; }
 
-  /// This sets the density for coulomb and exchange computations
-  void set_density(TArray D) { D_ = D; }
+	/*!
+	 * \brief This sets the density for coulomb and exchange computations
+	 * \param D the density feeded by user
+	 */
+	void set_density(TArray D) { D_ = D; }
 
   /// @return density matrix
   TArray get_density() { return D_; }

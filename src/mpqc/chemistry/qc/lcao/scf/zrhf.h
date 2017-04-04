@@ -16,9 +16,9 @@
 namespace mpqc {
 namespace lcao {
 
-using MatrixzVec = std::vector<Matrixz>;
-using VectorzVec = std::vector<Vectorz>;
-using VectordVec = std::vector<Vectord>;
+using MatrixzVec = std::vector<MatrixZ>;
+using VectorzVec = std::vector<VectorZ>;
+using VectordVec = std::vector<VectorD>;
 using Matrix = RowMatrixXd;
 
 /**
@@ -98,7 +98,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>,
    * \param arg_value original complex value
    * \param factor \phi in e^(i \phi)
    */
-  Matrixz reverse_phase_factor(Matrixz& mat0);
+  MatrixZ reverse_phase_factor(MatrixZ& mat0);
 
  protected:
   TArray S_;

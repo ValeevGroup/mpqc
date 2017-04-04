@@ -409,7 +409,8 @@ void closed_shell_cabs_mo_build_svd(
         world, tr_ribs, tr_ribs_mo, 1.0);
     C_ri("i,j") = S_ribs_inv("i,k") * ribs_to_mo("k,j");
 
-    auto tr_allvir_mo = utility::compute_trange1(nbf_cabs + n_vir, vir_blocksize);
+		auto tr_allvir_mo =
+				utility::compute_trange1(nbf_cabs + n_vir, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
                                             "All Virtual MO");
 
@@ -688,7 +689,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
       utility::compute_trange1(tr_cabs.elements_range().second, vir_blocksize);
-  auto tr_allvir_mo = utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
+	auto tr_allvir_mo =
+			utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
 
   mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
   TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile, Policy>(
@@ -721,18 +723,23 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
  * \brief This inserts crystal orbitals to registry for gamma-point methods
  */
 template <typename Tile, typename Policy>
-std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
-                           RowMatrixXd& C_gamma_point, UnitCell& unitcell,
-                           size_t occ_block, size_t vir_block) {
+std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(
+		PeriodicLCAOFactory<Tile, Policy> &plcao_factory,
+		RowMatrixXd &C_gamma_point, UnitCell &unitcell, size_t occ_block,
+		size_t vir_block) {
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
-  auto& orbital_registry = plcao_factory.orbital_registry();
-  auto& world = plcao_factory.world();
+	auto &orbital_registry = plcao_factory.orbital_registry();
+	auto &world = plcao_factory.world();
 
   auto all = C_gamma_point.cols();
 
   // the unit cell must be electrically neutral
   const auto charge = 0;
+
+	assert(unitcell.total_atomic_number() % 2 == 0 &&
+				 "total atomic number must be even");
+
   auto occ = (unitcell.total_atomic_number() - charge) / 2;
   auto vir = all - occ;
   std::size_t n_frozen_core = 0;  // TODO: should be determined by user
@@ -745,9 +752,8 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLC
   ExEnv::out0() << "OccBlockSize: " << occ_block << std::endl;
   ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
 
-  auto obs_basis =
-      plcao_factory.pao_factory().basis_registry()->retrieve(
-          OrbitalIndex(L"κ"));
+	auto obs_basis = plcao_factory.pao_factory().basis_registry()->retrieve(
+			OrbitalIndex(L"κ"));
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
 
   // get all trange1s
@@ -793,8 +799,6 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLC
 
   return tre;
 }
-
-
 
 }  // namespace lcao
 }  // namespace mpqc

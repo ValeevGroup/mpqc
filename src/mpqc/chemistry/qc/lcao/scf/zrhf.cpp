@@ -252,21 +252,21 @@ zRHF::TArray zRHF::compute_density() {
     auto X = X_[k];
     // Symmetrize Fock
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    Matrixz F_twice = F + F.transpose().conjugate();
+    MatrixZ F_twice = F + F.transpose().conjugate();
     // When k=0 (gamma point), reverse phase factor of complex values
     if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
       F_twice = reverse_phase_factor(F_twice);
     F = 0.5 * F_twice;
 
     // Orthogonalize Fock matrix: F' = Xt * F * X
-    Matrixz Xt = X.transpose().conjugate();
+    MatrixZ Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
 
     // Diagonalize F'
-    Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(Ft);
+    Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
     eps_[k] = comp_eig_solver.eigenvalues();
-    Matrixz Ctemp = comp_eig_solver.eigenvectors();
+    MatrixZ Ctemp = comp_eig_solver.eigenvectors();
 
     // When k=0 (gamma point), reverse phase factor of complex eigenvectors
     if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
@@ -305,7 +305,7 @@ zRHF::TArrayZ zRHF::transform_real2recip(TArray& matrix) {
   // Perform real->reciprocal transformation with Eigen
   // TODO: perform it with TA
   auto matrix_eig = array_ops::array_to_eigen(matrix);
-  Matrixz result_eig(tr0.extent(), tr1.extent());
+  MatrixZ result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();
@@ -331,8 +331,8 @@ zRHF::TArrayZ zRHF::transform_real2recip(TArray& matrix) {
   return result;
 }
 
-Matrixz zRHF::reverse_phase_factor(Matrixz& mat0) {
-  Matrixz result(mat0);
+MatrixZ zRHF::reverse_phase_factor(MatrixZ& mat0) {
+  MatrixZ result(mat0);
 
   for (auto row = 0; row < mat0.rows(); ++row) {
     for (auto col = 0; col < mat0.cols(); ++col) {

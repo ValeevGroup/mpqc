@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include <libint2/engine.h>
+
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
@@ -18,8 +20,6 @@
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals.h"
 #include "mpqc/util/meta/make_array.h"
-
-#include <libint2/engine.h>
 #include "mpqc/util/misc/pool.h"
 
 namespace mpqc {

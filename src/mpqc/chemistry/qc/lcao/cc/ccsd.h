@@ -240,7 +240,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "CCSD Time in CCSD: " << duration0 << std::endl;
+      ExEnv::out0() << "CCSD Time in CCSD: " << duration0 << " S" << std::endl;
     }
   }
 

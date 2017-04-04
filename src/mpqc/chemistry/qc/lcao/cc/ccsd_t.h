@@ -191,7 +191,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       this->set_value(result, ccsd_energy + triples_energy_);
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "(T) Time in CCSD(T): " << duration0 << std::endl;
+      ExEnv::out0() << "(T) Time in CCSD(T): " << duration0 << " S" << std::endl;
     }
   }
 

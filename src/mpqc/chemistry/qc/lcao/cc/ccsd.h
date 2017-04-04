@@ -66,7 +66,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
+   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard method |
@@ -86,10 +86,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     auto default_method =
         this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
     method_ = kv.value<std::string>("method", default_method);
-    if (method_ != "df" && method_ != "direct" && method_ != "standard") {
+    if (method_ != "df" && method_ != "direct" && method_ != "standard" &&
+        method_ != "direct_df") {
       throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
     }
-    if (method_ == "df" || method_ == "direct") {
+    if (method_ == "df" || method_ == "direct_df") {
       df_ = true;
     }
 
@@ -190,7 +191,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
           std::make_shared<Energy>(ref_wfn_, target_ref_precision);
       ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
-      auto& world = this->wfn_world()->world();
+      auto &world = this->wfn_world()->world();
       auto time0 = mpqc::fenced_now(world);
 
       this->init_sdref(ref_wfn_, target_ref_precision);
@@ -224,7 +225,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         ccsd_corr_energy_ = compute_ccsd_conventional(t1, t2);
       } else if (method_ == "df") {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
-      } else if (method_ == "direct") {
+      } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
             this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
@@ -964,11 +965,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray ca = this->get_Ca();
     TArray ci = this->get_Ci();
 
-    // get three center integral
-    TArray Xab = this->get_Xab();
-    TArray Xij = this->get_Xij();
-    TArray Xai = this->get_Xai();
-
     mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
 
     bool accurate_time = this->lcao_factory().accurate_time();
@@ -978,11 +974,29 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
     auto tmp_time0 = mpqc::now(world, accurate_time);
 
+    // get three center integral
+    TArray Xab, Xij, Xai;
+    if (this->df_) {
+      Xab = this->get_Xab();
+      Xij = this->get_Xij();
+      Xai = this->get_Xai();
+    }
+    // get all integrals
+    TArray g_ijkl = this->get_ijkl();
     TArray g_ijab = this->get_ijab();
-
+    TArray g_iajb = this->get_iajb();
+    TArray g_ijka = this->get_ijka();
+    TArray g_ijak = this->get_ijak();
+    TArray g_iabc;
+    TArray g_aibc;
+    if (!this->df_) {
+      g_iabc = this->get_iabc();
+      g_aibc = this->get_aibc();
+    }
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
     TArray f_ab = this->get_fock_ab();
+    this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
 
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
@@ -995,16 +1009,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       g_abij("a,b,i,j") = g_ijab("i,j,a,b");
       t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
     }
-
-    //      std::cout << t1 << std::endl;
-    //      std::cout << t2 << std::endl;
-
-    // get all two electron integrals
-    TArray g_ijkl = this->get_ijkl();
-    TArray g_iajb = this->get_iajb();
-    TArray g_ijak = this->get_ijak();
-    TArray g_ijka = this->get_ijka();
-    this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -1125,9 +1129,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
         // permutation term
         {
-          r2("a,b,i,j") = Xab("X,b,c") * t1("c,j") * Xai("X,a,i");
+          r2("a,b,i,j") = -g_iajb("k,b,i,c") * t1("c,j") * t1("a,k");
 
-          r2("a,b,i,j") -= g_iajb("k,b,i,c") * t1("c,j") * t1("a,k");
+          if (this->df_) {
+            r2("a,b,i,j") += Xab("X,b,c") * t1("c,j") * Xai("X,a,i");
+          } else {
+            r2("a,b,i,j") += g_iabc("i,c,a,b") * t1("c,j");
+          }
 
           r2("a,b,i,j") -=
               (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
@@ -1147,11 +1155,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
               h_ki("k,i") + f_ai("c,k") * t1("c,i") +
               (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
-          g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+          if (this->df_) {
+            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
 
-                        + 2.0 * Xai("X,d,k") * t1("d,k") * Xab("X,a,c")
+                          + 2.0 * Xai("X,d,k") * t1("d,k") * Xab("X,a,c")
 
-                        - Xab("X,a,d") * t1("d,k") * Xai("X,c,k");
+                          - Xab("X,a,d") * t1("d,k") * Xai("X,c,k");
+          } else {
+            g_ac("a,c") =
+                h_ac("a,c") - f_ai("c,k") * t1("a,k") +
+                (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+          }
 
           r2("a,b,i,j") +=
               (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
@@ -1172,24 +1186,46 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
             T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
-            j_akic("a,k,i,c") =
-                g_ijab("i,k,a,c")
+            if (this->df_) {
+              j_akic("a,k,i,c") =
+                  g_ijab("i,k,a,c")
 
-                - g_ijka("l,k,i,c") * t1("a,l")
+                  - g_ijka("l,k,i,c") * t1("a,l")
 
-                + (Xab("X,a,d") * t1("d,i")) * Xai("X,c,k")
+                  + (Xab("X,a,d") * t1("d,i")) * Xai("X,c,k")
 
-                - (Xai("X,d,l") * T("d,a,i,l")) * Xai("X,c,k")
+                  - (Xai("X,d,l") * T("d,a,i,l")) * Xai("X,c,k")
 
-                + (g_ijab("k,l,c,d") - 0.5 * g_ijab("k,l,d,c")) * t2("a,d,i,l");
+                  +
+                  (g_ijab("k,l,c,d") - 0.5 * g_ijab("k,l,d,c")) * t2("a,d,i,l");
 
-            k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+              k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
 
-                                - g_ijka("k,l,i,c") * t1("a,l")
+                                  - g_ijka("k,l,i,c") * t1("a,l")
 
-                                + (Xai("X,d,k") * t1("d,i")) * Xab("X,a,c")
+                                  + (Xai("X,d,k") * t1("d,i")) * Xab("X,a,c")
 
-                                - g_ijab("k,l,d,c") * T("d,a,i,l");
+                                  - g_ijab("k,l,d,c") * T("d,a,i,l");
+            } else {
+              j_akic("a,k,i,c") =
+                  g_ijab("i,k,a,c") - g_ijka("l,k,i,c") * t1("a,l")
+
+                  + g_aibc("a,k,d,c") * t1("d,i")
+
+                  - g_ijab("k,l,c,d") * T("d,a,i,l")
+
+                  +
+                  0.5 * (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
+                      t2("a,d,i,l");
+
+              k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+
+                                  - g_ijka("k,l,i,c") * t1("a,l")
+
+                                  + g_iabc("k,a,d,c") * t1("d,i")
+
+                                  - g_ijab("k,l,d,c") * T("d,a,i,l");
+            }
 
             if (print_detail_) {
               mpqc::detail::print_size_info(T, "T");

@@ -57,7 +57,11 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
     }
 
     method_ = kv.value<std::string>("method", "df");
-    if (method_ != "standard" && method_ != "df" && method_ != "direct") {
+    if(method_ == "direct"){
+      throw InputError("CCSD_F12 must use direct_df! \n", __FILE__, __LINE__,
+                       "method");
+    }
+    if (method_ != "standard" && method_ != "df" && method_ != "direct_df") {
       throw InputError("Invalid Method For CCSD_F12! \n", __FILE__, __LINE__,
                        "method");
     }
@@ -169,9 +173,7 @@ void CCSD_F12<Tile>::compute_f12() {
   Matrix Eij_F12;
   if (method_ == "standard") {
     Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
-  } else if (method_ == "df") {
-    Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
-  } else if (method_ == "direct") {
+  } else if (method_ == "df" || method_ == "direct_df") {
     Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
   }
 

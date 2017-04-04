@@ -965,7 +965,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray ca = this->get_Ca();
     TArray ci = this->get_Ci();
 
-    mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
+    if(this->df_){
+      mpqc::utility::print_par(world, "Use Direct-DF CCSD Compute \n");
+    }
+    else{
+      mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
+    }
 
     bool accurate_time = this->lcao_factory().accurate_time();
 

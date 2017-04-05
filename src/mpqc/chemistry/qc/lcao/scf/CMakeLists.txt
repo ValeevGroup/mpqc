@@ -34,6 +34,7 @@ list(APPEND sources
         pbc/periodic_cond_ortho.h
         pbc/periodic_soad.h
 				pbc/periodic_four_center_fock_builder.h
+				pbc/periodic_df_fock_builder.h
 				)
 endif()
 

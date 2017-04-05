@@ -104,6 +104,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 	array_type S_;
 	array_type D_;
   bool print_detail_;
+	std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
 
  private:
 	array_type T_;
@@ -114,8 +115,6 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 	array_type K_;
 	array_type F_;
 	array_type_z Fk_;
-
-	std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -156,16 +155,11 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   bool can_evaluate(Energy* energy) override;
   void evaluate(Energy* result) override;
 
-//  /// returns Coulomb term J_μν
-//	virtual array_type J_builder();
-//  /// returns Exchange term K_μν
-//	virtual array_type K_builder();
   /// returns Hartree-Fock energy
   virtual double compute_energy();
-//  /// initializes other stuff (may be used by derived class)
-//  virtual void init_other() {}
 	/// initializes periodic four-center Fock builder
 	virtual void init_fock_builder();
+
 	/// builds Fock
 	void build_F();
 };
@@ -179,10 +173,16 @@ template <typename Tile, typename Policy>
 class DFzRHF : public zRHF<Tile, Policy> {
  public:
 	using array_type = typename zRHF<Tile, Policy>::array_type;
-	using DirectTArray =
-			typename PeriodicAOWavefunction<Tile, Policy>::DirectTArray;
+	using factory_type = typename zRHF<Tile, Policy>::factory_type;
+	using DirectTArray = typename factory_type::DirectTArray;
 
 	DFzRHF(const KeyVal& kv);
+
+	~DFzRHF() {}
+
+ private:
+	/// initializes necessary arrays for DFzRHF Fock builder
+	void init_fock_builder() override;
 
  private:
 	array_type M_;         // charge matrix of product density <μ|ν>
@@ -204,14 +204,6 @@ class DFzRHF : public zRHF<Tile, Policy> {
 	array_type CD_;                        // intermediate for C_Xμν D_μν
 	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 
-//	/// returns DF Coulomb term J_μν
-//	array_type J_builder() override;
-
-//	/// initializes necessary arrays for J builder
-//	void init_other() override;
-
-	/// initializes necessary arrays for DFzRHF Fock builder
-	void init_fock_builder() override;
 };
 
 #if TA_DEFAULT_POLICY == 0

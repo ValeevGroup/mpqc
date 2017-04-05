@@ -12,18 +12,17 @@ class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
 
 	PeriodicFourCenterFockBuilder(Factory &ao_factory)
-			: ao_factory_(std::make_shared<Factory>(ao_factory)) {}
+			: ao_factory_(ao_factory) {}
 
 	~PeriodicFourCenterFockBuilder() {}
 
-	array_type operator()(array_type const &D, array_type const &,
-												double) override {
+	array_type operator()(array_type const &D, double) override {
 		// feed density matrix to Factory
-		ao_factory_->set_density(D);
+		ao_factory_.set_density(D);
 
 		array_type J, K, G;
-		J = ao_factory_->compute_direct(L"(μ ν| J|κ λ)");
-		K = ao_factory_->compute_direct(L"(μ ν| K|κ λ)");
+		J = ao_factory_.compute_direct(L"(μ ν| J|κ λ)");
+		K = ao_factory_.compute_direct(L"(μ ν| K|κ λ)");
 
 		G("mu, nu") = 2.0 * J("mu, nu") - K("mu, nu");
 
@@ -36,8 +35,8 @@ class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 	}
 
  private:
-	std::shared_ptr<Factory> ao_factory_;
-}
+	Factory &ao_factory_;
+};
 
 }  // namespace scf
 }  // namespace mpqc

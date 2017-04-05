@@ -320,6 +320,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return UnitCell object
   UnitCell &unitcell() { return *unitcell_; }
 
+	/// @return boolean of wether to print detailed information
+	bool print_detail() { return print_detail_; }
+
 	/*!
 	 * \brief This sets the density for coulomb and exchange computations
 	 * \param D the density feeded by user

@@ -11,23 +11,22 @@ template <typename Tile, typename Policy, typename Factory>
 class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  public:
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
+	using DirectTArray = typename Factory::DirectTArray;
 
-	PeriodicFourCenterFockBuilder(Factory &ao_factory)
-			: ao_factory_(std::make_shared<Factory>(ao_factory)) {
-		print_detail_ = kv.value<bool>("print_detail", false);
-		auto &world = ao_factory_->world();
+	PeriodicDFFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
+		print_detail_ = ao_factory_.print_detail();
+		auto &world = ao_factory_.world();
 
 		auto t0_init = mpqc::fenced_now(world);
 		mpqc::time_point t0, t1;
 
-		// TODO read overlap from zRHF?
 		// overlap matrix
-		M_ = ao_factory_->compute(L"<κ|λ>");
+		M_ = ao_factory_.compute(L"<κ|λ>");
 
 		// 1*N charge matrix of auxiliary basis within one unit cell
 		auto unit_basis = ::mpqc::lcao::gaussian::detail::create_unit_basis();
-		ao_factory_->basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
-		auto charge_mat = ao_factory_->compute(L"< U | Κ >");
+		ao_factory_.basis_registry()->add(OrbitalIndex(L"U"), unit_basis);
+		auto charge_mat = ao_factory_.compute(L"< U | Κ >");
 		// charge vector of auxiliary basis within one unit cell
 		auto charge_vec =
 				::mpqc::lcao::gaussian::detail::take_row_from_2D_array(charge_mat, 0);
@@ -98,27 +97,26 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 									<< std::endl;
 	}
 
-	~PeriodicFourCenterFockBuilder() {}
+	~PeriodicDFFockBuilder() {}
+
+	array_type operator()(array_type const &D, double) override {
+		// feed density matrix to Factory
+		ao_factory_.set_density(D);
+
+		array_type K, G;
+		K = ao_factory_.compute_direct(L"(μ ν| K|κ λ)");
+		G("mu, nu") = 2.0 * compute_J(D)("mu, nu") - K("mu, nu");
+
+		return G;
+	}
 
 	void register_fock(const array_type &fock,
 										 FormulaRegistry<array_type> &registry) override {
 		registry.insert(Formula(L"(κ|F|λ)"), fock);
 	}
 
-	array_type operator()(array_type const &D, array_type const &,
-												double) override {
-		// feed density matrix to Factory
-		ao_factory_->set_density(D);
-
-		array_type K, G;
-		K = ao_factory_->compute_direct(L"(μ ν| K|κ λ)");
-		G("mu, nu") = 2.0 * compute_J()("mu, nu") - K("mu, nu");
-
-		return G;
-	}
-
  private:
-	std::shared_ptr<Factory> ao_factory_;
+	Factory &ao_factory_;
 	bool print_detail_;
 
 	array_type M_;         // charge matrix of product density <μ|ν>
@@ -140,15 +138,15 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 	array_type CD_;                        // intermediate for C_Xμν D_μν
 	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 
-private:
-	array_type compute_J() {
-		auto &world = ao_factory_->world();
+ private:
+	array_type compute_J(const array_type &D) {
+		auto &world = ao_factory_.world();
 
 		mpqc::time_point t0, t1;
 		auto t0_j_builder = mpqc::fenced_now(world);
 
 		// 3-center 2-electron direct integrals contracted with density matrix
-		G_ = ao_factory_->compute_direct(L"( Κ | G|κ λ)");
+		G_ = ao_factory_.compute_direct(L"( Κ | G|κ λ)");
 
 		// Build [CD]_X = C_Xμν D_μν
 		double t_w_para, t_w;
@@ -156,7 +154,7 @@ private:
 			// intermediate for C_para_Xμν D_μν
 			t0 = mpqc::fenced_now(world);
 			array_type interm;
-			interm("X") = (1.0 / q_) * M_("mu, nu") * n_("X") * this->D_("mu, nu");
+			interm("X") = (1.0 / q_) * M_("mu, nu") * n_("X") * D("mu, nu");
 			t1 = mpqc::fenced_now(world);
 			t_w_para = mpqc::duration_in_s(t0, t1);
 
@@ -185,7 +183,7 @@ private:
 			t_j1_interm = mpqc::duration_in_s(t0_j1_interm, t1_j1_interm);
 
 			auto t0_j1_contr = mpqc::fenced_now(world);
-			auto RJ_size = ao_factory_->RJ_size();
+			auto RJ_size = ao_factory_.RJ_size();
 			for (auto RJ = 0; RJ < RJ_size; ++RJ) {
 				auto &g = Gamma_vec_[RJ];
 				if (RJ == 0)
@@ -241,7 +239,7 @@ private:
 		}
 		return J;
 	}
-}
+};
 
 }  // namespace scf
 }  // namespace mpqc

@@ -42,7 +42,7 @@ class PeriodicFockBuilder {
 	virtual ~PeriodicFockBuilder() {}
 
 	virtual array_type operator()(
-			array_type const &D, array_type const &C,
+			array_type const &D,
 			double target_precision = std::numeric_limits<double>::epsilon()) = 0;
 
 	virtual void register_fock(const array_type &,

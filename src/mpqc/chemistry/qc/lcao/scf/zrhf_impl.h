@@ -5,8 +5,8 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 
 namespace mpqc {
@@ -85,9 +85,6 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 	// compute guess density
 	D_ = compute_density();
 
-	// set density in periodic ao_factory
-	ao_factory.set_density(D_);
-
 	init_fock_builder();
 
 	auto init_end = mpqc::fenced_now(world);
@@ -120,20 +117,6 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
 		if (print_detail_)
 			if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
-
-		//		auto j_start = mpqc::fenced_now(world);
-		//		J_ = J_builder();  // Coulomb
-		//		auto j_end = mpqc::fenced_now(world);
-		//		j_duration_ += mpqc::duration_in_s(j_start, j_end);
-
-		//		auto k_start = mpqc::fenced_now(world);
-		//		K_ = K_builder();  // Exchange
-		//		auto k_end = mpqc::fenced_now(world);
-		//		k_duration_ += mpqc::duration_in_s(k_start, k_end);
-
-		//		// F = H + 2J - K
-		//		F_ = H_;
-		//		F_("mu, nu") += 2.0 * J_("mu, nu") - K_("mu, nu");
 
 		// F = H + 2J - K
 		auto f_start = mpqc::fenced_now(world);
@@ -404,18 +387,10 @@ double zRHF<Tile, Policy>::compute_energy() {
 }
 
 template <typename Tile, typename Policy>
-typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::J_builder() {
-	return this->ao_factory().compute_direct(L"(μ ν| J|κ λ)");
-}
-
-template <typename Tile, typename Policy>
-typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::K_builder() {
-	return this->ao_factory().compute_direct(L"(μ ν| K|κ λ)");
-}
-
-template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::init_fock_builder() {
-	using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy, factory_type>;
+	using Builder =
+			scf::PeriodicFourCenterFockBuilder<Tile, Policy,
+																				 zRHF<Tile, Policy>::factory_type>;
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
@@ -434,7 +409,9 @@ DFzRHF<Tile, Policy>::DFzRHF(const KeyVal& kv) : zRHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DFzRHF<Tile, Policy>::init_fock_builder() {
-	using Builder = scf::PeriodicDFFockBuilder<Tile, Policy, factory_type>;
+	using Builder =
+			scf::PeriodicDFFockBuilder<Tile, Policy,
+																 DFzRHF<Tile, Policy>::factory_type>;
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 

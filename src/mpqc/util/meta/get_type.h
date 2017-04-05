@@ -61,9 +61,7 @@ struct select_impl {
 
 // Gets the last element in a variadic parameter pack.
 template <typename T, typename... Ts>
-auto back(T &&t, Ts &&... ts)
-    -> decltype(detail::select_impl<Ts...>::select(static_cast<T &&>(t),
-                                                   static_cast<Ts &&>(ts)...)) {
+auto back(T &&t, Ts &&... ts) {
   return detail::select_impl<Ts...>::select(static_cast<T &&>(t),
                                             static_cast<Ts &&>(ts)...);
 }

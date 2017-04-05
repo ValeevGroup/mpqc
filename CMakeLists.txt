@@ -144,15 +144,11 @@ include(CheckFunctionExists)
 
 # Check compiler feature support ===============================================
 
-include(CheckCXX11Support)
-check_cxx11_support(COMPILER_HAS_CXX11_SUPPORT CXX11_COMPILE_FLAG)
-if(COMPILER_HAS_CXX11_SUPPORT)
-  if(CXX11_COMPILE_FLAG)
-    append_flags(CMAKE_CXX_FLAGS "${CXX11_COMPILE_FLAG}")
-  endif()
-else()
-  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} does not support C++11.")
-endif()
+# need for C++14 will be inherited from madness
+# but insist on strict standard
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
 check_include_files(sys/resource.h       HAVE_SYS_RESOURCE_H)

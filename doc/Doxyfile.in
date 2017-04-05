@@ -1078,7 +1078,7 @@ CLANG_ASSISTED_PARSING = NO
 # specified with INPUT and INCLUDE_PATH.
 # This tag requires that the tag CLANG_ASSISTED_PARSING is set to YES.
 
-CLANG_OPTIONS          = -std=c++11 -stdlib=libc++
+CLANG_OPTIONS          = -std=c++14 -stdlib=libc++
 
 #---------------------------------------------------------------------------
 # Configuration options related to the alphabetical class index

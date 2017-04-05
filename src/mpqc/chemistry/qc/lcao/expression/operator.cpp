@@ -59,7 +59,7 @@ Operator::Operator(std::wstring oper) {
 
   auto iter = std::find_if(
       begin(oper_to_string), end(oper_to_string),
-      [=](const std::pair<Operator::Type, std::wstring> item) -> bool {
+      [=](const std::pair<Operator::Type, std::wstring> item) {
         return item.second == oper;
       });
 

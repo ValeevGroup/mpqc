@@ -5,23 +5,6 @@
 
 namespace std {
 
-// C++14 features
-#if __cplusplus < 201402L
-
-template <typename T>
-using remove_reference_t = typename std::remove_reference<T>::type;
-
-template <typename T>
-using remove_const_t = typename std::remove_const<T>::type;
-
-template <typename T>
-using result_of_t = typename std::result_of<T>::type;
-
-template <bool B, typename U = void>
-using enable_if_t = typename std::enable_if<B, U>::type;
-
-#endif  // C++14 features
-
 // C++17 features
 #if __cplusplus <= 201402L
 

@@ -7,6 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 
+#include <memory>
+
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
@@ -17,7 +19,6 @@
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
-#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
 

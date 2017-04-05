@@ -14,11 +14,11 @@ struct Cluster {
     Vector3d center;
     std::vector<Vector3d> elements;
 
-    auto begin() const -> decltype(elements.begin()) {
+    auto begin() const {
         return elements.begin();
     }
 
-    auto end() const -> decltype(elements.end()) { return elements.end(); }
+    auto end() const { return elements.end(); }
 };
 
 void remove_clusterables(Cluster &cluster) { cluster.elements.clear(); }

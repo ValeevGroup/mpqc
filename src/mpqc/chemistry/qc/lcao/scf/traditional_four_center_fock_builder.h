@@ -93,6 +93,7 @@ class FourCenterFockBuilder
 	using Shell = typename ::mpqc::lcao::gaussian::Shell;
 	using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
 	using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
+	using func_offset_list = std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
   FourCenterFockBuilder(madness::World &world,
                         std::shared_ptr<const Basis> bra_basis,
@@ -290,30 +291,30 @@ class FourCenterFockBuilder
 
 		ExEnv::out0() << "\n# of integrals = " << num_ints_computed_ << std::endl;
 
-		ExEnv::out0() << "\ntime for compute_JK_aaaa = " << dur_jk << std::endl;
-		ExEnv::out0() << "\ttime for prepare input = " << dur_prepare << std::endl;
-		ExEnv::out0() << "\ttime for init engine = " << dur_eng << std::endl;
-		ExEnv::out0() << "\ttime for init screener = " << dur_screen << std::endl;
-		ExEnv::out0() << "\ttime for computing shell block norm of D = " << dur_shblknormD << std::endl;
-		ExEnv::out0() << "\ttime for computing tasks = " << dur_task << std::endl;
-		ExEnv::out0() << "\t\ttime for finding D tiles = " << dur_findD << std::endl;
-		ExEnv::out0() << "\t\ttime for pre Shell loop = " << dur_preLoopShell_ << std::endl;
-		ExEnv::out0() << "\t\ttime for 6 fock tiles = " << dur_fock_tile_ << std::endl;
+//		ExEnv::out0() << "\ntime for compute_JK_aaaa = " << dur_jk << std::endl;
+//		ExEnv::out0() << "\ttime for prepare input = " << dur_prepare << std::endl;
+//		ExEnv::out0() << "\ttime for init engine = " << dur_eng << std::endl;
+//		ExEnv::out0() << "\ttime for init screener = " << dur_screen << std::endl;
+//		ExEnv::out0() << "\ttime for computing shell block norm of D = " << dur_shblknormD << std::endl;
+//		ExEnv::out0() << "\ttime for computing tasks = " << dur_task << std::endl;
+//		ExEnv::out0() << "\t\ttime for finding D tiles = " << dur_findD << std::endl;
+//		ExEnv::out0() << "\t\ttime for pre Shell loop = " << dur_preLoopShell_ << std::endl;
+//		ExEnv::out0() << "\t\ttime for 6 fock tiles = " << dur_fock_tile_ << std::endl;
 
-		ExEnv::out0() << "\t\t\ttime for pre loop = " << dur_preLoop_ << std::endl;
-		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell0 = " << dur_preLoopInts_s0_ << std::endl;
-		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell1 = " << dur_preLoopInts_s1_ << std::endl;
-		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell2 = " << dur_preLoopInts_s2_ << std::endl;
-		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell3 = " << dur_preLoopInts_s3_ << std::endl;
+//		ExEnv::out0() << "\t\t\ttime for pre loop = " << dur_preLoop_ << std::endl;
+//		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell0 = " << dur_preLoopInts_s0_ << std::endl;
+//		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell1 = " << dur_preLoopInts_s1_ << std::endl;
+//		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell2 = " << dur_preLoopInts_s2_ << std::endl;
+//		ExEnv::out0() << "\t\t\ttime for pre Ints loop shell3 = " << dur_preLoopInts_s3_ << std::endl;
 //		ExEnv::out0() << "\t\t\ttime for loop shell3 = " << dur_s3_ << std::endl;
 
-		ExEnv::out0() << "\t\t\t\ttime for skipping = " << dur_skip_ << std::endl;
-		ExEnv::out0() << "\t\t\t\ttime for integrals = " << dur_int_compute_ << std::endl;
-		ExEnv::out0() << "\t\t\t\ttime for contraction = " << dur_contr_ << std::endl;
+//		ExEnv::out0() << "\t\t\t\ttime for skipping = " << dur_skip_ << std::endl;
+//		ExEnv::out0() << "\t\t\t\ttime for integrals = " << dur_int_compute_ << std::endl;
+//		ExEnv::out0() << "\t\t\t\ttime for contraction = " << dur_contr_ << std::endl;
 
-		ExEnv::out0() << "\t\ttime for accumulate = " << dur_accumul_ << std::endl;
-		ExEnv::out0() << "\ttime for shape = " << dur_shape << std::endl;
-		ExEnv::out0() << "\ttime for g = " << dur_g << std::endl;
+//		ExEnv::out0() << "\t\ttime for accumulate = " << dur_accumul_ << std::endl;
+//		ExEnv::out0() << "\ttime for shape = " << dur_shape << std::endl;
+//		ExEnv::out0() << "\ttime for g = " << dur_g << std::endl;
 
     return G;
   }
@@ -380,7 +381,7 @@ class FourCenterFockBuilder
 
   void compute_task(Tile D01, Tile D23, Tile D02, Tile D03, Tile D12, Tile D13,
                     std::array<size_t, 4> tile_idx) {
-		const auto t_preLoopShell_0 = mpqc::now();
+//		const auto t_preLoopShell_0 = mpqc::now();
 
 		const auto tile0 = tile_idx[0];
 		const auto tile1 = tile_idx[1];
@@ -448,14 +449,14 @@ class FourCenterFockBuilder
 		const auto* norm_D03_ptr = compute_K_ ? norm_D03.data() : nullptr;
 		const auto* norm_D12_ptr = compute_K_ ? norm_D12.data() : nullptr;
 		const auto* norm_D13_ptr = compute_K_ ? norm_D13.data() : nullptr;
-		const auto t_preLoopShell_1 = mpqc::now();
-		dur_preLoopShell_ += mpqc::duration_in_s(t_preLoopShell_0, t_preLoopShell_1);
+//		const auto t_preLoopShell_1 = mpqc::now();
+//		dur_preLoopShell_ += mpqc::duration_in_s(t_preLoopShell_0, t_preLoopShell_1);
 
-		const auto t_fock_tile_0 = mpqc::now();
-		ExEnv::out0() << "\nI'm the only task.\n" << std::endl;
+//		const auto t_fock_tile_0 = mpqc::now();
+//		ExEnv::out0() << "\nI'm the only task.\n" << std::endl;
     // compute contributions to all Fock matrices
     {
-			const auto t_preLoop_0 = mpqc::now();
+//			const auto t_preLoop_0 = mpqc::now();
       auto& screen = *p_screener_;
       auto engine = engines_->local();
       const auto engine_precision = target_precision_;
@@ -496,39 +497,47 @@ class FourCenterFockBuilder
 			const auto nshells1 = cluster1.size();
 			const auto nshells2 = cluster2.size();
 			const auto nshells3 = cluster3.size();
-			ExEnv::out0() << "\n# of shells = \n" << nshells0 << std::endl;
+//			ExEnv::out0() << "\n# of shells = \n" << nshells0 << std::endl;
+
+			// compute offset list of cluster1 and cluster3
+			auto offset_list_c1 = compute_func_offset_list(cluster1, rng1.first);
+			auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
 
       // this is the index of the first basis functions for each shell *in this shell cluster*
       auto cf0_offset = 0;
       // this is the index of the first basis functions for each shell *in the basis set*
       auto bf0_offset = rng0.first;
-			// this is the index of the first shell *in this shell cluster*
-			auto sh0 = 0;
-			const auto t_preLoop_1 = mpqc::now();
-			dur_preLoop_ += mpqc::duration_in_s(t_preLoop_0, t_preLoop_1);
+
+//			const auto t_preLoop_1 = mpqc::now();
+//			dur_preLoop_ += mpqc::duration_in_s(t_preLoop_0, t_preLoop_1);
 
       // loop over unique shell sets
       // N.B. skip nonunique shell sets that did not get eliminated by unique cluster set iteration
-      for (const auto& shell0 : cluster0) {
-				const auto t_preLoopInts_s0_0 = mpqc::now();
+			for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+//				const auto t_preLoopInts_s0_0 = mpqc::now();
+				const auto& shell0 = cluster0[sh0];
 				const auto nf0 = shell0.size();
-        auto cf1_offset = 0;
-        auto bf1_offset = rng1.first;
-				auto sh1 = 0;
-				const auto t_preLoopInts_s0_1 = mpqc::now();
-				dur_preLoopInts_s0_ += mpqc::duration_in_s(t_preLoopInts_s0_0, t_preLoopInts_s0_1);
+//        auto cf1_offset = 0;
+//        auto bf1_offset = rng1.first;
+//				auto sh1 = 0;
+				size_t cf1_offset, bf1_offset;
+//				const auto t_preLoopInts_s0_1 = mpqc::now();
+//				dur_preLoopInts_s0_ += mpqc::duration_in_s(t_preLoopInts_s0_0, t_preLoopInts_s0_1);
 
-				const auto &pl0 = bra_shellpair_list[sh0];
-				for (const auto& shell1 : cluster1) {
+//				const auto &pl0 = bra_shellpair_list[sh0];
+				for (const auto &sh1 : bra_shellpair_list[sh0]) {
+					std::tie(cf1_offset, bf1_offset) = offset_list_c1[sh1];
+
+					const auto &shell1 = cluster1[sh1];
 					const auto nf1 = shell1.size();
-					if (std::find(pl0.begin(), pl0.end(), sh1) == pl0.end()) {
-						cf1_offset += nf1;
-						bf1_offset += nf1;
-						sh1++;
-						continue;
-					}
+//					if (std::find(pl0.begin(), pl0.end(), sh1) == pl0.end()) {
+//						cf1_offset += nf1;
+//						bf1_offset += nf1;
+//						sh1++;
+//						continue;
+//					}
 
-					const auto t_preLoopInts_s1_0 = mpqc::now();
+//					const auto t_preLoopInts_s1_0 = mpqc::now();
 					// skip if shell set is nonunique
 					if (bf0_offset < bf1_offset)
 						break;  // assuming basis functions increase monotonically in the basis
@@ -541,12 +550,12 @@ class FourCenterFockBuilder
 
 					auto cf2_offset = 0;
 					auto bf2_offset = rng2.first;
-					auto sh2 = 0;
-					const auto t_preLoopInts_s1_1 = mpqc::now();
-					dur_preLoopInts_s1_ += mpqc::duration_in_s(t_preLoopInts_s1_0, t_preLoopInts_s1_1);
+//					const auto t_preLoopInts_s1_1 = mpqc::now();
+//					dur_preLoopInts_s1_ += mpqc::duration_in_s(t_preLoopInts_s1_0, t_preLoopInts_s1_1);
 
-					for (const auto& shell2 : cluster2) {
-						const auto t_preLoopInts_s2_0 = mpqc::now();
+					for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
+//						const auto t_preLoopInts_s2_0 = mpqc::now();
+						const auto &shell2 = cluster2[sh2];
 						// skip if shell set is nonunique
 						if (bf0_offset < bf2_offset) break;
 
@@ -559,23 +568,26 @@ class FourCenterFockBuilder
 						const auto Dnorm012 = std::max({Dnorm12, Dnorm02, Dnorm01});
 
 						const auto nf2 = shell2.size();
-						auto cf3_offset = 0;
-						auto bf3_offset = rng3.first;
-						auto sh3 = 0;
-						const auto t_preLoopInts_s2_1 = mpqc::now();
-						dur_preLoopInts_s2_ += mpqc::duration_in_s(t_preLoopInts_s2_0, t_preLoopInts_s2_1);
+//						auto cf3_offset = 0;
+//						auto bf3_offset = rng3.first;
+						size_t cf3_offset, bf3_offset;
+//						auto sh3 = 0;
+//						const auto t_preLoopInts_s2_1 = mpqc::now();
+//						dur_preLoopInts_s2_ += mpqc::duration_in_s(t_preLoopInts_s2_0, t_preLoopInts_s2_1);
 
-						const auto &pl2 = ket_shellpair_list[sh2];
-						for (const auto& shell3 : cluster3) {
+//						const auto &pl2 = ket_shellpair_list[sh2];
+						for (const auto &sh3 : ket_shellpair_list[sh2]) {
+							std::tie(cf3_offset, bf3_offset) = offset_list_c3[sh3];
 
+							const auto &shell3 = cluster3[sh3];
 							const auto nf3 = shell3.size();
 
-							if (std::find(pl2.begin(), pl2.end(), sh3) == pl2.end()) {
-								cf3_offset += nf3;
-								bf3_offset += nf3;
-								sh3++;
-								continue;
-							}
+//							if (std::find(pl2.begin(), pl2.end(), sh3) == pl2.end()) {
+//								cf3_offset += nf3;
+//								bf3_offset += nf3;
+//								sh3++;
+//								continue;
+//							}
 //							const auto t_preLoopInts_s3_0 = mpqc::now();
 
 
@@ -602,9 +614,9 @@ class FourCenterFockBuilder
 
 //							const auto t_skip_0 = mpqc::now();
 							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123)) {
-								cf3_offset += nf3;
-								bf3_offset += nf3;
-								sh3++;
+//								cf3_offset += nf3;
+//								bf3_offset += nf3;
+//								sh3++;
 								continue;
 							}
 //							const auto t_skip_1 = mpqc::now();
@@ -621,18 +633,18 @@ class FourCenterFockBuilder
 							const auto multiplicity =
 									multiplicity01 * multiplicity23 * multiplicity0213;
 
-							const auto t_ints_0 = mpqc::now();
+//							const auto t_ints_0 = mpqc::now();
 							// compute shell set
 							engine.compute2<libint2::Operator::coulomb,
 															libint2::BraKet::xx_xx, 0>(
 									shell0, shell1, shell2, shell3);
 							const auto* eri_0123 = computed_shell_sets[0];
-							const auto t_ints_1 = mpqc::now();
-							dur_int_compute_ += mpqc::duration_in_s(t_ints_0, t_ints_1);
+//							const auto t_ints_1 = mpqc::now();
+//							dur_int_compute_ += mpqc::duration_in_s(t_ints_0, t_ints_1);
 
 							if (eri_0123 != nullptr) {  // if the shell set is not screened out
 
-								const auto t_contr_0 = mpqc::now();
+//								const auto t_contr_0 = mpqc::now();
 								for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
 									const auto cf0 =
 											f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
@@ -696,13 +708,13 @@ class FourCenterFockBuilder
 										}
 									}
 								}
-								const auto t_contr_1 = mpqc::now();
-								dur_contr_ += mpqc::duration_in_s(t_contr_0, t_contr_1);
+//								const auto t_contr_1 = mpqc::now();
+//								dur_contr_ += mpqc::duration_in_s(t_contr_0, t_contr_1);
 							}
 
-							cf3_offset += nf3;
-							bf3_offset += nf3;
-							sh3++;
+//							cf3_offset += nf3;
+//							bf3_offset += nf3;
+//							sh3++;
 
 //							const auto t_s3_1 = mpqc::now();
 //							dur_s3_ += mpqc::duration_in_s(t_s3_0, t_s3_1);
@@ -710,21 +722,19 @@ class FourCenterFockBuilder
 
 						cf2_offset += nf2;
 						bf2_offset += nf2;
-						sh2++;
 					}
 
-					cf1_offset += nf1;
-					bf1_offset += nf1;
-					sh1++;
+//					cf1_offset += nf1;
+//					bf1_offset += nf1;
+//					sh1++;
 				}
 
         cf0_offset += nf0;
         bf0_offset += nf0;
-				sh0++;
       }
     }
-		const auto t_fock_tile_1 = mpqc::now();
-		dur_fock_tile_ += mpqc::duration_in_s(t_fock_tile_0, t_fock_tile_1);
+//		const auto t_fock_tile_1 = mpqc::now();
+//		dur_fock_tile_ += mpqc::duration_in_s(t_fock_tile_0, t_fock_tile_1);
 
 		const auto t_accumul_0 = mpqc::now();
     const auto me = this->get_world().rank();
@@ -765,6 +775,12 @@ class FourCenterFockBuilder
 	}
 
 	// TODO compute norms in a parallel fashion
+	/*!
+	 * \brief This computes shell-block norm of density matrix \c D
+	 * \param bs Basis
+	 * \param D density matrix
+	 * \return
+	 */
 	array_type compute_shellblock_norm(const Basis& bs, const array_type& D) const {
 
 		auto& world = this->get_world();
@@ -799,6 +815,15 @@ class FourCenterFockBuilder
 		return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, trange1, trange1);
 	}
 
+	/*!
+	 * \brief This computes non-negligible shell pair list; ; shells \c i and \c j form a non-negligible pair if they share a center or the Frobenius norm of their overlap isgreater than threshold
+	 * \param shv1 a cluster (a.k.a. std::vector<Shell>)
+	 * \param shv2 a cluster (a.k.a. std::vector<Shell>)
+	 * \param threshold
+	 * \return a list of pairs with
+	 * key: shell index
+	 * mapped value: a vector of shell indices
+	 */
 	shellpair_list_t compute_shellpair_list(const ShellVec &shv1, const ShellVec &_shv2 = std::vector<Shell>({Shell()}), double threshold = 1e-12) const {
 		const ShellVec &shv2 = ((_shv2.size() == 1 && _shv2[0] == Shell()) ? shv1 : _shv2);
 		const auto nsh1 = shv1.size();
@@ -859,6 +884,33 @@ class FourCenterFockBuilder
 		for (auto s1 = 0l; s1 != nsh1; ++s1) {
 			auto &list = result[s1];
 			std::sort(list.begin(), list.end());
+		}
+
+		return result;
+	}
+
+	/*!
+	 * \brief This computes basis function offsets for every shell in a cluster
+	 * \param cluster a cluster (a.k.a. std::vector<Shell>)
+	 * \param bf_first basis function index of the first function in this \c cluster
+	 *
+	 * \return a list of <key, mapped value> pairs with
+	 * key: shell index
+	 * mapped value: {cluster function offset, basis function offset} tuple
+	 */
+	func_offset_list compute_func_offset_list(const ShellVec &cluster, const size_t bf_first) const {
+		func_offset_list result;
+
+		auto cf_offset = 0;
+		auto bf_offset = bf_first;
+
+		const auto nshell = cluster.size();
+		for (auto s = 0; s != nshell; ++s) {
+			const auto &shell = cluster[s];
+			const auto nf = shell.size();
+			result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
+			bf_offset += nf;
+			cf_offset += nf;
 		}
 
 		return result;

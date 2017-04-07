@@ -152,7 +152,7 @@ Vector<unsigned long> get_pivots(
 }
 
 template <typename T>
-auto all_have_elems(std::vector<T> &vs) -> decltype(vs.begin()) {
+auto all_have_elems(std::vector<T> &vs) {
   auto end = vs.end();
   for (auto it = vs.begin(); it != end; ++it) {
     if (it->elems().size() == 0) {

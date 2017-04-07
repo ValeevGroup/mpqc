@@ -2,6 +2,9 @@
 
 # this script builds an MPQC4 docker image
 
+# update these before rebuilding
+LIBINT_VERSION=2.3.0-beta.6
+
 disable_aslr=disable_aslr.sh
 
 ##############################################################
@@ -29,7 +32,7 @@ CMD ["/sbin/my_init"]
 # 1. basic prereqs
 RUN apt-get update && apt-get install -y cmake liblapack-dev mpich libboost-dev libeigen3-dev git wget libboost-serialization-dev libtbb-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # 2. libint
-RUN cd /usr/local/src && wget https://github.com/evaleev/libint/releases/download/v2.3.0-beta.3/libint-2.3.0-beta.3.tgz && tar -xvzf libint-2.3.0-beta.3.tgz && cd libint-2.3.0-beta.3 && ./configure --prefix=/usr/local --with-incdirs="-I/usr/include/eigen3" && make -j2 && make install && make clean
+RUN cd /usr/local/src && wget https://github.com/evaleev/libint/releases/download/v${LIBINT_VERSION}/libint-${LIBINT_VERSION}.tgz && tar -xvzf libint-${LIBINT_VERSION}.tgz && cd libint-${LIBINT_VERSION} && ./configure --prefix=/usr/local --with-incdirs="-I/usr/include/eigen3" && make -j2 && make install && make clean
 # 3. tiledarray
 RUN cd /usr/local/src && mkdir tiledarray && cd tiledarray && git clone --depth=1 https://github.com/ValeevGroup/tiledarray.git tiledarray_src && cmake tiledarray_src -DCMAKE_INSTALL_PREFIX=/usr/local -DMPI_CXX_COMPILER=mpicxx -DMPI_C_COMPILER=mpicc -DCMAKE_BUILD_TYPE=Release && make && make install && make clean
 # 4. mpqc4

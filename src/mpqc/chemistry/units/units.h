@@ -2,9 +2,9 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_UNITS_UNITS_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 
-#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/exception.h"
 
 namespace mpqc {

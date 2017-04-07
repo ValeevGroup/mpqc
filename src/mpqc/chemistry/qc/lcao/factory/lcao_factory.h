@@ -420,7 +420,7 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
 
   auto compute_strength_factors = [=](
       const std::vector<OrbitalIndex>& indices,
-      std::vector<float>& strenth_factors) -> void {
+      std::vector<float>& strenth_factors) {
     for (const auto& index : indices) {
       float strength_factor;
       if (index.is_lcao()) {
@@ -441,7 +441,7 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
   compute_strength_factors(bra_indices, bra_strength_factors);
   compute_strength_factors(ket_indices, ket_strength_factors);
 
-  auto nonzero_float_compare = [](float a, float b) -> bool {
+  auto nonzero_float_compare = [](float a, float b) {
     if (a == 0.0) return false;
     if (b == 0.0) return true;
     return a < b;

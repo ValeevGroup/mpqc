@@ -29,12 +29,11 @@
 
 #include <cerrno>
 #include <cstring>
-
+#include <memory>
 #include <stdexcept>
 #include <sstream>
 
 #include "mpqc/util/misc/exenv.h"
-#include "mpqc/util/external/c++/memory"
 
 using namespace std;
 

@@ -37,7 +37,11 @@ add_dependencies(install-libmpqc install-mpqc)
 add_executable(mpqc mpqc.cpp)
 INCLUDE_DIRECTORIES(${MPQC_SOURCE_DIR}/src/bin)
 target_link_libraries(mpqc
-                      MPQCmpqc ${MPQC_LIBS})
+                      MPQCmpqc ${MPQC_LIBS} ${MADNESS_DISABLEPIE_LINKER_FLAG})
+# note above an ad hoc treatment of PIE until CMake allows to do it properly ... specifically, need CMake to:
+# 1. force non-PIE for compilers that default to PIE
+# 2. allow clean specification of PIE/non-PIE properties for library targets
+
 install(TARGETS mpqc RUNTIME DESTINATION bin)
 #cotire(mpqc)
 

@@ -4,7 +4,7 @@
 set -ev
 
 # Environment variables
-export CXXFLAGS="-mno-avx -std=c++11"
+export CXXFLAGS="-mno-avx"
 
 if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION

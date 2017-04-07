@@ -15,4 +15,5 @@ add_executable(${program} EXCLUDE_FROM_ALL ${program}.cpp)
 
 # mp2 uses MPQC main and links in all classes that the MPQC executable links in
 # replace libmpqc with libMPQCcc, etc., to include only some libs
-target_link_libraries(${program} MPQCmain libmpqc)
+target_link_libraries(${program} MPQCmain libmpqc ${MADNESS_DISABLEPIE_LINKER_FLAG})
+

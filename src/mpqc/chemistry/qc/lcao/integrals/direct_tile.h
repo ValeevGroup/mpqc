@@ -110,14 +110,12 @@ class DirectArray {
   bool is_initialized() const { return builder_ && array_.is_initialized(); }
 
   template <typename... Args>
-  auto operator()(Args &&... args)
-      -> decltype(array_(std::forward<Args>(args)...)) {
+  auto operator()(Args &&... args) {
     return array_(std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  auto operator()(Args &&... args) const
-      -> decltype(array_(std::forward<Args>(args)...)) {
+  auto operator()(Args &&... args) const {
     return array_(std::forward<Args>(args)...);
   }
 

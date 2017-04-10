@@ -417,8 +417,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           iter++;
 
           // block for g_cjkl
-          std::size_t c_low = b;
-          std::size_t c_up = b + 1;
+          std::size_t c_low = c;
+          std::size_t c_up = c + 1;
           block g_cjkl_low{c_low, 0, 0, 0};
           block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
           TArray g_cjkl;

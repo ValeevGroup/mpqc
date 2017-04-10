@@ -634,7 +634,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                   << std::endl;
     ExEnv::out0() << "Contraction Time: " << contraction_time << " S"
                   << std::endl;
-    std::cout << "Outer Product Time: " << outer_product_time << " S"
+    ExEnv::out0() << "Outer Product Time: " << outer_product_time << " S"
               << std::endl;
     ExEnv::out0() << "Reduce Time: " << reduce_time << " S" << std::endl
                   << std::endl;

@@ -7,14 +7,14 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Factory>
-class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
+class ReferencePeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  public:
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
 
-	PeriodicFourCenterFockBuilder(Factory &ao_factory)
+	ReferencePeriodicFourCenterFockBuilder(Factory &ao_factory)
 			: ao_factory_(ao_factory) {}
 
-	~PeriodicFourCenterFockBuilder() {}
+	~ReferencePeriodicFourCenterFockBuilder() {}
 
 	array_type operator()(array_type const &D, double) override {
 		// feed density matrix to Factory
@@ -36,6 +36,34 @@ class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
  private:
 	Factory &ao_factory_;
+};
+
+template <typename Tile, typename Policy>
+class PeriodicFourCenterFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
+public:
+	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
+
+	PeriodicFourCenterFockBuilder(madness::World &world,
+																std::shared_ptr<const Basis> basis,
+																bool compute_J, bool compute_K,
+																std::string screen = "schwarz",
+																double screen_threshold = 1.0e-10)
+		:  {}
+
+	~ReferencePeriodicFourCenterFockBuilder() {}
+
+	array_type operator()(array_type const &D, double) override {
+
+	}
+
+	void register_fock(const array_type &fock,
+										 FormulaRegistry<array_type> &registry) override {
+		registry.insert(Formula(L"(κ|F|λ)"), fock);
+	}
+
+private:
+
+
 };
 
 }  // namespace scf

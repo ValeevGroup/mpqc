@@ -389,7 +389,7 @@ double zRHF<Tile, Policy>::compute_energy() {
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::init_fock_builder() {
 	using Builder =
-			scf::PeriodicFourCenterFockBuilder<Tile, Policy,
+			scf::ReferencePeriodicFourCenterFockBuilder<Tile, Policy,
 																				 zRHF<Tile, Policy>::factory_type>;
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }

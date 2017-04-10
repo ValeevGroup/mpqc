@@ -304,14 +304,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
         if (t3.is_initialized()) {
           t3("a,b,i,c,j,k") +=
-              ((block_g_dabi * block_t2_dcjk).set_world(this_world) -
-               (block_t2_abil * block_g_cjkl).set_world(this_world))
-                  .set_world(this_world);
+              (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
         } else {
           t3("a,b,i,c,j,k") =
-              ((block_g_dabi * block_t2_dcjk).set_world(this_world) -
-               (block_t2_abil * block_g_cjkl).set_world(this_world))
-                  .set_world(this_world);
+              (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
         }
       }
     };
@@ -341,10 +337,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         auto block_t_ai = t1_this("a,i").block(t1_ai_low, t1_ai_up);
 
         if (v3.is_initialized()) {
-          v3("b,c,j,k,a,i") +=
-              (block_g_bcjk * block_t_ai).set_world(this_world);
+          v3("b,c,j,k,a,i") += (block_g_bcjk * block_t_ai);
         } else {
-          v3("b,c,j,k,a,i") = (block_g_bcjk * block_t_ai).set_world(this_world);
+          v3("b,c,j,k,a,i") = (block_g_bcjk * block_t_ai);
         }
       }
     };
@@ -378,6 +373,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       progress_points.push_back(i);
     }
 
+    TA::set_default_world(this_world);
+
     // start loop over a, b, c
     for (auto a = 0; a < n_tr_vir; ++a) {
       std::size_t a_low = a;
@@ -385,9 +382,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       block g_ajkl_low{a_low, 0, 0, 0};
       block g_ajkl_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
       TArray g_ajkl;
-      g_ajkl("a,j,k,l") = g_cjkl_global("a,j,k,l")
-                              .block(g_ajkl_low, g_ajkl_up)
-                              .set_world(this_world);
+      g_ajkl("a,j,k,l") = g_cjkl_global("a,j,k,l").block(g_ajkl_low, g_ajkl_up);
 
       for (auto b = 0; b <= a; ++b) {
         std::size_t b_low = b;
@@ -395,9 +390,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block g_bjkl_low{b_low, 0, 0, 0};
         block g_bjkl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
         TArray g_bjkl;
-        g_bjkl("b,j,k,l") = g_cjkl_global("b,j,k,l")
-                                .block(g_bjkl_low, g_bjkl_up)
-                                .set_world(this_world);
+        g_bjkl("b,j,k,l") =
+            g_cjkl_global("b,j,k,l").block(g_bjkl_low, g_bjkl_up);
 
         for (auto c = 0; c <= b; ++c) {
           global_iter++;
@@ -414,9 +408,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           block g_cjkl_low{c_low, 0, 0, 0};
           block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
           TArray g_cjkl;
-          g_cjkl("c,j,k,l") = g_cjkl_global("c,j,k,l")
-                                  .block(g_cjkl_low, g_cjkl_up)
-                                  .set_world(this_world);
+          g_cjkl("c,j,k,l") =
+              g_cjkl_global("c,j,k,l").block(g_cjkl_low, g_cjkl_up);
 
           // compute t3
           TArray t3;
@@ -584,6 +577,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }  // loop of a
     this_world.gop.fence();
     global_world.gop.fence();
+
+    TA::set_default_world(global_world);
 
     if (this->print_detail()) {
       // loop over all rank and print

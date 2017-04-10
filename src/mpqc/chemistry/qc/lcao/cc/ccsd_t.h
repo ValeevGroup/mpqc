@@ -271,7 +271,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     typedef std::vector<std::size_t> block;
     // lambda function to compute t3
     auto compute_t3 = [&](std::size_t a, std::size_t b, std::size_t c,
-                          TArray &t3, const TArray &this_g_cjkl) {
+                          TArray &t3, const TArray &this_t2_dcjk,
+                          const TArray &this_g_cjkl) {
       // index
       std::size_t a_low = a;
       std::size_t a_up = a + 1;
@@ -287,11 +288,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
         auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
 
-        // block for t2_cdk
-        block t2_dcjk_low{0, c_low, 0, 0};
-        block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
-
-        auto block_t2_dcjk = t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
+        // block for t2_dcjk
+        auto block_t2_dcjk = this_t2_dcjk("d,c,j,k");
 
         // block for g_cjkl
         auto block_g_cjkl = this_g_cjkl("c,j,k,l");
@@ -379,19 +377,35 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     for (auto a = 0; a < n_tr_vir; ++a) {
       std::size_t a_low = a;
       std::size_t a_up = a + 1;
+
+      // block for g_ajkl
       block g_ajkl_low{a_low, 0, 0, 0};
       block g_ajkl_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
       TArray g_ajkl;
       g_ajkl("a,j,k,l") = g_cjkl_global("a,j,k,l").block(g_ajkl_low, g_ajkl_up);
 
+      // block for t2_dcjk
+      block t2_dajk_low{0, a_low, 0, 0};
+      block t2_dajk_up{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
+      TArray t2_dajk;
+      t2_dajk("d,a,j,k") = t2_left("d,a,j,k").block(t2_dajk_low, t2_dajk_up);
+
       for (auto b = 0; b <= a; ++b) {
         std::size_t b_low = b;
         std::size_t b_up = b + 1;
+
+        // block for g_bjkl
         block g_bjkl_low{b_low, 0, 0, 0};
         block g_bjkl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
         TArray g_bjkl;
         g_bjkl("b,j,k,l") =
             g_cjkl_global("b,j,k,l").block(g_bjkl_low, g_bjkl_up);
+
+        // block for t2_dbjk
+        block t2_dbjk_low{0, b_low, 0, 0};
+        block t2_dbjk_up{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
+        TArray t2_dbjk;
+        t2_dbjk("d,b,j,k") = t2_left("d,b,j,k").block(t2_dbjk_low, t2_dbjk_up);
 
         for (auto c = 0; c <= b; ++c) {
           global_iter++;
@@ -402,7 +416,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           // inner loop
           iter++;
 
-          // get g_cjkl
+          // block for g_cjkl
           std::size_t c_low = b;
           std::size_t c_up = b + 1;
           block g_cjkl_low{c_low, 0, 0, 0};
@@ -411,13 +425,20 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           g_cjkl("c,j,k,l") =
               g_cjkl_global("c,j,k,l").block(g_cjkl_low, g_cjkl_up);
 
+          // block for t2_dcjk
+          block t2_dcjk_low{0, c_low, 0, 0};
+          block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
+          TArray t2_dcjk;
+          t2_dcjk("d,c,j,k") =
+              t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
+
           // compute t3
           TArray t3;
           // abcijk contribution
           // g^{da}_{bi}*t^{cd}_{kj} - g^{cj}_{kl}*t^{ab}_{il}
 
           time00 = mpqc::now(this_world, accurate_time);
-          compute_t3(a, b, c, t3, g_cjkl);
+          compute_t3(a, b, c, t3, t2_dcjk, g_cjkl);
           time01 = mpqc::now(this_world, accurate_time);
           contraction_time += mpqc::duration_in_s(time00, time01);
 
@@ -428,7 +449,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time00 = mpqc::now(this_world, accurate_time);
             permutation_time += mpqc::duration_in_s(time01, time00);
 
-            compute_t3(a, c, b, t3, g_bjkl);
+            compute_t3(a, c, b, t3, t2_dbjk, g_bjkl);
             time01 = mpqc::now(this_world, accurate_time);
             contraction_time += mpqc::duration_in_s(time00, time01);
           }
@@ -440,7 +461,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time00 = mpqc::now(this_world, accurate_time);
             permutation_time += mpqc::duration_in_s(time01, time00);
 
-            compute_t3(c, a, b, t3, g_bjkl);
+            compute_t3(c, a, b, t3, t2_dbjk, g_bjkl);
             time01 = mpqc::now(this_world, accurate_time);
             contraction_time += mpqc::duration_in_s(time00, time01);
           }
@@ -452,7 +473,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time00 = mpqc::now(this_world, accurate_time);
             permutation_time += mpqc::duration_in_s(time01, time00);
 
-            compute_t3(c, b, a, t3, g_ajkl);
+            compute_t3(c, b, a, t3, t2_dajk, g_ajkl);
             time01 = mpqc::now(this_world, accurate_time);
             contraction_time += mpqc::duration_in_s(time00, time01);
           }
@@ -464,7 +485,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time00 = mpqc::now(this_world, accurate_time);
             permutation_time += mpqc::duration_in_s(time01, time00);
 
-            compute_t3(b, c, a, t3, g_ajkl);
+            compute_t3(b, c, a, t3, t2_dajk, g_ajkl);
             time01 = mpqc::now(this_world, accurate_time);
             contraction_time += mpqc::duration_in_s(time00, time01);
           }
@@ -476,7 +497,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time00 = mpqc::now(this_world, accurate_time);
             permutation_time += mpqc::duration_in_s(time01, time00);
 
-            compute_t3(b, a, c, t3, g_cjkl);
+            compute_t3(b, a, c, t3, t2_dcjk, g_cjkl);
             time01 = mpqc::now(this_world, accurate_time);
             contraction_time += mpqc::duration_in_s(time00, time01);
           }

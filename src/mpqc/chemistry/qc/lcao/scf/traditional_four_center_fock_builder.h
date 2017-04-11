@@ -84,6 +84,7 @@ class FourCenterFockBuilder
       public madness::WorldObject<FourCenterFockBuilder<Tile, Policy>> {
  public:
   using array_type = typename FockBuilder<Tile, Policy>::array_type;
+	using const_data_ptr = typename Tile::allocator_type::const_pointer;
 
   using WorldObject_ =
       madness::WorldObject<FourCenterFockBuilder<Tile, Policy>>;
@@ -110,7 +111,7 @@ class FourCenterFockBuilder
         density_basis_(std::move(density_basis)),
         screen_(screen),
         screen_threshold_(screen_threshold) {
-    // same basis on each center only
+		// same basis on each center only
     assert(bra_basis_ == ket_basis_ && bra_basis_ == density_basis_ &&
            "not yet implemented");
     // WorldObject mandates this is called from the ctor
@@ -121,7 +122,7 @@ class FourCenterFockBuilder
 
   array_type operator()(array_type const &D, array_type const &,
                         double target_precision) override {
-    // validate preconditions
+		// validate preconditions
     auto ntiles_D = density_basis_->nclusters();
     {
       auto trange_D = D.trange();
@@ -171,9 +172,6 @@ class FourCenterFockBuilder
 				::mpqc::lcao::gaussian::BasisVector{{basis, basis, basis, basis}};
 		p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
 				compute_world, engines_, bases, screen_, screen_threshold_);
-
-		// make shell block norm of D
-		shblk_norm_D_ = compute_shellblock_norm(basis, D);
 
     // compute shell-level schwarz matrices Q
     //auto Q = make_schwarz_Q_shells(compute_world, bra_basis_, bra_basis_);
@@ -337,26 +335,6 @@ class FourCenterFockBuilder
     auto F12 = compute_K_ ? Tile(std::move(rng12), 0.0) : Tile();
     auto F13 = compute_K_ ? Tile(std::move(rng13), 0.0) : Tile();
 
-		// find shell block norm of D
-		auto norm_D01 = (!compute_J_ || shblk_norm_D_.is_zero({tile0, tile1}))
-												? Tile()
-												: shblk_norm_D_.find({tile0, tile1});
-		auto norm_D23 = (!compute_J_ || shblk_norm_D_.is_zero({tile2, tile3}))
-												? Tile()
-												: shblk_norm_D_.find({tile2, tile3});
-		auto norm_D02 = (!compute_K_ || shblk_norm_D_.is_zero({tile0, tile2}))
-												? Tile()
-												: shblk_norm_D_.find({tile0, tile2});
-		auto norm_D03 = (!compute_K_ || shblk_norm_D_.is_zero({tile0, tile3}))
-												? Tile()
-												: shblk_norm_D_.find({tile0, tile3});
-		auto norm_D12 = (!compute_K_ || shblk_norm_D_.is_zero({tile1, tile2}))
-												? Tile()
-												: shblk_norm_D_.find({tile1, tile2});
-		auto norm_D13 = (!compute_K_ || shblk_norm_D_.is_zero({tile1, tile3}))
-												? Tile()
-												: shblk_norm_D_.find({tile1, tile3});
-
     // grab ptrs to tile data to make addressing more efficient
     auto* F01_ptr = compute_J_ ? F01.data() : nullptr;
     auto* F23_ptr = compute_J_ ? F23.data() : nullptr;
@@ -370,12 +348,6 @@ class FourCenterFockBuilder
     const auto* D03_ptr = compute_K_ ? D03.data() : nullptr;
     const auto* D12_ptr = compute_K_ ? D12.data() : nullptr;
     const auto* D13_ptr = compute_K_ ? D13.data() : nullptr;
-		const auto* norm_D01_ptr = compute_J_ ? norm_D01.data() : nullptr;
-		const auto* norm_D23_ptr = compute_J_ ? norm_D23.data() : nullptr;
-		const auto* norm_D02_ptr = compute_K_ ? norm_D02.data() : nullptr;
-		const auto* norm_D03_ptr = compute_K_ ? norm_D03.data() : nullptr;
-		const auto* norm_D12_ptr = compute_K_ ? norm_D12.data() : nullptr;
-		const auto* norm_D13_ptr = compute_K_ ? norm_D13.data() : nullptr;
 
 		// compute contributions to all Fock matrices
     {
@@ -391,6 +363,46 @@ class FourCenterFockBuilder
 			const auto& cluster1 = basis->cluster_shells()[tile1];
 			const auto& cluster2 = basis->cluster_shells()[tile2];
 			const auto& cluster3 = basis->cluster_shells()[tile3];
+
+			// compute shell block norms of density tiles
+			auto norm_D01 =
+					(!compute_J_ || D01_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D01_ptr, cluster0, cluster1,
+																								rng0_size, rng1_size);
+			auto norm_D23 =
+					(!compute_J_ || D23_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D23_ptr, cluster2, cluster3,
+																								rng2_size, rng3_size);
+			auto norm_D02 =
+					(!compute_K_ || D02_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D02_ptr, cluster0, cluster2,
+																								rng0_size, rng2_size);
+			auto norm_D03 =
+					(!compute_K_ || D03_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D03_ptr, cluster0, cluster3,
+																								rng0_size, rng3_size);
+			auto norm_D12 =
+					(!compute_K_ || D12_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D12_ptr, cluster1, cluster2,
+																								rng1_size, rng2_size);
+			auto norm_D13 =
+					(!compute_K_ || D13_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D13_ptr, cluster1, cluster3,
+																								rng1_size, rng3_size);
+
+			// grab ptrs to tile data to make addressing more efficient
+			const auto* norm_D01_ptr = compute_J_ ? norm_D01.data() : nullptr;
+			const auto* norm_D23_ptr = compute_J_ ? norm_D23.data() : nullptr;
+			const auto* norm_D02_ptr = compute_K_ ? norm_D02.data() : nullptr;
+			const auto* norm_D03_ptr = compute_K_ ? norm_D03.data() : nullptr;
+			const auto* norm_D12_ptr = compute_K_ ? norm_D12.data() : nullptr;
+			const auto* norm_D13_ptr = compute_K_ ? norm_D13.data() : nullptr;
 
 			// make unique shell pair list
 			const auto same_c0c1 = tile0 == tile1;
@@ -625,47 +637,44 @@ class FourCenterFockBuilder
 
 	}
 
-	// TODO compute norms in a parallel fashion
 	/*!
-	 * \brief This computes shell-block norm of density matrix \c D
-	 * \param bs Basis
-	 * \param D density matrix
-	 * \return
+	 * \brief This computes shell block norm of a density tile
+	 * \param arg_tile_ptr a const pointer to data of the tile
+	 * \param cluster0 a shell cluster (a.k.a. std::vector<Shell>)
+	 * \param cluster1 a shell cluster (a.k.a. std::vector<Shell>)
+	 * \param nf0 number of functions in \c cluster0
+	 * \param nf1 number of functions in \c cluster1
+	 * \return a tile filled with shell block norms
 	 */
-	array_type compute_shellblock_norm(const Basis& bs,
-																		 const array_type& D) const {
-		auto& world = this->get_world();
-		// make trange1
-		const auto& shells_Vec = bs.cluster_shells();
-		auto blocking = std::vector<int64_t>{0};
-		for (const auto& shells : shells_Vec) {
-			const auto nshell = shells.size();
-			auto next = blocking.back() + nshell;
-			blocking.emplace_back(next);
-		}
-		auto trange1 = TA::TiledRange1(blocking.begin(), blocking.end());
+	Tile compute_shellblock_norm_of_tile(const_data_ptr arg_tile_ptr,
+																			 const ShellVec& cluster0,
+																			 const ShellVec& cluster1,
+																			 const size_t nf0,
+																			 const size_t nf1) const {
+		// # of shells in this shell cluster
+		const auto nsh0 = cluster0.size();
+		const auto nsh1 = cluster1.size();
 
-		auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
-		// compute shell block norms
-		const auto shells = bs.flattened_shells();
-		const auto nshell = shells.size();
-		RowMatrixXd norm_D(nshell, nshell);
-		for (auto sh1 = 0, sh1_first = 0; sh1 != nshell; ++sh1) {
-			const auto sh1_size = shells[sh1].size();
-			for (auto sh2 = 0, sh2_first = 0; sh2 != nshell; ++sh2) {
-				const auto sh2_size = shells[sh2].size();
+		auto range01 = TA::Range({nsh0, nsh1});
+		auto shblk_norm = Tile(std::move(range01), 0.0);
+		auto* shblk_norm_ptr = shblk_norm.data();
 
-				norm_D(sh1, sh2) = eig_D.block(sh1_first, sh2_first, sh1_size, sh2_size)
-															 .template lpNorm<Eigen::Infinity>();
+		const auto arg_tile_eig =
+				Eigen::Map<const RowMatrixXd>(arg_tile_ptr, nf0, nf1);
 
-				sh2_first += sh2_size;
+		for (auto s0 = 0, s0_first = 0, s01 = 0; s0 != nsh0; ++s0) {
+			const auto s0_size = cluster0[s0].size();
+			for (auto s1 = 0, s1_first = 0; s1 != nsh1; ++s1, ++s01) {
+				const auto s1_size = cluster1[s1].size();
+				shblk_norm_ptr[s01] =
+						arg_tile_eig.block(s0_first, s1_first, s0_size, s1_size)
+								.template lpNorm<Eigen::Infinity>();
+				s1_first += s1_size;
 			}
-
-			sh1_first += sh1_size;
+			s0_first += s0_size;
 		}
 
-		return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, trange1,
-																									 trange1);
+		return shblk_norm;
 	}
 
 	/*!

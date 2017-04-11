@@ -41,6 +41,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   /// if reblock inner contraction occ and unocc space
   bool reblock_inner_;
 
+  /// if replicate integral g_cijk
+  bool replicate_ijka_;
+
   /// string represent (T) approach, see keyval constructor for detail
   std::string approach_;
 
@@ -89,6 +92,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | size of number of orbital | block size to reblock inner dimension, set to 0 to disable reblock inner |
    * | approach | string | coarse | coarse grain, fine grain, straight or laplace approach |
+   * | replicate_ijka | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
    * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
    * | quadrature_points | int | 4 | number of quadrature points for the Laplace transform |
    */
@@ -99,6 +103,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     occ_block_size_ = kv.value<int>("reblock_occ", 8);
     unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
+    replicate_ijka_ = kv.value<bool>("replicate_ijka", false);
 
     // default value is size of total number of orbitals, which makes it 1 block
     std::size_t n_obs = this->wfn_world()
@@ -196,7 +201,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     bool accurate_time = this->lcao_factory().accurate_time();
 
     // get integral
-    TArray g_cjkl_global = get_aijk();
+    TArray g_aijk = get_aijk();
     TArray g_abij = get_abij();
     TArray g_dabi = get_abci();
 
@@ -255,6 +260,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto &this_world = *tmp_ptr;
     global_world.gop.fence();
 
+    TArray g_cjkl_global(
+        this_world, g_aijk.trange(), g_aijk.shape(),
+        Policy::default_pmap(this_world,
+                             g_aijk.trange().tiles_range().volume()));
+
     TArray t1_this(
         this_world, t1.trange(), t1.shape(),
         Policy::default_pmap(this_world, t1.trange().tiles_range().volume()));
@@ -266,6 +276,15 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     } else {
       // on 1 node, no need to replicate t1
       t1_this = t1;
+    }
+
+    // based on replicate keyword, replicate g_cjkl array
+    if (replicate_ijka_ && size > 1) {
+      // replicate g_cjkl
+      g_cjkl_global("c,j,k,l") = g_aijk("c,j,k,l").set_world(this_world);
+    } else {
+      // don't replicate g_cjkl
+      g_cjkl_global = g_aijk;
     }
 
     typedef std::vector<std::size_t> block;
@@ -647,6 +666,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // manually clean replicated array
     if (size > 1) {
       t1_this = TArray();
+      g_cjkl_global = TArray();
 
       // warning! this line is important, it make sure all Array object was
       // cleaned before destruction of this_world

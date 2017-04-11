@@ -46,9 +46,11 @@ class PeriodicFourCenterFockBuilder
 			public madness::WorldObject<PeriodicFourCenterFockBuilder<Tile, Policy>> {
  public:
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
+	using const_data_ptr = typename Tile::allocator_type::const_pointer;
+
 	using WorldObject_ =
-			madness::WorldObject<FourCenterFockBuilder<Tile, Policy>>;
-	using FourCenterFockBuilder_ = FourCenterFockBuilder<Tile, Policy>;
+			madness::WorldObject<PeriodicFourCenterFockBuilder<Tile, Policy>>;
+	using PeriodicFourCenterFockBuilder_ = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
 	using Basis = ::mpqc::lcao::gaussian::Basis;
 	using BasisVector = std::vector<Basis>;
@@ -79,15 +81,17 @@ class PeriodicFourCenterFockBuilder
 		RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
 		RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
-		assert(basis0_ != nullptr);
+		assert(basis0_ != nullptr && "No basis is provided");
+		assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
 		// WorldObject mandates this is called from the ctor
 		WorldObject_::process_pending();
 	}
 
-	~ReferencePeriodicFourCenterFockBuilder() {}
+	~PeriodicFourCenterFockBuilder() {}
 
 	array_type operator()(array_type const &D, double target_precision) override {
-		num_ints_computed_ = 0;
+		J_num_ints_computed_ = 0;
+		K_num_ints_computed_ = 0;
 
 		auto vec_G = std::vector<array_type>(RJ_size_, array_type());
 		using ::mpqc::lcao::detail::direct_vector;
@@ -96,8 +100,6 @@ class PeriodicFourCenterFockBuilder
 
 		Vector3d zero_shift_base(0.0, 0.0, 0.0);
 		auto basisR = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
-		// make shell block norm of D
-		shblk_norm_D_ = compute_shellblock_norm(*basis0_, *basisR, D);
 
 		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
 			auto &G = vec_G[RJ];
@@ -115,6 +117,11 @@ class PeriodicFourCenterFockBuilder
 			}
 		}
 
+		ExEnv::out0() << "\n# of integrals in Coulomb = "
+									<< J_num_ints_computed_ << std::endl;
+		ExEnv::out0() << "# of integrals in Exchange = "
+									<< K_num_ints_computed_ << std::endl;
+
 		return vec_G[0];
 	}
 
@@ -123,9 +130,9 @@ class PeriodicFourCenterFockBuilder
 		registry.insert(Formula(L"(κ|F|λ)"), fock);
 	}
 
-	array_type compute_JK_abcd(array_type &D, std::vector<Basis> basisR,
-														 std::vector<Basis> basisRJ,
-														 std::vector<Basis> basisRD,
+	array_type compute_JK_abcd(array_type &D, std::shared_ptr<Basis> basisR,
+														 std::shared_ptr<Basis> basisRJ,
+														 std::shared_ptr<Basis> basisRD,
 														 double target_precision) const {
 		// prepare input data
 		auto &compute_world = this->get_world();
@@ -142,7 +149,7 @@ class PeriodicFourCenterFockBuilder
 		pmap_D_ = D.pmap();
 
 		const auto ntile_tasks =
-				static_cast<unit64_t>(ntiles0 * ntilesR * ntilesRD * ntilesRJ);
+				static_cast<uint64_t>(ntiles0 * ntilesR * ntilesRD * ntilesRJ);
 		auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
 																																ntile_tasks);
 
@@ -174,16 +181,13 @@ class PeriodicFourCenterFockBuilder
 			for (auto tile1 = 0ul; tile1 != ntilesR; ++tile1) {
 				for (auto tile2 = 0ul; tile2 != ntilesRJ; ++tile2) {
 					for (auto tile3 = 0ul; tile3 != ntilesRD; ++tile3, ++tile0123) {
-						auto D23 = (!compute_J_ || D.is_zero({tile2, tile3}))
+						auto D_RJRD = (D.is_zero({tile2, tile3}))
 													 ? empty
 													 : D.find({tile2, tile3});
-						auto D13 = (!compute_K_ || D.is_zero({tile1, tile3}))
-													 ? empty
-													 : D.find({tile1, tile3});
 						if (pmap->is_local(tile0123))
 							WorldObject_::task(
-									me, &PeriodicFourCenterFockBuilder::compute_task_abcd, D23,
-									D13, basisR, basisRJ, basisRD,
+									me, &PeriodicFourCenterFockBuilder::compute_task_abcd, D_RJRD,
+									basisR, basisRJ, basisRD,
 									std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
 					}
 				}
@@ -203,8 +207,8 @@ class PeriodicFourCenterFockBuilder
 			std::vector<std::pair<std::array<size_t, 2>, double>> local_tile_norms;
 			for (const auto &local_tile_iter : local_fock_tiles_) {
 				const auto ij = local_tile_iter.first;
-				const auto i = ij / ntiles;
-				const auto j = ij % ntiles;
+				const auto i = ij / ntilesR;
+				const auto j = ij % ntilesR;
 				const auto ij_norm = local_tile_iter.second.norm();
 				local_tile_norms.push_back(
 						std::make_pair(std::array<size_t, 2>{{i, j}}, ij_norm));
@@ -253,11 +257,12 @@ class PeriodicFourCenterFockBuilder
 	mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> j_engines_;
 	mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> k_engines_;
 	mutable array_type shblk_norm_D_;
-	mutable std::atomic<size_t> num_ints_computed_{0};
+	mutable std::atomic<size_t> J_num_ints_computed_{0};
+	mutable std::atomic<size_t> K_num_ints_computed_{0};
 
 	void accumulate_task(Tile fock_matrix_tile, long tile0, long tile1) {
-		const auto ntiles = trange_D_.dim(1).tile_extent();
-		const auto tile01 = tile0 * ntiles + tile1;
+		const auto ntiles1 = trange_D_.dim(1).tile_extent();
+		const auto tile01 = tile0 * ntiles1 + tile1;
 		assert(pmap_D_->is_local(tile01));
 		// if reducer does not exist, create entry and store F, else accumulate F to
 		// the existing contents
@@ -277,14 +282,14 @@ class PeriodicFourCenterFockBuilder
 		acc.release();  // END OF CRITICAL SECTION
 	}
 
-	void compute_task_abcd(Tile D23, Tile D13, std::shared_ptr<Basis> basisR,
+	void compute_task_abcd(Tile D_RJRD, std::shared_ptr<Basis> basisR,
 												 std::shared_ptr<Basis> basisRJ,
 												 std::shared_ptr<Basis> basisRD,
 												 std::array<size_t, 4> tile_idx) {
 		const auto tile0 = tile_idx[0];
-		const auto tile1 = tile_idx[1];
-		const auto tile2 = tile_idx[2];
-		const auto tile3 = tile_idx[3];
+		const auto tileR = tile_idx[1];
+		const auto tileRJ = tile_idx[2];
+		const auto tileRD = tile_idx[3];
 
 		// 1-d tile ranges
 		const auto &tr0 = trange_D_.dim(0);
@@ -292,308 +297,426 @@ class PeriodicFourCenterFockBuilder
 		const auto ntiles0 = tr0.tile_extent();
 		const auto ntiles1 = tr1.tile_extent();
 		const auto &rng0 = tr0.tile(tile0);
-		const auto &rng1 = tr1.tile(tile1);  // this is for Coulomb term
-		const auto &rng2 = tr0.tile(tile2);
-		const auto &rng3 = tr1.tile(tile3);
+		const auto &rngR = tr1.tile(tileR);
+		const auto &rngRJ = tr0.tile(tileRJ);
+		const auto &rngRD = tr1.tile(tileRD);
 		const auto rng0_size = rng0.second - rng0.first;
-		const auto rng1_size = rng1.second - rng1.first;
-		const auto rng2_size = rng2.second - rng2.first;
-		const auto rng3_size = rng3.second - rng3.first;
+		const auto rngR_size = rngR.second - rngR.first;
+		const auto rngRJ_size = rngRJ.second - rngRJ.first;
+		const auto rngRD_size = rngRD.second - rngRD.first;
 
 		// 2-d tile ranges describing the Fock contribution blocks produced by this
-		auto rng23 = compute_J_ ? TA::Range({rng2, rng3}) : TA::Range();
-		auto rng13 = compute_K_ ? TA::Range({rng1, rng3}) : TA::Range();
+//		auto rng0R = compute_J_ ? TA::Range({rng0, rngR}) : TA::Range();
+		auto rng0R = TA::Range({rng0, rngR});
 
 		// initialize contribution to the Fock matrices
-		auto F23 = compute_J_ ? Tile(std::move(rng23), 0.0) : Tile();
-		auto F13 = compute_K_ ? Tile(std::move(rng13), 0.0) : Tile();
-
-		// find shell block norm of D
-		auto norm_D23 = (!compute_J_ || shblk_norm_D_.is_zero({tile2, tile3}))
-												? Tile()
-												: shblk_norm_D_.find({tile2, tile3});
-		auto norm_D13 = (!compute_K_ || shblk_norm_D_.is_zero({tile1, tile3}))
-												? Tile()
-												: shblk_norm_D_.find({tile1, tile3});
+//		auto F0R = compute_J_ ? Tile(std::move(rng0R), 0.0) : Tile();
+//		auto F01K = compute_K_ ? Tile(std::move(rng0R), 0.0) : Tile();
+		auto F0R = Tile(std::move(rng0R), 0.0);
 
 		// grab ptrs to tile data to make addressing more efficient
-		auto *F23_ptr = compute_J_ ? F23.data() : nullptr;
-		auto *F13_ptr = compute_K_ ? F13.data() : nullptr;
-		const auto *D23_ptr = compute_J_ ? D23.data() : nullptr;
-		const auto *D13_ptr = compute_K_ ? D13.data() : nullptr;
-		const auto *norm_D23_ptr = compute_J_ ? norm_D23.data() : nullptr;
-		const auto *norm_D13_ptr = compute_K_ ? norm_D13.data() : nullptr;
+//		auto *F01_ptr = compute_J_ ? F0R.data() : nullptr;
+//		auto *F02_ptr = compute_K_ ? F01K.data() : nullptr;
+//		const auto *D23_ptr = compute_J_ ? D_RJRD.data() : nullptr;
+		auto *F0R_ptr = F0R.data();
+		const auto *D_RJRD_ptr = D_RJRD.data();
 
-		// compute contributions to all Fock matrices
+		// compute Coulomb and/or Exchange contributions to all Fock matrices
 		{
 			const auto engine_precision = target_precision_;
 
-			auto &j_screen = *j_p_screener_;
-			auto j_engine = j_engines_->local();
-			j_engine.set_precision(engine_precision);
-			const auto &j_computed_shell_sets = j_engine.results();
-
-			auto &k_screen = *k_p_screener_;
-			auto k_engine = k_engines_->local();
-			k_engine.set_precision(engine_precision);
-			const auto &k_computed_shell_sets = k_engine.results();
-
 			const auto &basis0 = basis0_;
 			// shell clusters for this tile
-			if (compute_J_) {
-				const auto& cluster0 = basis0->cluster_shells()[tile0];
-				const auto& cluster1 = basisR->cluster_shells()[tile1];
-				const auto& cluster2 = basisRJ->cluster_shells()[tile2];
-				const auto& cluster3 = basisRD->cluster_shells()[tile3];
-			} else {
-				const auto& cluster0 = basis0->cluster_shells()[tile0];
-				const auto& cluster1 = basisRJ->cluster_shells()[tile2];
-				const auto& cluster2 = basisR->cluster_shells()[tile1];
-				const auto& cluster3 = basisRD->cluster_shells()[tile3];
-			}
+			const auto& cluster0 = basis0->cluster_shells()[tile0];
+			const auto& clusterR = basisR->cluster_shells()[tileR];
+			const auto& clusterRJ = basisRJ->cluster_shells()[tileRJ];
+			const auto& clusterRD = basisRD->cluster_shells()[tileRD];
 
-			// make unique shell pair list
-			shellpair_list_t bra_shellpair_list, ket_shellpair_list;
-			bra_shellpair_list = compute_shellpair_list(cluster0, cluster1);
-			ket_shellpair_list = compute_shellpair_list(cluster2, cluster3);
+			// compute shell block norms of density tiles
+			auto norm_D_RJRD =
+					(D_RJRD_ptr == nullptr)
+							? Tile()
+							: compute_shellblock_norm_of_tile(D_RJRD_ptr, clusterRJ, clusterRD,
+																								rngRJ_size, rngRD_size);
+
+			// grab ptrs to tile data to make addressing more efficient
+			const auto* norm_D_RJRD_ptr = norm_D_RJRD.data();
 
 			// number of shells in each cluster
 			const auto nshells0 = cluster0.size();
-			const auto nshells1 = cluster1.size();
-			const auto nshells2 = cluster2.size();
-			const auto nshells3 = cluster3.size();
+			const auto nshellsR = clusterR.size();
+			const auto nshellsRJ = clusterRJ.size();
+			const auto nshellsRD = clusterRD.size();
 
-			// compute offset list of cluster1 and cluster3
-			auto offset_list_c1 = compute_func_offset_list(cluster1, rng1.first);
-			auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
+			// compute Coulomb contributions to all Fock matrices
+			if (compute_J_) {
 
-			// this is the index of the first basis functions for each shell *in this shell cluster*
-			auto cf0_offset = 0;
-			// this is the index of the first basis functions for each shell *in the basis set*
-			auto bf0_offset = rng0.first;
+				auto &screen = *j_p_screener_;
+				auto engine = j_engines_->local();
+				engine.set_precision(engine_precision);
+				const auto &computed_shell_sets = engine.results();
 
-			size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
+				// make non-negligible shell pair list
+				shellpair_list_t bra_shellpair_list, ket_shellpair_list;
+				bra_shellpair_list = compute_shellpair_list(cluster0, clusterR);
+				ket_shellpair_list = compute_shellpair_list(clusterRJ, clusterRD);
 
-			// loop over unique shell sets
-			// N.B. skip nonunique shell sets that did not get eliminated by unique cluster set iteration
-			for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
-				const auto& shell0 = cluster0[sh0];
-				const auto nf0 = shell0.size();
+				// compute offset list of cluster1 and cluster3
+				auto offset_list_bra1 = compute_func_offset_list(clusterR, rngR.first);
+				auto offset_list_ket1 = compute_func_offset_list(clusterRD, rngRD.first);
 
-				for (const auto &sh1 : bra_shellpair_list[sh0]) {
-					std::tie(cf1_offset, bf1_offset) = offset_list_c1[sh1];
-					// skip if shell set is nonunique
-//					if (bf0_offset < bf1_offset)
-//						break;  // assuming basis functions increase monotonically in the basis
+				// this is the index of the first basis functions for each shell *in this shell cluster*
+				auto cf0_offset = 0;
+				// this is the index of the first basis functions for each shell *in the basis set*
+				auto bf0_offset = rng0.first;
+				size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
 
-					const auto &shell1 = cluster1[sh1];
-					const auto nf1 = shell1.size();
+				// loop over all shell sets
+				for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+					const auto& shell0 = cluster0[sh0];
+					const auto nf0 = shell0.size();
 
-//					const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
-
-//					const auto sh01 = sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
-//					const auto Dnorm01 =
-//							(norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
-
-					auto cf2_offset = 0;
-					auto bf2_offset = rng2.first;
-
-					for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
+					for (const auto &sh1 : bra_shellpair_list[sh0]) {
+						std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
 						// skip if shell set is nonunique
-//						if (bf0_offset < bf2_offset) break;
+	//					if (bf0_offset < bf1_offset)
+	//						break;  // assuming basis functions increase monotonically in the basis
 
-						const auto &shell2 = cluster2[sh2];
-						const auto nf2 = shell2.size();
+						const auto &shell1 = clusterR[sh1];
+						const auto nf1 = shell1.size();
 
-//						const auto sh02 = sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
-//						const auto sh12 = sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-//						const auto Dnorm02 =
-//								(norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
-//						const auto Dnorm12 =
-//								(norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
-//						const auto Dnorm012 = std::max({Dnorm12, Dnorm02, Dnorm01});
+	//					const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
-						for (const auto &sh3 : ket_shellpair_list[sh2]) {
-							std::tie(cf3_offset, bf3_offset) = offset_list_c3[sh3];
+	//					const auto sh01 = sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
+	//					const auto Dnorm01 =
+	//							(norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
+
+						auto cf2_offset = 0;
+						auto bf2_offset = rngRJ.first;
+
+						for (auto sh2 = 0; sh2 != nshellsRJ; ++sh2) {
 							// skip if shell set is nonunique
-//							if (bf2_offset < bf3_offset ||
-//									(bf0_offset == bf2_offset && bf1_offset < bf3_offset))
-//								break;
+	//						if (bf0_offset < bf2_offset) break;
 
-							const auto &shell3 = cluster3[sh3];
-							const auto nf3 = shell3.size();
+							const auto &shell2 = clusterRJ[sh2];
+							const auto nf2 = shell2.size();
 
-//							const auto sh03 = sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
-							const auto sh13 = sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
-							const auto sh23 = sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
-//							const auto Dnorm03 =
-//									(norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
-							const auto Dnorm13 =
-									(norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
-							const auto Dnorm23 =
-									(norm_D23_ptr != nullptr) ? norm_D23_ptr[sh23] : 0.0;
-//							const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm23, Dnorm012});
-							const auto Dnorm0123 = std::max({Dnorm13, Dnorm23});
+	//						const auto sh02 = sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
+	//						const auto sh12 = sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
+	//						const auto Dnorm02 =
+	//								(norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
+	//						const auto Dnorm12 =
+	//								(norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
+	//						const auto Dnorm012 = std::max({Dnorm12, Dnorm02, Dnorm01});
+
+							for (const auto &sh3 : ket_shellpair_list[sh2]) {
+								std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
+								// skip if shell set is nonunique
+	//							if (bf2_offset < bf3_offset ||
+	//									(bf0_offset == bf2_offset && bf1_offset < bf3_offset))
+	//								break;
+
+								const auto &shell3 = clusterRD[sh3];
+								const auto nf3 = shell3.size();
+
+	//							const auto sh03 = sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
+	//							const auto sh13 = sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
+								const auto sh23 = sh2 * nshellsRD + sh3;  // index of {sh2, sh3} in norm_D23
+	//							const auto Dnorm03 =
+	//									(norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
+	//							const auto Dnorm13 =
+	//									(norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
+								const auto Dnorm23 =
+										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh23] : 0.0;
+	//							const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm23, Dnorm012});
+	//							const auto Dnorm0123 = std::max({Dnorm13, Dnorm23});
 
 
-							if (compute_J_ && j_screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123))
-								continue;
+								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm23))
+									continue;
 
-							num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+								J_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
 
-//							const auto multiplicity23 =
-//									bf2_offset == bf3_offset ? 1.0 : 2.0;
-//							const auto multiplicity0213 =
-//									(bf0_offset == bf2_offset && bf1_offset == bf3_offset)
-//											? 1.0
-//											: 2.0;
-//							const auto multiplicity =
-//									multiplicity01 * multiplicity23 * multiplicity0213;
+	//							const auto multiplicity23 =
+	//									bf2_offset == bf3_offset ? 1.0 : 2.0;
+	//							const auto multiplicity0213 =
+	//									(bf0_offset == bf2_offset && bf1_offset == bf3_offset)
+	//											? 1.0
+	//											: 2.0;
+	//							const auto multiplicity =
+	//									multiplicity01 * multiplicity23 * multiplicity0213;
 
-							// compute shell set
-							j_engine.compute2<libint2::Operator::coulomb,
-															libint2::BraKet::xx_xx, 0>(
-									shell0, shell1, shell2, shell3);
-							const auto* eri_0123 = computed_shell_sets[0];
+								// compute shell set
+								engine.compute2<libint2::Operator::coulomb,
+																libint2::BraKet::xx_xx, 0>(
+										shell0, shell1, shell2, shell3);
+								const auto* eri_0123 = computed_shell_sets[0];
 
-							if (eri_0123 != nullptr) {  // if the shell set is not screened out
+								if (eri_0123 != nullptr) {  // if the shell set is not screened out
 
-								for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-									const auto cf0 =
-											f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
-									for (auto f1 = 0; f1 != nf1; ++f1) {
-										const auto cf1 = f1 + cf1_offset;
-										const auto cf01 =
-												cf0 * rng1_size + cf1;  // index of {cf0,cf1} in D01 or F01
-										for (auto f2 = 0; f2 != nf2; ++f2) {
-											const auto cf2 = f2 + cf2_offset;
-											const auto cf02 =
-													cf0 * rng2_size + cf2;  // index of {cf0,cf2} in D02 or F02
-											const auto cf12 =
-													cf1 * rng2_size + cf2;  // index of {cf1,cf2} in D12 or F12
-											for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-												const auto cf3 = f3 + cf3_offset;
-												const auto cf03 =
-														cf0 * rng3_size + cf3;  // index of {cf0,cf3} in D03 or F03
-												const auto cf13 =
-														cf1 * rng3_size + cf3;  // index of {cf1,cf3} in D13 or F13
-												const auto cf23 =
-														cf2 * rng3_size + cf3;  // index of {cf2,cf3} in D23 or F23
+									for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+										const auto cf0 =
+												f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
+										for (auto f1 = 0; f1 != nf1; ++f1) {
+											const auto cf1 = f1 + cf1_offset;
+											const auto cf01 =
+													cf0 * rngR_size + cf1;  // index of {cf0,cf1} in F0R
+											for (auto f2 = 0; f2 != nf2; ++f2) {
+												const auto cf2 = f2 + cf2_offset;
+//												const auto cf02 =
+//														cf0 * rngRJ_size + cf2;  // index of {cf0,cf2} in D02 or F02
+//												const auto cf12 =
+//														cf1 * rngRJ_size + cf2;  // index of {cf1,cf2} in D12 or F12
+												for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+													const auto cf3 = f3 + cf3_offset;
+//													const auto cf03 =
+//															cf0 * rngRD_size + cf3;  // index of {cf0,cf3} in D03 or F03
+//													const auto cf13 =
+//															cf1 * rngRD_size + cf3;  // index of {cf1,cf3} in D13 or F13
+													const auto cf23 =
+															cf2 * rngRD_size + cf3;  // index of {cf2,cf3} in D_RJRD
 
-												const auto value = eri_0123[f0123];
+													const auto value = eri_0123[f0123];
 
-//												const auto value_scaled_by_multiplicity =
-//														value * multiplicity;
+	//												const auto value_scaled_by_multiplicity =
+	//														value * multiplicity;
 
-												if (compute_J_) {
-													F01_ptr[cf01] +=
-															(D23_ptr != nullptr)
-																	? D23_ptr[cf23] * value
+													F0R_ptr[cf01] +=
+															(D_RJRD_ptr != nullptr)
+																	? 2.0 * D_RJRD_ptr[cf23] * value
 																	: 0.0;
-//													F23_ptr[cf23] +=
-//															(D01_ptr != nullptr)
-//																	? D01_ptr[cf01] * value_scaled_by_multiplicity
-//																	: 0.0;
-												}
-												if (compute_K_) {
-													F02_ptr[cf02] -=
-															(D13_ptr != nullptr)
-																	? 0.25 * D13_ptr[cf13] *
-																				value_scaled_by_multiplicity
-																	: 0.0;
-//													F13_ptr[cf13] -=
-//															(D02_ptr != nullptr)
-//																	? 0.25 * D02_ptr[cf02] *
-//																				value_scaled_by_multiplicity
-//																	: 0.0;
-//													F03_ptr[cf03] -=
-//															(D12_ptr != nullptr)
-//																	? 0.25 * D12_ptr[cf12] *
-//																				value_scaled_by_multiplicity
-//																	: 0.0;
-//													F12_ptr[cf12] -=
-//															(D03_ptr != nullptr)
-//																	? 0.25 * D03_ptr[cf03] *
-//																				value_scaled_by_multiplicity
-//																	: 0.0;
+
+//													if (compute_J_) {
+//														F0R_ptr[cf01] +=
+//																(D_RJRD_ptr != nullptr)
+//																		? 2.0 * D_RJRD_ptr[cf23] * value
+//																		: 0.0;
+//	//													F23_ptr[cf23] +=
+//	//															(D01_ptr != nullptr)
+//	//																	? D01_ptr[cf01] * value_scaled_by_multiplicity
+//	//																	: 0.0;
+//													}
+//													if (compute_K_) {
+//														F02_ptr[cf02] -=
+//																(D13_ptr != nullptr)
+//																		? 0.25 * D13_ptr[cf13] *
+//																					value_scaled_by_multiplicity
+//																		: 0.0;
+//	//													F13_ptr[cf13] -=
+//	//															(D02_ptr != nullptr)
+//	//																	? 0.25 * D02_ptr[cf02] *
+//	//																				value_scaled_by_multiplicity
+//	//																	: 0.0;
+//	//													F03_ptr[cf03] -=
+//	//															(D12_ptr != nullptr)
+//	//																	? 0.25 * D12_ptr[cf12] *
+//	//																				value_scaled_by_multiplicity
+//	//																	: 0.0;
+//	//													F12_ptr[cf12] -=
+//	//															(D03_ptr != nullptr)
+//	//																	? 0.25 * D03_ptr[cf03] *
+//	//																				value_scaled_by_multiplicity
+//	//																	: 0.0;
+//													}
 												}
 											}
 										}
 									}
 								}
+
 							}
 
+							cf2_offset += nf2;
+							bf2_offset += nf2;
 						}
-
-						cf2_offset += nf2;
-						bf2_offset += nf2;
 					}
-				}
 
-				cf0_offset += nf0;
-				bf0_offset += nf0;
+					cf0_offset += nf0;
+					bf0_offset += nf0;
+				}
+			}
+
+			if (compute_K_) {
+				auto &screen = *k_p_screener_;
+				auto engine = k_engines_->local();
+				engine.set_precision(engine_precision);
+				const auto &computed_shell_sets = engine.results();
+
+				// make non-negligible shell pair list
+				shellpair_list_t bra_shellpair_list, ket_shellpair_list;
+				bra_shellpair_list = compute_shellpair_list(cluster0, clusterRJ);
+				ket_shellpair_list = compute_shellpair_list(clusterR, clusterRD);
+
+				// compute offset list of cluster1 and cluster3
+				auto offset_list_bra1 = compute_func_offset_list(clusterRJ, rngRJ.first);
+				auto offset_list_ket1 = compute_func_offset_list(clusterRD, rngRD.first);
+
+				// this is the index of the first basis functions for each shell *in this shell cluster*
+				auto cf0_offset = 0;
+				// this is the index of the first basis functions for each shell *in the basis set*
+				auto bf0_offset = rng0.first;
+				size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
+
+				// loop over all shell sets
+				for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+					const auto& shell0 = cluster0[sh0];
+					const auto nf0 = shell0.size();
+
+					for (const auto &sh1 : bra_shellpair_list[sh0]) {
+						std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
+
+						const auto &shell1 = clusterRJ[sh1];
+						const auto nf1 = shell1.size();
+
+						auto cf2_offset = 0;
+						auto bf2_offset = rngR.first;
+
+						for (auto sh2 = 0; sh2 != nshellsR; ++sh2) {
+							const auto &shell2 = clusterR[sh2];
+							const auto nf2 = shell2.size();
+
+							for (const auto &sh3 : ket_shellpair_list[sh2]) {
+								std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
+
+								const auto &shell3 = clusterRD[sh3];
+								const auto nf3 = shell3.size();
+
+								const auto sh23 = sh2 * nshellsRD + sh3;
+								const auto Dnorm23 =
+										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh23] : 0.0;
+
+								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm23))
+									continue;
+
+								K_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+
+								// compute shell set
+								engine.compute2<libint2::Operator::coulomb,
+																libint2::BraKet::xx_xx, 0>(
+											shell0, shell1, shell2, shell3);
+								const auto* eri_0123 = computed_shell_sets[0];
+
+								if (eri_0123 != nullptr) {  // if the shell set if not screened out
+
+									for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+										const auto cf0 = f0 + cf0_offset;  // basis function index in the tile (i.e. shell cluster)
+										for (auto f1 = 0; f1 != nf1; ++f1) {
+											const auto cf1 = f1 + cf1_offset;
+											for (auto f2 = 0; f2 != nf2; ++f2) {
+												const auto cf2 = f2 + cf2_offset;
+												const auto cf02 = cf0 * rngR_size + cf2;  // index of {cf0,cf2} in F0R
+												for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+													const auto cf3 = f3 + cf3_offset;
+													const auto cf13 = cf1 * rngRD_size + cf3;  // index of {cf1, cf3} in D_RJRD
+
+													const auto value = eri_0123[f0123];
+
+													F0R_ptr[cf02] -=
+															(D_RJRD_ptr != nullptr)
+																	? D_RJRD_ptr[cf13] * value
+																	: 0.0;
+
+												}
+											}
+										}
+									}
+								}
+
+							}
+
+							cf2_offset += nf2;
+							bf2_offset += nf2;
+						}
+					}
+
+					cf0_offset += nf0;
+					bf0_offset += nf0;
+				}
 			}
 
 		}
+
+		const auto me = this->get_world().rank();
+		assert(me == pmap_D_->rank());
+		// accumulate the contributions by submitting tasks to the owners of their
+		// tiles
+		{
+			const auto proc = pmap_D_->owner(tile0 * ntiles1 + tileR);
+			WorldObject_::task(proc, &PeriodicFourCenterFockBuilder_::accumulate_task,
+												 F0R, tile0, tileR,
+												 madness::TaskAttributes::hipri());
+		}
+
+//		if (compute_J_) {
+//			const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles1 + tile_idx[1]);
+//			const auto proc23 = pmap_D_->owner(tile_idx[2] * ntiles3 + tile_idx[3]);
+//			WorldObject_::task(proc01, &PeriodicFourCenterFockBuilder_::accumulate_task, F0R,
+//												 tile_idx[0], tile_idx[1],
+//												 madness::TaskAttributes::hipri());
+//			WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
+//												 tile_idx[2], tile_idx[3],
+//												 madness::TaskAttributes::hipri());
+//		}
+//		if (compute_K_) {
+//			const auto proc02 = pmap_D_->owner(tile_idx[0] * ntiles2 + tile_idx[2]);
+//			const auto proc03 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
+//			const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
+//			const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
+//			WorldObject_::task(proc02, &PeriodicFourCenterFockBuilder_::accumulate_task, F01K,
+//												 tile_idx[0], tile_idx[2],
+//												 madness::TaskAttributes::hipri());
+//			WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
+//												 tile_idx[0], tile_idx[3],
+//												 madness::TaskAttributes::hipri());
+//			WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
+//												 tile_idx[1], tile_idx[2],
+//												 madness::TaskAttributes::hipri());
+//			WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
+//												 tile_idx[1], tile_idx[3],
+//												 madness::TaskAttributes::hipri());
+//		}
+
+
 	}
 
-	// TODO compute norms in a parallel fashion
 	/*!
-	 * \brief This computes shell-block norm of density matrix \c D
-	 * \param bs Basis
-	 * \param D density matrix
-	 * \return
+	 * \brief This computes shell block norm of a density tile
+	 * \param arg_tile_ptr a const pointer to data of the tile
+	 * \param cluster0 a shell cluster (a.k.a. std::vector<Shell>)
+	 * \param cluster1 a shell cluster (a.k.a. std::vector<Shell>)
+	 * \param nf0 number of functions in \c cluster0
+	 * \param nf1 number of functions in \c cluster1
+	 * \return a tile filled with shell block norms
 	 */
-	array_type compute_shellblock_norm(const Basis &bs0, const Basis &bs1,
-																		 const array_type &D) const {
-		auto &world = this->get_world();
-		TA::TiledRange1 tr0, tr1;
-		// make trange1 for basis0
-		{
-			const auto &shells_Vec = bs0.cluster_shells();
-			auto blocking = std::vector<int64_t>{0};
-			for (const auto &shells : shells_Vec) {
-				const auto nshell = shells.size();
-				auto next = blocking.back() + nshell;
-				blocking.emplace_back(next);
+	Tile compute_shellblock_norm_of_tile(const_data_ptr arg_tile_ptr,
+																			 const ShellVec& cluster0,
+																			 const ShellVec& cluster1,
+																			 const size_t nf0,
+																			 const size_t nf1) const {
+		// # of shells in this shell cluster
+		const auto nsh0 = cluster0.size();
+		const auto nsh1 = cluster1.size();
+
+		auto range01 = TA::Range({nsh0, nsh1});
+		auto shblk_norm = Tile(std::move(range01), 0.0);
+		auto* shblk_norm_ptr = shblk_norm.data();
+
+		const auto arg_tile_eig =
+				Eigen::Map<const RowMatrixXd>(arg_tile_ptr, nf0, nf1);
+
+		for (auto s0 = 0, s0_first = 0, s01 = 0; s0 != nsh0; ++s0) {
+			const auto s0_size = cluster0[s0].size();
+			for (auto s1 = 0, s1_first = 0; s1 != nsh1; ++s1, ++s01) {
+				const auto s1_size = cluster1[s1].size();
+				shblk_norm_ptr[s01] =
+						arg_tile_eig.block(s0_first, s1_first, s0_size, s1_size)
+								.template lpNorm<Eigen::Infinity>();
+				s1_first += s1_size;
 			}
-			tr0 = TA::TiledRange1(blocking.begin(), blocking.end());
-		}
-		// make trange1 for basis1
-		{
-			const auto &shells_Vec = bs1.cluster_shells();
-			auto blocking = std::vector<int64_t>{0};
-			for (const auto &shells : shells_Vec) {
-				const auto nshell = shells.size();
-				auto next = blocking.back() + nshell;
-				blocking.emplace_back(next);
-			}
-			tr1 = TA::TiledRange1(blocking.begin(), blocking.end());
-		}
-
-		auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
-		// compute shell block norms
-		const auto shells0 = bs0.flattened_shells();
-		const auto nshell0 = shells0.size();
-		const auto shells1 = bs1.flattened_shells();
-		const auto nshell1 = shells1.size();
-		RowMatrixXd norm_D(nshell0, nshell1);
-
-		for (auto sh0 = 0, sh0_first = 0; sh0 != nshell0; ++sh0) {
-			const auto sh0_size = shells0[sh0].size();
-			for (auto sh1 = 0, sh1_first = 0; sh1 != nshell1; ++sh1) {
-				const auto sh1_size = shells1[sh1].size();
-
-				norm_D(sh0, sh1) = eig_D.block(sh0_first, sh1_first, sh0_size, sh1_size)
-															 .template lpNorm<Eigen::Infinity>();
-
-				sh1_first += sh1_size;
-			}
-
-			sh0_first += sh0_size;
+			s0_first += s0_size;
 		}
 
-		return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
+		return shblk_norm;
 	}
 
 	/*!

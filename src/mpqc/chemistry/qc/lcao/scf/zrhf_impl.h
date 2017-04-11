@@ -388,9 +388,8 @@ double zRHF<Tile, Policy>::compute_energy() {
 
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::init_fock_builder() {
-	using Builder =
-			scf::ReferencePeriodicFourCenterFockBuilder<Tile, Policy,
-																				 zRHF<Tile, Policy>::factory_type>;
+	using Builder = scf::ReferencePeriodicFourCenterFockBuilder<
+			Tile, Policy, zRHF<Tile, Policy>::factory_type>;
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
@@ -413,6 +412,29 @@ void DFzRHF<Tile, Policy>::init_fock_builder() {
 			scf::PeriodicDFFockBuilder<Tile, Policy,
 																 DFzRHF<Tile, Policy>::factory_type>;
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
+template <typename Tile, typename Policy>
+FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
+		: zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
+	auto& factory = this->ao_factory();
+	auto& world = factory.world();
+	auto screen = factory.screen();
+	auto screen_threshold = factory.screen_threshold();
+	auto basis =
+			this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+	auto dcell = factory.unitcell().dcell();
+	auto R_max = factory.R_max();
+	auto RJ_max = factory.RJ_max();
+	auto RD_max = factory.RD_max();
+
+	using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
+	this->f_builder_ =
+			std::make_unique<Builder>(world, basis, dcell, R_max, RJ_max, RD_max,
+																true, true, screen, screen_threshold);
 }
 
 }  // namespace lcao

@@ -310,18 +310,12 @@ class PeriodicFourCenterFockBuilder
 		const auto rngRD_size = rngRD.second - rngRD.first;
 
 		// 2-d tile ranges describing the Fock contribution blocks produced by this
-//		auto rng0R = compute_J_ ? TA::Range({rng0, rngR}) : TA::Range();
 		auto rng0R = TA::Range({rng0, rngR});
 
 		// initialize contribution to the Fock matrices
-//		auto F0R = compute_J_ ? Tile(std::move(rng0R), 0.0) : Tile();
-//		auto F01K = compute_K_ ? Tile(std::move(rng0R), 0.0) : Tile();
 		auto F0R = Tile(std::move(rng0R), 0.0);
 
 		// grab ptrs to tile data to make addressing more efficient
-//		auto *F01_ptr = compute_J_ ? F0R.data() : nullptr;
-//		auto *F02_ptr = compute_K_ ? F01K.data() : nullptr;
-//		const auto *D23_ptr = compute_J_ ? D_RJRD.data() : nullptr;
 		auto *F0R_ptr = F0R.data();
 		const auto *D_RJRD_ptr = D_RJRD.data();
 
@@ -386,73 +380,32 @@ class PeriodicFourCenterFockBuilder
 
 					for (const auto &sh1 : bra_shellpair_list[sh0]) {
 						std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
-						// skip if shell set is nonunique
-	//					if (bf0_offset < bf1_offset)
-	//						break;  // assuming basis functions increase monotonically in the basis
 
 						const auto &shell1 = clusterR[sh1];
 						const auto nf1 = shell1.size();
-
-	//					const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
-
-	//					const auto sh01 = sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
-	//					const auto Dnorm01 =
-	//							(norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
 
 						auto cf2_offset = 0;
 						auto bf2_offset = rngRJ.first;
 
 						for (auto sh2 = 0; sh2 != nshellsRJ; ++sh2) {
-							// skip if shell set is nonunique
-	//						if (bf0_offset < bf2_offset) break;
 
 							const auto &shell2 = clusterRJ[sh2];
 							const auto nf2 = shell2.size();
 
-	//						const auto sh02 = sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
-	//						const auto sh12 = sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-	//						const auto Dnorm02 =
-	//								(norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
-	//						const auto Dnorm12 =
-	//								(norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
-	//						const auto Dnorm012 = std::max({Dnorm12, Dnorm02, Dnorm01});
-
 							for (const auto &sh3 : ket_shellpair_list[sh2]) {
 								std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
-								// skip if shell set is nonunique
-	//							if (bf2_offset < bf3_offset ||
-	//									(bf0_offset == bf2_offset && bf1_offset < bf3_offset))
-	//								break;
 
 								const auto &shell3 = clusterRD[sh3];
 								const auto nf3 = shell3.size();
 
-	//							const auto sh03 = sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
-	//							const auto sh13 = sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
 								const auto sh23 = sh2 * nshellsRD + sh3;  // index of {sh2, sh3} in norm_D23
-	//							const auto Dnorm03 =
-	//									(norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
-	//							const auto Dnorm13 =
-	//									(norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
 								const auto Dnorm23 =
 										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh23] : 0.0;
-	//							const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm23, Dnorm012});
-	//							const auto Dnorm0123 = std::max({Dnorm13, Dnorm23});
-
 
 								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm23))
 									continue;
 
 								J_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
-
-	//							const auto multiplicity23 =
-	//									bf2_offset == bf3_offset ? 1.0 : 2.0;
-	//							const auto multiplicity0213 =
-	//									(bf0_offset == bf2_offset && bf1_offset == bf3_offset)
-	//											? 1.0
-	//											: 2.0;
-	//							const auto multiplicity =
-	//									multiplicity01 * multiplicity23 * multiplicity0213;
 
 								// compute shell set
 								engine.compute2<libint2::Operator::coulomb,
@@ -471,61 +424,18 @@ class PeriodicFourCenterFockBuilder
 													cf0 * rngR_size + cf1;  // index of {cf0,cf1} in F0R
 											for (auto f2 = 0; f2 != nf2; ++f2) {
 												const auto cf2 = f2 + cf2_offset;
-//												const auto cf02 =
-//														cf0 * rngRJ_size + cf2;  // index of {cf0,cf2} in D02 or F02
-//												const auto cf12 =
-//														cf1 * rngRJ_size + cf2;  // index of {cf1,cf2} in D12 or F12
 												for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
 													const auto cf3 = f3 + cf3_offset;
-//													const auto cf03 =
-//															cf0 * rngRD_size + cf3;  // index of {cf0,cf3} in D03 or F03
-//													const auto cf13 =
-//															cf1 * rngRD_size + cf3;  // index of {cf1,cf3} in D13 or F13
 													const auto cf23 =
 															cf2 * rngRD_size + cf3;  // index of {cf2,cf3} in D_RJRD
 
 													const auto value = eri_0123[f0123];
-
-	//												const auto value_scaled_by_multiplicity =
-	//														value * multiplicity;
 
 													F0R_ptr[cf01] +=
 															(D_RJRD_ptr != nullptr)
 																	? 2.0 * D_RJRD_ptr[cf23] * value
 																	: 0.0;
 
-//													if (compute_J_) {
-//														F0R_ptr[cf01] +=
-//																(D_RJRD_ptr != nullptr)
-//																		? 2.0 * D_RJRD_ptr[cf23] * value
-//																		: 0.0;
-//	//													F23_ptr[cf23] +=
-//	//															(D01_ptr != nullptr)
-//	//																	? D01_ptr[cf01] * value_scaled_by_multiplicity
-//	//																	: 0.0;
-//													}
-//													if (compute_K_) {
-//														F02_ptr[cf02] -=
-//																(D13_ptr != nullptr)
-//																		? 0.25 * D13_ptr[cf13] *
-//																					value_scaled_by_multiplicity
-//																		: 0.0;
-//	//													F13_ptr[cf13] -=
-//	//															(D02_ptr != nullptr)
-//	//																	? 0.25 * D02_ptr[cf02] *
-//	//																				value_scaled_by_multiplicity
-//	//																	: 0.0;
-//	//													F03_ptr[cf03] -=
-//	//															(D12_ptr != nullptr)
-//	//																	? 0.25 * D12_ptr[cf12] *
-//	//																				value_scaled_by_multiplicity
-//	//																	: 0.0;
-//	//													F12_ptr[cf12] -=
-//	//															(D03_ptr != nullptr)
-//	//																	? 0.25 * D03_ptr[cf03] *
-//	//																				value_scaled_by_multiplicity
-//	//																	: 0.0;
-//													}
 												}
 											}
 										}
@@ -589,11 +499,11 @@ class PeriodicFourCenterFockBuilder
 								const auto &shell3 = clusterRD[sh3];
 								const auto nf3 = shell3.size();
 
-								const auto sh23 = sh2 * nshellsRD + sh3;
-								const auto Dnorm23 =
-										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh23] : 0.0;
+								const auto sh13 = sh1 * nshellsRD + sh3;
+								const auto Dnorm13 =
+										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh13] : 0.0;
 
-								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm23))
+								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm13))
 									continue;
 
 								K_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
@@ -654,36 +564,6 @@ class PeriodicFourCenterFockBuilder
 												 F0R, tile0, tileR,
 												 madness::TaskAttributes::hipri());
 		}
-
-//		if (compute_J_) {
-//			const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles1 + tile_idx[1]);
-//			const auto proc23 = pmap_D_->owner(tile_idx[2] * ntiles3 + tile_idx[3]);
-//			WorldObject_::task(proc01, &PeriodicFourCenterFockBuilder_::accumulate_task, F0R,
-//												 tile_idx[0], tile_idx[1],
-//												 madness::TaskAttributes::hipri());
-//			WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
-//												 tile_idx[2], tile_idx[3],
-//												 madness::TaskAttributes::hipri());
-//		}
-//		if (compute_K_) {
-//			const auto proc02 = pmap_D_->owner(tile_idx[0] * ntiles2 + tile_idx[2]);
-//			const auto proc03 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
-//			const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
-//			const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
-//			WorldObject_::task(proc02, &PeriodicFourCenterFockBuilder_::accumulate_task, F01K,
-//												 tile_idx[0], tile_idx[2],
-//												 madness::TaskAttributes::hipri());
-//			WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
-//												 tile_idx[0], tile_idx[3],
-//												 madness::TaskAttributes::hipri());
-//			WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
-//												 tile_idx[1], tile_idx[2],
-//												 madness::TaskAttributes::hipri());
-//			WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
-//												 tile_idx[1], tile_idx[3],
-//												 madness::TaskAttributes::hipri());
-//		}
-
 
 	}
 

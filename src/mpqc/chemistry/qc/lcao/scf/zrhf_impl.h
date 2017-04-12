@@ -430,10 +430,14 @@ void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
 	auto R_max = factory.R_max();
 	auto RJ_max = factory.RJ_max();
 	auto RD_max = factory.RD_max();
+	auto R_size = factory.R_size();
+	auto RJ_size = factory.RJ_size();
+	auto RD_size = factory.RD_size();
 
 	using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
 	this->f_builder_ =
 			std::make_unique<Builder>(world, basis, dcell, R_max, RJ_max, RD_max,
+																R_size, RJ_size, RD_size,
 																true, true, screen, screen_threshold);
 }
 

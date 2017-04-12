@@ -63,6 +63,8 @@ class PeriodicFourCenterFockBuilder
 																std::shared_ptr<const Basis> basis,
 																Vector3d &dcell, Vector3i &R_max,
 																Vector3i &RJ_max, Vector3i &RD_max,
+																int64_t R_size, int64_t RJ_size,
+																int64_t RD_size,
 																bool compute_J, bool compute_K,
 																std::string screen = "schwarz",
 																double screen_threshold = 1.0e-10)
@@ -73,13 +75,12 @@ class PeriodicFourCenterFockBuilder
 				R_max_(R_max),
 				RJ_max_(RJ_max),
 				RD_max_(RD_max),
+				R_size_(R_size),
+				RJ_size_(RJ_size),
+				RD_size_(RD_size),
 				basis0_(basis),
 				screen_(screen),
 				screen_threshold_(screen_threshold) {
-		using ::mpqc::lcao::detail::direct_ord_idx;
-		R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-		RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-		RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
 		assert(basis0_ != nullptr && "No basis is provided");
 		assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -95,20 +96,21 @@ class PeriodicFourCenterFockBuilder
 
 		auto vec_G = std::vector<array_type>(RJ_size_, array_type());
 		using ::mpqc::lcao::detail::direct_vector;
-		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 		using ::mpqc::lcao::gaussian::detail::make_screener;
+		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
 		Vector3d zero_shift_base(0.0, 0.0, 0.0);
-		auto basisR = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
+		basisR_ = shift_basis_origin(*basis0_, zero_shift_base,
+																					 R_max_, dcell_);
 
 		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
 			auto &G = vec_G[RJ];
 			auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
 
-			auto basisRJ = shift_basis_origin(*basis0_, vec_RJ);
-			auto basisRD = shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_);
+			basisRJ_ = shift_basis_origin(*basis0_, vec_RJ);
+			basisRD_ = shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_);
 
-			G = compute_JK_abcd(D, basisR, basisRJ, basisRD, target_precision);
+			G = compute_JK_abcd(D, target_precision);
 		}
 
 		if (RJ_size_ > 0) {
@@ -130,20 +132,23 @@ class PeriodicFourCenterFockBuilder
 		registry.insert(Formula(L"(κ|F|λ)"), fock);
 	}
 
-	array_type compute_JK_abcd(array_type &D, std::shared_ptr<Basis> basisR,
-														 std::shared_ptr<Basis> basisRJ,
-														 std::shared_ptr<Basis> basisRD,
+	array_type compute_JK_abcd(array_type const &D,
 														 double target_precision) const {
 		// prepare input data
 		auto &compute_world = this->get_world();
 		const auto me = compute_world.rank();
 		target_precision_ = target_precision;
 
+		const auto basis0 = *basis0_;
+		const auto basisR = *basisR_;
+		const auto basisRJ = *basisRJ_;
+		const auto basisRD = *basisRD_;
+
 		// # of tiles per basis
-		auto ntiles0 = basis0_->nclusters();
-		auto ntilesR = basisR->nclusters();
-		auto ntilesRJ = basisRJ->nclusters();
-		auto ntilesRD = basisRD->nclusters();
+		auto ntiles0 = basis0.nclusters();
+		auto ntilesR = basisR.nclusters();
+		auto ntilesRJ = basisRJ.nclusters();
+		auto ntilesRD = basisRD.nclusters();
 
 		trange_D_ = D.trange();
 		pmap_D_ = D.pmap();
@@ -158,20 +163,20 @@ class PeriodicFourCenterFockBuilder
 		if (compute_J_) {
 			j_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
 					oper_type,
-					utility::make_array_of_refs(*basis0_, *basisR, *basisRJ, *basisRD),
+					utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
 					libint2::BraKet::xx_xx);
 			auto bases = ::mpqc::lcao::gaussian::BasisVector{
-					{*basis0_, *basisR, *basisRJ, *basisRD}};
+					{basis0, basisR, basisRJ, basisRD}};
 			j_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
 					compute_world, j_engines_, bases, screen_, screen_threshold_);
 		}
 		if (compute_K_) {
 			k_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
 					oper_type,
-					utility::make_array_of_refs(*basis0_, *basisRJ, *basisR, *basisRD),
+					utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
 					libint2::BraKet::xx_xx);
 			auto bases = ::mpqc::lcao::gaussian::BasisVector{
-					{*basis0_, *basisRJ, *basisR, *basisRD}};
+					{basis0, basisRJ, basisR, basisRD}};
 			k_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
 					compute_world, k_engines_, bases, screen_, screen_threshold_);
 		}
@@ -187,7 +192,6 @@ class PeriodicFourCenterFockBuilder
 						if (pmap->is_local(tile0123))
 							WorldObject_::task(
 									me, &PeriodicFourCenterFockBuilder::compute_task_abcd, D_RJRD,
-									basisR, basisRJ, basisRD,
 									std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
 					}
 				}
@@ -250,6 +254,9 @@ class PeriodicFourCenterFockBuilder
 	// mutated by compute_ functions
 	mutable std::shared_ptr<lcao::Screener> j_p_screener_;
 	mutable std::shared_ptr<lcao::Screener> k_p_screener_;
+	mutable std::shared_ptr<Basis> basisR_;
+	mutable std::shared_ptr<Basis> basisRJ_;
+	mutable std::shared_ptr<Basis> basisRD_;
 	mutable madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
 	mutable TA::TiledRange trange_D_;
 	mutable std::shared_ptr<TA::Pmap> pmap_D_;
@@ -282,10 +289,7 @@ class PeriodicFourCenterFockBuilder
 		acc.release();  // END OF CRITICAL SECTION
 	}
 
-	void compute_task_abcd(Tile D_RJRD, std::shared_ptr<Basis> basisR,
-												 std::shared_ptr<Basis> basisRJ,
-												 std::shared_ptr<Basis> basisRD,
-												 std::array<size_t, 4> tile_idx) {
+	void compute_task_abcd(Tile D_RJRD, std::array<size_t, 4> tile_idx) {
 		const auto tile0 = tile_idx[0];
 		const auto tileR = tile_idx[1];
 		const auto tileRJ = tile_idx[2];
@@ -326,6 +330,10 @@ class PeriodicFourCenterFockBuilder
 			const auto engine_precision = target_precision_;
 
 			const auto &basis0 = basis0_;
+			const auto &basisR = basisR_;
+			const auto &basisRJ = basisRJ_;
+			const auto &basisRD = basisRD_;
+
 			// shell clusters for this tile
 			const auto& cluster0 = basis0->cluster_shells()[tile0];
 			const auto& clusterR = basisR->cluster_shells()[tileR];

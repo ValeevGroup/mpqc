@@ -113,7 +113,8 @@ std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
 namespace gaussian {
 namespace detail {
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift) {
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+																					const Vector3d &shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
@@ -131,7 +132,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift) {
   return result_ptr;
 }
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
 																					const Vector3d &shift_base,
 																					const Vector3i &nshift,
 																					const Vector3d &dcell) {

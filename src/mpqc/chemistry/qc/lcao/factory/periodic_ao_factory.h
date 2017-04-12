@@ -151,7 +151,7 @@ namespace detail {
  * \param shift the 3D vector of the shift
  * \return the shared pointer of shifted Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift);
+std::shared_ptr<Basis> shift_basis_origin(const Basis& basis, const Vector3d &shift);
 
 /*!
  * \brief This shifts the origin of a Basis object by multiple vectors,
@@ -163,7 +163,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift);
  * \param dcell the direct unit cell params
  * \return the shared pointer of the compound Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
+std::shared_ptr<Basis> shift_basis_origin(const Basis& basis,
 																					const Vector3d &shift_base,
 																					const Vector3i &nshift,
 																					const Vector3d &dcell);

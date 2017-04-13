@@ -289,9 +289,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     typedef std::vector<std::size_t> block;
     // lambda function to compute t3
-    auto compute_t3 = [&](std::size_t a, std::size_t b, std::size_t c,
-                          TArray &t3, const TArray &this_t2_dcjk,
-                          const TArray &this_g_cjkl) {
+    auto compute_t3 = [&g_dabi, &t2_right, n_tr_vir_inner, n_tr_occ,
+                       n_tr_occ_inner](
+        std::size_t a, std::size_t b, std::size_t c, TArray &t3,
+        const TArray &this_t2_dcjk, const TArray &this_g_cjkl) {
       // index
       std::size_t a_low = a;
       std::size_t a_up = a + 1;
@@ -330,8 +331,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     };
 
     // lambda function to compute v3
-    auto compute_v3 = [&](std::size_t a, std::size_t b, std::size_t c,
-                          TArray &v3) {
+    auto compute_v3 = [&g_abij, &t1_this, n_tr_occ](
+        std::size_t a, std::size_t b, std::size_t c, TArray &v3) {
       // index
       std::size_t a_low = a;
       std::size_t a_up = a + 1;
@@ -654,7 +655,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     ExEnv::out0() << "Contraction Time: " << contraction_time << " S"
                   << std::endl;
     ExEnv::out0() << "Outer Product Time: " << outer_product_time << " S"
-              << std::endl;
+                  << std::endl;
     ExEnv::out0() << "Reduce Time: " << reduce_time << " S" << std::endl
                   << std::endl;
 

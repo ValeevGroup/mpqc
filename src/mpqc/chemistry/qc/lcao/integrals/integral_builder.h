@@ -212,7 +212,7 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   };
 
   // compute Tile for particular block
-  Tile operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
+  madness::Future<Tile> operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
     TA_ASSERT(idx.size() == 4);
 
     auto &world = bra_.world();

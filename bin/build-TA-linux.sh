@@ -31,6 +31,7 @@ mkdir -p TA
 cd TA
 
 git clone https://github.com/ValeevGroup/tiledarray.git ta_src
+cd ta_scr; git checkout mixed-expressions; cd ..
 
 cmake ta_src \
       -DCMAKE_INSTALL_PREFIX=/home/travis/build/ValeevGroup/_install/TA \

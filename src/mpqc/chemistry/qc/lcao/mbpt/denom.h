@@ -110,7 +110,7 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
             std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord,
+  auto make_tile = [&ens, n_occ, n_frozen](const range_type &range, std::size_t ord,
                                            Tile *out_tile, TA::TensorF *norms) {
 
     auto result_tile = Tile(range);
@@ -178,7 +178,7 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
             std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
+  auto make_tile = [&ens, n_occ, n_frozen](const range_type &range) {
 
     auto result_tile = Tile(range);
     const auto a0 = result_tile.range().lobound()[0];

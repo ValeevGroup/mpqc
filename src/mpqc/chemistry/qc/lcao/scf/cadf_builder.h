@@ -109,8 +109,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
   ~CADFFockBuilder() { }
 
-  void register_fock(const TA::TSpArrayD &fock,
-                     FormulaRegistry<TA::TSpArrayD> &registry) override {
+  void register_fock(const ArrayType &fock,
+                     FormulaRegistry<ArrayType> &registry) override {
     registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
   }
 

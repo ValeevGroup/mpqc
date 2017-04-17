@@ -38,7 +38,7 @@ std::array<TiledArray::Tensor<T, AT>, 2> eigen_estimator(
   }
 
   // Sum the rows of tile into result
-  auto reduce_op = [](T &restrict result, const T arg) {
+  auto reduce_op = [](T & MADNESS_RESTRICT result, const T arg) {
     result += std::abs(arg);
   };
 
@@ -71,8 +71,8 @@ std::array<TiledArray::Tensor<T, AT>, 2> eigen_estimator(
     size_type result_first = tile_first / weight[0];
 
     // Compute the trace
-    const T *restrict const tile_data = tile.data();
-    T *restrict const result_data = result[1].data();
+    const T *MADNESS_RESTRICT const tile_data = tile.data();
+    T *MADNESS_RESTRICT const result_data = result[1].data();
     for (; tile_first < tile_last; tile_first += tile_stride, ++result_first) {
       result_data[result_first] = tile_data[tile_first];
     }

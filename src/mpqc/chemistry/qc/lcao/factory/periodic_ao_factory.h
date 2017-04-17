@@ -215,7 +215,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
   template <typename T = Tile>
   void set_oper(typename std::enable_if<std::is_same<T, TA::TensorZ>::value,
                                         T>::type &&t) {
-    op_ = TA::Noop<TA::TensorZ, true>();
+    op_ = TA::detail::Noop<TA::TensorZ, TA::TensorZ, true>();
   }
 
   ~PeriodicAOFactory() noexcept {}
@@ -336,7 +336,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile,Policy> {
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
       madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      Op op = TA::Noop<TA::TensorZ, true>());
+      Op op = TA::detail::Noop<Tile, TA::TensorZ, true>());
 
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
 

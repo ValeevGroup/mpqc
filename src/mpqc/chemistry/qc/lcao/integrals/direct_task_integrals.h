@@ -4,6 +4,8 @@
 
 #include <limits>
 
+#include <TiledArray/tile_op/noop.h>
+
 #include "mpqc/chemistry/qc/lcao/integrals/direct_tile.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integral_builder.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
@@ -21,7 +23,7 @@ template <typename Tile = TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -81,7 +83,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::vector<std::pair<Idx, float>> const &user_provided_norms,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -137,7 +139,7 @@ template <typename Tile = TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -199,7 +201,7 @@ template <typename Tile = TA::TensorD, typename Engine>
 DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);

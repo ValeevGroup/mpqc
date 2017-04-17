@@ -28,7 +28,7 @@ template <typename Tile, typename Policy, typename FactoryType>
 TA::DistArray<Tile,Policy> periodic_fock_soad(
     madness::World &world, UnitCell const &unitcell, TA::DistArray<Tile,Policy> const &H,
     FactoryType &pao_factory,
-    std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>()) {
+    std::function<Tile(TA::TensorZ &&)> op = TA::detail::Noop<Tile, TA::TensorZ, true>()) {
   if (world.rank() == 0) {
     std::cout << "\nBuilding Fock Matrix from SOAD Guess ...\n";
   }

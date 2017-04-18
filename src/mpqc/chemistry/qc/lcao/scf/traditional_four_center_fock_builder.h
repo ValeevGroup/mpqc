@@ -140,23 +140,29 @@ class FourCenterFockBuilder
     assert(false && "feature not implemented");
   }
 
-  array_type compute_JK_aaaa(array_type const &D,
+	array_type compute_JK_aaaa(array_type const &D,
                              double target_precision) const {
+		dist_pmap_D_ = D.pmap();
+
+		// Copy D and make it replicated.
+		auto D_repl = D;
+		D_repl.make_replicated();
+
 		// prepare input data
     auto &compute_world = this->get_world();
 		const auto me = compute_world.rank();
-    target_precision_ = target_precision;
+		target_precision_ = target_precision;
 
 		auto nsh = bra_basis_->nshells();
     auto ntiles = bra_basis_->nclusters();
-    trange_D_ = D.trange();
-    pmap_D_ = D.pmap();
+		trange_D_ = D_repl.trange();
+		pmap_D_ = D_repl.pmap();
     auto trange1 = trange_D_.dim(0);
     auto trange = TA::TiledRange({trange1, trange1, trange1, trange1});
     const auto ntile_tasks =
         static_cast<uint64_t>(ntiles * (ntiles + 1)) *
         static_cast<uint64_t>((ntiles + 2) * (3 * ntiles + 1)) / 24;
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(
+		auto pmap = std::make_shared<const TA::detail::BlockedPmap>(
         compute_world, ntile_tasks);
 
 		// make the engine pool
@@ -178,6 +184,8 @@ class FourCenterFockBuilder
 
 		num_ints_computed_ = 0;
 
+		madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles;
+
     auto empty = TA::Future<Tile>(Tile());
     // todo screen loop with schwarz
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles; ++tile0) {
@@ -189,17 +197,17 @@ class FourCenterFockBuilder
             // TODO screen D blocks using schwarz estimate for this Coulomb
             // operator tile
 						auto D01 =
-                (!compute_J_ || D.is_zero({tile0, tile1})) ? empty : D.find({tile0, tile1});
+								(!compute_J_ || D_repl.is_zero({tile0, tile1})) ? empty : D_repl.find({tile0, tile1});
             auto D23 =
-                (!compute_J_ || D.is_zero({tile2, tile3})) ? empty : D.find({tile2, tile3});
+								(!compute_J_ || D_repl.is_zero({tile2, tile3})) ? empty : D_repl.find({tile2, tile3});
             auto D02 =
-                (!compute_K_ || D.is_zero({tile0, tile2})) ? empty : D.find({tile0, tile2});
+								(!compute_K_ || D_repl.is_zero({tile0, tile2})) ? empty : D_repl.find({tile0, tile2});
             auto D03 =
-                (!compute_K_ || D.is_zero({tile0, tile3})) ? empty : D.find({tile0, tile3});
+								(!compute_K_ || D_repl.is_zero({tile0, tile3})) ? empty : D_repl.find({tile0, tile3});
             auto D12 =
-                (!compute_K_ || D.is_zero({tile1, tile2})) ? empty : D.find({tile1, tile2});
+								(!compute_K_ || D_repl.is_zero({tile1, tile2})) ? empty : D_repl.find({tile1, tile2});
             auto D13 =
-                (!compute_K_ || D.is_zero({tile1, tile3})) ? empty : D.find({tile1, tile3});
+								(!compute_K_ || D_repl.is_zero({tile1, tile3})) ? empty : D_repl.find({tile1, tile3});
 
 						if (pmap->is_local(tile0123))
 							WorldObject_::task(
@@ -217,6 +225,8 @@ class FourCenterFockBuilder
     // cleanup
     engines_.reset();
 
+		ExEnv::out0() << "\n# of integrals = " << num_ints_computed_ << std::endl;
+
 		typename Policy::shape_type shape;
     // compute the shape, if sparse
     if (!decltype(shape)::is_dense()) {
@@ -232,24 +242,76 @@ class FourCenterFockBuilder
       shape = decltype(shape)(compute_world, local_tile_norms, trange_D_);
     }
 
-		array_type G(compute_world, trange_D_, shape, pmap_D_);
+		array_type G(compute_world, trange_D_, shape, dist_pmap_D_);
 
-    // copy results of local reduction tasks into G
-    for (const auto &local_tile : local_fock_tiles_) {
+		// copy results of local reduction tasks into the local copy of G
+		for (const auto &local_tile : local_fock_tiles_) {
       // if this tile was not truncated away
-      if (!G.shape().is_zero(local_tile.first))
-        G.set(local_tile.first, local_tile.second);
+			if (!G.shape().is_zero(local_tile.first))
+				G.set(local_tile.first, local_tile.second);
     }
     // set the remaining local tiles to 0 (this should only be needed for dense policy)
-    G.fill_local(0.0, true);
-    local_fock_tiles_.clear();
+		G.fill_local(0.0, true);
 
-    // symmetrize to account for permutation symmetry use
-    G("i,j") = 0.5 * (G("i,j") + G("j,i"));
+		local_fock_tiles_.clear();
 
-		ExEnv::out0() << "\n# of integrals = " << num_ints_computed_ << std::endl;
+//		{
+//			ExEnv::out0() << "Process ID = 0, G = \n" << G << std::endl;
+//		}
 
-    return G;
+		// TODO Each process has its own copy of G with different values.
+		// Need to sum up all the G's and turn it back to a dist array
+//		if (pmap_D_->is_replicated() && compute_world.size() > 1 && 0) {
+//			for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
+//				for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
+//					auto tile01 = tile0 * ntiles + tile1;
+//					auto G01 = G.is_zero(tile01) ? empty : G.find(tile01);
+//					if (pmap_D_->is_local(tile01) && (!G.is_zero(tile01))) {
+//						WorldObject_::task(me, &FourCenterFockBuilder_::accumulate_array, G01, tile01);
+//					}
+//				}
+//			}
+
+//			typename Policy::shape_type shape;
+//			// compute the shape, if sparse
+//			if (!decltype(shape)::is_dense()) {
+//				// extract local contribution to the shape of G, construct global shape
+//				std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
+//				for (const auto &global_tile : global_fock_tiles_) {
+//					const auto ij = global_tile.first;
+//					const auto i = ij / ntiles;
+//					const auto j = ij % ntiles;
+//					const auto ij_norm = global_tile.second.norm();
+//					global_tile_norms.push_back(std::make_pair(std::array<size_t,2>{{i, j}}, ij_norm));
+//				}
+//				shape = decltype(shape)(compute_world, global_tile_norms, trange_D_);
+//			}
+//			compute_world.gop.fence();
+
+//			array_type G_dist(compute_world, trange_D_, shape, D.pmap());
+//			for (const auto &global_tile : global_fock_tiles_) {
+//				if (!G_dist.shape().is_zero(global_tile.first))
+//					G_dist.set(global_tile.first, global_tile.second);
+//			}
+//			G_dist.fill_local(0.0, true);
+
+//			global_fock_tiles_.clear();
+
+//			G_dist("i,j") = 0.5 * (G_dist("i,j") + G_dist("j,i"));
+//			return G_dist;
+
+//		} else {
+//			// symmetrize to account for permutation symmetry use
+//			G("i,j") = 0.5 * (G("i,j") + G("j,i"));
+
+//			return G;
+//		}
+
+		// symmetrize to account for permutation symmetry use
+		G("i,j") = 0.5 * (G("i,j") + G("j,i"));
+
+		return G;
+
   }
 
   void register_fock(const array_type &fock,
@@ -273,12 +335,26 @@ class FourCenterFockBuilder
   mutable std::shared_ptr<lcao::Screener> p_screener_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile>
       local_fock_tiles_;
-  mutable TA::TiledRange trange_D_;
+	mutable madness::ConcurrentHashMap<std::size_t, Tile> global_fock_tiles_;
+	mutable TA::TiledRange trange_D_;
   mutable std::shared_ptr<TA::Pmap> pmap_D_;
+	mutable std::shared_ptr<TA::Pmap> dist_pmap_D_;
   mutable double target_precision_ = 0.0;
   mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
 	mutable array_type shblk_norm_D_;
 	mutable std::atomic<size_t> num_ints_computed_{0};
+
+	void accumulate_array(Tile arg_tile, long tile01) {
+		typename decltype(global_fock_tiles_)::accessor acc;
+		if (!global_fock_tiles_.insert(acc, std::make_pair(tile01, arg_tile))) {  // CRITICAL SECTION
+			const auto size = arg_tile.range().volume();
+			TA::math::inplace_vector_op_serial(
+						[](TA::detail::numeric_t<Tile>& l,
+							 const TA::detail::numeric_t<Tile> r) { l += r; },
+						size, acc->second.data(), arg_tile.data());
+		}
+		acc.release();  // END OF CRITICAL SECTION
+	}
 
   void accumulate_task(Tile fock_matrix_tile, long tile0, long tile1) {
     const auto ntiles = trange_D_.dim(0).tile_extent();
@@ -300,7 +376,7 @@ class FourCenterFockBuilder
   }
 
   void compute_task(Tile D01, Tile D23, Tile D02, Tile D03, Tile D12, Tile D13,
-                    std::array<size_t, 4> tile_idx) {
+										std::array<size_t, 4> tile_idx) {
 
 		const auto tile0 = tile_idx[0];
 		const auto tile1 = tile_idx[1];
@@ -603,12 +679,12 @@ class FourCenterFockBuilder
     }
 
     const auto me = this->get_world().rank();
-    assert(me == pmap_D_->rank());
+		assert(me == dist_pmap_D_->rank());
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
     if (compute_J_) {
-      const auto proc01 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
-      const auto proc23 = pmap_D_->owner(tile_idx[2] * ntiles + tile_idx[3]);
+			const auto proc01 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
+			const auto proc23 = dist_pmap_D_->owner(tile_idx[2] * ntiles + tile_idx[3]);
       WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
                          tile_idx[0], tile_idx[1],
                          madness::TaskAttributes::hipri());
@@ -617,10 +693,10 @@ class FourCenterFockBuilder
                          madness::TaskAttributes::hipri());
     }
     if (compute_K_) {
-      const auto proc02 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[2]);
-      const auto proc03 = pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
-      const auto proc12 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
-      const auto proc13 = pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
+			const auto proc02 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[2]);
+			const auto proc03 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
+			const auto proc12 = dist_pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
+			const auto proc13 = dist_pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
       WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
                          tile_idx[0], tile_idx[2],
                          madness::TaskAttributes::hipri());

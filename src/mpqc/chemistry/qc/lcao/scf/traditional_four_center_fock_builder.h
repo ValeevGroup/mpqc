@@ -180,13 +180,6 @@ class FourCenterFockBuilder
 		p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
 				compute_world, engines_, bases, screen_, screen_threshold_);
 
-    // compute shell-level schwarz matrices Q
-    //auto Q = make_schwarz_Q_shells(compute_world, bra_basis_, bra_basis_);
-
-		num_ints_computed_ = 0;
-
-		madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles;
-
     auto empty = TA::Future<Tile>(Tile());
     // todo screen loop with schwarz
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles; ++tile0) {
@@ -220,55 +213,22 @@ class FourCenterFockBuilder
       }
     }
 
-    // fence ensures everyone is done
+		// fence ensures everyone is done
 		compute_world.gop.fence();
 
     // cleanup
     engines_.reset();
 
-		ExEnv::out0() << "\n# of integrals = " << num_ints_computed_ << std::endl;
-
-		typename Policy::shape_type shape;
-    // compute the shape, if sparse
-    if (!decltype(shape)::is_dense()) {
-      // extract local contribution to the shape of G, construct global shape
-      std::vector<std::pair<std::array<size_t, 2>, double>> local_tile_norms;
-      for (const auto &local_tile_iter : local_fock_tiles_) {
-        const auto ij = local_tile_iter.first;
-        const auto i = ij / ntiles;
-        const auto j = ij % ntiles;
-        const auto ij_norm = local_tile_iter.second.norm();
-        local_tile_norms.push_back(std::make_pair(std::array<size_t,2>{{i, j}}, ij_norm));
-      }
-      shape = decltype(shape)(compute_world, local_tile_norms, trange_D_);
-    }
-
-		array_type G(compute_world, trange_D_, shape, pmap_D_);
-
-		// copy results of local reduction tasks into the local copy of G
-		for (const auto &local_tile : local_fock_tiles_) {
-      // if this tile was not truncated away
-			if (!G.shape().is_zero(local_tile.first))
-				G.set(local_tile.first, local_tile.second);
-    }
-    // set the remaining local tiles to 0 (this should only be needed for dense policy)
-		G.fill_local(0.0, true);
-		local_fock_tiles_.clear();
-
-		compute_world.gop.fence();
-
 		// Each process has its own copy of G which is treated differently.
 		// Reduce all G's to a dist array
 		if (pmap_D_->is_replicated() && compute_world.size() > 1) {
-			for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
-				for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
-					auto tile01 = tile0 * ntiles + tile1;
-					auto G01 = G.is_zero(tile01) ? empty : G.find(tile01);
-					auto proc01 = dist_pmap_D_->owner(tile01);;
-					if (!G.is_zero(tile01))
-						WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_array, G01, tile01);
-				}
+
+			for (const auto &local_tile : local_fock_tiles_) {
+				const auto ij = local_tile.first;
+				const auto proc01 = dist_pmap_D_->owner(ij);
+				WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_array, local_tile.second, ij);
 			}
+			local_fock_tiles_.clear();
 
 			compute_world.gop.fence();
 
@@ -300,6 +260,33 @@ class FourCenterFockBuilder
 			return G_dist;
 
 		} else {
+
+			typename Policy::shape_type shape;
+			// compute the shape, if sparse
+			if (!decltype(shape)::is_dense()) {
+				// extract local contribution to the shape of G, construct global shape
+				std::vector<std::pair<std::array<size_t, 2>, double>> local_tile_norms;
+				for (const auto &local_tile_iter : local_fock_tiles_) {
+					const auto ij = local_tile_iter.first;
+					const auto i = ij / ntiles;
+					const auto j = ij % ntiles;
+					const auto ij_norm = local_tile_iter.second.norm();
+					local_tile_norms.push_back(std::make_pair(std::array<size_t,2>{{i, j}}, ij_norm));
+				}
+				shape = decltype(shape)(compute_world, local_tile_norms, trange_D_);
+			}
+
+			array_type G(compute_world, trange_D_, shape, pmap_D_);
+
+			// copy results of local reduction tasks into the local copy of G
+			for (const auto &local_tile : local_fock_tiles_) {
+				// if this tile was not truncated away
+				if (!G.shape().is_zero(local_tile.first))
+					G.set(local_tile.first, local_tile.second);
+			}
+			// set the remaining local tiles to 0 (this should only be needed for dense policy)
+			G.fill_local(0.0, true);
+
 			local_fock_tiles_.clear();
 
 			// symmetrize to account for permutation symmetry use
@@ -338,7 +325,6 @@ class FourCenterFockBuilder
   mutable double target_precision_ = 0.0;
   mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
 	mutable array_type shblk_norm_D_;
-	mutable std::atomic<size_t> num_ints_computed_{0};
 
 	void accumulate_array(Tile arg_tile, long tile01) {
 		typename decltype(global_fock_tiles_)::accessor acc;
@@ -578,8 +564,6 @@ class FourCenterFockBuilder
 							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123))
 								continue;
 
-							num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
-
 							const auto multiplicity23 =
 									bf2_offset == bf3_offset ? 1.0 : 2.0;
 							const auto multiplicity0213 =
@@ -674,8 +658,6 @@ class FourCenterFockBuilder
       }
     }
 
-    const auto me = this->get_world().rank();
-		assert(me == dist_pmap_D_->rank());
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
     if (compute_J_) {

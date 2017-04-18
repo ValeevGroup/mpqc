@@ -145,7 +145,8 @@ class FourCenterFockBuilder
 		dist_pmap_D_ = D.pmap();
 
 		// Copy D and make it replicated.
-		auto D_repl = D;
+		array_type D_repl;
+		D_repl("i,j") = D("i,j");
 		D_repl.make_replicated();
 
 		// prepare input data
@@ -220,7 +221,7 @@ class FourCenterFockBuilder
     }
 
     // fence ensures everyone is done
-    compute_world.gop.fence();
+		compute_world.gop.fence();
 
     // cleanup
     engines_.reset();
@@ -242,7 +243,7 @@ class FourCenterFockBuilder
       shape = decltype(shape)(compute_world, local_tile_norms, trange_D_);
     }
 
-		array_type G(compute_world, trange_D_, shape, dist_pmap_D_);
+		array_type G(compute_world, trange_D_, shape, pmap_D_);
 
 		// copy results of local reduction tasks into the local copy of G
 		for (const auto &local_tile : local_fock_tiles_) {
@@ -252,65 +253,60 @@ class FourCenterFockBuilder
     }
     // set the remaining local tiles to 0 (this should only be needed for dense policy)
 		G.fill_local(0.0, true);
-
 		local_fock_tiles_.clear();
 
-//		{
-//			ExEnv::out0() << "Process ID = 0, G = \n" << G << std::endl;
-//		}
+		compute_world.gop.fence();
 
-		// TODO Each process has its own copy of G with different values.
-		// Need to sum up all the G's and turn it back to a dist array
-//		if (pmap_D_->is_replicated() && compute_world.size() > 1 && 0) {
-//			for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
-//				for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
-//					auto tile01 = tile0 * ntiles + tile1;
-//					auto G01 = G.is_zero(tile01) ? empty : G.find(tile01);
-//					if (pmap_D_->is_local(tile01) && (!G.is_zero(tile01))) {
-//						WorldObject_::task(me, &FourCenterFockBuilder_::accumulate_array, G01, tile01);
-//					}
-//				}
-//			}
+		// Each process has its own copy of G which is treated differently.
+		// Reduce all G's to a dist array
+		if (pmap_D_->is_replicated() && compute_world.size() > 1) {
+			for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
+				for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
+					auto tile01 = tile0 * ntiles + tile1;
+					auto G01 = G.is_zero(tile01) ? empty : G.find(tile01);
+					auto proc01 = dist_pmap_D_->owner(tile01);;
+					if (!G.is_zero(tile01))
+						WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_array, G01, tile01);
+				}
+			}
 
-//			typename Policy::shape_type shape;
-//			// compute the shape, if sparse
-//			if (!decltype(shape)::is_dense()) {
-//				// extract local contribution to the shape of G, construct global shape
-//				std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
-//				for (const auto &global_tile : global_fock_tiles_) {
-//					const auto ij = global_tile.first;
-//					const auto i = ij / ntiles;
-//					const auto j = ij % ntiles;
-//					const auto ij_norm = global_tile.second.norm();
-//					global_tile_norms.push_back(std::make_pair(std::array<size_t,2>{{i, j}}, ij_norm));
-//				}
-//				shape = decltype(shape)(compute_world, global_tile_norms, trange_D_);
-//			}
-//			compute_world.gop.fence();
+			compute_world.gop.fence();
 
-//			array_type G_dist(compute_world, trange_D_, shape, D.pmap());
-//			for (const auto &global_tile : global_fock_tiles_) {
-//				if (!G_dist.shape().is_zero(global_tile.first))
-//					G_dist.set(global_tile.first, global_tile.second);
-//			}
-//			G_dist.fill_local(0.0, true);
+			typename Policy::shape_type shape;
+			// compute the shape, if sparse
+			if (!decltype(shape)::is_dense()) {
+				// extract local contribution to the shape of G, construct global shape
+				std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
+				for (const auto &global_tile : global_fock_tiles_) {
+					const auto ij = global_tile.first;
+					const auto i = ij / ntiles;
+					const auto j = ij % ntiles;
+					const auto ij_norm = global_tile.second.norm();
+					global_tile_norms.push_back(std::make_pair(std::array<size_t,2>{{i, j}}, ij_norm));
+				}
+				shape = decltype(shape)(compute_world, global_tile_norms, trange_D_);
+			}
 
-//			global_fock_tiles_.clear();
+			array_type G_dist(compute_world, trange_D_, shape, D.pmap());
+			for (const auto &global_tile : global_fock_tiles_) {
+				if (!G_dist.shape().is_zero(global_tile.first))
+					G_dist.set(global_tile.first, global_tile.second);
+			}
+			G_dist.fill_local(0.0, true);
+			global_fock_tiles_.clear();
 
-//			G_dist("i,j") = 0.5 * (G_dist("i,j") + G_dist("j,i"));
-//			return G_dist;
+			// symmetrize to account for permutation symmetry use
+			G_dist("i,j") = 0.5 * (G_dist("i,j") + G_dist("j,i"));
+			return G_dist;
 
-//		} else {
-//			// symmetrize to account for permutation symmetry use
-//			G("i,j") = 0.5 * (G("i,j") + G("j,i"));
+		} else {
+			local_fock_tiles_.clear();
 
-//			return G;
-//		}
+			// symmetrize to account for permutation symmetry use
+			G("i,j") = 0.5 * (G("i,j") + G("j,i"));
 
-		// symmetrize to account for permutation symmetry use
-		G("i,j") = 0.5 * (G("i,j") + G("j,i"));
-
-		return G;
+			return G;
+		}
 
   }
 
@@ -683,32 +679,14 @@ class FourCenterFockBuilder
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
     if (compute_J_) {
-			const auto proc01 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[1]);
-			const auto proc23 = dist_pmap_D_->owner(tile_idx[2] * ntiles + tile_idx[3]);
-      WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_task, F01,
-                         tile_idx[0], tile_idx[1],
-                         madness::TaskAttributes::hipri());
-      WorldObject_::task(proc23, &FourCenterFockBuilder_::accumulate_task, F23,
-                         tile_idx[2], tile_idx[3],
-                         madness::TaskAttributes::hipri());
+			FourCenterFockBuilder_::accumulate_task(F01, tile_idx[0], tile_idx[1]);
+			FourCenterFockBuilder_::accumulate_task(F23, tile_idx[2], tile_idx[3]);
     }
     if (compute_K_) {
-			const auto proc02 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[2]);
-			const auto proc03 = dist_pmap_D_->owner(tile_idx[0] * ntiles + tile_idx[3]);
-			const auto proc12 = dist_pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[2]);
-			const auto proc13 = dist_pmap_D_->owner(tile_idx[1] * ntiles + tile_idx[3]);
-      WorldObject_::task(proc02, &FourCenterFockBuilder_::accumulate_task, F02,
-                         tile_idx[0], tile_idx[2],
-                         madness::TaskAttributes::hipri());
-      WorldObject_::task(proc03, &FourCenterFockBuilder_::accumulate_task, F03,
-                         tile_idx[0], tile_idx[3],
-                         madness::TaskAttributes::hipri());
-      WorldObject_::task(proc12, &FourCenterFockBuilder_::accumulate_task, F12,
-                         tile_idx[1], tile_idx[2],
-                         madness::TaskAttributes::hipri());
-      WorldObject_::task(proc13, &FourCenterFockBuilder_::accumulate_task, F13,
-                         tile_idx[1], tile_idx[3],
-                         madness::TaskAttributes::hipri());
+			FourCenterFockBuilder_::accumulate_task(F02, tile_idx[0], tile_idx[2]);
+			FourCenterFockBuilder_::accumulate_task(F03, tile_idx[0], tile_idx[3]);
+			FourCenterFockBuilder_::accumulate_task(F12, tile_idx[1], tile_idx[2]);
+			FourCenterFockBuilder_::accumulate_task(F13, tile_idx[1], tile_idx[3]);
     }
 
 	}

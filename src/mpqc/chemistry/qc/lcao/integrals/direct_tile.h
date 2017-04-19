@@ -155,7 +155,7 @@ class DirectDFTile {
         builder_(std::move(builder)) {}
 
   /// compute and return Tile
-  operator eval_type() const { return builder_->operator()(idx_, range_); }
+  explicit operator TA::Future<eval_type>() const& { return builder_->operator()(idx_, range_); }
 
   /// output serialize
   template <typename Archive>

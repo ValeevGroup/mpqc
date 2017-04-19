@@ -180,9 +180,12 @@ class FourCenterFockBuilder
 		p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
 				compute_world, engines_, bases, screen_, screen_threshold_);
 
+		num_ints_computed_ = 0;
+
 		// make shell block norm of D
 		shblk_norm_D_ = compute_shellblock_norm(basis, D);
 		shblk_norm_D_.make_replicated();  // make sure it is replicated
+		compute_world.gop.fence();
 
     auto empty = TA::Future<Tile>(Tile());
     // todo screen loop with schwarz
@@ -222,6 +225,16 @@ class FourCenterFockBuilder
 
     // cleanup
     engines_.reset();
+
+		ExEnv::out0() << "\nIntegrals per node:" << std::endl;
+		for(auto i = 0; i < compute_world.nproc(); ++i){
+			if(me == i){
+				ExEnv::outn() << indent << "Integrals on node(" << i << "): " << num_ints_computed_ << std::endl;
+			}
+			compute_world.gop.fence();
+		}
+		ExEnv::out0() << std::endl;
+
 
 		if (pmap_D_->is_replicated() && compute_world.size() > 1) {
 
@@ -330,6 +343,7 @@ class FourCenterFockBuilder
   mutable double target_precision_ = 0.0;
   mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
 	mutable array_type shblk_norm_D_;
+	mutable std::atomic<size_t> num_ints_computed_{0};
 
 	void accumulate_array(Tile arg_tile, long tile01) {
 		typename decltype(global_fock_tiles_)::accessor acc;
@@ -555,6 +569,8 @@ class FourCenterFockBuilder
 
 							if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset, Dnorm0123))
 								continue;
+
+							num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
 
 							const auto multiplicity23 =
 									bf2_offset == bf3_offset ? 1.0 : 2.0;

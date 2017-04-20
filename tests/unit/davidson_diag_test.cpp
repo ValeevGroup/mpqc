@@ -9,7 +9,7 @@
 using namespace mpqc;
 
 TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
-  using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
+  using Array = TA::DistArray<TA::TensorD, TA::DensePolicy>;
 
   // matrix size
   const auto n = 500;
@@ -39,7 +39,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   TA::TiledRange1 tr_n{0, 100, 200, 300, n};
   TA::TiledRange1 tr_guess{0, 1};
 
-  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::SparsePolicy>(
+  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
       TA::get_default_world(), A, tr_n, tr_n);
 
   // build guess vector
@@ -48,7 +48,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
   std::vector<Array> guess_ta(n_roots);
 
   for (auto i = 0; i < n_roots; i++) {
-    guess_ta[i] = array_ops::eigen_to_array<TA::TensorD, TA::SparsePolicy>(
+    guess_ta[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
         TA::get_default_world(), guess.col(i), tr_n, tr_guess);
   }
 
@@ -105,7 +105,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
 }
 
 TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
-  using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
+  using Array = TA::DistArray<TA::TensorD, TA::DensePolicy>;
 
   // matrix size
   const auto n = 100;
@@ -133,7 +133,7 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
   TA::TiledRange1 tr_n{0, 50, n};
   TA::TiledRange1 tr_guess{0, 1};
 
-  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::SparsePolicy>(
+  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
       TA::get_default_world(), A, tr_n, tr_n);
 
   // build guess vector
@@ -142,7 +142,7 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
   std::vector<Array> guess_ta(n_roots);
 
   for (auto i = 0; i < n_roots; i++) {
-    guess_ta[i] = array_ops::eigen_to_array<TA::TensorD, TA::SparsePolicy>(
+    guess_ta[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
         TA::get_default_world(), guess.col(i), tr_n, tr_guess);
   }
 

@@ -142,7 +142,7 @@ class FourCenterFockBuilder
   }
 
 	array_type compute_JK_aaaa(array_type const& D,
-                             double target_precision) const {
+														 double target_precision) {
 		dist_pmap_D_ = D.pmap();
 
 		// Copy D and make it replicated.
@@ -240,6 +240,18 @@ class FourCenterFockBuilder
 								(!compute_K_ || shblk_norm_D.is_zero({tile1, tile3}))
 										? empty
 										: shblk_norm_D.find({tile1, tile3});
+
+						// Using lambda as a task argument fails
+						// because madness cannot find type trait (constness) of lambda.
+						// To be fixed ...
+//						auto task_func = [&, this](){
+//							this->compute_task(D01, D23, D02, D03, D12, D13,
+//													 std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
+//													 std::array<Tile, 6>{{norm_D01, norm_D23, norm_D02, norm_D03,
+//																								norm_D12, norm_D13}});
+//						};
+//						if (pmap->is_local(tile0123))
+//							WorldObject_::task(me, task_func);
 
 						if (pmap->is_local(tile0123))
 							WorldObject_::task(
@@ -365,16 +377,15 @@ class FourCenterFockBuilder
   const double screen_threshold_;
 
   // mutated by compute_ functions
-  mutable std::shared_ptr<lcao::Screener> p_screener_;
-	mutable madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
-	mutable madness::ConcurrentHashMap<std::size_t, Tile> global_fock_tiles_;
-	mutable TA::TiledRange trange_D_;
-  mutable std::shared_ptr<TA::Pmap> pmap_D_;
-	mutable std::shared_ptr<TA::Pmap> dist_pmap_D_;
-  mutable double target_precision_ = 0.0;
-  mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
-//	mutable array_type shblk_norm_D_;
-	mutable std::atomic<size_t> num_ints_computed_{0};
+	std::shared_ptr<lcao::Screener> p_screener_;
+	madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
+	madness::ConcurrentHashMap<std::size_t, Tile> global_fock_tiles_;
+	TA::TiledRange trange_D_;
+	std::shared_ptr<TA::Pmap> pmap_D_;
+	std::shared_ptr<TA::Pmap> dist_pmap_D_;
+	double target_precision_ = 0.0;
+	::mpqc::lcao::gaussian::ShrPool<libint2::Engine> engines_;
+	std::atomic<size_t> num_ints_computed_{0};
 
 	void accumulate_array(Tile arg_tile, long tile01) {
 		typename decltype(global_fock_tiles_)::accessor acc;
@@ -718,7 +729,7 @@ class FourCenterFockBuilder
 	 * \return
 	 */
 	array_type compute_shellblock_norm(const Basis& bs,
-																		 const array_type& D) const {
+																		 const array_type& D) {
 		auto& world = this->get_world();
 		// make trange1
 		const auto& shells_Vec = bs.cluster_shells();
@@ -766,7 +777,7 @@ class FourCenterFockBuilder
 																			 const ShellVec& cluster0,
 																			 const ShellVec& cluster1,
 																			 const size_t nf0,
-																			 const size_t nf1) const {
+																			 const size_t nf1) {
 		// # of shells in this shell cluster
 		const auto nsh0 = cluster0.size();
 		const auto nsh1 = cluster1.size();
@@ -808,7 +819,7 @@ class FourCenterFockBuilder
 	shellpair_list_t compute_shellpair_list(
 			const ShellVec& shv1,
 			const ShellVec& _shv2 = std::vector<Shell>({Shell()}),
-			double threshold = 1e-12) const {
+			double threshold = 1e-12) {
 		const ShellVec& shv2 =
 				((_shv2.size() == 1 && _shv2[0] == Shell()) ? shv1 : _shv2);
 		const auto nsh1 = shv1.size();
@@ -882,7 +893,7 @@ class FourCenterFockBuilder
 	 * mapped value: {cluster function offset, basis function offset} tuple
 	 */
 	func_offset_list compute_func_offset_list(const ShellVec& cluster,
-																						const size_t bf_first) const {
+																						const size_t bf_first) {
 		func_offset_list result;
 
 		auto cf_offset = 0;

@@ -20,12 +20,8 @@ namespace gaussian {
 /*! \brief A direct tile for integral construction
  *
  */
-template <typename Tile, typename Engine = libint2::Engine>
+template <typename Tile, typename Builder = DirectIntegralBuilder<Tile, libint2::Engine> >
 class DirectTile {
- public:
-  using Builder = DirectIntegralBuilder<Tile, Engine>;
-  using BaseBuilder = IntegralBuilder<Tile, Engine>;
-
  private:
   std::vector<std::size_t> idx_;
   TA::Range range_;
@@ -81,17 +77,16 @@ class DirectTile {
     madness::World *world = madness::World::world_from_id(id.get_world_id());
     // dynamic cast
     builder_ = std::dynamic_pointer_cast<Builder>(
-        world->template shared_ptr_from_id<BaseBuilder>(id));
+        world->template shared_ptr_from_id<Builder>(id));
     assert(builder_ != nullptr);
   }
 };
 
 /*! Class to hold a direct tile builder with its array. */
-template <typename Tile, typename Policy, typename Engine = libint2::Engine>
+template <typename Tile, typename Policy, typename Builder>
 class DirectArray {
  public:
-  using Builder = DirectIntegralBuilder<Tile, Engine>;
-  using Array = TA::DistArray<DirectTile<Tile, Engine>, Policy>;
+  using Array = TA::DistArray<DirectTile<Tile, Builder>, Policy>;
 
  private:
   std::shared_ptr<Builder> builder_;
@@ -156,6 +151,7 @@ class DirectDFTile {
 
   /// compute and return Tile
   explicit operator TA::Future<eval_type>() const& { return builder_->operator()(idx_, range_); }
+//  explicit operator eval_type () const& { return builder_->operator()(idx_, range_); }
 
   /// output serialize
   template <typename Archive>

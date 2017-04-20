@@ -27,7 +27,7 @@ template <typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
-  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
+  using DirectArrayType = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   using LCAOFactoryType = LCAOFactoryBase<Tile,Policy>;
   using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
 

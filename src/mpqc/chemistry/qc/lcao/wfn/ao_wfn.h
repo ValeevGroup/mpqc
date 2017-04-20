@@ -27,8 +27,8 @@ class AOWavefunction : public Wavefunction {
  public:
 
   using ArrayType = TA::DistArray<Tile,Policy>;
-  using DirectArrayType = gaussian::DirectArray<Tile,Policy>;
   using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
+  using DirectArrayType = typename gaussian::AOFactory<Tile,Policy>::DirectTArray;
 
   // clang-format off
   /**

@@ -20,10 +20,12 @@ namespace gaussian {
  * Same requirements on Op as those in Integral Builder
  */
 template <typename Tile = TA::TensorD, typename Engine>
-DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
+DirectArray<Tile, TA::SparsePolicy, DirectIntegralBuilder<Tile, Engine>>
+direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op =
+        TA::detail::Noop<Tile, TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -43,11 +45,12 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
       std::move(op), std::move(plist));
 
   auto dir_array =
-      DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
+      DirectArray<Tile, TA::SparsePolicy, DirectIntegralBuilder<Tile, Engine>>(
+          std::move(builder));
 
   auto builder_ptr = dir_array.builder();
 
-  using DirectTileType = DirectTile<Tile, Engine>;
+  using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, Engine>>;
 
   auto task_f = [=](int64_t ord, detail::IdxVec const &idx, TA::Range rng) {
     return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
@@ -79,11 +82,13 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
  * that tile.
  */
 template <typename Tile = TA::TensorD, typename Engine, typename Idx>
-DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
+DirectArray<Tile, TA::SparsePolicy, DirectIntegralBuilder<Tile, Engine>>
+direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::vector<std::pair<Idx, float>> const &user_provided_norms,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op =
+        TA::detail::Noop<Tile, TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -100,12 +105,13 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
       world, std::move(shr_pool), std::move(shr_bases), std::move(screen),
       std::move(op), std::move(plist));
 
+  using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, Engine>>;
+
   auto dir_array =
-      DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
+      DirectArray<Tile, TA::SparsePolicy, DirectIntegralBuilder<Tile, Engine>>(
+          std::move(builder));
 
   auto builder_ptr = dir_array.builder();
-
-  using DirectTileType = DirectTile<Tile, Engine>;
 
   auto task_f = [=](detail::IdxVec idx, TA::Range rng) {
     return DirectTileType(std::move(idx), std::move(rng),
@@ -138,7 +144,8 @@ template <typename Tile = TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op =
+        TA::detail::Noop<Tile, TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -153,10 +160,11 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
       std::move(op), std::move(plist));
 
   auto dir_array =
-      DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
+      DirectArray<Tile, TA::SparsePolicy, DirectIntegralBuilder<Tile, Engine>>(
+          std::move(builder));
   auto builder_ptr = dir_array.builder();
 
-  using DirectTileType = DirectTile<Tile, Engine>;
+  using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, Engine>>;
 
   std::vector<std::pair<int64_t, DirectTileType>> tiles(tvolume);
 
@@ -197,10 +205,12 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
  * Same requirements on Op as those in Integral Builder
  */
 template <typename Tile = TA::TensorD, typename Engine>
-DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
+DirectArray<Tile, TA::DensePolicy, DirectIntegralBuilder<Tile, Engine>>
+direct_dense_integrals(
     madness::World &world, ShrPool<Engine> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>(),
+    std::function<Tile(TA::TensorD &&)> op =
+        TA::detail::Noop<Tile, TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist =
         math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
@@ -214,10 +224,11 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
       std::move(op), std::move(plist));
 
   auto dir_array =
-      DirectArray<Tile, TA::DensePolicy, Engine>(std::move(builder));
+      DirectArray<Tile, TA::DensePolicy, DirectIntegralBuilder<Tile, Engine>>(
+          std::move(builder));
   auto builder_ptr = dir_array.builder();
 
-  using DirectTileType = DirectTile<Tile, Engine>;
+  using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, Engine>>;
 
   TA::DistArray<DirectTileType, TA::DensePolicy> out(world, trange);
 
@@ -241,7 +252,7 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
 template <typename Tile>
 TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy>
 df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
-                          TA::DistArray<Tile, TA::DensePolicy> &ket) {
+                    TA::DistArray<Tile, TA::DensePolicy> &ket) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];
   vec_tr1[1] = bra.trange().data()[2];
@@ -254,16 +265,16 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
       std::make_shared<DirectDFIntegralBuilder<Tile, TA::DensePolicy>>(bra,
                                                                        ket);
 
-  auto& world = bra.world();
+  auto &world = bra.world();
 
   TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy> result(
       world, trange);
 
-  auto task_f = [builder_ptr,&trange](int64_t ord) {
+  auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(
-        std::move(idx), std::move(range), builder_ptr);
+    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
+                                                std::move(range), builder_ptr);
   };
 
   // set all tiles
@@ -285,7 +296,7 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
 template <typename Tile>
 TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy>
 df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
-                          TA::DistArray<Tile, TA::SparsePolicy> &ket) {
+                    TA::DistArray<Tile, TA::SparsePolicy> &ket) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];
   vec_tr1[1] = bra.trange().data()[2];
@@ -294,7 +305,6 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
 
   TA::TiledRange trange(vec_tr1.begin(), vec_tr1.end());
 
-
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
@@ -302,63 +312,62 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
       std::make_shared<DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>(bra,
                                                                         ket);
 
-  auto& world = bra.world();
+  auto &world = bra.world();
 
   // set norm to a large enough value
-  auto task_norm = [builder_ptr](int64_t ord,
-                                 const TA::Range &range,
+  auto task_norm = [builder_ptr](int64_t ord, const TA::Range &range,
                                  TA::TensorF &tile_norm) {
     const auto tile_volume = range.volume();
-//    Tile tile = builder_ptr->operator()(idx, range);
-//    const auto tile_volume = tile.range().volume();
-//    const auto norm = tile.norm();
+    //    Tile tile = builder_ptr->operator()(idx, range);
+    //    const auto tile_volume = tile.range().volume();
+    //    const auto norm = tile.norm();
 
-//    std::cout << "idx: " << idx <<  "norm: " << norm << std::endl;
+    //    std::cout << "idx: " << idx <<  "norm: " << norm << std::endl;
 
-//    bool save_norm =
-//        norm >= tile_volume * TA::SparseShape<float>::threshold();
-//    if (save_norm) {
-//      tile_norm[ord] = norm;
-    //TODO better way to estimate norm
+    //    bool save_norm =
+    //        norm >= tile_volume * TA::SparseShape<float>::threshold();
+    //    if (save_norm) {
+    //      tile_norm[ord] = norm;
+    // TODO better way to estimate norm
     tile_norm[ord] = tile_volume;
-//    }
+    //    }
 
   };
 
   // initialize norm
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (const auto &ord : *pmap) {
-//    detail::IdxVec idx = trange.tiles_range().idx(ord);
+    //    detail::IdxVec idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-//    world.taskq.add(task_norm, ord, range, tile_norms);
+    //    world.taskq.add(task_norm, ord, range, tile_norms);
     task_norm(ord, range, tile_norms);
   }
-//  world.gop.fence();
+  //  world.gop.fence();
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
 
   TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy> result(
       world, trange, shape, pmap);
 
-  auto task_f = [builder_ptr,&trange](int64_t ord) {
+  auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(
-        std::move(idx), std::move(range), builder_ptr);
+    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
+                                                std::move(range), builder_ptr);
   };
 
   // set all tiles
   for (const auto &ord : *pmap) {
     if (!result.is_zero(ord)) {
-//      auto tile_future = world.taskq.add(task_f, ord);
-//      result.set(ord, tile_future);
+      //      auto tile_future = world.taskq.add(task_f, ord);
+      //      result.set(ord, tile_future);
       auto idx = trange.tiles_range().idx(ord);
       auto range = trange.make_tile_range(ord);
       result.set(ord, DirectDFTile<Tile, TA::SparsePolicy>(
-          std::move(idx), std::move(range), builder_ptr) ) ;
+                          std::move(idx), std::move(range), builder_ptr));
     }
   }
-//  world.gop.fence();
+  //  world.gop.fence();
 
   return result;
 };

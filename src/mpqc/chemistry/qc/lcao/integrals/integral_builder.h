@@ -29,8 +29,7 @@ namespace gaussian {
  * ```
  */
 template <typename Tile, typename Engine = libint2::Engine>
-class IntegralBuilder
-    : public std::enable_shared_from_this<IntegralBuilder<Tile, Engine>> {
+class IntegralBuilder {
  public:
   using Op = std::function<Tile(TA::TensorD &&)>;
 
@@ -68,7 +67,7 @@ class IntegralBuilder
     TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
 
-  virtual ~IntegralBuilder() { }
+  virtual ~IntegralBuilder() {}
 
   Tile operator()(std::vector<std::size_t> const &idx, TA::Range range) {
     return op_(integrals(idx, std::move(range)));
@@ -120,7 +119,9 @@ class IntegralBuilder
 };
 
 template <typename Tile, typename Engine = libint2::Engine>
-class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
+class DirectIntegralBuilder
+    : public IntegralBuilder<Tile, Engine>,
+      public std::enable_shared_from_this<DirectIntegralBuilder<Tile, Engine>> {
  public:
   using Op = typename IntegralBuilder<Tile, Engine>::Op;
 
@@ -212,13 +213,14 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   };
 
   // compute Tile for particular block
-  madness::Future<Tile> operator()(const std::vector<std::size_t> &idx, const TA::Range &range) const {
+  madness::Future<Tile> operator()(const std::vector<std::size_t> &idx,
+                                   const TA::Range &range) const {
     TA_ASSERT(idx.size() == 4);
 
     auto &world = bra_.world();
     // create tile
     //    madness::Future<Tile> result(Tile(range, 0.0));
-//        Tile result(range, 0.0);
+    //        Tile result(range, 0.0);
 
     std::vector<std::size_t> bra_idx(3);
     bra_idx[1] = idx[0];
@@ -258,18 +260,18 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     }
     return reduce_pair_task.submit();
 
-//            for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
-//              bra_idx[0] = i;
-//              ket_idx[0] = i;
-//              auto future_bra_tile = bra_.find(bra_idx);
-//              auto future_ket_tile = ket_.find(ket_idx);
-//
-//              result.add_to(
-//                  future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
-//                  gemm_helper));
-//            }
-//
-//        return result;
+    //            for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
+    //              bra_idx[0] = i;
+    //              ket_idx[0] = i;
+    //              auto future_bra_tile = bra_.find(bra_idx);
+    //              auto future_ket_tile = ket_.find(ket_idx);
+    //
+    //              result.add_to(
+    //                  future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
+    //                  gemm_helper));
+    //            }
+    //
+    //        return result;
   }
 
  private:

@@ -17,7 +17,7 @@ class LCAOFactory;
 template <typename Tile, typename Policy>
 using LCAOFactoryBase =
     Factory<TA::DistArray<Tile, Policy>,
-            gaussian::DirectArray<
+            gaussian::DirectDFArray<
                 Tile, Policy, gaussian::DirectDFIntegralBuilder<Tile, Policy>>>;
 
 template <typename Tile, typename Policy>
@@ -64,7 +64,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray =
-      gaussian::DirectArray<Tile, Policy,
+      gaussian::DirectDFArray<Tile, Policy,
                             gaussian::DirectDFIntegralBuilder<Tile, Policy>>;
   // for now hardwire to Gaussians
   // TODO generalize to non-gaussian AO operators

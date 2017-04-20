@@ -405,7 +405,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 template <typename DirectTile, typename Tile>
 void create_ii_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
                     DirectTile eri3_iii, Tile M_tile, unsigned long ord) {
-  TA::Tensor<double> eri3_tile = eri3_iii;
+  TA::Tensor<double> eri3_tile = eri3_iii.operator TA::Tensor<double>();
   auto eri3_extent = eri3_tile.range().extent();
   RowMatrixXd eri3_eig =
       TA::eigen_map(eri3_tile, eri3_extent[0], eri3_extent[1] * eri3_extent[2]);
@@ -429,8 +429,8 @@ void create_ij_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
                     Tile M_tile_ii, Tile M_tile_ij, Tile M_tile_ji,
                     Tile M_tile_jj, unsigned long ord_iij,
                     unsigned long ord_jij) {
-  TA::Tensor<double> eri3_iij = direct_eri3_iij;
-  TA::Tensor<double> eri3_jij = direct_eri3_jij;
+  TA::Tensor<double> eri3_iij = direct_eri3_iij.operator TA::Tensor<double>();
+  TA::Tensor<double> eri3_jij = direct_eri3_jij.operator TA::Tensor<double>();
 
   auto eri3_extent_iij = eri3_iij.range().extent_data();
   auto eri3_extent_jij = eri3_jij.range().extent_data();

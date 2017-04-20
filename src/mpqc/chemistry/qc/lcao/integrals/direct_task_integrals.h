@@ -250,7 +250,8 @@ direct_dense_integrals(
  */
 
 template <typename Tile>
-TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy>
+DirectArray<Tile, TA::DensePolicy,
+            DirectDFIntegralBuilder<Tile, TA::DensePolicy>>
 df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
                     TA::DistArray<Tile, TA::DensePolicy> &ket) {
   std::vector<TA::TiledRange1> vec_tr1(4);
@@ -267,14 +268,16 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
 
   auto &world = bra.world();
 
-  TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy> result(
-      world, trange);
+  TA::DistArray<
+      DirectTile<Tile, DirectDFIntegralBuilder<Tile, TA::DensePolicy>>,
+      TA::DensePolicy>
+      result(world, trange);
 
   auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
-                                                std::move(range), builder_ptr);
+    return DirectTile<Tile, DirectDFIntegralBuilder<Tile, TA::DensePolicy>>(
+        std::move(idx), std::move(range), builder_ptr);
   };
 
   // set all tiles
@@ -287,14 +290,19 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
   }
   world.gop.fence();
 
-  return result;
+  DirectArray<Tile, TA::DensePolicy,
+              DirectDFIntegralBuilder<Tile, TA::DensePolicy>>
+      direct_result(builder_ptr, result);
+
+  return direct_result;
 };
 
 /**
  * construct direct sparse LCAO integral from density fitting
  */
 template <typename Tile>
-TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy>
+DirectArray<Tile, TA::SparsePolicy,
+            DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>
 df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
                     TA::DistArray<Tile, TA::SparsePolicy> &ket) {
   std::vector<TA::TiledRange1> vec_tr1(4);
@@ -346,14 +354,16 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
 
-  TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy> result(
-      world, trange, shape, pmap);
+  TA::DistArray<
+      DirectTile<Tile, DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>,
+      TA::SparsePolicy>
+      result(world, trange, shape, pmap);
 
   auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
-                                                std::move(range), builder_ptr);
+    return DirectTile<Tile, DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>(
+        std::move(idx), std::move(range), builder_ptr);
   };
 
   // set all tiles
@@ -363,13 +373,18 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
       //      result.set(ord, tile_future);
       auto idx = trange.tiles_range().idx(ord);
       auto range = trange.make_tile_range(ord);
-      result.set(ord, DirectDFTile<Tile, TA::SparsePolicy>(
-                          std::move(idx), std::move(range), builder_ptr));
+      result.set(
+          ord,
+          DirectTile<Tile, DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>(
+              std::move(idx), std::move(range), builder_ptr));
     }
   }
   //  world.gop.fence();
 
-  return result;
+  DirectArray<Tile, TA::SparsePolicy,
+              DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>
+      direct_result(builder_ptr, result);
+  return direct_result;
 };
 
 }  // namespace gaussian

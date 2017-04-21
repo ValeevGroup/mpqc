@@ -157,7 +157,7 @@ class PeriodicFourCenterFockBuilder
 	}
 
 	array_type compute_JK_abcd(array_type const &D,
-														 double target_precision) const {
+														 double target_precision) const {		
 		dist_pmap_D_ = D.pmap();
 
 		// Copy D and make it replicated.
@@ -180,6 +180,8 @@ class PeriodicFourCenterFockBuilder
 				static_cast<uint64_t>(ntiles0 * ntilesR * ntiles0 * ntilesR * RJ_size_);
 		auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
 																																ntile_tasks);
+
+		auto t0 = mpqc::fenced_now(compute_world);
 
 		// make shell block norm of D
 		auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basisR_, D_repl);
@@ -218,10 +220,14 @@ class PeriodicFourCenterFockBuilder
 		ExEnv::out0() << "\nIntegrals per node:" << std::endl;
 		for (auto i = 0; i < compute_world.nproc(); ++i) {
 			if (me == i) {
-				ExEnv::outn() << indent << "Ints for J on node(" << i
-											<< "): " << J_num_ints_computed_ << std::endl;
-				ExEnv::outn() << indent << "Ints for K on node(" << i
-											<< "): " << K_num_ints_computed_ << std::endl;
+				if (compute_J_) {
+					ExEnv::outn() << indent << "Ints for J on node(" << i
+												<< "): " << J_num_ints_computed_ << std::endl;
+				}
+				if (compute_K_) {
+					ExEnv::outn() << indent << "Ints for K on node(" << i
+												<< "): " << K_num_ints_computed_ << std::endl;
+				}
 			}
 			compute_world.gop.fence();
 		}
@@ -262,6 +268,10 @@ class PeriodicFourCenterFockBuilder
 			G.fill_local(0.0, true);
 			global_fock_tiles_.clear();
 
+			auto t1 = mpqc::fenced_now(compute_world);
+			auto dur = mpqc::duration_in_s(t0, t1);
+			ExEnv::out0() << "Total PeriodicFourCenterFock builder time: " << dur
+										<< std::endl;
 			return G;
 
 		} else {

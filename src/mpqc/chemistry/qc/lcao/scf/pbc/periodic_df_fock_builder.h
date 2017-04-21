@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 
 namespace mpqc {
 namespace scf {
@@ -12,6 +13,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  public:
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
 	using DirectTArray = typename Factory::DirectTArray;
+	using PFC_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
 	PeriodicDFFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
 		print_detail_ = ao_factory_.print_detail();
@@ -95,17 +97,34 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		}
 		ExEnv::out0() << "\nInit RI-J time:      " << t_init_other << " s\n"
 									<< std::endl;
+
+		// construct PerioidcFourCenterFockBuilder for exchange term
+		{
+			auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+			auto dcell = ao_factory_.unitcell().dcell();
+			auto R_max = ao_factory_.R_max();
+			auto RJ_max = ao_factory_.RJ_max();
+			auto RD_max = ao_factory_.RD_max();
+			auto R_size = ao_factory_.R_size();
+			auto RJ_size = ao_factory_.RJ_size();
+			auto RD_size = ao_factory_.RD_size();
+			auto screen = ao_factory_.screen();
+			auto screen_threshold = ao_factory_.screen_threshold();
+
+			k_builder_ = std::make_unique<PFC_Builder>(
+					world, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size, RD_size,
+					false, true, screen, screen_threshold);
+		}
 	}
 
 	~PeriodicDFFockBuilder() {}
 
-	array_type operator()(array_type const &D, double) override {
-		// feed density matrix to Factory
-		ao_factory_.set_density(D);
+	array_type operator()(array_type const &D, double target_precision) override {
+		array_type G;
 
-		array_type K, G;
-		K = ao_factory_.compute_direct(L"(μ ν| K|κ λ)");
-		G("mu, nu") = 2.0 * compute_J(D)("mu, nu") - K("mu, nu");
+		// the '-' sign is embeded in K builder
+		G("mu, nu") =
+				2.0 * compute_J(D)("mu, nu") + compute_K(D, target_precision)("mu, nu");
 
 		return G;
 	}
@@ -118,6 +137,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  private:
 	Factory &ao_factory_;
 	bool print_detail_;
+	std::unique_ptr<PFC_Builder> k_builder_;
 
 	array_type M_;         // charge matrix of product density <μ|ν>
 	array_type n_;         // normalized charge vector <Κ>
@@ -141,6 +161,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  private:
 	array_type compute_J(const array_type &D) {
 		auto &world = ao_factory_.world();
+		// feed density matrix to Factory
+		ao_factory_.set_density(D);
 
 		mpqc::time_point t0, t1;
 		auto t0_j_builder = mpqc::fenced_now(world);
@@ -238,6 +260,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 										<< "\nTotal J builder time: " << t_tot << " s" << std::endl;
 		}
 		return J;
+	}
+
+	array_type compute_K(const array_type &D, double target_precision) {
+		return k_builder_->operator()(D, target_precision);
 	}
 };
 

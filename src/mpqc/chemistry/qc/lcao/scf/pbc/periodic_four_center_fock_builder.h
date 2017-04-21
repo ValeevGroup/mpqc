@@ -52,6 +52,7 @@ class PeriodicFourCenterFockBuilder
 			madness::WorldObject<PeriodicFourCenterFockBuilder<Tile, Policy>>;
 	using PeriodicFourCenterFockBuilder_ = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
+	using Engine = ::mpqc::lcao::gaussian::ShrPool<libint2::Engine>;
 	using Basis = ::mpqc::lcao::gaussian::Basis;
 	using BasisVector = std::vector<Basis>;
 	using Shell = typename ::mpqc::lcao::gaussian::Shell;
@@ -86,9 +87,63 @@ class PeriodicFourCenterFockBuilder
 		assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
 		// WorldObject mandates this is called from the ctor
 		WorldObject_::process_pending();
+
+		using ::mpqc::lcao::detail::direct_vector;
+		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+		using ::mpqc::lcao::gaussian::make_engine_pool;
+		using ::mpqc::lcao::gaussian::detail::make_screener;
+
+		// make compound basis set for bra1
+		Vector3d zero_shift_base(0.0, 0.0, 0.0);
+		basisR_ = shift_basis_origin(*basis0_, zero_shift_base,
+																					 R_max_, dcell_);
+		const auto basis0 = *basis0_;
+		const auto basisR = *basisR_;
+		auto oper_type = libint2::Operator::coulomb;
+
+
+		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+			auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+			// make compound basis sets for ket0 and ket1
+			basisRJ_.push_back(shift_basis_origin(*basis0_, vec_RJ));
+			basisRD_.push_back(shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_));
+
+			const auto basisRJ = *(basisRJ_.back());
+			const auto basisRD = *(basisRD_.back());
+
+			// initialize engine and screener
+			if (compute_J_) {
+				j_engines_.push_back(make_engine_pool(
+						oper_type,
+						utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+						libint2::BraKet::xx_xx));
+				auto bases = ::mpqc::lcao::gaussian::BasisVector{
+						{basis0, basisR, basisRJ, basisRD}};
+				j_p_screener_.push_back(make_screener(
+						world, j_engines_.back(), bases, screen_, screen_threshold_));
+			}
+			if (compute_K_) {
+				k_engines_.push_back(make_engine_pool(
+						oper_type,
+						utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
+						libint2::BraKet::xx_xx));
+				auto bases = ::mpqc::lcao::gaussian::BasisVector{
+						{basis0, basisRJ, basisR, basisRD}};
+				k_p_screener_.push_back(make_screener(
+						world, k_engines_.back(), bases, screen_, screen_threshold_));
+			}
+
+
+		}
+
+
 	}
 
-	~PeriodicFourCenterFockBuilder() {}
+	~PeriodicFourCenterFockBuilder() {
+		if (compute_J_) j_engines_.resize(0);
+		if (compute_K_) k_engines_.resize(0);
+
+	}
 
 	array_type operator()(array_type const &D, double target_precision) override {
 		J_num_ints_computed_ = 0;
@@ -97,20 +152,10 @@ class PeriodicFourCenterFockBuilder
 		auto vec_G = std::vector<array_type>(RJ_size_, array_type());
 		using ::mpqc::lcao::detail::direct_vector;
 		using ::mpqc::lcao::gaussian::detail::make_screener;
-		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-
-		Vector3d zero_shift_base(0.0, 0.0, 0.0);
-		basisR_ = shift_basis_origin(*basis0_, zero_shift_base,
-																					 R_max_, dcell_);
 
 		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
 			auto &G = vec_G[RJ];
-			auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-
-			basisRJ_ = shift_basis_origin(*basis0_, vec_RJ);
-			basisRD_ = shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_);
-
-			G = compute_JK_abcd(D, target_precision);
+			G = compute_JK_abcd(D, RJ, target_precision);
 		}
 
 		if (RJ_size_ > 0) {
@@ -132,7 +177,7 @@ class PeriodicFourCenterFockBuilder
 		registry.insert(Formula(L"(κ|F|λ)"), fock);
 	}
 
-	array_type compute_JK_abcd(array_type const &D,
+	array_type compute_JK_abcd(array_type const &D, int64_t RJ,
 														 double target_precision) const {
 		// prepare input data
 		auto &compute_world = this->get_world();
@@ -141,8 +186,8 @@ class PeriodicFourCenterFockBuilder
 
 		const auto basis0 = *basis0_;
 		const auto basisR = *basisR_;
-		const auto basisRJ = *basisRJ_;
-		const auto basisRD = *basisRD_;
+		const auto basisRJ = *(basisRJ_[RJ]);
+		const auto basisRD = *(basisRD_[RJ]);
 
 		// # of tiles per basis
 		auto ntiles0 = basis0.nclusters();
@@ -159,27 +204,27 @@ class PeriodicFourCenterFockBuilder
 																																ntile_tasks);
 
 		// make the engine pool
-		auto oper_type = libint2::Operator::coulomb;
-		if (compute_J_) {
-			j_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
-					oper_type,
-					utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
-					libint2::BraKet::xx_xx);
-			auto bases = ::mpqc::lcao::gaussian::BasisVector{
-					{basis0, basisR, basisRJ, basisRD}};
-			j_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
-					compute_world, j_engines_, bases, screen_, screen_threshold_);
-		}
-		if (compute_K_) {
-			k_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
-					oper_type,
-					utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
-					libint2::BraKet::xx_xx);
-			auto bases = ::mpqc::lcao::gaussian::BasisVector{
-					{basis0, basisRJ, basisR, basisRD}};
-			k_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
-					compute_world, k_engines_, bases, screen_, screen_threshold_);
-		}
+//		auto oper_type = libint2::Operator::coulomb;
+//		if (compute_J_) {
+//			j_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
+//					oper_type,
+//					utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+//					libint2::BraKet::xx_xx);
+//			auto bases = ::mpqc::lcao::gaussian::BasisVector{
+//					{basis0, basisR, basisRJ, basisRD}};
+//			j_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
+//					compute_world, j_engines_, bases, screen_, screen_threshold_);
+//		}
+//		if (compute_K_) {
+//			k_engines_ = ::mpqc::lcao::gaussian::make_engine_pool(
+//					oper_type,
+//					utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
+//					libint2::BraKet::xx_xx);
+//			auto bases = ::mpqc::lcao::gaussian::BasisVector{
+//					{basis0, basisRJ, basisR, basisRD}};
+//			k_p_screener_ = ::mpqc::lcao::gaussian::detail::make_screener(
+//					compute_world, k_engines_, bases, screen_, screen_threshold_);
+//		}
 
 		auto empty = TA::Future<Tile>(Tile());
 		for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles0; ++tile0) {
@@ -191,7 +236,7 @@ class PeriodicFourCenterFockBuilder
 													 : D.find({tile2, tile3});
 						if (pmap->is_local(tile0123))
 							WorldObject_::task(
-									me, &PeriodicFourCenterFockBuilder::compute_task_abcd, D_RJRD,
+									me, &PeriodicFourCenterFockBuilder::compute_task_abcd, D_RJRD, RJ,
 									std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
 					}
 				}
@@ -201,8 +246,8 @@ class PeriodicFourCenterFockBuilder
 		compute_world.gop.fence();
 
 		// cleanup
-		if (compute_J_) j_engines_.reset();
-		if (compute_K_) k_engines_.reset();
+//		if (compute_J_) j_engines_[RJ].reset();
+//		if (compute_K_) k_engines_[RJ].reset();
 
 		typename Policy::shape_type shape;
 		// compute the shape, if sparse
@@ -252,17 +297,17 @@ class PeriodicFourCenterFockBuilder
 	const int64_t RD_size_;
 
 	// mutated by compute_ functions
-	mutable std::shared_ptr<lcao::Screener> j_p_screener_;
-	mutable std::shared_ptr<lcao::Screener> k_p_screener_;
+	mutable std::vector<std::shared_ptr<lcao::Screener>> j_p_screener_;
+	mutable std::vector<std::shared_ptr<lcao::Screener>> k_p_screener_;
 	mutable std::shared_ptr<Basis> basisR_;
-	mutable std::shared_ptr<Basis> basisRJ_;
-	mutable std::shared_ptr<Basis> basisRD_;
+	mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
+	mutable std::vector<std::shared_ptr<Basis>> basisRD_;
 	mutable madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
 	mutable TA::TiledRange trange_D_;
 	mutable std::shared_ptr<TA::Pmap> pmap_D_;
 	mutable double target_precision_ = 0.0;
-	mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> j_engines_;
-	mutable ::mpqc::lcao::gaussian::ShrPool<libint2::Engine> k_engines_;
+	mutable std::vector<Engine> j_engines_;
+	mutable std::vector<Engine> k_engines_;
 	mutable array_type shblk_norm_D_;
 	mutable std::atomic<size_t> J_num_ints_computed_{0};
 	mutable std::atomic<size_t> K_num_ints_computed_{0};
@@ -289,7 +334,7 @@ class PeriodicFourCenterFockBuilder
 		acc.release();  // END OF CRITICAL SECTION
 	}
 
-	void compute_task_abcd(Tile D_RJRD, std::array<size_t, 4> tile_idx) {
+	void compute_task_abcd(Tile D_RJRD, int64_t RJ, std::array<size_t, 4> tile_idx) {
 		const auto tile0 = tile_idx[0];
 		const auto tileR = tile_idx[1];
 		const auto tileRJ = tile_idx[2];
@@ -325,8 +370,8 @@ class PeriodicFourCenterFockBuilder
 
 			const auto &basis0 = basis0_;
 			const auto &basisR = basisR_;
-			const auto &basisRJ = basisRJ_;
-			const auto &basisRD = basisRD_;
+			const auto &basisRJ = basisRJ_[RJ];
+			const auto &basisRD = basisRD_[RJ];
 
 			// shell clusters for this tile
 			const auto& cluster0 = basis0->cluster_shells()[tile0];
@@ -353,8 +398,8 @@ class PeriodicFourCenterFockBuilder
 			// compute Coulomb contributions to all Fock matrices
 			if (compute_J_) {
 
-				auto &screen = *j_p_screener_;
-				auto engine = j_engines_->local();
+				auto &screen = *(j_p_screener_[RJ]);
+				auto engine = j_engines_[RJ]->local();
 				engine.set_precision(engine_precision);
 				const auto &computed_shell_sets = engine.results();
 
@@ -408,7 +453,7 @@ class PeriodicFourCenterFockBuilder
 								J_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
 
 								// compute shell set
-								engine.compute2<libint2::Operator::coulomb,
+								engine.template compute2<libint2::Operator::coulomb,
 																libint2::BraKet::xx_xx, 0>(
 										shell0, shell1, shell2, shell3);
 								const auto* eri_0123 = computed_shell_sets[0];
@@ -455,8 +500,8 @@ class PeriodicFourCenterFockBuilder
 			}
 
 			if (compute_K_) {
-				auto &screen = *k_p_screener_;
-				auto engine = k_engines_->local();
+				auto &screen = *(k_p_screener_[RJ]);
+				auto engine = k_engines_[RJ]->local();
 				engine.set_precision(engine_precision);
 				const auto &computed_shell_sets = engine.results();
 
@@ -509,7 +554,7 @@ class PeriodicFourCenterFockBuilder
 								K_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
 
 								// compute shell set
-								engine.compute2<libint2::Operator::coulomb,
+								engine.template compute2<libint2::Operator::coulomb,
 																libint2::BraKet::xx_xx, 0>(
 											shell0, shell1, shell2, shell3);
 								const auto* eri_0123 = computed_shell_sets[0];

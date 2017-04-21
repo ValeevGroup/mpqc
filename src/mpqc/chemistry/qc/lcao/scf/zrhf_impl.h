@@ -414,6 +414,10 @@ void DFzRHF<Tile, Policy>::init_fock_builder() {
 	this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
+/**
+ *  FourCenterzRHF member functions
+ */
+
 template <typename Tile, typename Policy>
 FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
 		: zRHF<Tile, Policy>(kv) {}

@@ -89,6 +89,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 
 	auto init_end = mpqc::fenced_now(world);
 	init_duration_ = mpqc::duration_in_s(init_start, init_end);
+	ExEnv::out0() << "Periodic RHF Init Time: " << init_duration_ << " s" << std::endl;
 }
 
 template <typename Tile, typename Policy>

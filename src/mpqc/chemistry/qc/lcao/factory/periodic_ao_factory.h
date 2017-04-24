@@ -637,11 +637,11 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, this->accurate_time());
 
-      if (print_detail_) {
-        double size = mpqc::detail::array_size(g);
-        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-                      << std::endl;
-      }
+//      if (print_detail_) {
+//        double size = mpqc::detail::array_size(g);
+//        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+//                      << std::endl;
+//      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, this->accurate_time());
@@ -670,11 +670,11 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, this->accurate_time());
 
-      if (print_detail_) {
-        double size = mpqc::detail::array_size(g);
-        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-                      << std::endl;
-      }
+//      if (print_detail_) {
+//        double size = mpqc::detail::array_size(g);
+//        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+//                      << std::endl;
+//      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, this->accurate_time());
@@ -831,11 +831,11 @@ PeriodicAOFactory<Tile, Policy>::compute_direct3(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-        if (print_detail_) {
-          double size = mpqc::detail::array_size(g.array());
-          ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
-                        << std::endl;
-        }
+//        if (print_detail_) {
+//          double size = mpqc::detail::array_size(g.array());
+//          ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
+//                        << std::endl;
+//        }
 
         time_3idx += mpqc::duration_in_s(time_g0, time_g1);
       }
@@ -911,11 +911,11 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-        if (print_detail_) {
-          double size = mpqc::detail::array_size(g.array());
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-                        << std::endl;
-        }
+//        if (print_detail_) {
+//          double size = mpqc::detail::array_size(g.array());
+//          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+//                        << std::endl;
+//        }
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
@@ -955,11 +955,11 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-        if (print_detail_) {
-          double size = mpqc::detail::array_size(g.array());
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-                        << std::endl;
-        }
+//        if (print_detail_) {
+//          double size = mpqc::detail::array_size(g.array());
+//          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+//                        << std::endl;
+//        }
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
@@ -1239,7 +1239,7 @@ typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen, Op op) {
-  auto time0 = mpqc::now(world, true);
+//  auto time0 = mpqc::now(world, true);
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -1278,7 +1278,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-  auto time_f0 = mpqc::now(world, true);
+//  auto time_f0 = mpqc::now(world, true);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -1286,21 +1286,21 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
                     &tiles[ord].second);
   }
   world.gop.fence();
-  auto time_f1 = mpqc::now(this->world(), true);
-  auto time_f = mpqc::duration_in_s(time_f0, time_f1);
+//  auto time_f1 = mpqc::now(this->world(), true);
+//  auto time_f = mpqc::duration_in_s(time_f0, time_f1);
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
-  auto time1 = mpqc::now(this->world(), true);
-  auto time = mpqc::duration_in_s(time0, time1);
+//  auto time1 = mpqc::now(this->world(), true);
+//  auto time = mpqc::duration_in_s(time0, time1);
 
-  if (print_detail_) {
-    utility::print_par(this->world(), " \tsum of task_f time: ", time_f, " s\n",
-                       " \ttotal compute time: ", time, " s\n\n");
-  }
+//  if (print_detail_) {
+//    utility::print_par(this->world(), " \tsum of task_f time: ", time_f, " s\n",
+//                       " \ttotal compute time: ", time, " s\n\n");
+//  }
 
   return out;
 }

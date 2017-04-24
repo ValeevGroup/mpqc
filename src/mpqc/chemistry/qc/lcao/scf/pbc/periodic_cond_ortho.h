@@ -67,10 +67,8 @@ MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
   auto nbf_omitted = s_rows - s_cond;
   if (nbf_omitted < 0) throw "Error: dropping negative number of functions!";
 
-  if (world.rank() == 0) {
-    std::cout << "\n\toverlap condition number = " << S_condition_num
-              << " at k = " << k;
-  }
+	ExEnv::out0() << "\n\toverlap condition number = " << S_condition_num
+						<< " at k = " << k;
 
   if (nbf_omitted > 0) {
     auto XtS = X.transpose().conjugate() * S_eig;
@@ -81,13 +79,12 @@ MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
     auto I_comp = I_real.template cast<std::complex<double>>();
     auto should_be_zero = (should_be_I - I_comp).norm();
 
-    if (world.rank() == 0) {
-      std::cout << " (dropped " << nbf_omitted << " "
-                << (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
-                << result_condition_num << ")" << std::endl;
-      std::cout << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
-                << " (should be zero)" << std::endl;
-    }
+		ExEnv::out0() << " (dropped " << nbf_omitted << " "
+							<< (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
+							<< result_condition_num << ")" << std::endl;
+		ExEnv::out0() << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
+							<< " (should be zero)" << std::endl;
+
   }
 
   return X;
@@ -123,6 +120,7 @@ std::vector<MatrixZ> conditioned_orthogonalizer(
     X[k] = gensqrtinv(S, false, max_condition_num, k);
   }
 
+	ExEnv::out0() << std::endl;
   return X;
 }
 

@@ -82,7 +82,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		t1 = mpqc::fenced_now(world);
 		auto t_im = mpqc::duration_in_s(t0, t1);
 
+		t0 = mpqc::fenced_now(world);
 		Gamma_vec_ = ao_factory_.compute_direct_vector(L"( Κ | G|κ λ)");
+		t1 = mpqc::fenced_now(world);
+		auto t_3c_vec = mpqc::duration_in_s(t0, t1);
 
 		auto t1_init = mpqc::fenced_now(world);
 		double t_init_other = mpqc::duration_in_s(t0_init, t1_init);
@@ -93,13 +96,15 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 										<< "\tA = V_perp + P_para: " << t_a << " s\n"
 										<< "\tL inv:               " << t_l_inv << " s\n"
 										<< "\tA inv:               " << t_a_inv << " s\n"
-										<< "\tIM:                  " << t_im << " s" << std::endl;
+										<< "\tIM:                  " << t_im << " s\n"
+										<< "\tInit of 3c int vec:  " << t_3c_vec << " s" << std::endl;
 		}
-		ExEnv::out0() << "\nInit RI-J time:      " << t_init_other << " s\n"
+		ExEnv::out0() << "\nInit RI-J time:      " << t_init_other << " s"
 									<< std::endl;
 
 		// construct PerioidcFourCenterFockBuilder for exchange term
 		{
+			auto t0_k_init = mpqc::fenced_now(world);
 			auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 			auto dcell = ao_factory_.unitcell().dcell();
 			auto R_max = ao_factory_.R_max();
@@ -114,6 +119,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 			k_builder_ = std::make_unique<PFC_Builder>(
 					world, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size, RD_size,
 					false, true, screen, screen_threshold);
+			auto t1_k_init = mpqc::fenced_now(world);
+			auto k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
+			ExEnv::out0() << "\nInit Four-Center-K time:      " << k_init << " s\n"
+										<< std::endl;
 		}
 	}
 

@@ -305,6 +305,11 @@ class PeriodicFourCenterFockBuilder
 			G.fill_local(0.0, true);
 			local_fock_tiles_.clear();
 
+			auto t1 = mpqc::fenced_now(compute_world);
+			auto dur = mpqc::duration_in_s(t0, t1);
+			ExEnv::out0() << "Total PeriodicFourCenterFock builder time: " << dur
+										<< std::endl;
+
 			return G;
 		}
 	}

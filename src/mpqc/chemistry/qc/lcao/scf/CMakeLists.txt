@@ -22,6 +22,7 @@ purification_density_build_impl.h
 rhf.cpp
 rhf.h
 rhf_impl.h
+rij_exact_k_fock_builder.h
 soad.h
 ta_shape_tracker.h
 traditional_df_fock_builder.h

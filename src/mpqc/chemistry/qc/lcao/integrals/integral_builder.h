@@ -166,7 +166,8 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     TA_ASSERT(df_upbound_ == ket_.trange().data().front().tiles_range().second);
   }
 
-  DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = default;
+  DirectDFIntegralBuilder(DirectDFIntegralBuilder &&) = delete;
+  DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = delete;
 
   ~DirectDFIntegralBuilder() {
     if (madness::initialized()) {

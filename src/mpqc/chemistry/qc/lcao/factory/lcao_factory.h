@@ -624,7 +624,6 @@ typename LCAOFactory<Tile, Policy>::DirectTArray
 LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
   TA_ASSERT(formula.rank() == 4);
   TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
-  TA_ASSERT(formula.notation() == Formula::Notation::Chemical);
 
   ExEnv::out0() << incindent;
   double time = 0.0;
@@ -652,7 +651,7 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
     time0 = mpqc::now(world, this->accurate_time_);
 
     left("K,i,j") = center("K,Q") * left("Q,i,j");
-    result = gaussian::df_direct_integrals(left, right);
+    result = gaussian::df_direct_integrals(left, right,formula.notation());
 
     time1 = mpqc::now(world, this->accurate_time_);
     time = mpqc::duration_in_s(time0, time1);

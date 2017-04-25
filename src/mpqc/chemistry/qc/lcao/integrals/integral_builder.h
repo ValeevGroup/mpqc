@@ -11,6 +11,7 @@
 #include "mpqc/util/misc/pool.h"
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/expression/formula.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
@@ -77,42 +78,41 @@ class IntegralBuilder
   TA::TensorD integrals(std::vector<std::size_t> const &idx, TA::Range range) {
     auto size = bases_->size();
 
-    if (size == 2) {
-      // Get integral shells
-      detail::VecArray<2> shellvec_ptrs;
-      for (auto i = 0ul; i < size; ++i) {
-        auto const &basis_i = bases_->operator[](i);
-        shellvec_ptrs[i] = &basis_i.cluster_shells()[idx[i]];
-      }
+    switch (size) {
+      case 2:
+        // Get integral shells
+        detail::VecArray<2> shellvec_ptrs2;
+        for (auto i = 0ul; i < size; ++i) {
+          auto const &basis_i = bases_->operator[](i);
+          shellvec_ptrs2[i] = &basis_i.cluster_shells()[idx[i]];
+        }
+        // Compute integrals over the selected shells.
+        return detail::integral_kernel(engines_->local(), std::move(range),
+                                       shellvec_ptrs2, *screen_, *plist_);
+      case 3:
+        // Get integral shells
+        detail::VecArray<3> shellvec_ptrs3;
+        for (auto i = 0ul; i < size; ++i) {
+          auto const &basis_i = bases_->operator[](i);
+          shellvec_ptrs3[i] = &basis_i.cluster_shells()[idx[i]];
+        }
+        // Compute integrals over the selected shells.
+        return detail::integral_kernel(engines_->local(), std::move(range),
+                                       shellvec_ptrs3, *screen_, *plist_);
+      case 4:
+        // Get integral shells
+        detail::VecArray<4> shellvec_ptrs4;
+        for (auto i = 0ul; i < size; ++i) {
+          auto const &basis_i = bases_->operator[](i);
+          shellvec_ptrs4[i] = &basis_i.cluster_shells()[idx[i]];
+        }
 
-      // Compute integrals over the selected shells.
-      return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_, *plist_);
-    } else if (size == 3) {
-      // Get integral shells
-      detail::VecArray<3> shellvec_ptrs;
-      for (auto i = 0ul; i < size; ++i) {
-        auto const &basis_i = bases_->operator[](i);
-        shellvec_ptrs[i] = &basis_i.cluster_shells()[idx[i]];
-      }
-
-      // Compute integrals over the selected shells.
-      return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_, *plist_);
-    } else if (size == 4) {
-      // Get integral shells
-      detail::VecArray<4> shellvec_ptrs;
-      for (auto i = 0ul; i < size; ++i) {
-        auto const &basis_i = bases_->operator[](i);
-        shellvec_ptrs[i] = &basis_i.cluster_shells()[idx[i]];
-      }
-
-      // Compute integrals over the selected shells.
-      return detail::integral_kernel(engines_->local(), std::move(range),
-                                     shellvec_ptrs, *screen_, *plist_);
-    } else {
-      throw std::runtime_error(
-          "Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
+        // Compute integrals over the selected shells.
+        return detail::integral_kernel(engines_->local(), std::move(range),
+                                       shellvec_ptrs4, *screen_, *plist_);
+      default:
+        throw std::runtime_error(
+            "Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
     }
   }
 
@@ -156,8 +156,12 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   DirectDFIntegralBuilder() = default;
   DirectDFIntegralBuilder(
       const TA::DistArray<Tile, Policy> &left,
-      const TA::DistArray<Tile, Policy> &right = TA::DistArray<Tile, Policy>())
-      : bra_(left), ket_(right), id_(left.world().register_ptr(this)) {
+      const TA::DistArray<Tile, Policy> &right,
+      Formula::Notation notation = Formula::Notation::Chemical)
+      : bra_(left),
+        ket_(right),
+        id_(left.world().register_ptr(this)),
+        notation_(notation) {
     df_lobound_ = bra_.trange().data().front().tiles_range().first;
     df_upbound_ = bra_.trange().data().front().tiles_range().second;
 
@@ -211,65 +215,63 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     }
   };
 
+  // permute function
+  static Tile permute(const Tile &tile) {
+    return tile.permute(TA::Permutation({0, 2, 1, 3}));
+  }
+
   // compute Tile for particular block
-  madness::Future<Tile> operator()(const std::vector<std::size_t> &idx, const TA::Range &range) {
+  madness::Future<Tile> operator()(const std::vector<std::size_t> &idx,
+                                   const TA::Range &range) {
     TA_ASSERT(idx.size() == 4);
 
     auto &world = bra_.world();
     // create tile
     //    madness::Future<Tile> result(Tile(range, 0.0));
-//        Tile result(range, 0.0);
+    //        Tile result(range, 0.0);
 
     std::vector<std::size_t> bra_idx(3);
-    bra_idx[1] = idx[0];
-    bra_idx[2] = idx[1];
     std::vector<std::size_t> ket_idx(3);
-    ket_idx[1] = idx[2];
+    bra_idx[1] = idx[0];
     ket_idx[2] = idx[3];
+    if(notation_==Formula::Notation::Physical){
+      bra_idx[2] = idx[2];
+      ket_idx[1] = idx[1];
+    }else{
+      bra_idx[2] = idx[1];
+      ket_idx[1] = idx[2];
+    }
 
     TA::math::GemmHelper gemm_helper(madness::cblas::Trans,
                                      madness::cblas::NoTrans, 4, 3, 3);
 
-    //    auto task_gemm = [gemm_helper](Tile bra, Tile ket) {
-    //      return bra.gemm(ket, 1.0, gemm_helper);
-    //    };
-    //
-    //    auto task_add = [](Tile tile, Tile& result) {
-    //      // need to lock
-    ////      std::scoped_lock lock();
-    //      result.add_to(tile);
-    //    };
+    TA::Range this_range;
+    if(notation_==Formula::Notation::Physical){
+      this_range = TA::Range(TA::Permutation({0,2,1,3}),range);
+    }
+    else{
+      this_range = range;
+    }
 
-    // loop over density fitting space
-
-    TaskGemm task_gemm(range, gemm_helper);
+    TaskGemm task_gemm(this_range, gemm_helper);
 
     TA::detail::ReducePairTask<decltype(task_gemm)> reduce_pair_task(world,
                                                                      task_gemm);
+    // loop over density fitting space
     for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
       bra_idx[0] = i;
       ket_idx[0] = i;
       madness::Future<Tile> future_bra_tile = bra_.find(bra_idx);
       madness::Future<Tile> future_ket_tile = ket_.find(ket_idx);
 
-      //      auto tile = world.taskq.add(task_gemm, future_bra_tile,
-      //      future_ket_tile);
       reduce_pair_task.add(future_bra_tile, future_ket_tile);
     }
-    return reduce_pair_task.submit();
 
-//            for (std::size_t i = df_lobound_; i < df_upbound_; ++i) {
-//              bra_idx[0] = i;
-//              ket_idx[0] = i;
-//              auto future_bra_tile = bra_.find(bra_idx);
-//              auto future_ket_tile = ket_.find(ket_idx);
-//
-//              result.add_to(
-//                  future_bra_tile.get().gemm(future_ket_tile.get(), 1.0,
-//                  gemm_helper));
-//            }
-//
-//        return result;
+    if (notation_ == Formula::Notation::Chemical) {
+      return reduce_pair_task.submit();
+    } else {
+      return world.taskq.add(this->permute, reduce_pair_task.submit());
+    }
   }
 
  private:
@@ -283,6 +285,8 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   std::size_t df_upbound_;
   // madness id for serailization
   madness::uniqueidT id_;
+  // notation
+  Formula::Notation notation_;
 };
 
 /*!

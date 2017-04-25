@@ -239,7 +239,8 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
 template <typename Tile>
 TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy>
 df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
-                          TA::DistArray<Tile, TA::DensePolicy> &ket) {
+                    TA::DistArray<Tile, TA::DensePolicy> &ket,
+                    Formula::Notation notation = Formula::Notation::Chemical) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];
   vec_tr1[1] = bra.trange().data()[2];
@@ -249,19 +250,19 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
   TA::TiledRange trange(vec_tr1.begin(), vec_tr1.end());
 
   auto builder_ptr =
-      std::make_shared<DirectDFIntegralBuilder<Tile, TA::DensePolicy>>(bra,
-                                                                       ket);
+      std::make_shared<DirectDFIntegralBuilder<Tile, TA::DensePolicy>>(
+          bra, ket, notation);
 
-  auto& world = bra.world();
+  auto &world = bra.world();
 
   TA::DistArray<DirectDFTile<Tile, TA::DensePolicy>, TA::DensePolicy> result(
       world, trange);
 
-  auto task_f = [builder_ptr,&trange](int64_t ord) {
+  auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(
-        std::move(idx), std::move(range), builder_ptr);
+    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
+                                                std::move(range), builder_ptr);
   };
 
   // set all tiles
@@ -283,7 +284,8 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
 template <typename Tile>
 TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy>
 df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
-                          TA::DistArray<Tile, TA::SparsePolicy> &ket) {
+                    TA::DistArray<Tile, TA::SparsePolicy> &ket,
+                    Formula::Notation notation = Formula::Notation::Chemical) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];
   vec_tr1[1] = bra.trange().data()[2];
@@ -292,71 +294,65 @@ df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
 
   TA::TiledRange trange(vec_tr1.begin(), vec_tr1.end());
 
-
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   auto builder_ptr =
-      std::make_shared<DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>(bra,
-                                                                        ket);
+      std::make_shared<DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>(
+          bra, ket, notation);
 
-  auto& world = bra.world();
+  auto &world = bra.world();
 
   // set norm to a large enough value
-  auto task_norm = [builder_ptr](int64_t ord,
-                                 const TA::Range &range,
+  auto task_norm = [builder_ptr](int64_t ord, const TA::Range &range,
                                  TA::TensorF &tile_norm) {
     const auto tile_volume = range.volume();
-//    Tile tile = builder_ptr->operator()(idx, range);
-//    const auto tile_volume = tile.range().volume();
-//    const auto norm = tile.norm();
+    //    Tile tile = builder_ptr->operator()(idx, range);
+    //    const auto tile_volume = tile.range().volume();
+    //    const auto norm = tile.norm();
 
-//    std::cout << "idx: " << idx <<  "norm: " << norm << std::endl;
+    //    std::cout << "idx: " << idx <<  "norm: " << norm << std::endl;
 
-//    bool save_norm =
-//        norm >= tile_volume * TA::SparseShape<float>::threshold();
-//    if (save_norm) {
-//      tile_norm[ord] = norm;
-    //TODO better way to estimate norm
+    //    bool save_norm =
+    //        norm >= tile_volume * TA::SparseShape<float>::threshold();
+    //    if (save_norm) {
+    //      tile_norm[ord] = norm;
+    // TODO better way to estimate norm
     tile_norm[ord] = tile_volume;
-//    }
+    //    }
 
   };
 
   // initialize norm
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (const auto &ord : *pmap) {
-//    detail::IdxVec idx = trange.tiles_range().idx(ord);
+    //    detail::IdxVec idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-//    world.taskq.add(task_norm, ord, range, tile_norms);
+    //    world.taskq.add(task_norm, ord, range, tile_norms);
     task_norm(ord, range, tile_norms);
   }
-//  world.gop.fence();
+  //  world.gop.fence();
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
 
   TA::DistArray<DirectDFTile<Tile, TA::SparsePolicy>, TA::SparsePolicy> result(
       world, trange, shape, pmap);
 
-  auto task_f = [builder_ptr,&trange](int64_t ord) {
+  auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(
-        std::move(idx), std::move(range), builder_ptr);
+    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
+                                                std::move(range), builder_ptr);
   };
 
   // set all tiles
   for (const auto &ord : *pmap) {
     if (!result.is_zero(ord)) {
-//      auto tile_future = world.taskq.add(task_f, ord);
-//      result.set(ord, tile_future);
-      auto idx = trange.tiles_range().idx(ord);
-      auto range = trange.make_tile_range(ord);
-      result.set(ord, DirectDFTile<Tile, TA::SparsePolicy>(
-          std::move(idx), std::move(range), builder_ptr) ) ;
+      auto tile_future = world.taskq.add(task_f, ord);
+      result.set(ord, tile_future);
     }
   }
-//  world.gop.fence();
+  world.gop.fence();
 
   return result;
 };

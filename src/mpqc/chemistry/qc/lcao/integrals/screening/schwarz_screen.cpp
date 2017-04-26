@@ -53,6 +53,13 @@ bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c) const {
   return skip_(a, b, c);
 }
 
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, double D) {
+	return skip_(D, a, b, c);
+}
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, double D) const {
+	return skip_(D, a, b, c);
+}
+
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
   return skip_(a, b, c, d);
 }

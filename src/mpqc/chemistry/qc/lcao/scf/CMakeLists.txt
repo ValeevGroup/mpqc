@@ -33,6 +33,7 @@ list(APPEND sources
         decomposed_rij.cpp
         pbc/periodic_cond_ortho.h
         pbc/periodic_soad.h
+        pbc/periodic_three_center_contraction_builder.h
 				pbc/periodic_four_center_fock_builder.h
 				pbc/periodic_df_fock_builder.h
 				)

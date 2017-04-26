@@ -205,7 +205,7 @@ class PeriodicFourCenterFockBuilder
 						for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile0123) {
 							if (pmap->is_local(tile0123))
 								WorldObject_::task(
-										me, &PeriodicFourCenterFockBuilder::compute_task_abcd,
+										me, &PeriodicFourCenterFockBuilder_::compute_task_abcd,
 										D_RJRD, norm_D_RJRD, RJ,
 										std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
 						}

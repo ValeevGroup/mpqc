@@ -103,31 +103,31 @@ class PeriodicFourCenterFockBuilder
 		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
 			auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
 			// make compound basis sets for ket0 and ket1
-			basisRJ_.push_back(shift_basis_origin(*basis0_, vec_RJ));
-			basisRD_.push_back(shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_));
+			basisRJ_.emplace_back(shift_basis_origin(*basis0_, vec_RJ));
+			basisRD_.emplace_back(shift_basis_origin(*basis0_, vec_RJ, RD_max_, dcell_));
 
 			const auto basisRJ = *(basisRJ_.back());
 			const auto basisRD = *(basisRD_.back());
 
 			// initialize engine and screener
 			if (compute_J_) {
-				j_engines_.push_back(make_engine_pool(
+				j_engines_.emplace_back(make_engine_pool(
 						oper_type,
 						utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
 						libint2::BraKet::xx_xx));
 				auto bases = ::mpqc::lcao::gaussian::BasisVector{
 						{basis0, basisR, basisRJ, basisRD}};
-				j_p_screener_.push_back(make_screener(world, j_engines_.back(), bases,
+				j_p_screener_.emplace_back(make_screener(world, j_engines_.back(), bases,
 																							screen_, screen_threshold_));
 			}
 			if (compute_K_) {
-				k_engines_.push_back(make_engine_pool(
+				k_engines_.emplace_back(make_engine_pool(
 						oper_type,
 						utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
 						libint2::BraKet::xx_xx));
 				auto bases = ::mpqc::lcao::gaussian::BasisVector{
 						{basis0, basisRJ, basisR, basisRD}};
-				k_p_screener_.push_back(make_screener(world, k_engines_.back(), bases,
+				k_p_screener_.emplace_back(make_screener(world, k_engines_.back(), bases,
 																							screen_, screen_threshold_));
 			}
 		}

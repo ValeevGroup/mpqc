@@ -217,10 +217,6 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     }
   };
 
-  // permute function
-  static Tile permute(const Tile &tile) {
-    return tile.permute(TA::Permutation({0, 2, 1, 3}));
-  }
 
   // compute Tile for particular block
   madness::Future<Tile> operator()(const std::vector<std::size_t> &idx,
@@ -269,10 +265,15 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
       reduce_pair_task.add(future_bra_tile, future_ket_tile);
     }
 
+    // permute function
+    auto permute = [](const Tile &tile) {
+      return tile.permute(TA::Permutation({0, 2, 1, 3}));
+    };
+
     if (notation_ == Formula::Notation::Chemical) {
       return reduce_pair_task.submit();
     } else {
-      return world.taskq.add(this->permute, reduce_pair_task.submit());
+      return world.taskq.add(permute, reduce_pair_task.submit());
     }
   }
 

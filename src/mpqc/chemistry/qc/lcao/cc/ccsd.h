@@ -626,8 +626,22 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     // get all two electron integrals
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
-    auto g_abcd = this->lcao_factory().compute_direct(L"<a b|G|c d>[df]");
-    //    auto g_abcd = this->lcao_factory().compute(L"(a b|G|c d)[df]");
+    typename LCAOFactory<Tile,Policy>::DirectTArray g_abcd_direct;
+    TArray g_abcd;
+
+    auto abcd_time0 = mpqc::fenced_now(world);
+    if(!reduced_abcd_memory_){
+      g_abcd = this->lcao_factory().compute(L"<a b|G|c d>[df]");
+    }
+    else{
+      g_abcd_direct = this->lcao_factory().compute_direct(L"<a b|G|c d>[df]");
+      TArray tmp;
+      tmp("a,b,c,d") = g_abcd_direct("a,b,c,d");
+    }
+    auto abcd_time1 = mpqc::fenced_now(world);
+    auto abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
+    ExEnv::out0() << "G_ABCD Compute Time: " << abcd_time << "\n";
+
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
     TArray g_iabc = this->get_iabc();
@@ -680,6 +694,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
+      std::cout << "Reduced ABCD Memory Approach: "
+                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
 
     while (iter < max_iter_) {
@@ -874,7 +890,16 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // compute b intermediate
         // avoid store b_abcd
         TArray b_abij;
-        b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
+        abcd_time0 = mpqc::fenced_now(world);
+        if(!reduced_abcd_memory_){
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
+        }
+        else{
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_direct("a,b,c,d");
+        }
+        abcd_time1 = mpqc::fenced_now(world);
+        abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
+        ExEnv::out0() << "G_ABCD*Tau_CDIJ Term Time: " << abcd_time << "\n";
 
         b_abij("a,b,i,j") -= g_iabc("k,a,d,c") * tau("c,d,i,j") * t1("b,k");
 

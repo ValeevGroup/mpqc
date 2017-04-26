@@ -132,6 +132,9 @@ class DirectIntegralBuilder
       : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op, plist),
         id_(world.register_ptr(this)) {}
 
+  DirectIntegralBuilder(const DirectIntegralBuilder& builder) = delete;
+  DirectIntegralBuilder& operator=(const DirectIntegralBuilder& builder) = delete;
+
   madness::uniqueidT id() const { return id_; }
 
   ~DirectIntegralBuilder() {
@@ -172,6 +175,7 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
 
   DirectDFIntegralBuilder(DirectDFIntegralBuilder &&) = delete;
   DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = delete;
+  DirectDFIntegralBuilder& operator=(const DirectDFIntegralBuilder & ) = delete;
 
   ~DirectDFIntegralBuilder() {
     if (madness::initialized()) {

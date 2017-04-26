@@ -196,8 +196,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       this->init_sdref(ref_wfn_, target_ref_precision);
 
-      f_pq_diagonal_ =
-          make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+      f_pq_diagonal_ = make_diagonal_fpq(this->lcao_factory(),
+                                         this->ao_factory(), this->is_df());
 
       // set up the solver
       if (solver_str_ == "jacobi_diis") {
@@ -626,12 +626,25 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     // get all two electron integrals
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
-    //    auto g_abcd = this->lcao_factory().compute_direct(L"(a b|G|c d)[df]");
-    auto g_abcd = this->lcao_factory().compute(L"(a b|G|c d)[df]");
+    typename LCAOFactory<Tile,Policy>::DirectTArray g_abcd_direct;
+    TArray g_abcd;
+
+    auto abcd_time0 = mpqc::fenced_now(world);
+    if(!reduced_abcd_memory_){
+      g_abcd = this->lcao_factory().compute(L"<a b|G|c d>[df]");
+    }
+    else{
+      g_abcd_direct = this->lcao_factory().compute_direct(L"<a b|G|c d>[df]");
+      TArray tmp;
+      tmp("a,b,c,d") = g_abcd_direct("a,b,c,d");
+    }
+    auto abcd_time1 = mpqc::fenced_now(world);
+    auto abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
+    ExEnv::out0() << "G_ABCD Compute Time: " << abcd_time << "\n";
+
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
     TArray g_iabc = this->get_iabc();
-    TArray g_aibc = this->get_aibc();
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
     auto tmp_time1 = mpqc::now(world, accurate_time);
@@ -681,6 +694,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
+      std::cout << "Reduced ABCD Memory Approach: "
+                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
 
     while (iter < max_iter_) {
@@ -763,9 +778,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       {
         r2("a,b,i,j") =
-            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
-
-        r2("a,b,i,j") -=
+            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j") -
             (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -783,7 +796,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
                       (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
         g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                      (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+                      (2.0 * g_iabc("k,a,d,c") - g_iabc("k,a,c,d")) * t1("d,k");
 
         r2("a,b,i,j") +=
             g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
@@ -804,17 +817,18 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
           T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
-          j_akic("a,k,i,c") = g_ijab("i,k,a,c");
+          j_akic("a,k,i,c") =
+              g_ijab("i,k,a,c")
 
-          j_akic("a,k,i,c") -= g_ijka("l,k,i,c") * t1("a,l");
+              - g_ijka("l,k,i,c") * t1("a,l")
 
-          j_akic("a,k,i,c") += g_aibc("a,k,d,c") * t1("d,i");
+              + g_iabc("k,a,c,d") * t1("d,i")
 
-          j_akic("a,k,i,c") -= X_ai("x,d,l") * T("d,a,i,l") * X_ai("x,c,k");
+              - X_ai("x,d,l") * T("d,a,i,l") * X_ai("x,c,k")
 
-          j_akic("a,k,i,c") += 0.5 *
-                               (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
-                               t2("a,d,i,l");
+              +
+              0.5 * (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
+                  t2("a,d,i,l");
 
           k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
 
@@ -851,13 +865,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       {
         TArray a_klij;
         // compute a intermediate
-        a_klij("k,l,i,j") = g_ijkl("k,l,i,j");
+        a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
 
-        a_klij("k,l,i,j") += g_ijka("k,l,i,c") * t1("c,j");
+                            + g_ijka("k,l,i,c") * t1("c,j")
 
-        a_klij("k,l,i,j") += g_ijak("k,l,c,j") * t1("c,i");
+                            + g_ijak("k,l,c,j") * t1("c,i")
 
-        a_klij("k,l,i,j") += g_ijab("k,l,c,d") * tau("c,d,i,j");
+                            + g_ijab("k,l,c,d") * tau("c,d,i,j");
 
         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
@@ -876,9 +890,18 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // compute b intermediate
         // avoid store b_abcd
         TArray b_abij;
-        b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,c,b,d");
+        abcd_time0 = mpqc::fenced_now(world);
+        if(!reduced_abcd_memory_){
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
+        }
+        else{
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_direct("a,b,c,d");
+        }
+        abcd_time1 = mpqc::fenced_now(world);
+        abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
+        ExEnv::out0() << "G_ABCD*Tau_CDIJ Term Time: " << abcd_time << "\n";
 
-        b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
+        b_abij("a,b,i,j") -= g_iabc("k,a,d,c") * tau("c,d,i,j") * t1("b,k");
 
         b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
@@ -965,10 +988,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray ca = this->get_Ca();
     TArray ci = this->get_Ci();
 
-    if(this->df_){
+    if (this->df_) {
       mpqc::utility::print_par(world, "Use Direct-DF CCSD Compute \n");
-    }
-    else{
+    } else {
       mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
     }
 
@@ -993,10 +1015,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray g_ijka = this->get_ijka();
     TArray g_ijak = this->get_ijak();
     TArray g_iabc;
-    TArray g_aibc;
     if (!this->df_) {
       g_iabc = this->get_iabc();
-      g_aibc = this->get_aibc();
     }
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
@@ -1167,9 +1187,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
                           - Xab("X,a,d") * t1("d,k") * Xai("X,c,k");
           } else {
-            g_ac("a,c") =
-                h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
+                          2.0 * g_iabc("k,a,d,c") * t1("d,k") -
+                          g_iabc("k,a,c,d") * t1("d,k");
           }
 
           r2("a,b,i,j") +=
@@ -1215,7 +1235,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
               j_akic("a,k,i,c") =
                   g_ijab("i,k,a,c") - g_ijka("l,k,i,c") * t1("a,l")
 
-                  + g_aibc("a,k,d,c") * t1("d,i")
+                  + g_iabc("k,a,c,d") * t1("d,i")
 
                   - g_ijab("k,l,c,d") * T("d,a,i,l")
 

@@ -173,7 +173,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // get the inverse square root instead
   if (iterative_inv_sqrt_ && formula.has_option(Formula::Option::Inverse)) {
     auto inv_sqrt_formula = formula;
-    inv_sqrt_formula.set_option(Formula::Option::InverseSquareRoot);
+    inv_sqrt_formula.clear_option();
+    inv_sqrt_formula.add_option(Formula::Option::InverseSquareRoot);
 
     result = this->compute(inv_sqrt_formula);
 

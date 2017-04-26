@@ -283,13 +283,24 @@ bool Formula::is_ao() const {
   return true;
 }
 
-void Formula::set_option(Option op) {
+void Formula::add_option(Option op) {
   if (!has_option(op)) options_.push_back(op);
 }
 
 bool Formula::has_option(Formula::Option op) const {
-  auto df = std::find(options_.cbegin(), options_.cend(), op);
-  return (df != options_.cend());
+  auto option = std::find(options_.cbegin(), options_.cend(), op);
+  return (option != options_.cend());
+}
+
+void Formula::clear_option() {
+  options_.clear();
+}
+
+void Formula::remove_option(Option op) {
+  auto option = std::find(options_.cbegin(), options_.cend(), op);
+  if(option != options_.end()){
+    options_.erase(option);
+  }
 }
 
 }  // namespace mpqc

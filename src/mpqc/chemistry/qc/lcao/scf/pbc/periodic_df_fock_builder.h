@@ -4,6 +4,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
 
 namespace mpqc {
 namespace scf {
@@ -13,6 +14,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  public:
 	using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
 	using DirectTArray = typename Factory::DirectTArray;
+	using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
 	using PFC_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
 	PeriodicDFFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
@@ -82,13 +84,38 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		t1 = mpqc::fenced_now(world);
 		auto t_im = mpqc::duration_in_s(t0, t1);
 
-		t0 = mpqc::fenced_now(world);
-		Gamma_vec_ = ao_factory_.compute_direct_vector(L"( Κ | G|κ λ)");
-		t1 = mpqc::fenced_now(world);
-		auto t_3c_vec = mpqc::duration_in_s(t0, t1);
+//		t0 = mpqc::fenced_now(world);
+//		Gamma_vec_ = ao_factory_.compute_direct_vector(L"( Κ | G|κ λ)");
+//		t1 = mpqc::fenced_now(world);
+//		auto t_3c_vec = mpqc::duration_in_s(t0, t1);
+
+		auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+		auto aux_basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
+		auto dcell = ao_factory_.unitcell().dcell();
+		auto R_max = ao_factory_.R_max();
+		auto RJ_max = ao_factory_.RJ_max();
+		auto RD_max = ao_factory_.RD_max();
+		auto R_size = ao_factory_.R_size();
+		auto RJ_size = ao_factory_.RJ_size();
+		auto RD_size = ao_factory_.RD_size();
+		auto screen = ao_factory_.screen();
+		auto screen_threshold = ao_factory_.screen_threshold();
+
+		// construct PerioidcThreeCenterContractionBuilder for contractions involving 3-center ints
+		three_center_builder_ = std::make_unique<PTC_Builder>(
+					world, basis, aux_basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size, RD_size,
+					screen, screen_threshold);
 
 		auto t1_init = mpqc::fenced_now(world);
-		double t_init_other = mpqc::duration_in_s(t0_init, t1_init);
+		double t_j_init = mpqc::duration_in_s(t0_init, t1_init);
+
+		auto t0_k_init = mpqc::fenced_now(world);
+		// construct PerioidcFourCenterFockBuilder for exchange term
+		k_builder_ = std::make_unique<PFC_Builder>(
+				world, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size, RD_size,
+				false, true, screen, screen_threshold);
+		auto t1_k_init = mpqc::fenced_now(world);
+		auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 
 		if (this->print_detail_) {
 			ExEnv::out0() << "\nRI-J init time decomposition:\n"
@@ -97,33 +124,13 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 										<< "\tL inv:               " << t_l_inv << " s\n"
 										<< "\tA inv:               " << t_a_inv << " s\n"
 										<< "\tIM:                  " << t_im << " s\n"
-										<< "\tInit of 3c int vec:  " << t_3c_vec << " s" << std::endl;
+										/*<< "\tInit of 3c int vec:  " << t_3c_vec << " s"*/ << std::endl;
 		}
-		ExEnv::out0() << "\nInit RI-J time:      " << t_init_other << " s"
+		ExEnv::out0() << "\nInit RI-J time:      " << t_j_init << " s"
+									<< std::endl;
+		ExEnv::out0() << "\nInit Four-Center-K time:      " << t_k_init << " s\n"
 									<< std::endl;
 
-		// construct PerioidcFourCenterFockBuilder for exchange term
-		{
-			auto t0_k_init = mpqc::fenced_now(world);
-			auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-			auto dcell = ao_factory_.unitcell().dcell();
-			auto R_max = ao_factory_.R_max();
-			auto RJ_max = ao_factory_.RJ_max();
-			auto RD_max = ao_factory_.RD_max();
-			auto R_size = ao_factory_.R_size();
-			auto RJ_size = ao_factory_.RJ_size();
-			auto RD_size = ao_factory_.RD_size();
-			auto screen = ao_factory_.screen();
-			auto screen_threshold = ao_factory_.screen_threshold();
-
-			k_builder_ = std::make_unique<PFC_Builder>(
-					world, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size, RD_size,
-					false, true, screen, screen_threshold);
-			auto t1_k_init = mpqc::fenced_now(world);
-			auto k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
-			ExEnv::out0() << "\nInit Four-Center-K time:      " << k_init << " s\n"
-										<< std::endl;
-		}
 	}
 
 	~PeriodicDFFockBuilder() {}
@@ -133,7 +140,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
 		// the '-' sign is embeded in K builder
 		G("mu, nu") =
-				2.0 * compute_J(D)("mu, nu") + compute_K(D, target_precision)("mu, nu");
+				2.0 * compute_J(D, target_precision)("mu, nu") + compute_K(D, target_precision)("mu, nu");
 
 		return G;
 	}
@@ -146,6 +153,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  private:
 	Factory &ao_factory_;
 	bool print_detail_;
+	std::unique_ptr<PTC_Builder> three_center_builder_;
 	std::unique_ptr<PFC_Builder> k_builder_;
 
 	array_type M_;         // charge matrix of product density <μ|ν>
@@ -168,7 +176,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 
  private:
-	array_type compute_J(const array_type &D) {
+	array_type compute_J(const array_type &D, double target_precision) {
 		auto &world = ao_factory_.world();
 		// feed density matrix to Factory
 		ao_factory_.set_density(D);
@@ -177,7 +185,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		auto t0_j_builder = mpqc::fenced_now(world);
 
 		// 3-center 2-electron direct integrals contracted with density matrix
-		G_ = ao_factory_.compute_direct(L"( Κ | G|κ λ)");
+//		G_ = ao_factory_.compute_direct(L"( Κ | G|κ λ)");
+		G_ = three_center_builder_->template contract_with<1>(D, target_precision);
 
 		// Build [CD]_X = C_Xμν D_μν
 		double t_w_para, t_w;
@@ -214,14 +223,15 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 			t_j1_interm = mpqc::duration_in_s(t0_j1_interm, t1_j1_interm);
 
 			auto t0_j1_contr = mpqc::fenced_now(world);
-			auto RJ_size = ao_factory_.RJ_size();
-			for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-				auto &g = Gamma_vec_[RJ];
-				if (RJ == 0)
-					J_part1("mu, nu") = g("X, mu, nu") * interm("X");
-				else
-					J_part1("mu, nu") += g("X, mu, nu") * interm("X");
-			}
+//			auto RJ_size = ao_factory_.RJ_size();
+//			for (auto RJ = 0; RJ < RJ_size; ++RJ) {
+//				auto &g = Gamma_vec_[RJ];
+//				if (RJ == 0)
+//					J_part1("mu, nu") = g("X, mu, nu") * interm("X");
+//				else
+//					J_part1("mu, nu") += g("X, mu, nu") * interm("X");
+//			}
+			J_part1 = three_center_builder_->template contract_with<2>(interm, target_precision);
 			auto t1_j1_contr = mpqc::fenced_now(world);
 			t_j1_contr = mpqc::duration_in_s(t0_j1_contr, t1_j1_contr);
 

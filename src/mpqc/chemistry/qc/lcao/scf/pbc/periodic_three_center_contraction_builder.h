@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
+#include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 
 namespace mpqc {
 namespace scf {
@@ -127,19 +128,22 @@ class PeriodicThreeCenterContractionBuilder
 
 	array_type compute_contr_Xmn_mn(array_type const &D,
 																	double target_precision) const {
-		dist_pmap_D_ = D.pmap();
 
 		// Copy D and make it replicated.
 		array_type D_repl;
 		D_repl("i,j") = D("i,j");
 		D_repl.make_replicated();
-		repl_pmap_D_ = D_repl.pmap();
-		trange_D_ = D_repl.trange();
+		arg_pmap_repl_ = D_repl.pmap();
+		arg_trange_ = D_repl.trange();
 
 		// prepare input data
 		auto &compute_world = this->get_world();
 		const auto me = compute_world.rank();
 		target_precision_ = target_precision;
+
+		// make trange and pmap for the result
+		result_trange_ = TA::TiledRange({trange1_aux_});
+		result_pmap_ = Policy::default_pmap(compute_world, result_trange_.tiles_range().volume());
 
 		// # of tiles per basis
 		auto ntiles0 = basis0_->nclusters();
@@ -179,13 +183,11 @@ class PeriodicThreeCenterContractionBuilder
 
 		compute_world.gop.fence();
 
-		auto result_trange = TA::TiledRange({trange1_aux_});
-		auto result_pmap = Policy::default_pmap(compute_world, result_trange.tiles_range().volume());
-
-		if (repl_pmap_D_->is_replicated() && compute_world.size() > 1) {
+		// collect local tiles
+		if (arg_pmap_repl_->is_replicated() && compute_world.size() > 1) {
 			for (const auto &local_tile : local_contr_tiles_) {
 				const auto tile_ord = local_tile.first;
-				const auto proc = result_pmap->owner(tile_ord);
+				const auto proc = result_pmap_->owner(tile_ord);
 				WorldObject_::task(proc, &PeriodicThreeCenterContractionBuilder_::accumulate_global_task,
 													 local_tile.second, tile_ord);
 			}
@@ -196,17 +198,17 @@ class PeriodicThreeCenterContractionBuilder
 			// compute the shape, if sparse
 			if (!decltype(shape)::is_dense()) {
 				// extract local contribution to the shape of G, construct global shape
-				std::vector<std::pair<size_t, double>> global_tile_norms;
+				std::vector<std::pair<std::array<size_t, 1>, double>> global_tile_norms;
 				for (const auto &global_tile : global_contr_tiles_) {
 					const auto tile_ord = global_tile.first;
 					const auto norm = global_tile.second.norm();
 					global_tile_norms.push_back(
-							std::make_pair(tile_ord, norm));
+							std::make_pair(std::array<size_t, 1>{{tile_ord}}, norm));
 				}
-				shape = decltype(shape)(compute_world, global_tile_norms, result_trange);
+				shape = decltype(shape)(compute_world, global_tile_norms, result_trange_);
 			}
 
-			array_type result(compute_world, result_trange, shape, result_pmap);
+			array_type result(compute_world, result_trange_, shape, result_pmap_);
 			for (const auto &global_tile : global_contr_tiles_) {
 				if (!result.shape().is_zero(global_tile.first))
 					result.set(global_tile.first, global_tile.second);
@@ -220,17 +222,17 @@ class PeriodicThreeCenterContractionBuilder
 			// compute the shape, if sparse
 			if (!decltype(shape)::is_dense()) {
 				// extract local contribution to the shape of G, construct global shape
-				std::vector<std::pair<size_t, double>> local_tile_norms;
+				std::vector<std::pair<std::array<size_t, 1>, double>> local_tile_norms;
 				for (const auto &local_tile : local_contr_tiles_) {
 					const auto tile_ord = local_tile.first;
 					const auto norm = local_tile.second.norm();
 					local_tile_norms.push_back(
-							std::make_pair(tile_ord, norm));
+							std::make_pair(std::array<size_t, 1>{{tile_ord}}, norm));
 				}
-				shape = decltype(shape)(compute_world, local_tile_norms, result_trange);
+				shape = decltype(shape)(compute_world, local_tile_norms, result_trange_);
 			}
 
-			array_type result(compute_world, result_trange, shape, result_pmap);
+			array_type result(compute_world, result_trange_, shape, result_pmap_);
 			for (const auto &local_tile : local_contr_tiles_) {
 				if (!result.shape().is_zero(local_tile.first))
 					result.set(local_tile.first, local_tile.second);
@@ -246,6 +248,120 @@ class PeriodicThreeCenterContractionBuilder
 	array_type compute_contr_Xmn_X(array_type const &X,
 																 double target_precision) const {
 
+		// copy X and make it replicated
+		array_type X_repl;
+		X_repl("X") = X("X");
+		X_repl.make_replicated();
+		arg_pmap_repl_ = X_repl.pmap();
+
+		// prepare input data
+		auto &compute_world = this->get_world();
+		const auto me = compute_world.rank();
+		target_precision_ = target_precision;
+
+		// make trange and pmap for the result
+		{
+			const auto basis0 = *basis0_;
+			const auto basisR = *basisR_;
+			auto result_bases = ::mpqc::lcao::gaussian::BasisVector{{basis0, basisR}};
+			result_trange_ =
+					::mpqc::lcao::gaussian::detail::create_trange(result_bases);
+			result_pmap_ = Policy::default_pmap(compute_world, result_trange_.tiles_range().volume());
+		}
+
+		// # of tiles per basis
+		auto ntiles0 = basis0_->nclusters();
+		auto ntilesR = basisR_->nclusters();
+		auto ntiles_aux = aux_basis_->nclusters();
+
+		const auto ntile_tasks =
+				static_cast<uint64_t>(ntiles0 * ntilesR * ntiles_aux * RJ_size_);
+		auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
+																																ntile_tasks);
+
+		auto empty = TA::Future<Tile>(Tile());
+		for (auto tile_aux = 0ul, tile012 = 0ul; tile_aux != ntiles_aux; ++tile_aux) {
+			auto X_aux = (X_repl.is_zero({tile_aux}))
+					? empty
+					: X_repl.find({tile_aux});
+			for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
+				for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {
+					for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
+						if (pmap->is_local(tile012))
+							WorldObject_::task(
+										me, &PeriodicThreeCenterContractionBuilder_::compute_task_Xmn_X,
+										X_aux, RJ,
+										std::array<size_t, 3>{{tile_aux, tile0, tileR}});
+					}
+				}
+			}
+		}
+
+		compute_world.gop.fence();
+
+		// collect local tiles
+		if (arg_pmap_repl_->is_replicated() && compute_world.size() > 1) {
+			for (const auto &local_tile : local_contr_tiles_) {
+				const auto tile_ord = local_tile.first;
+				const auto proc = result_pmap_->owner(tile_ord);
+				WorldObject_::task(proc, &PeriodicThreeCenterContractionBuilder_::accumulate_global_task,
+													 local_tile.second, tile_ord);
+			}
+			local_contr_tiles_.clear();
+			compute_world.gop.fence();
+
+			typename Policy::shape_type shape;
+			// compute the shape, if sparse
+			if (!decltype(shape)::is_dense()) {
+				// extract local contribution to the shape of G, construct global shape
+				std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
+				for (const auto &global_tile : global_contr_tiles_) {
+					const auto tile_ord = global_tile.first;
+					const auto i = tile_ord / ntilesR;
+					const auto j = tile_ord % ntilesR;
+					const auto norm = global_tile.second.norm();
+					global_tile_norms.push_back(
+							std::make_pair(std::array<size_t, 2>{{i, j}}, norm));
+				}
+				shape = decltype(shape)(compute_world, global_tile_norms, result_trange_);
+			}
+
+			array_type result(compute_world, result_trange_, shape, result_pmap_);
+			for (const auto &global_tile : global_contr_tiles_) {
+				if (!result.shape().is_zero(global_tile.first))
+					result.set(global_tile.first, global_tile.second);
+			}
+			result.fill_local(0.0, true);
+			global_contr_tiles_.clear();
+
+			return result;
+		} else {
+			typename Policy::shape_type shape;
+			// compute the shape, if sparse
+			if (!decltype(shape)::is_dense()) {
+				// extract local contribution to the shape of G, construct global shape
+				std::vector<std::pair<std::array<size_t, 2>, double>> local_tile_norms;
+				for (const auto &local_tile : local_contr_tiles_) {
+					const auto tile_ord = local_tile.first;
+					const auto i = tile_ord / ntilesR;
+					const auto j = tile_ord % ntilesR;
+					const auto norm = local_tile.second.norm();
+					local_tile_norms.push_back(
+							std::make_pair(std::array<size_t, 2>{{i, j}}, norm));
+				}
+				shape = decltype(shape)(compute_world, local_tile_norms, result_trange_);
+			}
+
+			array_type result(compute_world, result_trange_, shape, result_pmap_);
+			for (const auto &local_tile : local_contr_tiles_) {
+				if (!result.shape().is_zero(local_tile.first))
+					result.set(local_tile.first, local_tile.second);
+			}
+			result.fill_local(0.0, true);
+			local_contr_tiles_.clear();
+
+			return result;
+		}
 	}
 
  private:
@@ -270,10 +386,12 @@ class PeriodicThreeCenterContractionBuilder
 	// mutable std::vector<std::shared_ptr<Basis>> basisRD_;
 	mutable madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
 	mutable madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
-	mutable TA::TiledRange trange_D_;
+	mutable TA::TiledRange arg_trange_;
 	mutable TA::TiledRange1 trange1_aux_;
+	mutable TA::TiledRange result_trange_;
+	mutable std::shared_ptr<TA::Pmap> result_pmap_;
 	mutable std::shared_ptr<TA::Pmap> dist_pmap_D_;
-	mutable std::shared_ptr<TA::Pmap> repl_pmap_D_;
+	mutable std::shared_ptr<TA::Pmap> arg_pmap_repl_;
 	mutable double target_precision_ = 0.0;
 	mutable std::vector<Engine> engines_;
 	mutable array_type shblk_norm_D_;
@@ -323,8 +441,8 @@ class PeriodicThreeCenterContractionBuilder
 		const auto tileR = tile_idx[2];
 
 		// 1-d tile ranges
-		const auto &tr0 = trange_D_.dim(0);
-		const auto &tr1 = trange_D_.dim(1);
+		const auto &tr0 = arg_trange_.dim(0);
+		const auto &tr1 = arg_trange_.dim(1);
 		const auto ntiles0 = tr0.tile_extent();
 		const auto ntiles1 = tr1.tile_extent();
 		const auto &rng_aux = trange1_aux_.tile(tile_aux);
@@ -364,6 +482,7 @@ class PeriodicThreeCenterContractionBuilder
 
 			auto &screen = *(p_screener_[RJ]);
 			auto engine = engines_[RJ]->local();
+			engine.set_precision(engine_precision);
 			const auto &computed_shell_sets = engine.results();
 
 			// make non-negligible shell pair list
@@ -405,9 +524,8 @@ class PeriodicThreeCenterContractionBuilder
 							continue;
 
 						// compute shell set
-						engine.template compute2<libint2::Operator::coulomb,
-								libint2::BraKet::xs_xx, 0>(
-									shell_aux, shell0, shellR);
+						//TODO call 3-body version of compute2 to avoid extra copies
+						engine.compute(shell_aux, shell0, shellR);
 						const auto *eri_aux_0R = computed_shell_sets[0];
 
 						if (eri_aux_0R != nullptr) {
@@ -443,6 +561,133 @@ class PeriodicThreeCenterContractionBuilder
 		// accumulate the local contributions
 		{
 			PeriodicThreeCenterContractionBuilder_::accumulate_local_task(result_tile, tile_aux);
+		}
+	}
+
+	void compute_task_Xmn_X(Tile X_aux, size_t RJ, std::array<size_t, 3> tile_idx) {
+		const auto tile_aux = tile_idx[0];
+		const auto tile0 = tile_idx[1];
+		const auto tileR = tile_idx[2];
+
+		// 1-d tile ranges
+		const auto &tr0 = result_trange_.dim(0);
+		const auto &tr1 = result_trange_.dim(1);
+		const auto ntiles0 = tr0.tile_extent();
+		const auto ntilesR = tr1.tile_extent();
+		const auto &rng_aux = trange1_aux_.tile(tile_aux);
+		const auto &rng0 = tr0.tile(tile0);
+		const auto &rngR = tr1.tile(tileR);
+		const auto rng_aux_size = rng_aux.second - rng_aux.first;
+		const auto rng0_size = rng0.second - rng0.first;
+		const auto rngR_size = rngR.second - rngR.first;
+
+		// 2-d tile ranges describing the contribution blocks produced by this
+		auto result_rng = TA::Range({rng0, rngR});
+		// initialize contribution to the result matrices
+		auto result_tile = Tile(std::move(result_rng), 0.0);
+
+		// grab ptrs to tile data to make addressing more efficient
+		auto *result_ptr = result_tile.data();
+		const auto *X_aux_ptr = X_aux.data();
+
+		//TODO: check the sparsity of X. Will screening (X|mu) M_X be useful?
+		{
+			const auto engine_precision = target_precision_;
+
+			const auto &basisRJ_aux = aux_basis_RJ_[RJ];
+			const auto &basis0 = basis0_;
+			const auto &basisR = basisR_;
+
+			// shell clusters for this tile
+			const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
+			const auto &cluster0 = basis0->cluster_shells()[tile0];
+			const auto &clusterR = basisR->cluster_shells()[tileR];
+
+			// number of shells in each cluster
+			const auto nshellsRJ_aux = clusterRJ_aux.size();
+			const auto nshells0 = cluster0.size();
+			const auto nshellsR = clusterR.size();
+
+			auto &screen = *(p_screener_[RJ]);
+			auto engine = engines_[RJ]->local();
+			engine.set_precision(engine_precision);
+			const auto &computed_shell_sets = engine.results();
+
+			// make non-negligible shell pair list
+			auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);
+
+			// compute offset list of clusterR (ket1)
+			auto offset_list_ket1 = compute_func_offset_list(clusterR, rngR.first);
+
+			// this is the index of the first basis functions for each shell *in
+			// this shell cluster*
+			auto cf_aux_offset = 0;
+			// this is the index of the first basis functions for each shell *in the
+			// basis set*
+			auto bf_aux_offset = rng_aux.first;
+
+			size_t cf_R_offset, bf_R_offset;
+
+			// loop over all shell sets
+			for (auto sh_aux = 0; sh_aux != nshellsRJ_aux; ++sh_aux) {
+				const auto &shell_aux = clusterRJ_aux[sh_aux];
+				const auto nf_aux = shell_aux.size();
+
+				auto cf0_offset = 0;
+				auto bf0_offset = rng0.first;
+				for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+					const auto &shell0 = cluster0[sh0];
+					const auto nf0 = shell0.size();
+
+					for (const auto &shR : ket_shellpair_list[sh0]) {
+						std::tie(cf_R_offset, bf_R_offset) = offset_list_ket1[shR];
+
+						const auto &shellR = clusterR[shR];
+						const auto nfR = shellR.size();
+
+						if (screen.skip(bf_aux_offset, bf0_offset, bf_R_offset))
+							continue;
+
+						// compute shell set
+						//TODO call 3-body version of compute2 to avoid extra copies
+						engine.compute(shell_aux, shell0, shellR);
+
+						const auto *eri_aux_0R = computed_shell_sets[0];
+
+						if (eri_aux_0R != nullptr) {
+							for (auto f_aux = 0, f_aux_0R = 0; f_aux != nf_aux; ++f_aux) {
+								const auto cf_aux = f_aux + cf_aux_offset;
+								for (auto f0 = 0; f0 != nf0; ++f0) {
+									const auto cf0 = f0 + cf0_offset;
+									for (auto fR= 0; fR != nfR; ++fR, ++f_aux_0R) {
+										const auto cfR = fR + cf_R_offset;
+										const auto cf0R = cf0 * rngR_size + cfR;
+
+										const auto value = eri_aux_0R[f_aux_0R];
+
+										result_ptr[cf0R] += (X_aux_ptr != nullptr)
+												? X_aux_ptr[cf_aux] * value
+												: 0.0;
+									}
+								}
+							}
+						}
+					}
+
+					cf0_offset += nf0;
+					bf0_offset += nf0;
+				}
+
+				cf_aux_offset += nf_aux;
+				bf_aux_offset += nf_aux;
+			}
+
+		}
+
+		// accumulate the local contributions
+		{
+			auto tile0R = tile0 * ntilesR + tileR;
+			PeriodicThreeCenterContractionBuilder_::accumulate_local_task(result_tile, tile0R);
 		}
 	}
 

@@ -62,6 +62,8 @@ class PeriodicFourCenterFockBuilder
 	using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
 	using func_offset_list =
 			std::unordered_map<size_t, std::tuple<size_t, size_t>>;
+	using translated_uc_ord_list =
+			std::unordered_map<std::array<size_t, 3>, size_t>;
 
 	PeriodicFourCenterFockBuilder(madness::World &world,
 																std::shared_ptr<const Basis> basis,
@@ -88,6 +90,8 @@ class PeriodicFourCenterFockBuilder
 		assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
 		// WorldObject mandates this is called from the ctor
 		WorldObject_::process_pending();
+
+		screen_thresh2_ = screen_threshold_ * screen_threshold_;
 
 		using ::mpqc::lcao::detail::direct_vector;
 		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -116,21 +120,56 @@ class PeriodicFourCenterFockBuilder
 						oper_type,
 						utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
 						libint2::BraKet::xx_xx));
-				auto bases = ::mpqc::lcao::gaussian::BasisVector{
-						{basis0, basisR, basisRJ, basisRD}};
-				j_p_screener_.emplace_back(make_screener(world, j_engines_.back(), bases,
-																							screen_, screen_threshold_));
+//				auto bases = ::mpqc::lcao::gaussian::BasisVector{
+//						{basis0, basisR, basisRJ, basisRD}};
+//				j_p_screener_.emplace_back(make_screener(world, j_engines_.back(), bases,
+//																							screen_, screen_threshold_));
 			}
 			if (compute_K_) {
 				k_engines_.emplace_back(make_engine_pool(
 						oper_type,
 						utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
 						libint2::BraKet::xx_xx));
-				auto bases = ::mpqc::lcao::gaussian::BasisVector{
-						{basis0, basisRJ, basisR, basisRD}};
-				k_p_screener_.emplace_back(make_screener(world, k_engines_.back(), bases,
-																							screen_, screen_threshold_));
+//				auto bases = ::mpqc::lcao::gaussian::BasisVector{
+//						{basis0, basisRJ, basisR, basisRD}};
+//				k_p_screener_.emplace_back(make_screener(world, k_engines_.back(), bases,
+//																							screen_, screen_threshold_));
 			}
+		}
+
+		// initialize screener
+		if (compute_J_) {
+			// (bra0 bra1 | bra0 bra1) = (ket0 ket1 | ket0 ket1)
+			// using translational symmetry
+			auto screen_engine = make_engine_pool(
+						oper_type,
+						utility::make_array_of_refs(basis0, basisR),
+						libint2::BraKet::xx_xx);
+			auto Qbra = std::make_shared<Qmatrix>(
+						Qmatrix(world, screen_engine, basis0, basisR,
+										lcao::gaussian::detail::l2Norm));
+			j_p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
+						lcao::gaussian::SchwarzScreen(Qbra, Qbra, screen_threshold_));
+		}
+		if (compute_K_) {
+			std::shared_ptr<Qmatrix> Qbra, Qket;
+			// make Qmatrix for bra
+			{
+				const auto tmp_basis = *(shift_basis_origin(*basis0_, zero_shift_base, RJ_max_, dcell_));
+				auto tmp_eng = make_engine_pool(oper_type, utility::make_array_of_refs(basis0, tmp_basis), libint2::BraKet::xx_xx);
+				Qbra = std::make_shared<Qmatrix>(Qmatrix(world, tmp_eng, basis0, tmp_basis, ::mpqc::lcao::gaussian::detail::l2Norm));
+			}
+			// make Qmatrix for ket
+			{
+				auto max_uc = R_max_ + RJ_max_ + RD_max_;
+				translated_list_ = compute_translated_uc_ord_list(max_uc);
+
+				const auto tmp_basis = *(shift_basis_origin(*basis0_, zero_shift_base, max_uc, dcell_));
+				auto tmp_eng = make_engine_pool(oper_type, utility::make_array_of_refs(basis0, tmp_basis), libint2::BraKet::xx_xx);
+				Qket = std::make_shared<Qmatrix>(Qmatrix(world, tmp_eng, basis0, tmp_basis, ::mpqc::lcao::gaussian::detail::l2Norm));
+			}
+			k_p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
+						lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_threshold_));
 		}
 
 	}
@@ -332,8 +371,12 @@ class PeriodicFourCenterFockBuilder
 	const int64_t RD_size_;
 
 	// mutated by compute_ functions
-	mutable std::vector<std::shared_ptr<lcao::Screener>> j_p_screener_;
-	mutable std::vector<std::shared_ptr<lcao::Screener>> k_p_screener_;
+//	mutable std::vector<std::shared_ptr<lcao::Screener>> j_p_screener_;
+	mutable std::shared_ptr<lcao::Screener> j_p_screener_;
+
+//	mutable std::vector<std::shared_ptr<lcao::Screener>> k_p_screener_;
+	mutable std::shared_ptr<lcao::Screener> k_p_screener_;
+
 	mutable std::shared_ptr<Basis> basisR_;
 	mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
 	mutable std::vector<std::shared_ptr<Basis>> basisRD_;
@@ -348,7 +391,9 @@ class PeriodicFourCenterFockBuilder
 	mutable array_type shblk_norm_D_;
 	mutable std::atomic<size_t> J_num_ints_computed_{0};
 	mutable std::atomic<size_t> K_num_ints_computed_{0};
-	mutable std::shared_ptr<Qmatrix> Q_;
+	mutable std::shared_ptr<Qmatrix> Qbra_;
+	mutable double screen_thresh2_;
+	mutable translated_uc_ord_list translated_list_;
 
 	void accumulate_global_task(Tile arg_tile, long tile01) {
 		// if reducer does not exist, create entry and store F, else accumulate F to
@@ -431,6 +476,8 @@ class PeriodicFourCenterFockBuilder
 			const auto &basisRJ = basisRJ_[RJ];
 			const auto &basisRD = basisRD_[RJ];
 
+			const auto nbf_per_uc = basis0->nfunctions();
+
 			// shell clusters for this tile
 			const auto &cluster0 = basis0->cluster_shells()[tile0];
 			const auto &clusterR = basisR->cluster_shells()[tileR];
@@ -445,7 +492,7 @@ class PeriodicFourCenterFockBuilder
 
 			// compute Coulomb contributions to all Fock matrices
 			if (compute_J_) {
-				auto &screen = *(j_p_screener_[RJ]);
+				auto &screen = *(j_p_screener_);
 				auto engine = j_engines_[RJ]->local();
 				engine.set_precision(engine_precision);
 				const auto &computed_shell_sets = engine.results();
@@ -551,7 +598,7 @@ class PeriodicFourCenterFockBuilder
 			}
 
 			if (compute_K_) {
-				auto &screen = *(k_p_screener_[RJ]);
+				auto &screen = *(k_p_screener_);
 				auto engine = k_engines_[RJ]->local();
 				engine.set_precision(engine_precision);
 				const auto &computed_shell_sets = engine.results();
@@ -586,6 +633,8 @@ class PeriodicFourCenterFockBuilder
 						const auto &shell1 = clusterRJ[sh1];
 						const auto nf1 = shell1.size();
 
+						const auto bf1_in_screener = bf1_offset + nbf_per_uc * RJ;
+
 						auto cf2_offset = 0;
 						auto bf2_offset = rngR.first;
 
@@ -593,17 +642,25 @@ class PeriodicFourCenterFockBuilder
 							const auto &shell2 = clusterR[sh2];
 							const auto nf2 = shell2.size();
 
+							const auto R = bf2_offset / nbf_per_uc;
+							const auto bf2_in_screener = bf2_offset % nbf_per_uc;
+
 							for (const auto &sh3 : ket_shellpair_list[sh2]) {
 								std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
 								const auto &shell3 = clusterRD[sh3];
 								const auto nf3 = shell3.size();
 
+								const auto RD = bf3_offset / nbf_per_uc;
+								const auto bf3_in_uc = bf3_offset % nbf_per_uc;
+								const auto uc_ord_in_screener = translated_list_[std::array<size_t, 3>{{R, RJ, RD}}];
+								const auto bf3_in_screener = bf3_in_uc + uc_ord_in_screener * nbf_per_uc;
+
 								const auto sh13 = sh1 * nshellsRD + sh3;
 								const auto Dnorm13 =
 										(norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh13] : 0.0;
 
-								if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
+								if (screen.skip(bf0_offset, bf1_in_screener, bf2_in_screener, bf3_in_screener,
 																Dnorm13))
 									continue;
 
@@ -859,6 +916,31 @@ class PeriodicFourCenterFockBuilder
 
 		return result;
 	}
+
+	translated_uc_ord_list compute_translated_uc_ord_list (Vector3i max_uc) const {
+		using ::mpqc::lcao::detail::direct_3D_idx;
+		using ::mpqc::lcao::detail::direct_ord_idx;
+
+		translated_uc_ord_list result;
+		for (auto R = 0; R != R_size_; ++R) {
+			auto R_3D = direct_3D_idx(R, R_max_);
+			for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
+				auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
+				for (auto RD = 0; RD != RD_size_; ++RD) {
+					auto RD_3D = direct_3D_idx(RD, RD_max_);
+					auto translation_3D = RJ_3D + RD_3D - R_3D;
+					auto translation_ord = direct_ord_idx(translation_3D(0),
+																								translation_3D(1),
+																								translation_3D(2),
+																								max_uc);
+					result.insert(std::make_pair(std::array<size_t, 3>{{R, RJ, RD}}, translation_ord));
+				}
+			}
+		}
+
+		return result;
+	}
+
 };
 
 }  // namespace scf

@@ -79,6 +79,19 @@ int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max) {
   }
 }
 
+Vector3i direct_3D_idx(const int64_t ord_idx, const Vector3i &latt_max) {
+	if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0) {
+		auto z = ord_idx % (2 * latt_max(2) + 1);
+		auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
+		auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
+
+		Vector3i result(x - latt_max(0), y - latt_max(1), z - latt_max(2));
+		return result;
+	} else {
+		throw "invalid lattice boundaries";
+	}
+}
+
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {

@@ -84,6 +84,16 @@ Vector3d k_vector(int64_t ord_idx, Vector3i nk, Vector3d dcell);
 int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max);
 
 /*!
+ * \brief This takes the ordinal index of a direct lattice
+ * and returns the corresponding 3D index
+ *
+ * \param ord_idx the ordinal index in direct space
+ * \param latt_max the range of included lattices
+ * \return 3D index in direct space
+ */
+Vector3i direct_3D_idx(const int64_t ord_idx, const Vector3i &latt_max);
+
+/*!
  * \brief This takes the 3D index of a reciprocal lattice
  * and returns the corresponding ordinal index
  *

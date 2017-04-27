@@ -385,8 +385,8 @@ class SchwarzScreen : public Screener {
   bool skip(int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t) const override;
 
-	bool skip(int64_t a, int64_t b, int64_t c, double D);
-	bool skip(int64_t a, int64_t b, int64_t c, double D) const;
+	bool skip(int64_t a, int64_t b, int64_t c, double D) override;
+	bool skip(int64_t a, int64_t b, int64_t c, double D) const override;
 
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;

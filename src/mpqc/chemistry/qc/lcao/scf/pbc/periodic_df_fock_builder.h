@@ -183,7 +183,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		t0 = mpqc::fenced_now(world);
 		G_ = three_center_builder_->template contract_with<1>(D, target_precision);
 		t1 = mpqc::fenced_now(world);
-		t_3c_d_contr = mpqc::duration_in_s(t0, t1);
+		auto t_3c_d_contr = mpqc::duration_in_s(t0, t1);
 
 		// Build [CD]_X = C_Xμν D_μν
 		double t_w_para, t_w;

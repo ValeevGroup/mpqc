@@ -84,11 +84,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		t1 = mpqc::fenced_now(world);
 		auto t_im = mpqc::duration_in_s(t0, t1);
 
-//		t0 = mpqc::fenced_now(world);
-//		Gamma_vec_ = ao_factory_.compute_direct_vector(L"( Κ | G|κ λ)");
-//		t1 = mpqc::fenced_now(world);
-//		auto t_3c_vec = mpqc::duration_in_s(t0, t1);
-
+		// collect information to construct 3-center and 4-center builders
 		auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 		auto aux_basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
 		auto dcell = ao_factory_.unitcell().dcell();
@@ -123,8 +119,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 										<< "\tA = V_perp + P_para: " << t_a << " s\n"
 										<< "\tL inv:               " << t_l_inv << " s\n"
 										<< "\tA inv:               " << t_a_inv << " s\n"
-										<< "\tIM:                  " << t_im << " s\n"
-										/*<< "\tInit of 3c int vec:  " << t_3c_vec << " s"*/ << std::endl;
+										<< "\tIM:                  " << t_im << " s" << std::endl;
 		}
 		ExEnv::out0() << "\nInit RI-J time:      " << t_j_init << " s"
 									<< std::endl;
@@ -185,8 +180,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 		auto t0_j_builder = mpqc::fenced_now(world);
 
 		// 3-center 2-electron direct integrals contracted with density matrix
-//		G_ = ao_factory_.compute_direct(L"( Κ | G|κ λ)");
+		t0 = mpqc::fenced_now(world);
 		G_ = three_center_builder_->template contract_with<1>(D, target_precision);
+		t1 = mpqc::fenced_now(world);
+		t_3c_d_contr = mpqc::duration_in_s(t0, t1);
 
 		// Build [CD]_X = C_Xμν D_μν
 		double t_w_para, t_w;
@@ -223,14 +220,6 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 			t_j1_interm = mpqc::duration_in_s(t0_j1_interm, t1_j1_interm);
 
 			auto t0_j1_contr = mpqc::fenced_now(world);
-//			auto RJ_size = ao_factory_.RJ_size();
-//			for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-//				auto &g = Gamma_vec_[RJ];
-//				if (RJ == 0)
-//					J_part1("mu, nu") = g("X, mu, nu") * interm("X");
-//				else
-//					J_part1("mu, nu") += g("X, mu, nu") * interm("X");
-//			}
 			J_part1 = three_center_builder_->template contract_with<2>(interm, target_precision);
 			auto t1_j1_contr = mpqc::fenced_now(world);
 			t_j1_contr = mpqc::duration_in_s(t0_j1_contr, t1_j1_contr);
@@ -268,6 +257,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
 		if (this->print_detail_) {
 			ExEnv::out0() << "\nRI-J timing decomposition:\n"
+										<< "\tSum_RJ (X|μν) D_μν:   " << t_3c_d_contr << " s\n"
 										<< "\tC_para_Xμν D_μν:      " << t_w_para << " s\n"
 										<< "\tC_Xμν D_μν:           " << t_w << " s\n"
 										<< "\tJ_part1:              " << t_j1 << " s\n"

@@ -45,6 +45,9 @@ class Screener {
   virtual bool skip(int64_t, int64_t, int64_t);
   virtual bool skip(int64_t, int64_t, int64_t) const;
 
+	virtual bool skip(int64_t, int64_t, int64_t, double);
+	virtual bool skip(int64_t, int64_t, int64_t, double) const;
+
   virtual bool skip(int64_t, int64_t, int64_t, int64_t);
   virtual bool skip(int64_t, int64_t, int64_t, int64_t) const;
 

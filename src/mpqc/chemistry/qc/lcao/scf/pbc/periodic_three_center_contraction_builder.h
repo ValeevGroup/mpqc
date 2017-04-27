@@ -518,7 +518,7 @@ class PeriodicThreeCenterContractionBuilder
 						const auto nfR = shellR.size();
 
 						const auto sh0R = sh0 * nshellsR + shR;  // index of {sh0, shR} in norm_D0R
-						const auto Dnorm0R = (norm_D_0R_ptr != nullptr) ? norm_D_0R_ptr[sh0R] : 0.0;
+						const double Dnorm0R = (norm_D_0R_ptr != nullptr) ? norm_D_0R_ptr[sh0R] : 0.0;
 
 						if (screen.skip(bf_aux_offset, bf0_offset, bf_R_offset, Dnorm0R))
 							continue;

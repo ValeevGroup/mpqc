@@ -243,7 +243,8 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                 const auto lb3 = lb[3];
                 ub[3] += ns3;
 
-                if (plist.is_canonical(lb0, lb1, lb2, lb3) && !screen.skip(lb0, lb1, lb2, lb3)) {
+								// convert type of lb3 to avoid overload ambiguity
+								if (plist.is_canonical(lb0, lb1, lb2, lb3) && !screen.skip(lb0, lb1, lb2, int64_t(lb3))) {
                   shell_set(eng, s0, s1, s2, s3);
                   const auto ns0123 = ns012 * ns3;
                   assert(

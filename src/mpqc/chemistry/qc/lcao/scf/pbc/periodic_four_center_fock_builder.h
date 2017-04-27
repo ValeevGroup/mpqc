@@ -54,6 +54,7 @@ class PeriodicFourCenterFockBuilder
 			PeriodicFourCenterFockBuilder<Tile, Policy>;
 
 	using Engine = ::mpqc::lcao::gaussian::ShrPool<libint2::Engine>;
+	using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
 	using Basis = ::mpqc::lcao::gaussian::Basis;
 	using BasisVector = std::vector<Basis>;
 	using Shell = typename ::mpqc::lcao::gaussian::Shell;
@@ -109,7 +110,7 @@ class PeriodicFourCenterFockBuilder
 			const auto basisRJ = *(basisRJ_.back());
 			const auto basisRD = *(basisRD_.back());
 
-			// initialize engine and screener
+			// initialize engines
 			if (compute_J_) {
 				j_engines_.emplace_back(make_engine_pool(
 						oper_type,
@@ -131,6 +132,7 @@ class PeriodicFourCenterFockBuilder
 																							screen_, screen_threshold_));
 			}
 		}
+
 	}
 
 	~PeriodicFourCenterFockBuilder() {
@@ -346,6 +348,7 @@ class PeriodicFourCenterFockBuilder
 	mutable array_type shblk_norm_D_;
 	mutable std::atomic<size_t> J_num_ints_computed_{0};
 	mutable std::atomic<size_t> K_num_ints_computed_{0};
+	mutable std::shared_ptr<Qmatrix> Q_;
 
 	void accumulate_global_task(Tile arg_tile, long tile01) {
 		// if reducer does not exist, create entry and store F, else accumulate F to

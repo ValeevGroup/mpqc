@@ -20,7 +20,7 @@
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
-		MatrixZ;
+    MatrixZ;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> VectorZ;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorD;
 
@@ -164,9 +164,9 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift);
  * \return the shared pointer of the compound Basis object
  */
 std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-																					const Vector3d &shift_base,
-																					const Vector3i &nshift,
-																					const Vector3d &dcell);
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell);
 
 }  // namespace detail
 
@@ -320,14 +320,14 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return UnitCell object
   UnitCell &unitcell() { return *unitcell_; }
 
-	/// @return boolean of wether to print detailed information
-	bool print_detail() { return print_detail_; }
+  /// @return boolean of wether to print detailed information
+  bool print_detail() { return print_detail_; }
 
-	/*!
-	 * \brief This sets the density for coulomb and exchange computations
-	 * \param D the density feeded by user
-	 */
-	void set_density(TArray D) { D_ = D; }
+  /*!
+   * \brief This sets the density for coulomb and exchange computations
+   * \param D the density feeded by user
+   */
+  void set_density(TArray D) { D_ = D; }
 
   /// @return density matrix
   TArray get_density() { return D_; }

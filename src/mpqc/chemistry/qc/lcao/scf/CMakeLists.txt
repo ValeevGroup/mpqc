@@ -27,15 +27,15 @@ util.h
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
         zrhf.h
-				zrhf_impl.h
+        zrhf_impl.h
         zrhf.cpp
         decomposed_rij.h
         decomposed_rij.cpp
         pbc/periodic_cond_ortho.h
         pbc/periodic_soad.h
-				pbc/periodic_four_center_fock_builder.h
-				pbc/periodic_df_fock_builder.h
-				)
+        pbc/periodic_four_center_fock_builder.h
+        pbc/periodic_df_fock_builder.h
+        )
 endif()
 
 add_mpqc_library(lcao_scf sources sources "MPQCproperties;MPQClcao_expression;MPQClcao_wfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/lcao/scf")

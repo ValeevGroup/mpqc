@@ -129,30 +129,30 @@ OrbitalIndex get_jk_orbital_space(const Operator &operation);
  */
 template <typename Policy, bool is_real = true>
 TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
-		const TA::DistArray<TA::TensorZ, Policy> &complex_array) {
+    const TA::DistArray<TA::TensorZ, Policy> &complex_array) {
   TA::DistArray<TA::TensorD, Policy> result_array;
 
-	auto take_part_from_tile = [=](TA::TensorD &result_tile,
-																 const TA::TensorZ &arg_tile) {
-		const auto &range = arg_tile.range();
-		const auto volume = range.volume();
-		result_tile = TA::TensorD(range);
+  auto take_part_from_tile = [=](TA::TensorD &result_tile,
+                                 const TA::TensorZ &arg_tile) {
+    const auto &range = arg_tile.range();
+    const auto volume = range.volume();
+    result_tile = TA::TensorD(range);
 
-		float norm = 0.0;
-		for (auto ord = 0; ord < volume; ++ord) {
-			const auto z = arg_tile[ord];
-			auto result_el = (is_real) ? z.real() : z.imag();
-			norm += result_el * result_el;
-			result_tile[ord] = result_el;
-		}
+    float norm = 0.0;
+    for (auto ord = 0; ord < volume; ++ord) {
+      const auto z = arg_tile[ord];
+      auto result_el = (is_real) ? z.real() : z.imag();
+      norm += result_el * result_el;
+      result_tile[ord] = result_el;
+    }
 
-		return std::sqrt(norm);
-	};
+    return std::sqrt(norm);
+  };
 
-	result_array =
-			TA::foreach<TA::TensorD, TA::TensorZ>(complex_array, take_part_from_tile);
+  result_array =
+      TA::foreach<TA::TensorD, TA::TensorZ>(complex_array, take_part_from_tile);
 
-	complex_array.world().gop.fence();
+  complex_array.world().gop.fence();
 
   return result_array;
 }

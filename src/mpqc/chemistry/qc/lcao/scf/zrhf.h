@@ -30,9 +30,10 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
           CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
           PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
-	using array_type = typename PeriodicAOWavefunction<Tile, Policy>::ArrayType;
-	using factory_type = typename PeriodicAOWavefunction<Tile, Policy>::AOIntegral;
-	using array_type_z = TA::DistArray<TA::TensorZ, Policy>;
+  using array_type = typename PeriodicAOWavefunction<Tile, Policy>::ArrayType;
+  using factory_type =
+      typename PeriodicAOWavefunction<Tile, Policy>::AOIntegral;
+  using array_type_z = TA::DistArray<TA::TensorZ, Policy>;
 
   zRHF() = default;
 
@@ -53,7 +54,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    */
   zRHF(const KeyVal& kv);
 
-	~zRHF() {}
+  ~zRHF() {}
 
   void obsolete() override;
 
@@ -83,14 +84,14 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \brief This diagonalizes Fock matrix in reciprocal space and
    * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
    */
-	array_type compute_density();
+  array_type compute_density();
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
    * \param matrix the real-space integral matrix
    * \return the reciprocal-space integral matrix
    */
-	array_type_z transform_real2recip(array_type& matrix);
+  array_type_z transform_real2recip(array_type& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value
@@ -100,20 +101,20 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   MatrixZ reverse_phase_factor(MatrixZ& mat0);
 
  protected:
-	array_type S_;
-	array_type D_;
+  array_type S_;
+  array_type D_;
   bool print_detail_;
-	std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
+  std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
 
  private:
-	array_type T_;
-	array_type V_;
-	array_type_z Sk_;
-	array_type H_;
-	array_type J_;
-	array_type K_;
-	array_type F_;
-	array_type_z Fk_;
+  array_type T_;
+  array_type V_;
+  array_type_z Sk_;
+  array_type H_;
+  array_type J_;
+  array_type K_;
+  array_type F_;
+  array_type_z Fk_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -156,11 +157,11 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   /// returns Hartree-Fock energy
   virtual double compute_energy();
-	/// initializes periodic four-center Fock builder
-	virtual void init_fock_builder();
+  /// initializes periodic four-center Fock builder
+  virtual void init_fock_builder();
 
-	/// builds Fock
-	void build_F();
+  /// builds Fock
+  void build_F();
 };
 
 /*!
@@ -171,38 +172,37 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 template <typename Tile, typename Policy>
 class DFzRHF : public zRHF<Tile, Policy> {
  public:
-	using array_type = typename zRHF<Tile, Policy>::array_type;
-	using factory_type = typename zRHF<Tile, Policy>::factory_type;
-	using DirectTArray = typename factory_type::DirectTArray;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using DirectTArray = typename factory_type::DirectTArray;
 
-	DFzRHF(const KeyVal& kv);
+  DFzRHF(const KeyVal& kv);
 
-	~DFzRHF() {}
-
- private:
-	/// initializes necessary arrays for DFzRHF Fock builder
-	void init_fock_builder() override;
+  ~DFzRHF() {}
 
  private:
-	array_type M_;         // charge matrix of product density <μ|ν>
-	array_type n_;         // normalized charge vector <Κ>
-	double q_;             // total charge of auxiliary basis functions
-	array_type P_para_;    // projection matrix that projects X onto auxiliary
-												 // charge vector
-	array_type P_perp_;    // projection matrix that projects X onto the subspace
-												 // orthogonal to auxiliary charge vector
-	array_type V_;         // 2-center 2-electron integrals
-	array_type V_perp_;    // part of 2-center 2-electron integrals that is
-												 // orthogonal to auxiliary charge vector
-	array_type G_;         // 3-center 2-electron direct integrals contracted with
-												 // density matrix
-	array_type inv_;       // A inverse where A = V_perp + P_para
-	array_type identity_;  // idensity matrix
-	std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
-																				 // integrals. vector size = RJ_size_
-	array_type CD_;                        // intermediate for C_Xμν D_μν
-	array_type IP_;                        // intermediate for inv_XY P_perp_YZ
+  /// initializes necessary arrays for DFzRHF Fock builder
+  void init_fock_builder() override;
 
+ private:
+  array_type M_;         // charge matrix of product density <μ|ν>
+  array_type n_;         // normalized charge vector <Κ>
+  double q_;             // total charge of auxiliary basis functions
+  array_type P_para_;    // projection matrix that projects X onto auxiliary
+                         // charge vector
+  array_type P_perp_;    // projection matrix that projects X onto the subspace
+                         // orthogonal to auxiliary charge vector
+  array_type V_;         // 2-center 2-electron integrals
+  array_type V_perp_;    // part of 2-center 2-electron integrals that is
+                         // orthogonal to auxiliary charge vector
+  array_type G_;         // 3-center 2-electron direct integrals contracted with
+                         // density matrix
+  array_type inv_;       // A inverse where A = V_perp + P_para
+  array_type identity_;  // idensity matrix
+  std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
+                                         // integrals. vector size = RJ_size_
+  array_type CD_;                        // intermediate for C_Xμν D_μν
+  array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 };
 
 #if TA_DEFAULT_POLICY == 0

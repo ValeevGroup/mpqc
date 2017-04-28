@@ -39,13 +39,14 @@ class Qmatrix {
 
   // Matrix to hold the {shell,shell-pair} Schwarz bound factors
   // # of rows = # of shells in a basis
-  // # of cols = {1,# of shells} if screening integrals over {shells,shell-pairs}
+  // # of cols = {1,# of shells} if screening integrals over
+  // {shells,shell-pairs}
   RowMatrixXd Q_;
   // Matrix to hold the cluster/cluster-pair Schwarz bound factors
   // # of rows = # of clusters in a basis
-  // # of cols = {1,# of clusers} if screening integrals over {clusters,cluster-pairs}
-  RowMatrixXd
-      Q_cluster_;
+  // # of cols = {1,# of clusers} if screening integrals over
+  // {clusters,cluster-pairs}
+  RowMatrixXd Q_cluster_;
   Eigen::VectorXd max_elem_in_row_;  // Max element for each row of Q_
   double max_elem_in_Q_ = 0;  // Max val in Q_, should be set in constructor
   bool is_aux_;
@@ -66,7 +67,8 @@ class Qmatrix {
   RowMatrixXd const &Q() const { return Q_; }
   RowMatrixXd const &Qtile() const { return Q_cluster_; }
 
-  /*! Constructs Qmatrix for the case of screening integrals over shells, e.g. integrals of type \c (a|Op|b)
+  /*! Constructs Qmatrix for the case of screening integrals over shells, e.g.
+   * integrals of type \c (a|Op|b)
    *
    * \param world is a reference to the madness world to compute the Q matrix
    * construction tasks
@@ -129,7 +131,8 @@ class Qmatrix {
     Q_cluster_ = Eigen::VectorXd(nclusters);
     Q_cluster_.setZero();
 
-    // Because we are using Qbra * Qket >= (bra|ket)^2 just sum these values into
+    // Because we are using Qbra * Qket >= (bra|ket)^2 just sum these values
+    // into
     // Q_cluster_
     auto first_shell_in_cluster = 0;
     for (auto c = 0; c < nclusters; ++c) {
@@ -142,7 +145,8 @@ class Qmatrix {
     }
   }
 
-  /*! Constructs Qmatrix for the case of screening integrals over shell-pairs, e.g. integrals of type \c (ab|Op|cd)
+  /*! Constructs Qmatrix for the case of screening integrals over shell-pairs,
+   * e.g. integrals of type \c (ab|Op|cd)
    *
    * \param world is a reference to the madness world to compute the Q matrix
    * construction tasks
@@ -150,9 +154,11 @@ class Qmatrix {
    * \param eng is an integral engine pool used to compute the integral
    * estimates
    *
-   * \param bs0 is a Basis object composed of shells that appear first in shell pairs
+   * \param bs0 is a Basis object composed of shells that appear first in shell
+   * pairs
    *
-   * \param bs1 is a Basis object composed of shells that appear second in shell pairs
+   * \param bs1 is a Basis object composed of shells that appear second in shell
+   * pairs
    *
    * \param norm_func is a function that computes the sqrt(norm(quartet)) of the
    * integrals with signature double (Eigen::Map<const RowMatrixXd> const &)
@@ -286,9 +292,8 @@ class SchwarzScreen : public Screener {
  private:
   std::shared_ptr<Qmatrix> Qbra_;  // Screening matrix for the bra
   std::shared_ptr<Qmatrix> Qket_;  // Screening matrix for the ket
-  double thresh_;                 // Threshold used for screening
+  double thresh_;                  // Threshold used for screening
   double thresh2_;  // Threshold squared since estimates are not squared
-
 
   inline boost::optional<double> estimate(int64_t a) const;
 
@@ -320,27 +325,29 @@ class SchwarzScreen : public Screener {
     }
   }
 
-	/* skip_ takes norm of a density block and a list of indices.
-	 * This returns true when the product of density norm and integral estimate
-	 * is below the threshold and false when it is greater than or equal to the
-	 * threshold. See function estimate for the implementation.
-	 *
-	 * \param D is infinity norm of the corresponding density block
-	 * \param idx is a series of indices from which to generate an integral
-	 * estimate
-	 *
-	 * This is a one stop catch all for the overloads of the skip functions
-	 */
-	template <typename... IDX>
-	bool skip_(double D, IDX... idx) const {
-		auto est =
-				estimate(std::forward<IDX>(idx)...);  // optional estimation for set idx
-		if (est && D != 0.0) {  // Check that we were able to estimate the integral set AND density norm is large than zero
-			return (D * D * est.get()) < thresh2_;  // If D^2 * est below threshold then skip this set
-		} else {         // We were unable to estimate this set for some reason
-			return false;  // thus we should compute the integral
-		}
-	}
+  /* skip_ takes norm of a density block and a list of indices.
+   * This returns true when the product of density norm and integral estimate
+   * is below the threshold and false when it is greater than or equal to the
+   * threshold. See function estimate for the implementation.
+   *
+   * \param D is infinity norm of the corresponding density block
+   * \param idx is a series of indices from which to generate an integral
+   * estimate
+   *
+   * This is a one stop catch all for the overloads of the skip functions
+   */
+  template <typename... IDX>
+  bool skip_(double D, IDX... idx) const {
+    auto est =
+        estimate(std::forward<IDX>(idx)...);  // optional estimation for set idx
+    if (est && D != 0.0) {  // Check that we were able to estimate the integral
+                            // set AND density norm is large than zero
+      return (D * D * est.get()) <
+             thresh2_;  // If D^2 * est below threshold then skip this set
+    } else {            // We were unable to estimate this set for some reason
+      return false;     // thus we should compute the integral
+    }
+  }
 
  public:
   SchwarzScreen() = default;
@@ -353,10 +360,12 @@ class SchwarzScreen : public Screener {
 
   /*! \brief Constructor which requires two Q matrices
    *
-   * \param Qbra is the Qmatrix that describes the bra in screened integrals, e.g.
+   * \param Qbra is the Qmatrix that describes the bra in screened integrals,
+   * e.g.
    * it represents (cd| in (ab|cd), or (X| in (X|cd)
    *
-   * \param Qket is the Qmatrix that describes the ket in screened integrals, e.g.
+   * \param Qket is the Qmatrix that describes the ket in screened integrals,
+   * e.g.
    * it represents |cd) in (ab|cd), or |X) in (ab|X)
    *
    * \param thresh is the screening threshold used when evaluating whether or
@@ -365,7 +374,7 @@ class SchwarzScreen : public Screener {
    */
   SchwarzScreen(std::shared_ptr<Qmatrix> Qbra, std::shared_ptr<Qmatrix> Qket,
                 double thresh);
-  
+
   /// Returns the screening matrix for the Bra indices
   inline Qmatrix const &Qbra() const { return *Qbra_; }
 
@@ -388,8 +397,8 @@ class SchwarzScreen : public Screener {
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 
-	bool skip(int64_t, int64_t, int64_t, int64_t, double) override;
-	bool skip(int64_t, int64_t, int64_t, int64_t, double) const override;
+  bool skip(int64_t, int64_t, int64_t, int64_t, double) override;
+  bool skip(int64_t, int64_t, int64_t, int64_t, double) const override;
 
   /*! \brief returns an estimate of shape norms for the given basis vector, in
    * presence of symmetry described by a math::PetiteList object.
@@ -398,9 +407,10 @@ class SchwarzScreen : public Screener {
    * considered local by the pmap, the user will be responsible for using the
    * world based constructor for the TA::Shape.
    */
-  TA::Tensor<float> norm_estimate(
-      madness::World &world, std::vector<gaussian::Basis> const &bs_array,
-      TA::Pmap const &pmap, bool replicate = false) const override;
+  TA::Tensor<float> norm_estimate(madness::World &world,
+                                  std::vector<gaussian::Basis> const &bs_array,
+                                  TA::Pmap const &pmap,
+                                  bool replicate = false) const override;
 };
 
 /*! \brief Creates a Schwarz Screener

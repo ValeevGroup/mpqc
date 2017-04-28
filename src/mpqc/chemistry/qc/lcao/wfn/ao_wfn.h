@@ -42,10 +42,8 @@ class AOWavefunction : public Wavefunction {
    */
   // clang-format on
 
-  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    init_factory(kv);
-  }
-  virtual ~AOWavefunction() { }
+  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) { init_factory(kv); }
+  virtual ~AOWavefunction() {}
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
@@ -84,7 +82,7 @@ class PeriodicAOWavefunction : public Wavefunction {
   using AOIntegral = gaussian::PeriodicAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
   using DirectTArray = typename AOIntegral::DirectTArray;
-	using MatrixzVec = std::vector<MatrixZ>;
+  using MatrixzVec = std::vector<MatrixZ>;
   using VectordVec = std::vector<VectorD>;
 
   /**
@@ -102,7 +100,7 @@ class PeriodicAOWavefunction : public Wavefunction {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
   }
 
-  virtual ~PeriodicAOWavefunction() { }
+  virtual ~PeriodicAOWavefunction() {}
 
   virtual MatrixzVec co_coeff() = 0;
   virtual VectordVec co_energy() = 0;

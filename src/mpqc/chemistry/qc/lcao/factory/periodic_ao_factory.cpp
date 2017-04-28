@@ -29,8 +29,8 @@ void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec) {
   std::sort(sortedVal.begin(), sortedVal.end());
 
   // Build sorted eigenvalues and eigenvectors
-	VectorZ sortedEigVal(eigVal);
-	MatrixZ sortedEigVec(eigVec);
+  VectorZ sortedEigVal(eigVal);
+  MatrixZ sortedEigVec(eigVec);
   for (auto i = 0; i != val.size(); ++i) {
     sortedEigVal(i) = eigVal(sortedVal[i].second);
     sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);
@@ -132,9 +132,9 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift) {
 }
 
 std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-																					const Vector3d &shift_base,
-																					const Vector3i &nshift,
-																					const Vector3d &dcell) {
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;

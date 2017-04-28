@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
+#include <mpqc/chemistry/qc/lcao/scf/mo_build.h>
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
@@ -12,8 +13,6 @@
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/util/keyval/keyval.h"
-#include <mpqc/chemistry/qc/lcao/scf/mo_build.h>
-
 
 namespace mpqc {
 namespace lcao {
@@ -28,8 +27,8 @@ class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
   using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
-  using LCAOFactoryType = LCAOFactoryBase<Tile,Policy>;
-  using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
+  using LCAOFactoryType = LCAOFactoryBase<Tile, Policy>;
+  using AOFactoryType = gaussian::AOFactoryBase<Tile, Policy>;
 
   // clang-format off
   /**
@@ -68,7 +67,7 @@ class LCAOWavefunction : public Wavefunction {
     unocc_block_ = kv.value<int>("unocc_block_size", mo_block);
   }
 
-  virtual ~LCAOWavefunction() { }
+  virtual ~LCAOWavefunction() {}
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
 

@@ -86,7 +86,7 @@ class OrbitalIndex {
     abs = -3,
     ribs = -4,
     dfbs = -5,
-		ubs = -6
+    ubs = -6
   };
 
   ///
@@ -224,9 +224,7 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
   }
 }
 
-inline OrbitalIndex make_base_index(const OrbitalIndex& idx) {
-  return idx;
-}
+inline OrbitalIndex make_base_index(const OrbitalIndex &idx) { return idx; }
 
 }  // namespace lcao
 }  // namespace mpqc

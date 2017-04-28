@@ -78,23 +78,28 @@ class PeriodicThreeCenterContractionBuilder
 			engines_.emplace_back(make_engine_pool(
 					oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
 					libint2::BraKet::xs_xx));
-			// initialize screeners
-			{
-				auto screen_engine_pool = make_engine_pool(
-						oper_type,
-						utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
-						libint2::BraKet::xx_xx);
-				auto bases =
-						::mpqc::lcao::gaussian::BasisVector{{aux_basis_RJ, basis0, basisR}};
-				p_screener_.emplace_back(make_screener(world, screen_engine_pool, bases,
-																							 screen_, screen_threshold_));
-			}
 		}
+
+		// initialize screener
+		if (screen == "schwarz") {
+			const auto tmp_basis =
+					*(shift_basis_origin(*aux_basis_, zero_shift_base, RJ_max_, dcell_));
+			auto tmp_eng = make_engine_pool(
+					oper_type,
+					utility::make_array_of_refs(tmp_basis, basis0, basisR),
+					libint2::BraKet::xx_xx);
+			auto bases =
+					::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisR}};
+			p_screener_ = make_screener(world, tmp_eng, bases,
+																	screen_, screen_threshold_);
+		} else {
+			throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+		}
+
 	}
 
 	~PeriodicThreeCenterContractionBuilder() {
 		engines_.resize(0);
-		p_screener_.resize(0);
 	}
 
 	template<size_t target_rank>
@@ -379,7 +384,7 @@ class PeriodicThreeCenterContractionBuilder
 	const int64_t RD_size_;
 
 	// mutated by compute_ functions
-	mutable std::vector<std::shared_ptr<lcao::Screener>> p_screener_;
+	mutable std::shared_ptr<lcao::Screener> p_screener_;
 	mutable std::shared_ptr<Basis> basisR_;
 	mutable std::vector<std::shared_ptr<Basis>> aux_basis_RJ_;
 	// mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
@@ -470,6 +475,8 @@ class PeriodicThreeCenterContractionBuilder
 			const auto &basis0 = basis0_;
 			const auto &basisR = basisR_;
 
+			const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
+
 			// shell clusters for this tile
 			const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
 			const auto &cluster0 = basis0->cluster_shells()[tile0];
@@ -480,7 +487,7 @@ class PeriodicThreeCenterContractionBuilder
 			const auto nshells0 = cluster0.size();
 			const auto nshellsR = clusterR.size();
 
-			auto &screen = *(p_screener_[RJ]);
+			auto &screen = *(p_screener_);
 			auto engine = engines_[RJ]->local();
 			engine.set_precision(engine_precision);
 			const auto &computed_shell_sets = engine.results();
@@ -505,6 +512,8 @@ class PeriodicThreeCenterContractionBuilder
 				const auto &shell_aux = clusterRJ_aux[sh_aux];
 				const auto nf_aux = shell_aux.size();
 
+				const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
+
 				auto cf0_offset = 0;
 				auto bf0_offset = rng0.first;
 				for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
@@ -520,7 +529,8 @@ class PeriodicThreeCenterContractionBuilder
 						const auto sh0R = sh0 * nshellsR + shR;  // index of {sh0, shR} in norm_D0R
 						const double Dnorm0R = (norm_D_0R_ptr != nullptr) ? norm_D_0R_ptr[sh0R] : 0.0;
 
-						if (screen.skip(bf_aux_offset, bf0_offset, bf_R_offset, Dnorm0R))
+						if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset,
+														Dnorm0R))
 							continue;
 
 						// compute shell set
@@ -598,6 +608,8 @@ class PeriodicThreeCenterContractionBuilder
 			const auto &basis0 = basis0_;
 			const auto &basisR = basisR_;
 
+			const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
+
 			// shell clusters for this tile
 			const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
 			const auto &cluster0 = basis0->cluster_shells()[tile0];
@@ -608,7 +620,7 @@ class PeriodicThreeCenterContractionBuilder
 			const auto nshells0 = cluster0.size();
 			const auto nshellsR = clusterR.size();
 
-			auto &screen = *(p_screener_[RJ]);
+			auto &screen = *(p_screener_);
 			auto engine = engines_[RJ]->local();
 			engine.set_precision(engine_precision);
 			const auto &computed_shell_sets = engine.results();
@@ -633,6 +645,8 @@ class PeriodicThreeCenterContractionBuilder
 				const auto &shell_aux = clusterRJ_aux[sh_aux];
 				const auto nf_aux = shell_aux.size();
 
+				const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
+
 				auto cf0_offset = 0;
 				auto bf0_offset = rng0.first;
 				for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
@@ -645,7 +659,7 @@ class PeriodicThreeCenterContractionBuilder
 						const auto &shellR = clusterR[shR];
 						const auto nfR = shellR.size();
 
-						if (screen.skip(bf_aux_offset, bf0_offset, bf_R_offset))
+						if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset))
 							continue;
 
 						// compute shell set

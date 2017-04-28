@@ -2,7 +2,12 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 9f7e456ed29d06549d3c6ffb2e0dfbf38c5c73a5
+                 Revision 36171dc83deb6bc0e2f8dd95a965114cd63e4022
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Wed Feb 22 21:41:09 2017 UTC
+  Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
@@ -47,7 +52,6 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
         "type": "zRHF",
         "molecule": "$:unitcell",
         "wfn_world": "$:wfn_world",
-        "converge": "1.0e-7",
         "max_iter": "100",
         "soad_guess": "true",
         "print_detail": "false",
@@ -70,23 +74,29 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     "property": {
         "type": "Energy",
         "wfn": "$:wfn",
-        "precision": "1.0e-7"
+        "precision": "1.0e-11"
     }
 }
 
   Using fundamental constants system 2006CODATA
-OBS Basis Trange 
+
+Constructing Basis Registry: 
+OBS Basis = sto-3g
 ( tiles = [ 0, 1 ), elements = [ 0, 2 ) )
 Min and Max block size: 2 2
 Average: 2
 
-Screen: schwarz
-Threshold: 1e-20
-Precision: 2.22044604925031e-16
 
-Screen: schwarz
-Threshold: 1e-20
-Precision: 2.22044604925031e-16
+Constructing AOFactory: 
+  Screen = schwarz
+  Threshold = 1e-20
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = false
+  Accurate time = false
 
 
 PeriodicAOFactory computational parameters:
@@ -96,10 +106,10 @@ PeriodicAOFactory computational parameters:
 
 Molecule info:
 	C.O.M: 0 0 0
-	Mass: 2.01568
+	Mass: 2.01565006446
 
 Elements:
-	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00784, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00784, pos:                 0                 0 0.700003692500297}}}
+	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}}}
 
 Unit cell info:
 	Lattice parameters (in Bohr): [               0                0 2.79999965219213]
@@ -108,13 +118,13 @@ zRHF computational parameters:
   # of k points in each direction: [1 1 7]
 
 Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 2.98023223876953e-07 GB Time: 0.013169885 s
+ Size: 2.98023223876953e-07 GB Time: 0.004186188 s
 
 Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 2.98023223876953e-07 GB Time: 0.009331476 s
+ Size: 2.98023223876953e-07 GB Time: 0.012347295 s
 
 Computing One Body Integral for Periodic System: < κ | λ >
- Size: 2.98023223876953e-07 GB Time: 0.000452321 s
+ Size: 2.98023223876953e-07 GB Time: 0.000459145 s
 
 Building Fock Matrix from SOAD Guess ...
 
@@ -129,64 +139,70 @@ Nuclear Repulsion Energy: 3.96201858517154
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    1      -4.946123399254      -0.984104814082      -4.946123399254       0.005794939734                0.088
-    2      -4.963004473239      -1.000985888068      -0.016881073985       0.001202261441                0.086
-    3      -4.962979880805      -1.000961295634       0.000024592434       0.000468551226                0.084
-    4      -4.962974053031      -1.000955467859       0.000005827775       0.000277188119                0.096
-    5      -4.962972788433      -1.000954203262       0.000001264598       0.000171396672                0.079
-    6      -4.962972441002      -1.000953855831       0.000000347431       0.000105761503                0.098
-    7      -4.962972303070      -1.000953717899       0.000000137932       0.000065135847                0.096
-    8      -4.962972231173      -1.000953646001       0.000000071898       0.000040088691                0.112
+    0      -4.962937471366      -1.000918886195      -4.962937471366       0.005794939734                0.115
+    1      -4.962970807698      -1.000952222526      -0.000033336332       0.001202261441                0.064
+    2      -4.962971979566      -1.000953394395      -0.000001171868       0.000468551226                0.068
+    3      -4.962972079326      -1.000953494154      -0.000000099760       0.000277188119                0.086
+    4      -4.962972106489      -1.000953521318      -0.000000027164       0.000171396672                0.079
+    5      -4.962972116444      -1.000953531273      -0.000000009955       0.000105761503                0.067
+    6      -4.962972120203      -1.000953535031      -0.000000003759       0.000065135847                0.082
+    7      -4.962972121625      -1.000953536454      -0.000000001423       0.000040088691                0.066
+    8      -4.962972122164      -1.000953536992      -0.000000000539       0.000024668055                0.068
+    9      -4.962972122368      -1.000953537196      -0.000000000204       0.000015178247                0.078
+   10      -4.962972122445      -1.000953537273      -0.000000000077       0.000009339003                0.077
+   11      -4.962972122474      -1.000953537303      -0.000000000029       0.000005746151                0.073
+   12      -4.962972122485      -1.000953537314      -0.000000000011       0.000003535516                0.067
+   13      -4.962972122490      -1.000953537318      -0.000000000004       0.000002175346                0.073
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -1.00095364600103
+Total Periodic Hartree-Fock energy = -1.00095353731796
 
 Time(s):
-	Init:                               0.078
-	Coulomb term:                       0.362
-	Exchange term:                      0.364
-	Real->Recip trans:                  0.003
-	Diag + Density:                     0.006
-	Total:                              0.740
+	Init:                               0.071
+	Coulomb term:                       0.412
+	Exchange term:                      0.624
+	Real->Recip trans:                  0.005
+	Diag + Density:                     0.011
+	Total:                              1.063
 
 OccBlockSize: 1
 VirBlockSize: 1
-Obs Trange 
+Obs
 ( tiles = [ 0, 1 ), elements = [ 0, 2 ) )
 Min and Max block size: 2 2
 Average: 2
 
-Occ Trange 
+Occ
 ( tiles = [ 0, 1 ), elements = [ 0, 1 ) )
 Min and Max block size: 1 1
 Average: 1
 
-CorrOcc Trange 
+CorrOcc
 ( tiles = [ 0, 1 ), elements = [ 0, 1 ) )
 Min and Max block size: 1 1
 Average: 1
 
-Vir Trange 
+Vir
 ( tiles = [ 0, 1 ), elements = [ 0, 1 ) )
 Min and Max block size: 1 1
 Average: 1
 
-All Trange 
+All
 ( tiles = [ 0, 2 ), elements = [ 0, 2 ) )
 Min and Max block size: 1 1
 Average: 1
 
 Computing conventional gamma-point MP2 ...
  Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
- Size: 1.49011611938477e-08 GB
- Time: 0.25872373 s
-    PAO build total time:  0.257803502 s
-        part 1: 0.203735469 s
-        part 2: 0.03733157 s
-    PAO->CO transform time: 0.000920228 s
+ Size: 7.45058059692383e-09 GB
+ Time: 0.254842308 s
+    PAO build total time:  0.253787813 s
+        part 1: 0.19844746 s
+        part 2: 0.033235827 s
+    PAO->CO transform time: 0.001054495 s
 
-Gamma-Point MP2 Energy = -0.00685351460106706
+Gamma-Point MP2 Energy = -0.0152110243451564
   Output KeyVal (format=JSON):
 {
     "units": "2006CODATA",
@@ -230,7 +246,6 @@ Gamma-Point MP2 Energy = -0.00685351460106706
         "type": "zRHF",
         "molecule": "$:unitcell",
         "wfn_world": "$:wfn_world",
-        "converge": "1.0e-7",
         "max_iter": "100",
         "soad_guess": "true",
         "print_detail": "false",
@@ -253,11 +268,10 @@ Gamma-Point MP2 Energy = -0.00685351460106706
     "property": {
         "type": "Energy",
         "wfn": "$:wfn",
-        "precision": "1.0e-7",
+        "precision": "1.0e-11",
         "value": {
-            "value": "-1.0078071606020922"
+            "value": "-1.0161645616631181"
         }
-    },
-    "world": "0x108306130"
+    }
 }
 

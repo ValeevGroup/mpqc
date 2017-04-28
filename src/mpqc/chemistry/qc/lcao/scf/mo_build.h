@@ -9,6 +9,7 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_lcao_factory.h"
 #include "mpqc/util/misc/provider.h"
 
 namespace mpqc {
@@ -408,7 +409,8 @@ void closed_shell_cabs_mo_build_svd(
         world, tr_ribs, tr_ribs_mo, 1.0);
     C_ri("i,j") = S_ribs_inv("i,k") * ribs_to_mo("k,j");
 
-    auto tr_allvir_mo = utility::compute_trange1(nbf_cabs + n_vir, vir_blocksize);
+    auto tr_allvir_mo =
+        utility::compute_trange1(nbf_cabs + n_vir, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
                                             "All Virtual MO");
 
@@ -687,7 +689,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
       utility::compute_trange1(tr_cabs.elements_range().second, vir_blocksize);
-  auto tr_allvir_mo = utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
+  auto tr_allvir_mo =
+      utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
 
   mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
   TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile, Policy>(
@@ -714,7 +717,88 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   utility::print_par(world, "ClosedShell Dual Basis CABS MO Build Time: ",
                      mo_time, " S\n");
-};
+}
+
+/*!
+ * \brief This inserts crystal orbitals to registry for gamma-point methods
+ */
+template <typename Tile, typename Policy>
+std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(
+    PeriodicLCAOFactory<Tile, Policy> &plcao_factory,
+    RowMatrixXd &C_gamma_point, UnitCell &unitcell, size_t occ_block,
+    size_t vir_block) {
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
+
+  auto &orbital_registry = plcao_factory.orbital_registry();
+  auto &world = plcao_factory.world();
+
+  auto all = C_gamma_point.cols();
+
+  // the unit cell must be electrically neutral
+  const auto charge = 0;
+
+  assert(unitcell.total_atomic_number() % 2 == 0 &&
+         "total atomic number must be even");
+
+  auto occ = (unitcell.total_atomic_number() - charge) / 2;
+  auto vir = all - occ;
+  std::size_t n_frozen_core = 0;  // TODO: should be determined by user
+
+  RowMatrixXd C_occ = C_gamma_point.leftCols(occ);
+  RowMatrixXd C_corr_occ =
+      C_gamma_point.block(0, n_frozen_core, all, occ - n_frozen_core);
+  RowMatrixXd C_vir = C_gamma_point.rightCols(vir);
+
+  ExEnv::out0() << "OccBlockSize: " << occ_block << std::endl;
+  ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
+
+  auto obs_basis = plcao_factory.pao_factory().basis_registry()->retrieve(
+      OrbitalIndex(L"κ"));
+  auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
+
+  // get all trange1s
+  auto tr_obs = obs_basis->create_trange1();
+  auto tr_corr_occ = tre->get_active_occ_tr1();
+  auto tr_occ = utility::compute_trange1(occ, occ_block);
+  auto tr_vir = tre->get_vir_tr1();
+  auto tr_all = tre->get_all_tr1();
+
+  mpqc::detail::parallel_print_range_info(world, tr_obs, "Obs");
+  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
+  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
+  mpqc::detail::parallel_print_range_info(world, tr_all, "All");
+
+  // convert Eigen matrices to TA
+  auto C_occ_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+      world, C_corr_occ, tr_obs, tr_corr_occ);
+  auto C_vir_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_vir, tr_obs, tr_vir);
+  auto C_all_ta = array_ops::eigen_to_array<Tile, Policy>(world, C_gamma_point,
+                                                          tr_obs, tr_all);
+
+  // insert to registry
+  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
+  auto occ_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
+  orbital_registry.add(occ_space);
+
+  auto corr_occ_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
+  orbital_registry.add(corr_occ_space);
+
+  auto vir_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
+  orbital_registry.add(vir_space);
+
+  auto all_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
+  orbital_registry.add(all_space);
+
+  return tre;
+}
 
 }  // namespace lcao
 }  // namespace mpqc

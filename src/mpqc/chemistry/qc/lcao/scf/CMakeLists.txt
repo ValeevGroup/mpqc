@@ -8,7 +8,6 @@ diagonalize_for_coeffs.h
 eigen_solve_density_builder.h
 eigen_solve_density_builder_impl.h
 linear_cadf_builder.h
-linkage.cpp
 linkage.h
 mo_build.h
 orbital_localization.cpp
@@ -29,9 +28,14 @@ util.h
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
         zrhf.h
+        zrhf_impl.h
         zrhf.cpp
+        decomposed_rij.h
+        decomposed_rij.cpp
         pbc/periodic_cond_ortho.h
         pbc/periodic_soad.h
+        pbc/periodic_four_center_fock_builder.h
+        pbc/periodic_df_fock_builder.h
         )
 endif()
 

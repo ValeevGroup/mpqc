@@ -133,6 +133,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return f_pq_diagonal_;
   }
 
+  void set_orbital_energy(const Eigen::VectorXd &orbital_energy) {
+    f_pq_diagonal_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  }
+
  public:
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
@@ -165,6 +169,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   void set_t2(const TArray &t2) { T2_ = t2; }
 
   bool print_detail() const { return print_detail_; }
+
+  void set_target_precision(double precision) {
+      target_precision_ = precision;
+  }
 
   const typename AOFactory::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
@@ -232,7 +240,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
   }
 
- private:
+ protected:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -256,6 +264,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     TArray g_aibc = this->get_aibc();
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
+
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
     if (print_detail_) {
@@ -593,6 +602,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return E1;
   }
 
+ private:
   double compute_ccsd_df(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
@@ -1366,7 +1376,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   // using physical notation <ab|ij>
 
   /// <ab|ij>
-  const TArray get_abij() {
+  virtual const TArray get_abij() {
     if (df_) {
       return this->lcao_factory().compute(L"<a b|G|i j>[df]");
     } else {
@@ -1374,8 +1384,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
   }
 
+  /// <ij|ab>
+  virtual const TArray get_ijab() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<i j|G|a b>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<i j|G|a b>");
+    }
+  }
+
   /// <ij|kl>
-  const TArray get_ijkl() {
+  virtual const TArray get_ijkl() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|k l>[df]");
     } else {
@@ -1384,7 +1403,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ab|cd>
-  const TArray get_abcd() {
+  virtual const TArray get_abcd() {
     if (df_) {
       return this->lcao_factory().compute(L"<a b|G|c d>[df]");
     } else {
@@ -1393,7 +1412,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ia|bc>
-  const TArray get_iabc() {
+  virtual const TArray get_iabc() {
     if (df_) {
       return this->lcao_factory().compute(L"<i a|G|b c>[df]");
     } else {
@@ -1402,7 +1421,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ai|bc>
-  const TArray get_aibc() {
+  virtual const TArray get_aibc() {
     if (df_) {
       return this->lcao_factory().compute(L"<a i|G|b c>[df]");
     } else {
@@ -1411,7 +1430,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ij|ak>
-  const TArray get_ijak() {
+  virtual const TArray get_ijak() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|a k>[df]");
     } else {
@@ -1420,7 +1439,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ai|jk>
-  const TArray get_aijk() {
+  virtual const TArray get_aijk() {
     if (df_) {
       return this->lcao_factory().compute(L"<a i|G|j k>[df]");
     } else {
@@ -1429,7 +1448,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ia|jb>
-  const TArray get_iajb() {
+  virtual const TArray get_iajb() {
     if (df_) {
       return this->lcao_factory().compute(L"<i a|G|j b>[df]");
     } else {
@@ -1438,7 +1457,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <ij|ka>
-  const TArray get_ijka() {
+  virtual const TArray get_ijka() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|k a>[df]");
     } else {
@@ -1447,7 +1466,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   }
 
   /// <a|f|i>
-  const TArray get_fock_ai() {
+  virtual const TArray get_fock_ai() {
     if (df_) {
       return this->lcao_factory().compute(L"<a|F|i>[df]");
     } else {

@@ -269,14 +269,14 @@ namespace detail {
 bool if_all_lcao(const Formula &formula) {
   auto left = formula.bra_indices();
   for (auto &index : left) {
-    if(!index.is_lcao()){
+    if (!index.is_lcao()) {
       return false;
     }
   }
 
   auto right = formula.ket_indices();
   for (auto &index : right) {
-    if(!index.is_lcao()){
+    if (!index.is_lcao()) {
       return false;
     }
   }
@@ -286,14 +286,14 @@ bool if_all_lcao(const Formula &formula) {
 bool if_all_ao(const Formula &formula) {
   auto left = formula.bra_indices();
   for (auto &index : left) {
-    if(!index.is_ao()){
+    if (!index.is_ao()) {
       return false;
     }
   }
 
   auto right = formula.ket_indices();
   for (auto &index : right) {
-    if(!index.is_ao()){
+    if (!index.is_ao()) {
       return false;
     }
   }

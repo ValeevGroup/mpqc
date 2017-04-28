@@ -90,6 +90,11 @@ class OrbitalSpaceRegistry : public OrbitalRegistry<OrbitalSpace<Array>> {
     return trange1_engine_;
   }
 
+  /// sets value for trange1_engine_ (this is a temporary work around)
+  void set_trange1_engine(const ::mpqc::utility::TRange1Engine &tre) {
+      trange1_engine_ = std::make_shared<::mpqc::utility::TRange1Engine>(tre);
+  }
+
  private:
   mutable std::shared_ptr<const TRange1Engine> trange1_engine_ = std::shared_ptr<const TRange1Engine>();
 };

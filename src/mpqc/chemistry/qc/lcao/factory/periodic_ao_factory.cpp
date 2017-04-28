@@ -16,7 +16,7 @@ TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size) {
   return tr1;
 }
 
-void sort_eigen(Vectorz &eigVal, Matrixz &eigVec) {
+void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec) {
   auto val = eigVal.real();
 
   // Sort by ascending eigenvalues
@@ -29,8 +29,8 @@ void sort_eigen(Vectorz &eigVal, Matrixz &eigVec) {
   std::sort(sortedVal.begin(), sortedVal.end());
 
   // Build sorted eigenvalues and eigenvectors
-  Vectorz sortedEigVal(eigVal);
-  Matrixz sortedEigVec(eigVec);
+  VectorZ sortedEigVal(eigVal);
+  MatrixZ sortedEigVec(eigVec);
   for (auto i = 0; i != val.size(); ++i) {
     sortedEigVal(i) = eigVal(sortedVal[i].second);
     sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);
@@ -113,14 +113,14 @@ std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
 namespace gaussian {
 namespace detail {
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift) {
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, const Vector3d &shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
     for (auto shell : shell_vec) {
-      std::array<double, 3> new_origin = {{
-          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)}};
+      std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                           shell.O[1] + shift(1),
+                                           shell.O[2] + shift(2)}};
       shell.move(new_origin);
       shells.push_back(shell);
     }
@@ -132,9 +132,9 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
 }
 
 std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift_base,
-                                                    Vector3i nshift,
-                                                    Vector3d dcell) {
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;
@@ -149,8 +149,8 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
       ShellVec shells;
       for (auto shell : shell_vec) {
         std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
-                                            shell.O[1] + shift(1),
-                                            shell.O[2] + shift(2)}};
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
         shell.move(new_origin);
         shells.push_back(shell);
       }

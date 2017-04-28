@@ -9,21 +9,14 @@
 namespace mpqc {
 namespace lcao {
 
-bool Screener::skip(int64_t) { return false; }
 bool Screener::skip(int64_t) const { return false; }
 
-bool Screener::skip(int64_t, int64_t) { return false; }
 bool Screener::skip(int64_t, int64_t) const { return false; }
 
-bool Screener::skip(int64_t, int64_t, int64_t) { return false; }
 bool Screener::skip(int64_t, int64_t, int64_t) const { return false; }
 
-bool Screener::skip(int64_t, int64_t, int64_t, int64_t) { return false; }
 bool Screener::skip(int64_t, int64_t, int64_t, int64_t) const { return false; }
 
-bool Screener::skip(int64_t, int64_t, int64_t, int64_t, double) {
-  return false;
-}
 bool Screener::skip(int64_t, int64_t, int64_t, int64_t, double) const {
   return false;
 }

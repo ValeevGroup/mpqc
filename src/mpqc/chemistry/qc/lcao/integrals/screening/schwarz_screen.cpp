@@ -39,28 +39,16 @@ SchwarzScreen::SchwarzScreen(std::shared_ptr<Qmatrix> Qbra,
 
 double SchwarzScreen::skip_threshold() const { return thresh_; }
 
-bool SchwarzScreen::skip(int64_t a) { return skip_(a); }
 bool SchwarzScreen::skip(int64_t a) const { return skip_(a); }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b) { return skip_(a, b); }
 bool SchwarzScreen::skip(int64_t a, int64_t b) const { return skip_(a, b); }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c) {
-  return skip_(a, b, c);
-}
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c) const {
   return skip_(a, b, c);
 }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
-  return skip_(a, b, c, d);
-}
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) const {
   return skip_(a, b, c, d);
-}
-
-bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d, double D) {
-  return skip_(D, a, b, c, d);
 }
 
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d,

@@ -7,6 +7,7 @@
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 
 namespace mpqc {
@@ -33,6 +34,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
 
   using TArray = typename FactoryType::TArray;
   using DirectTArray = typename FactoryType::DirectTArray;
+  using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
 
   // get necessary information for periodic AO integrals
   auto RJ_size = pao_factory.RJ_size();
@@ -73,41 +75,55 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   // F = H
   auto F = H;
 
-  // F += (2J - K)
-  for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-    using ::mpqc::lcao::detail::direct_vector;
-    auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-    auto min_bs0 = detail::shift_basis_origin(min_bs, vec_RJ);
-    auto min_bs1 = min_bs0;
-    // F += 2 J
-    DirectTArray &g_J = g_J_vector[RJ];
-    if (!g_J.array().is_initialized()) {
-      bases = BasisVector{{*normal_bs0, *normal_bs1, *min_bs0, *min_bs1}};
-      engine_pool = make_engine_pool(
-          libint2::Operator::coulomb,
-          utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener = detail::make_screener(world, engine_pool, bases, screen,
-                                         screen_thresh);
+  auto R_size = pao_factory.R_size();
+  Vector3i RD_max = {0, 0, 0};
+  int64_t RD_size = 1;
+  std::shared_ptr<const Basis> min_basis_p =
+      std::make_shared<const Basis>(min_bs);
+  auto four_center_fock_builder = std::make_unique<Builder>(
+      world, min_basis_p, normal_bs0, dcell, R_max, RJ_max, RD_max, R_size,
+      RJ_size, RD_size, true, true, screen, screen_thresh);
+  auto G = four_center_fock_builder->operator()(
+      D, std::numeric_limits<double>::epsilon());
+  F("mu, nu") += G("mu, nu");
 
-      g_J = pao_factory.compute_direct_integrals(world, engine_pool, bases,
-                                                 p_screener);
-    }
-    F("mu, nu") += 2.0 * g_J("mu, nu, lambda, rho") * D("lambda, rho");
-    // F -= K
-    DirectTArray &g_K = g_K_vector[RJ];
-    if (!g_K.array().is_initialized()) {
-      bases = BasisVector{{*normal_bs0, *min_bs0, *normal_bs1, *min_bs1}};
-      engine_pool = make_engine_pool(
-          libint2::Operator::coulomb,
-          utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener = detail::make_screener(world, engine_pool, bases, screen,
-                                         screen_thresh);
+  //  // F += (2J - K)
+  //  for (auto RJ = 0; RJ < RJ_size; ++RJ) {
+  //    using ::mpqc::lcao::detail::direct_vector;
+  //    auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
+  //    auto min_bs0 = detail::shift_basis_origin(min_bs, vec_RJ);
+  //    auto min_bs1 = min_bs0;
+  //    // F += 2 J
+  //    DirectTArray &g_J = g_J_vector[RJ];
+  //    if (!g_J.array().is_initialized()) {
+  //      bases = BasisVector{{*normal_bs0, *normal_bs1, *min_bs0, *min_bs1}};
+  //      engine_pool = make_engine_pool(
+  //          libint2::Operator::coulomb,
+  //          utility::make_array_of_refs(bases[0], bases[1], bases[2],
+  //          bases[3]));
+  //      p_screener = detail::make_screener(world, engine_pool, bases, screen,
+  //                                         screen_thresh);
 
-      g_K = pao_factory.compute_direct_integrals(world, engine_pool, bases,
-                                                 p_screener);
-    }
-    F("mu, nu") -= g_K("mu, lambda, nu, rho") * D("lambda, rho");
-  }
+  //      g_J = pao_factory.compute_direct_integrals(world, engine_pool, bases,
+  //                                                 p_screener);
+  //    }
+  //    F("mu, nu") += 2.0 * g_J("mu, nu, lambda, rho") * D("lambda, rho");
+  //    // F -= K
+  //    DirectTArray &g_K = g_K_vector[RJ];
+  //    if (!g_K.array().is_initialized()) {
+  //      bases = BasisVector{{*normal_bs0, *min_bs0, *normal_bs1, *min_bs1}};
+  //      engine_pool = make_engine_pool(
+  //          libint2::Operator::coulomb,
+  //          utility::make_array_of_refs(bases[0], bases[1], bases[2],
+  //          bases[3]));
+  //      p_screener = detail::make_screener(world, engine_pool, bases, screen,
+  //                                         screen_thresh);
+
+  //      g_K = pao_factory.compute_direct_integrals(world, engine_pool, bases,
+  //                                                 p_screener);
+  //    }
+  //    F("mu, nu") -= g_K("mu, lambda, nu, rho") * D("lambda, rho");
+  //  }
 
   auto t1 = mpqc::now(world, true);
   double time = mpqc::duration_in_s(t0, t1);

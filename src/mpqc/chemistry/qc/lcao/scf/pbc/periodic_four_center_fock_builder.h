@@ -123,8 +123,6 @@ class PeriodicFourCenterFockBuilder
 
   array_type compute_JK_abcd(array_type const &D,
                              double target_precision) const {
-    dist_pmap_D_ = D.pmap();
-
     // Copy D and make it replicated.
     array_type D_repl;
     D_repl("i,j") = D("i,j");
@@ -140,21 +138,21 @@ class PeriodicFourCenterFockBuilder
     // # of tiles per basis
     auto ntiles0 = bra_basis_->nclusters();
     auto ntiles1 = bra_basis_->nclusters() * R_size_;
-    auto ntiles2 = ket_basis_->nclusters() * RJ_size_;
+    auto ntiles2 = ket_basis_->nclusters();
     auto ntiles3 = ket_basis_->nclusters() * RD_size_;
 
     const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles0 * ntiles1 * ntiles2 * ntiles3);
+        static_cast<uint64_t>(ntiles0 * ntiles1 * ntiles2 * ntiles3 * RJ_size_);
     auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
                                                                 ntile_tasks);
 
     auto t0 = mpqc::fenced_now(compute_world);
 
     // make shell block norm of D
-    assert(RD_size_ > 0 && RD_size_ % 2 == 1);
-    auto RD_ref = (RD_size_ - 1) / 2;
+    assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
+    auto ref_uc = (RJ_size_ - 1) / 2;
     auto shblk_norm_D =
-        compute_shellblock_norm(*ket_basis_, *(basisRD_[RD_ref]), D_repl);
+        compute_shellblock_norm(*ket_basis_, *(basisRD_[ref_uc]), D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
     J_num_ints_computed_ = 0;
@@ -163,8 +161,8 @@ class PeriodicFourCenterFockBuilder
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles0; ++tile0) {
       for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
-        for (auto tile2 = 0ul; tile2 != ntiles0; ++tile2) {
-          for (auto tile3 = 0ul; tile3 != ntiles1; ++tile3) {
+        for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
+          for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
             auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
                               ? empty
                               : D_repl.find({tile2, tile3});
@@ -310,7 +308,6 @@ class PeriodicFourCenterFockBuilder
   mutable madness::ConcurrentHashMap<std::size_t, Tile> global_fock_tiles_;
   mutable TA::TiledRange trange_D_;
   mutable TA::TiledRange trange_fock_;
-  mutable std::shared_ptr<TA::Pmap> dist_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> repl_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> dist_pmap_fock_;
   mutable double target_precision_ = 0.0;
@@ -363,14 +360,14 @@ class PeriodicFourCenterFockBuilder
     // initialize screener
     if (screen_ == "schwarz") {
       if (compute_J_) {
-        // (bra0 bra1 | bra0 bra1) = (ket0 ket1 | ket0 ket1)
-        // using translational symmetry
         auto screen_engine = make_engine_pool(
             oper_type, utility::make_array_of_refs(basis0, basisR),
             libint2::BraKet::xx_xx);
         auto Qbra = std::make_shared<Qmatrix>(
             Qmatrix(world, screen_engine, basis0, basisR,
                     lcao::gaussian::detail::l2Norm));
+        // (bra0 bra1 | bra0 bra1) = (ket0 ket1 | ket0 ket1)
+        // using translational symmetry
         if (bra_basis_ == ket_basis_) {
           j_p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
               lcao::gaussian::SchwarzScreen(Qbra, Qbra, screen_threshold_));
@@ -393,7 +390,7 @@ class PeriodicFourCenterFockBuilder
         // make Qmatrix for bra
         {
           const auto tmp_basis = *(shift_basis_origin(
-              *bra_basis_, zero_shift_base, RJ_max_, dcell_));
+              *ket_basis_, zero_shift_base, RJ_max_, dcell_));
           auto tmp_eng = make_engine_pool(
               oper_type, utility::make_array_of_refs(basis0, tmp_basis),
               libint2::BraKet::xx_xx);
@@ -407,7 +404,7 @@ class PeriodicFourCenterFockBuilder
           translation_map_ = compute_translation_map(max_uc);
 
           const auto tmp_basis = *(
-              shift_basis_origin(*bra_basis_, zero_shift_base, max_uc, dcell_));
+              shift_basis_origin(*ket_basis_, zero_shift_base, max_uc, dcell_));
           auto tmp_eng = make_engine_pool(
               oper_type, utility::make_array_of_refs(basis0, tmp_basis),
               libint2::BraKet::xx_xx);
@@ -451,7 +448,6 @@ class PeriodicFourCenterFockBuilder
   void accumulate_local_task(Tile fock_matrix_tile, long tile0, long tile1) {
     const auto ntiles1 = trange_fock_.dim(1).tile_extent();
     const auto tile01 = tile0 * ntiles1 + tile1;
-    assert(repl_pmap_D_->is_local(tile01));
     // if reducer does not exist, create entry and store F, else accumulate F to
     // the existing contents
     typename decltype(local_fock_tiles_)::accessor acc;
@@ -507,7 +503,8 @@ class PeriodicFourCenterFockBuilder
       const auto &basisRJ = basisRJ_[RJ];
       const auto &basisRD = basisRD_[RJ];
 
-      const auto nbf_per_uc = basis0->nfunctions();
+      const auto nbf_bra_per_uc = bra_basis_->nfunctions();
+      const auto nbf_ket_per_uc = ket_basis_->nfunctions();
 
       // shell clusters for this tile
       const auto &cluster0 = basis0->cluster_shells()[tile0];
@@ -664,7 +661,7 @@ class PeriodicFourCenterFockBuilder
             const auto &shell1 = clusterRJ[sh1];
             const auto nf1 = shell1.size();
 
-            const auto bf1_in_screener = bf1_offset + nbf_per_uc * RJ;
+            const auto bf1_in_screener = bf1_offset + nbf_ket_per_uc * RJ;
             const auto RJ_stride = RJ * RD_size_;
 
             auto cf2_offset = 0;
@@ -674,9 +671,9 @@ class PeriodicFourCenterFockBuilder
               const auto &shell2 = clusterR[sh2];
               const auto nf2 = shell2.size();
 
-              const auto R = bf2_offset / nbf_per_uc;
+              const auto R = bf2_offset / nbf_bra_per_uc;
               const auto R_stride = R * RJ_size_ * RD_size_;
-              const auto bf2_in_screener = bf2_offset % nbf_per_uc;
+              const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
                 std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
@@ -684,12 +681,12 @@ class PeriodicFourCenterFockBuilder
                 const auto &shell3 = clusterRD[sh3];
                 const auto nf3 = shell3.size();
 
-                const auto RD = bf3_offset / nbf_per_uc;
+                const auto RD = bf3_offset / nbf_ket_per_uc;
                 const auto old_uc_ord = R_stride + RJ_stride + RD;
                 const auto new_uc_ord = translation_map_[old_uc_ord];
-                const auto bf3_in_uc = bf3_offset % nbf_per_uc;
+                const auto bf3_in_uc = bf3_offset % nbf_ket_per_uc;
                 const auto bf3_in_screener =
-                    bf3_in_uc + new_uc_ord * nbf_per_uc;
+                    bf3_in_uc + new_uc_ord * nbf_ket_per_uc;
 
                 const auto sh13 = sh1 * nshellsRD + sh3;
                 const auto Dnorm13 =
@@ -749,8 +746,8 @@ class PeriodicFourCenterFockBuilder
       }
     }
 
-    const auto me = this->get_world().rank();
-    assert(me == dist_pmap_D_->rank());
+    //    const auto me = this->get_world().rank();
+    //    assert(me == dist_pmap_D_->rank());
     // accumulate the local contributions
     {
       PeriodicFourCenterFockBuilder_::accumulate_local_task(F0R, tile0, tileR);

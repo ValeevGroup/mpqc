@@ -32,5 +32,15 @@ cmake .. \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true
 
+### build
 make -j1 mpqc
+### test within build tree
 setarch `uname -m` -R make -j1 check
+### install and test dev samples
+make install
+cd $INSTALL_DIR/mpqc4/share/doc/mpqc*/examples
+cd mp2
+  cmake .
+  make mp2
+  setarch `uname -m` -R ./mp2 ./mp2.json
+cd ..

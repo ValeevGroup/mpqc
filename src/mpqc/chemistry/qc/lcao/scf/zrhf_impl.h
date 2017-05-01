@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
 
 namespace mpqc {
 namespace lcao {
@@ -65,8 +66,23 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 
   T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
   V_ = ao_factory.compute(L"<κ|V|λ>");  // Nuclear-attraction
-  S_ = ao_factory.compute(L"<κ|λ>");    // Overlap in real space
-  Sk_ = transform_real2recip(S_);       // Overlap in reciprocal space
+
+  {
+    using Builder = scf::PeriodicTwoCenterBuilder<Tile, Policy>;
+    auto basis =
+        this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+    auto mpqc_oper = Operator::Type::Nuclear;
+    auto two_center_builder =
+        std::make_unique<Builder>(world, basis, mpqc_oper,
+                                  std::make_shared<const UnitCell>(unitcell),
+                                  dcell_, R_max_, RJ_max_, R_size_, RJ_size_);
+    auto V = two_center_builder->eval();
+    ExEnv::out0() << "\nReference V = \n" << V_ << std::endl;
+    ExEnv::out0() << "\nNew V = \n" << V << std::endl;
+  }
+
+  S_ = ao_factory.compute(L"<κ|λ>");  // Overlap in real space
+  Sk_ = transform_real2recip(S_);     // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 

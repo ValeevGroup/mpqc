@@ -53,49 +53,8 @@ class PeriodicThreeCenterContractionBuilder
 		// WorldObject mandates this is called from the ctor
 		WorldObject_::process_pending();
 
-		trange1_aux_ = aux_basis_->create_trange1();
-
-		using ::mpqc::lcao::detail::direct_vector;
-		using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-		using ::mpqc::lcao::gaussian::make_engine_pool;
-		using ::mpqc::lcao::gaussian::detail::make_screener;
-
-		// make compound basis set for ket1 in (bra | ket0 ket1)
-		Vector3d zero_shift_base(0.0, 0.0, 0.0);
-		basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
-		const auto basis0 = *basis0_;
-		const auto basisR = *basisR_;
-		auto oper_type = libint2::Operator::coulomb;
-
-		for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-			auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-			// make compound basis set for bra (aux)
-			aux_basis_RJ_.emplace_back(shift_basis_origin(*aux_basis_, vec_RJ));
-
-			const auto aux_basis_RJ = *(aux_basis_RJ_.back());
-
-			// initialize engines
-			engines_.emplace_back(make_engine_pool(
-					oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
-					libint2::BraKet::xs_xx));
-		}
-
-		// initialize screener
-		if (screen == "schwarz") {
-			const auto tmp_basis =
-					*(shift_basis_origin(*aux_basis_, zero_shift_base, RJ_max_, dcell_));
-			auto tmp_eng = make_engine_pool(
-					oper_type,
-					utility::make_array_of_refs(tmp_basis, basis0, basisR),
-					libint2::BraKet::xx_xx);
-			auto bases =
-					::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisR}};
-			p_screener_ = make_screener(world, tmp_eng, bases,
-																	screen_, screen_threshold_);
-		} else {
-			throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
-		}
-
+    // initialize compound bases, engines, and screeners
+    init();
 	}
 
 	~PeriodicThreeCenterContractionBuilder() {
@@ -402,6 +361,54 @@ class PeriodicThreeCenterContractionBuilder
 	mutable array_type shblk_norm_D_;
 	// mutable std::atomic<size_t> J_num_ints_computed_{0};
 	// mutable std::atomic<size_t> K_num_ints_computed_{0};
+
+  void init() {
+
+    trange1_aux_ = aux_basis_->create_trange1();
+
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::make_screener;
+
+    // make compound basis set for ket1 in (bra | ket0 ket1)
+    Vector3d zero_shift_base(0.0, 0.0, 0.0);
+    basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
+    const auto basis0 = *basis0_;
+    const auto basisR = *basisR_;
+    auto oper_type = libint2::Operator::coulomb;
+
+    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+      // make compound basis set for bra (aux)
+      aux_basis_RJ_.emplace_back(shift_basis_origin(*aux_basis_, vec_RJ));
+
+      const auto aux_basis_RJ = *(aux_basis_RJ_.back());
+
+      // initialize engines
+      engines_.emplace_back(make_engine_pool(
+          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+          libint2::BraKet::xs_xx));
+    }
+
+    auto &world = this->get_world();
+    // initialize screener
+    if (screen_ == "schwarz") {
+      const auto tmp_basis =
+          *(shift_basis_origin(*aux_basis_, zero_shift_base, RJ_max_, dcell_));
+      auto tmp_eng = make_engine_pool(
+          oper_type,
+          utility::make_array_of_refs(tmp_basis, basis0, basisR),
+          libint2::BraKet::xx_xx);
+      auto bases =
+          ::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisR}};
+      p_screener_ = make_screener(world, tmp_eng, bases,
+                                  screen_, screen_threshold_);
+    } else {
+      throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+    }
+
+  }
 
 	void accumulate_global_task(Tile arg_tile, long tile_ord) {
 		// if reducer does not exist, create entry and store F, else accumulate F to

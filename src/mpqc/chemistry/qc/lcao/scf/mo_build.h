@@ -191,7 +191,9 @@ void make_closed_shell_sdref_subspaces(
     auto obs_basis = ao_factory->basis_registry()->retrieve(OrbitalIndex(L"κ"));
 
     // need some integrals
-    auto S_m_obs = ao_factory->compute(L"<m|λ>");
+    auto S_obs = ao_factory->compute(L"<κ|λ>");
+    decltype(C_m) S_m_obs;
+    S_m_obs("m,lambda") = C_m("kappa,m") * S_obs("kappa,lambda");
     auto S_obs_inv = ao_factory->compute(L"<κ|λ>[inv_sqr]");
 
     decltype(S_m_obs) S_m_obs_ortho;

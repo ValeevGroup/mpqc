@@ -29,8 +29,8 @@ void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec) {
   std::sort(sortedVal.begin(), sortedVal.end());
 
   // Build sorted eigenvalues and eigenvectors
-	VectorZ sortedEigVal(eigVal);
-	MatrixZ sortedEigVec(eigVec);
+  VectorZ sortedEigVal(eigVal);
+  MatrixZ sortedEigVec(eigVec);
   for (auto i = 0; i != val.size(); ++i) {
     sortedEigVal(i) = eigVal(sortedVal[i].second);
     sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);
@@ -80,16 +80,16 @@ int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max) {
 }
 
 Vector3i direct_3D_idx(const int64_t ord_idx, const Vector3i &latt_max) {
-	if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0) {
-		auto z = ord_idx % (2 * latt_max(2) + 1);
-		auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
-		auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
+  if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0) {
+    auto z = ord_idx % (2 * latt_max(2) + 1);
+    auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
+    auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
 
-		Vector3i result(x - latt_max(0), y - latt_max(1), z - latt_max(2));
-		return result;
-	} else {
-		throw "invalid lattice boundaries";
-	}
+    Vector3i result(x - latt_max(0), y - latt_max(1), z - latt_max(2));
+    return result;
+  } else {
+    throw "invalid lattice boundaries";
+  }
 }
 
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk) {
@@ -127,7 +127,7 @@ namespace gaussian {
 namespace detail {
 
 std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
-																					const Vector3d &shift) {
+                                          const Vector3d &shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
@@ -146,9 +146,9 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
 }
 
 std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
-																					const Vector3d &shift_base,
-																					const Vector3i &nshift,
-																					const Vector3d &dcell) {
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;

@@ -20,7 +20,7 @@
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
-		MatrixZ;
+    MatrixZ;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> VectorZ;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorD;
 
@@ -161,7 +161,8 @@ namespace detail {
  * \param shift the 3D vector of the shift
  * \return the shared pointer of shifted Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(const Basis& basis, const Vector3d &shift);
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift);
 
 /*!
  * \brief This shifts the origin of a Basis object by multiple vectors,
@@ -173,10 +174,10 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis& basis, const Vector3d &sh
  * \param dcell the direct unit cell params
  * \return the shared pointer of the compound Basis object
  */
-std::shared_ptr<Basis> shift_basis_origin(const Basis& basis,
-																					const Vector3d &shift_base,
-																					const Vector3i &nshift,
-																					const Vector3d &dcell);
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell);
 
 }  // namespace detail
 
@@ -330,14 +331,14 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return UnitCell object
   UnitCell &unitcell() { return *unitcell_; }
 
-	/// @return boolean of wether to print detailed information
-	bool print_detail() { return print_detail_; }
+  /// @return boolean of wether to print detailed information
+  bool print_detail() { return print_detail_; }
 
-	/*!
-	 * \brief This sets the density for coulomb and exchange computations
-	 * \param D the density feeded by user
-	 */
-	void set_density(TArray D) { D_ = D; }
+  /*!
+   * \brief This sets the density for coulomb and exchange computations
+   * \param D the density feeded by user
+   */
+  void set_density(TArray D) { D_ = D; }
 
   /// @return density matrix
   TArray get_density() { return D_; }
@@ -647,11 +648,11 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, this->accurate_time());
 
-//      if (print_detail_) {
-//        double size = mpqc::detail::array_size(g);
-//        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-//                      << std::endl;
-//      }
+      //      if (print_detail_) {
+      //        double size = mpqc::detail::array_size(g);
+      //        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+      //                      << std::endl;
+      //      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, this->accurate_time());
@@ -680,11 +681,11 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, this->accurate_time());
 
-//      if (print_detail_) {
-//        double size = mpqc::detail::array_size(g);
-//        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-//                      << std::endl;
-//      }
+      //      if (print_detail_) {
+      //        double size = mpqc::detail::array_size(g);
+      //        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+      //                      << std::endl;
+      //      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, this->accurate_time());
@@ -841,11 +842,12 @@ PeriodicAOFactory<Tile, Policy>::compute_direct3(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-//        if (print_detail_) {
-//          double size = mpqc::detail::array_size(g.array());
-//          ExEnv::out0() << " Size of 3-index g tensor:" << size << " GB"
-//                        << std::endl;
-//        }
+        //        if (print_detail_) {
+        //          double size = mpqc::detail::array_size(g.array());
+        //          ExEnv::out0() << " Size of 3-index g tensor:" << size << "
+        //          GB"
+        //                        << std::endl;
+        //        }
 
         time_3idx += mpqc::duration_in_s(time_g0, time_g1);
       }
@@ -921,11 +923,12 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-//        if (print_detail_) {
-//          double size = mpqc::detail::array_size(g.array());
-//          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-//                        << std::endl;
-//        }
+        //        if (print_detail_) {
+        //          double size = mpqc::detail::array_size(g.array());
+        //          ExEnv::out0() << " Size of 4-index g tensor:" << size << "
+        //          GB"
+        //                        << std::endl;
+        //        }
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
@@ -965,11 +968,12 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, this->accurate_time());
 
-//        if (print_detail_) {
-//          double size = mpqc::detail::array_size(g.array());
-//          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
-//                        << std::endl;
-//        }
+        //        if (print_detail_) {
+        //          double size = mpqc::detail::array_size(g.array());
+        //          ExEnv::out0() << " Size of 4-index g tensor:" << size << "
+        //          GB"
+        //                        << std::endl;
+        //        }
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
 
@@ -1249,7 +1253,7 @@ typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen, Op op) {
-//  auto time0 = mpqc::now(world, true);
+  //  auto time0 = mpqc::now(world, true);
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -1288,7 +1292,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-//  auto time_f0 = mpqc::now(world, true);
+  //  auto time_f0 = mpqc::now(world, true);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -1296,21 +1300,22 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
                     &tiles[ord].second);
   }
   world.gop.fence();
-//  auto time_f1 = mpqc::now(this->world(), true);
-//  auto time_f = mpqc::duration_in_s(time_f0, time_f1);
+  //  auto time_f1 = mpqc::now(this->world(), true);
+  //  auto time_f = mpqc::duration_in_s(time_f0, time_f1);
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
-//  auto time1 = mpqc::now(this->world(), true);
-//  auto time = mpqc::duration_in_s(time0, time1);
+  //  auto time1 = mpqc::now(this->world(), true);
+  //  auto time = mpqc::duration_in_s(time0, time1);
 
-//  if (print_detail_) {
-//    utility::print_par(this->world(), " \tsum of task_f time: ", time_f, " s\n",
-//                       " \ttotal compute time: ", time, " s\n\n");
-//  }
+  //  if (print_detail_) {
+  //    utility::print_par(this->world(), " \tsum of task_f time: ", time_f, "
+  //    s\n",
+  //                       " \ttotal compute time: ", time, " s\n\n");
+  //  }
 
   return out;
 }

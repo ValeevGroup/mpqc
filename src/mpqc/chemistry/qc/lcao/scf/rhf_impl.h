@@ -9,18 +9,18 @@
 
 #include <memory>
 
+#include <madness/world/worldmem.h>
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
+#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/purification_density_build.h"
+#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
 #include "mpqc/util/misc/time.h"
-#include <madness/world/worldmem.h>
 
 namespace mpqc {
 namespace lcao {
@@ -110,7 +110,8 @@ void RHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder =
-      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4)>(eri4, eri4);
+      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4)>(eri4,
+                                                                        eri4);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 

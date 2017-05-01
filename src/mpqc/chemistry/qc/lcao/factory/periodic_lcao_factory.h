@@ -9,9 +9,9 @@ namespace lcao {
 template <typename Tile, typename Policy>
 class PeriodicLCAOFactory;
 
-
 template <typename Tile, typename Policy>
-using PeriodicLCAOFactoryBase = Factory<TA::DistArray<Tile,Policy>, TA::DistArray<Tile,Policy>>;
+using PeriodicLCAOFactoryBase =
+    Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>;
 
 namespace detail {
 /*!
@@ -38,7 +38,7 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
+class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactoryType = gaussian::PeriodicAOFactory<Tile, Policy>;
@@ -48,7 +48,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
    * \param kv the KeyVal object
    */
   PeriodicLCAOFactory(const KeyVal &kv)
-      : PeriodicLCAOFactoryBase<Tile,Policy>(kv),
+      : PeriodicLCAOFactoryBase<Tile, Policy>(kv),
         pao_factory_(
             *gaussian::construct_periodic_ao_factory<TA::TensorD, Policy>(kv)) {
     std::string prefix = "";
@@ -89,8 +89,8 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
    */
   TArray compute(const Formula &formula) override;
 
-  using PeriodicLCAOFactoryBase<Tile,Policy>::compute;
-  using PeriodicLCAOFactoryBase<Tile,Policy>::compute_direct;
+  using PeriodicLCAOFactoryBase<Tile, Policy>::compute;
+  using PeriodicLCAOFactoryBase<Tile, Policy>::compute_direct;
 
   /// return reference to PeriodicAOFactory object
   AOFactoryType &pao_factory() const { return pao_factory_; }

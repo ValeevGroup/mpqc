@@ -385,22 +385,16 @@ class SchwarzScreen : public Screener {
   double skip_threshold() const;
 
   // Overrides of the skips following.  See function skip_ for implementation
-  bool skip(int64_t) override;
   bool skip(int64_t) const override;
 
-  bool skip(int64_t, int64_t) override;
   bool skip(int64_t, int64_t) const override;
 
-  bool skip(int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t) const override;
 
-  bool skip(int64_t a, int64_t b, int64_t c, double D) override;
   bool skip(int64_t a, int64_t b, int64_t c, double D) const override;
 
-  bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 
-  bool skip(int64_t, int64_t, int64_t, int64_t, double) override;
   bool skip(int64_t, int64_t, int64_t, int64_t, double) const override;
 
   /*! \brief returns an estimate of shape norms for the given basis vector, in

@@ -23,7 +23,7 @@ class GammaPointMP2 : public RMP2<Tile, Policy> {
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
-  ~GammaPointMP2() { }
+  ~GammaPointMP2() {}
 
   void obsolete() override {
     e_mp2_ = 0.0;

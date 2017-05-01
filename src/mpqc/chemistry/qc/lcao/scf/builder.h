@@ -17,17 +17,17 @@ namespace scf {
 template <typename Tile, typename Policy>
 class FockBuilder {
  public:
-	using array_type = TA::DistArray<Tile, Policy>;
-	virtual ~FockBuilder() {}
+  using array_type = TA::DistArray<Tile, Policy>;
+  virtual ~FockBuilder() {}
 
   /// @brief computes the 2-e part of the Fock matrix
   /// @param D the (1-particle) density matrix
   /// @param C the occupied orbital AO coefficient matrix
   /// @param target_precision the target precision
   /// @return the 2-electron contribution to the Fock matrix.
-	virtual array_type operator()(
-			array_type const &D, array_type const &C,
-			double target_precision = std::numeric_limits<double>::epsilon()) = 0;
+  virtual array_type operator()(
+      array_type const &D, array_type const &C,
+      double target_precision = std::numeric_limits<double>::epsilon()) = 0;
 
   virtual void print_iter(std::string const &) = 0;
 
@@ -38,15 +38,15 @@ class FockBuilder {
 template <typename Tile, typename Policy>
 class PeriodicFockBuilder {
  public:
-	using array_type = TA::DistArray<Tile, Policy>;
-	virtual ~PeriodicFockBuilder() {}
+  using array_type = TA::DistArray<Tile, Policy>;
+  virtual ~PeriodicFockBuilder() {}
 
-	virtual array_type operator()(
-			array_type const &D,
-			double target_precision = std::numeric_limits<double>::epsilon()) = 0;
+  virtual array_type operator()(
+      array_type const &D,
+      double target_precision = std::numeric_limits<double>::epsilon()) = 0;
 
-	virtual void register_fock(const array_type &,
-														 FormulaRegistry<array_type> &) = 0;
+  virtual void register_fock(const array_type &,
+                             FormulaRegistry<array_type> &) = 0;
 };
 
 }  // namespace scf

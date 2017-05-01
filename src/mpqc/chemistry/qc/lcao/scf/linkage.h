@@ -6,8 +6,8 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/lcao/wfn/linkage.h"
-#include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/mpqc_config.h"
+#include "mpqc/util/keyval/forcelink.h"
 
 namespace mpqc {
 namespace lcao {
@@ -46,7 +46,7 @@ mpqc::detail::ForceLink<DFzRHF<TA::TensorD, TA::SparsePolicy>> fl6;
 #endif
 }
 
-} // namespace lcao
-} // namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_LINKAGE_H_

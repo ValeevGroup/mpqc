@@ -746,8 +746,6 @@ class PeriodicFourCenterFockBuilder
       }
     }
 
-    //    const auto me = this->get_world().rank();
-    //    assert(me == dist_pmap_D_->rank());
     // accumulate the local contributions
     {
       PeriodicFourCenterFockBuilder_::accumulate_local_task(F0R, tile0, tileR);

@@ -172,8 +172,6 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  private:
   array_type compute_J(const array_type &D, double target_precision) {
     auto &world = ao_factory_.world();
-    // feed density matrix to Factory
-    ao_factory_.set_density(D);
 
     mpqc::time_point t0, t1;
     auto t0_j_builder = mpqc::fenced_now(world);

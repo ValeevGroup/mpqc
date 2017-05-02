@@ -79,8 +79,9 @@ class PeriodicTwoCenterBuilder
     target_precision_ = target_precision;
 
     // compute significant shell pair list
-    //    ExEnv::out0() << "Computing shell pair list...\n" << std::endl;
-    //    sig_shellpair_list_ = parallel_compute_shellpair_list(basis0, basisR);
+    sig_shellpair_list_ = parallel_compute_shellpair_list(basis0, basisR);
+    basis0_shell_offset_map_ = compute_shell_offset(basis0);
+    basisR_shell_offset_map_ = compute_shell_offset(basisR);
 
     // # of tiles per basis
     auto ntiles0 = basis0_->nclusters();
@@ -189,6 +190,8 @@ class PeriodicTwoCenterBuilder
   mutable double target_precision_ = 0.0;
   mutable std::vector<Engine> engines_;
   mutable shellpair_list_t sig_shellpair_list_;
+  mutable std::unordered_map<size_t, size_t> basis0_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisR_shell_offset_map_;
 
   void init() {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -279,13 +282,13 @@ class PeriodicTwoCenterBuilder
       // number of shells in each cluster
       const auto nshells0 = cluster0.size();
       const auto nshellsR = clusterR.size();
+      const auto sh0_offset = basis0_shell_offset_map_[tile0];
+      const auto shR_offset = basisR_shell_offset_map_[tileR];
+      const auto shR_max = shR_offset + nshellsR;
 
       auto engine = engines_[RJ]->local();
       engine.set_precision(engine_precision);
       const auto &computed_shell_sets = engine.results();
-
-      // make non-negligible shell pair list
-      auto sig_shellpair_list = compute_shellpair_list(cluster0, clusterR);
 
       // compute offset list of cluster1 and cluster3
       auto offset_list = compute_func_offset_list(clusterR, rngR.first);
@@ -302,8 +305,12 @@ class PeriodicTwoCenterBuilder
       for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
         const auto &shell0 = cluster0[sh0];
         const auto nf0 = shell0.size();
+        const auto sh0_in_basis = sh0 + sh0_offset;
 
-        for (const auto &shR : sig_shellpair_list[sh0]) {
+        for (const auto &shR_in_basis : sig_shellpair_list_[sh0_in_basis]) {
+          if (shR_in_basis < shR_offset || shR_in_basis >= shR_max)
+            continue;
+          const auto shR = shR_in_basis - shR_offset;
           std::tie(cfR_offset, bfR_offset) = offset_list[shR];
 
           const auto &shellR = clusterR[shR];
@@ -399,8 +406,7 @@ class PeriodicTwoCenterBuilder
 
       };
 
-      // world.taskq.add(compute, s1);
-      compute(s1);
+       world.taskq.add(compute, s1);
     }
     world.gop.fence();
 
@@ -519,6 +525,29 @@ class PeriodicTwoCenterBuilder
 
     return result;
   }
+
+  /*!
+   * \brief This computes shell offsets for every cluster in a basis
+   * \param basis
+   * \return a list of <key, mapped value> pairs with
+   * key: cluster index
+   * mapped value: index of first shell in a cluster
+   */
+  std::unordered_map<size_t, size_t> compute_shell_offset(const Basis &basis) const {
+    std::unordered_map<size_t, size_t> result;
+
+    auto shell_offset = 0;
+    const auto &cluster_shells = basis.cluster_shells();
+    const auto nclusters = cluster_shells.size();
+    for (auto c = 0; c != nclusters; ++c) {
+      const auto nshells = cluster_shells[c].size();
+      result.insert(std::make_pair(c, shell_offset));
+      shell_offset += nshells;
+    }
+
+    return result;
+  }
+
 };
 
 }  // namespace scf

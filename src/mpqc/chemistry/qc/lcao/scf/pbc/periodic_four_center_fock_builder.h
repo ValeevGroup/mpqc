@@ -133,6 +133,7 @@ class PeriodicFourCenterFockBuilder
     // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
     // # of tiles per basis
@@ -171,7 +172,7 @@ class PeriodicFourCenterFockBuilder
                                    : shblk_norm_D.find({tile2, tile3});
 
             for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile0123) {
-              if (pmap->is_local(tile0123))
+              if (tile0123 % nproc == me)
                 WorldObject_::task(
                     me, &PeriodicFourCenterFockBuilder_::compute_task_abcd,
                     D_RJRD, norm_D_RJRD, RJ,

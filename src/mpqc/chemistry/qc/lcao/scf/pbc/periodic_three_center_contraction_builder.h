@@ -100,6 +100,7 @@ class PeriodicThreeCenterContractionBuilder
     // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
     // make trange and pmap for the result
@@ -134,7 +135,7 @@ class PeriodicThreeCenterContractionBuilder
                                : shblk_norm_D.find({tile0, tileR});
 
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
-            if (pmap->is_local(tile012))
+            if (tile012 % nproc == me)
               WorldObject_::task(
                   me,
                   &PeriodicThreeCenterContractionBuilder_::compute_task_Xmn_mn,
@@ -223,6 +224,7 @@ class PeriodicThreeCenterContractionBuilder
     // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
     // make trange and pmap for the result
@@ -254,7 +256,7 @@ class PeriodicThreeCenterContractionBuilder
       for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
         for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
-            if (pmap->is_local(tile012))
+            if (tile012 % nproc == me)
               WorldObject_::task(
                   me,
                   &PeriodicThreeCenterContractionBuilder_::compute_task_Xmn_X,

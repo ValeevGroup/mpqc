@@ -75,6 +75,7 @@ class PeriodicTwoCenterBuilder
     // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
     // compute significant shell pair list
@@ -92,7 +93,7 @@ class PeriodicTwoCenterBuilder
     for (auto tile0 = 0ul, tile01 = 0ul; tile0 != ntiles0; ++tile0) {
       for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {
         for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile01) {
-          if (pmap->is_local(tile01))
+          if (tile01 % nproc == me)
             WorldObject_::task(me, &PeriodicTwoCenterBuilder_::compute_task_ab,
                                RJ, std::array<size_t, 2>{{tile0, tileR}});
         }

@@ -16,6 +16,12 @@ class PeriodicTwoCenterBuilder
   using PeriodicTwoCenterBuilder_ = PeriodicTwoCenterBuilder<Tile, Policy>;
   using Engine = ::mpqc::lcao::gaussian::ShrPool<libint2::Engine>;
   using Basis = ::mpqc::lcao::gaussian::Basis;
+  using BasisVector = std::vector<Basis>;
+  using Shell = typename ::mpqc::lcao::gaussian::Shell;
+  using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
+  using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
+  using func_offset_list =
+      std::unordered_map<size_t, std::tuple<size_t, size_t>>;
   using OperType = ::mpqc::Operator::Type;
 
   PeriodicTwoCenterBuilder(madness::World &world,
@@ -70,6 +76,10 @@ class PeriodicTwoCenterBuilder
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
     target_precision_ = target_precision;
+
+    // compute significant shell pair list
+    //    ExEnv::out0() << "Computing shell pair list...\n" << std::endl;
+    //    sig_shellpair_list_ = parallel_compute_shellpair_list(basis0, basisR);
 
     // # of tiles per basis
     auto ntiles0 = basis0_->nclusters();
@@ -177,6 +187,7 @@ class PeriodicTwoCenterBuilder
   mutable std::shared_ptr<TA::Pmap> result_pmap_;
   mutable double target_precision_ = 0.0;
   mutable std::vector<Engine> engines_;
+  mutable shellpair_list_t sig_shellpair_list_;
 
   void init() {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -264,9 +275,19 @@ class PeriodicTwoCenterBuilder
       const auto &cluster0 = basis0->cluster_shells()[tile0];
       const auto &clusterR = basisR->cluster_shells()[tileR];
 
+      // number of shells in each cluster
+      const auto nshells0 = cluster0.size();
+      const auto nshellsR = clusterR.size();
+
       auto engine = engines_[RJ]->local();
       engine.set_precision(engine_precision);
       const auto &computed_shell_sets = engine.results();
+
+      // make non-negligible shell pair list
+      auto sig_shellpair_list = compute_shellpair_list(cluster0, clusterR);
+
+      // compute offset list of cluster1 and cluster3
+      auto offset_list = compute_func_offset_list(clusterR, rngR.first);
 
       // this is the index of the first basis functions for each shell *in
       // this shell cluster*
@@ -275,13 +296,16 @@ class PeriodicTwoCenterBuilder
       // basis set*
       auto bf0_offset = rng0.first;
 
+      size_t cfR_offset, bfR_offset;
       // loop over all shell sets
-      for (const auto &shell0 : cluster0) {
+      for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+        const auto &shell0 = cluster0[sh0];
         const auto nf0 = shell0.size();
 
-        auto cfR_offset = 0;
-        auto bfR_offset = rngR.first;
-        for (const auto &shellR : clusterR) {
+        for (const auto &shR : sig_shellpair_list[sh0]) {
+          std::tie(cfR_offset, bfR_offset) = offset_list[shR];
+
+          const auto &shellR = clusterR[shR];
           const auto nfR = shellR.size();
 
           // TODO add screening for 2-center ints
@@ -300,9 +324,6 @@ class PeriodicTwoCenterBuilder
               }
             }
           }
-
-          cfR_offset += nfR;
-          bfR_offset += nfR;
         }
 
         cf0_offset += nf0;
@@ -315,6 +336,187 @@ class PeriodicTwoCenterBuilder
       auto tile0R = tile0 * ntilesR + tileR;
       PeriodicTwoCenterBuilder_::accumulate_local_task(result_tile, tile0R);
     }
+  }
+
+  /*!
+   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+   * form a non-negligible pair if they share a center or the Frobenius norm of
+   * their overlap isgreater than threshold
+   * \param basis1 a basis
+   * \param basis2 a basis
+   * \param threshold
+   *
+   * \return a list of pairs with
+   * key: shell index
+   * mapped value: a vector of shell indices
+   */
+  shellpair_list_t parallel_compute_shellpair_list(
+      const Basis &basis1, const Basis &basis2,
+      double threshold = 1e-12) const {
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    // initialize engine
+    auto engine_pool = make_engine_pool(
+        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+        libint2::BraKet::x_x);
+
+    auto &world = this->get_world();
+
+    shellpair_list_t result;
+    const auto bs1_equiv_bs2 = false;
+
+    const auto &shv1 = basis1.flattened_shells();
+    const auto &shv2 = basis2.flattened_shells();
+    const auto nsh1 = shv1.size();
+    const auto nsh2 = shv2.size();
+
+    for (auto s1 = 0, s12 = 0; s1 != nsh1; ++s1) {
+      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      auto n1 = shv1[s1].size();
+
+      auto compute = [&](int s1) {
+
+        const auto engine_precision = target_precision_;
+        auto engine = engine_pool->local();
+        engine.set_precision(engine_precision);
+        const auto &buf = engine.results();
+
+        auto s2_max = bs1_equiv_bs2 ? s1 : nsh2 - 1;
+        for (auto s2 = 0l; s2 <= s2_max; ++s2, ++s12) {
+          auto on_same_center = (shv1[s1].O == shv2[s2].O);
+          bool significant = on_same_center;
+          if (!on_same_center) {
+            auto n2 = shv2[s2].size();
+            engine.compute1(shv1[s1], shv2[s2]);
+            Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+            auto norm = buf_mat.norm();
+            significant = (norm >= threshold);
+          }
+
+          if (significant) result[s1].emplace_back(s2);
+        }
+
+      };
+
+      // world.taskq.add(compute, s1);
+      compute(s1);
+    }
+    world.gop.fence();
+
+    // resort shell list in increasing order
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      auto &list = result[s1];
+      std::sort(list.begin(), list.end());
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+   * form a non-negligible pair if they share a center or the Frobenius norm of
+   * their overlap isgreater than threshold
+   * \param shv1 a cluster (a.k.a. std::vector<Shell>)
+   * \param shv2 a cluster (a.k.a. std::vector<Shell>)
+   * \param threshold
+   *
+   * \return a list of pairs with
+   * key: shell index
+   * mapped value: a vector of shell indices
+   */
+  shellpair_list_t compute_shellpair_list(
+      const ShellVec &shv1,
+      const ShellVec &_shv2 = std::vector<Shell>({Shell()}),
+      double threshold = 1e-12) const {
+    const ShellVec &shv2 =
+        ((_shv2.size() == 1 && _shv2[0] == Shell()) ? shv1 : _shv2);
+    const auto nsh1 = shv1.size();
+    const auto nsh2 = shv2.size();
+    const auto shv1_equiv_shv2 = (&shv1 == &shv2);
+
+    // determine max # of primitives in a shell cluster
+    auto max_nprim = [](const ShellVec &shv) {
+      size_t n = 0;
+      for (auto shell : shv) n = std::max(shell.nprim(), n);
+      return n;
+    };
+    const auto max_nprim_1 = max_nprim(shv1);
+    const auto max_nprim_2 = max_nprim(shv2);
+
+    // determine max angular momentum of a shell cluster
+    auto max_l = [](const ShellVec &shv) {
+      int l = 0;
+      for (auto shell : shv)
+        for (auto c : shell.contr) l = std::max(c.l, l);
+      return l;
+    };
+    const auto max_l_1 = max_l(shv1);
+    const auto max_l_2 = max_l(shv2);
+
+    // initialize libint2 engine
+    auto engine = libint2::Engine(libint2::Operator::overlap,
+                                  std::max(max_nprim_1, max_nprim_2),
+                                  std::max(max_l_1, max_l_2), 0);
+    const auto &buf = engine.results();
+    shellpair_list_t result;
+
+    // compute non-negligible shell-pair list
+    for (auto s1 = 0l, s12 = 0l; s1 != nsh1; ++s1) {
+      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      auto n1 = shv1[s1].size();
+
+      auto s2_max = shv1_equiv_shv2 ? s1 : nsh2 - 1;
+      for (auto s2 = 0l; s2 <= s2_max; ++s2, ++s12) {
+        auto on_same_center = (shv1[s1].O == shv2[s2].O);
+        bool significant = on_same_center;
+        if (!on_same_center) {
+          auto n2 = shv2[s2].size();
+          engine.compute(shv1[s1], shv2[s2]);
+          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+          auto norm = buf_mat.norm();
+          significant = (norm >= threshold);
+        }
+
+        if (significant) result[s1].emplace_back(s2);
+      }
+    }
+
+    // resort shell list in increasing order
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      auto &list = result[s1];
+      std::sort(list.begin(), list.end());
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes basis function offsets for every shell in a cluster
+   * \param cluster a cluster (a.k.a. std::vector<Shell>)
+   * \param bf_first basis function index of the first function in this \c
+   * cluster
+   *
+   * \return a list of <key, mapped value> pairs with
+   * key: shell index
+   * mapped value: {cluster function offset, basis function offset} tuple
+   */
+  func_offset_list compute_func_offset_list(const ShellVec &cluster,
+                                            const size_t bf_first) const {
+    func_offset_list result;
+
+    auto cf_offset = 0;
+    auto bf_offset = bf_first;
+
+    const auto nshell = cluster.size();
+    for (auto s = 0; s != nshell; ++s) {
+      const auto &shell = cluster[s];
+      const auto nf = shell.size();
+      result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
+      bf_offset += nf;
+      cf_offset += nf;
+    }
+
+    return result;
   }
 };
 

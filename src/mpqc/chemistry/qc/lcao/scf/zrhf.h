@@ -104,6 +104,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   array_type S_;
   array_type D_;
   bool print_detail_;
+  int64_t print_max_item_;
   std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
 
  private:
@@ -206,18 +207,18 @@ class DFzRHF : public zRHF<Tile, Policy> {
 };
 
 /*!
- * \breif four-center zRHF class uses shell-level&screening 4-center Fock builder
+ * \breif four-center zRHF class uses shell-level&screening 4-center Fock
+ * builder
  */
 template <typename Tile, typename Policy>
 class FourCenterzRHF : public zRHF<Tile, Policy> {
-public:
-	FourCenterzRHF(const KeyVal &kv);
+ public:
+  FourCenterzRHF(const KeyVal& kv);
 
-	~FourCenterzRHF() {}
+  ~FourCenterzRHF() {}
 
-private:
-	void init_fock_builder() override;
-
+ private:
+  void init_fock_builder() override;
 };
 
 #if TA_DEFAULT_POLICY == 0

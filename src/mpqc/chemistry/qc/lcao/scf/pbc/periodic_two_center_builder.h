@@ -19,13 +19,12 @@ class PeriodicTwoCenterBuilder
   using OperType = ::mpqc::Operator::Type;
 
   PeriodicTwoCenterBuilder(madness::World &world,
-                           std::shared_ptr<const Basis> basis, OperType &oper,
+                           std::shared_ptr<const Basis> basis,
                            std::shared_ptr<const UnitCell> unitcell,
                            Vector3d &dcell, Vector3i &R_max, Vector3i &RJ_max,
                            int64_t R_size, int64_t RJ_size)
       : WorldObject_(world),
         basis0_(basis),
-        oper_(oper),
         unitcell_(unitcell),
         dcell_(dcell),
         R_max_(R_max),
@@ -36,14 +35,37 @@ class PeriodicTwoCenterBuilder
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
-    // initialize compound bases and engines
+    // initialize compound bases
     init();
   }
 
   ~PeriodicTwoCenterBuilder() { engines_.resize(0); }
 
-  array_type eval(
-      double target_precision = std::numeric_limits<double>::epsilon()) {
+  array_type eval(OperType oper, double target_precision =
+                                     std::numeric_limits<double>::epsilon()) {
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::detail::shift_mol_origin;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
+
+    // initialize engines
+    const auto basis0 = *basis0_;
+    const auto basisR = *basisR_;
+    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+      if (oper == OperType::Nuclear) {
+        auto shifted_mol = shift_mol_origin(*unitcell_, vec_RJ);
+        engines_.emplace_back(make_engine_pool(
+            to_libint2_operator(oper),
+            utility::make_array_of_refs(basis0, basisR), libint2::BraKet::x_x,
+            to_libint2_operator_params(oper, *shifted_mol)));
+      } else {
+        throw ProgrammingError("Operator type not supported", __FILE__,
+                               __LINE__);
+      }
+    }
+
     // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
@@ -146,50 +168,24 @@ class PeriodicTwoCenterBuilder
   const Vector3i RJ_max_;
   const int64_t R_size_;
   const int64_t RJ_size_;
-  const OperType oper_;
 
   // mutated by compute_ functions
   mutable std::shared_ptr<Basis> basisR_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> local_result_tiles_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> global_result_tiles_;
-  mutable TA::TiledRange arg_trange_;
   mutable TA::TiledRange result_trange_;
   mutable std::shared_ptr<TA::Pmap> result_pmap_;
-  mutable std::shared_ptr<TA::Pmap> arg_pmap_repl_;
   mutable double target_precision_ = 0.0;
   mutable std::vector<Engine> engines_;
-  mutable array_type shblk_norm_D_;
 
   void init() {
-    using ::mpqc::lcao::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::shift_mol_origin;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
-    using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
-
     // make compound basis set for ket
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
     basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
 
     const auto basis0 = *basis0_;
     const auto basisR = *basisR_;
-
-    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-
-      // initialize engines
-      if (oper_ == OperType::Nuclear) {
-        auto shifted_mol = shift_mol_origin(*unitcell_, vec_RJ);
-        engines_.emplace_back(make_engine_pool(
-            to_libint2_operator(oper_),
-            utility::make_array_of_refs(basis0, basisR), libint2::BraKet::x_x,
-            to_libint2_operator_params(oper_, *shifted_mol)));
-      } else {
-        throw ProgrammingError("Operator type not supported", __FILE__,
-                               __LINE__);
-      }
-    }
 
     auto &world = this->get_world();
     // make trange and pmap for the result
@@ -239,8 +235,8 @@ class PeriodicTwoCenterBuilder
   }
 
   void compute_task_ab(size_t RJ, std::array<size_t, 2> tile_idx) {
-    const auto tile0 = tile_idx[1];
-    const auto tileR = tile_idx[2];
+    const auto tile0 = tile_idx[0];
+    const auto tileR = tile_idx[1];
 
     // 1-d tile ranges
     const auto &tr0 = result_trange_.dim(0);

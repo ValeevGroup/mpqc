@@ -28,7 +28,7 @@ libint2::Engine make_engine(const libint2::Operator &oper,
   // assign default params and braket, if needed
   if (braket == libint2::BraKet::invalid)
     braket = libint2::default_braket(oper);
-  if (oper_params.empty()) oper_params = libint2::default_params(oper);
+  if (!oper_params.has_value()) oper_params = libint2::default_params(oper);
 
   int max_am = 0;
   size_t max_nprim = 0;
@@ -73,7 +73,7 @@ inline ShrPool<libint2::Engine> make_engine_pool(
     braket = libint2::default_braket(oper);
   }
   // assign default params, if needed
-  if (oper_params.empty()) {
+  if (!oper_params.has_value()) {
     oper_params = libint2::default_params(oper);
   }
 

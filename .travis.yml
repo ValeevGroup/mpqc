@@ -25,6 +25,10 @@ matrix:
       env: GCC_VERSION=5 BUILD_TYPE=Debug
     - compiler: clang
       env: GCC_VERSION=5 BUILD_TYPE=Release
+  allow_failures:
+# this results in an ICE when compiling zrhf.cpp
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
 addons:
   apt:
     sources:

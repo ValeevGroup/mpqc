@@ -162,8 +162,10 @@ class PeriodicFourCenterFockBuilder
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles0; ++tile0) {
       for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
+        const auto R = tile1 / ntiles0;
         for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
           for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
+            const auto RD = tile3 / ntiles2;
             auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
                               ? empty
                               : D_repl.find({tile2, tile3});
@@ -175,7 +177,7 @@ class PeriodicFourCenterFockBuilder
               if (tile0123 % nproc == me)
                 WorldObject_::task(
                     me, &PeriodicFourCenterFockBuilder_::compute_task_abcd,
-                    D_RJRD, norm_D_RJRD, RJ,
+                    D_RJRD, norm_D_RJRD, R, RJ, RD,
                     std::array<size_t, 4>{{tile0, tile1, tile2, tile3}});
             }
           }
@@ -467,8 +469,8 @@ class PeriodicFourCenterFockBuilder
     acc.release();  // END OF CRITICAL SECTION
   }
 
-  void compute_task_abcd(Tile D_RJRD, Tile norm_D_RJRD, int64_t RJ,
-                         std::array<size_t, 4> tile_idx) {
+  void compute_task_abcd(Tile D_RJRD, Tile norm_D_RJRD, int64_t R, int64_t RJ,
+                         int64_t RD, std::array<size_t, 4> tile_idx) {
     const auto tile0 = tile_idx[0];
     const auto tileR = tile_idx[1];
     const auto tileRJ = tile_idx[2];
@@ -651,6 +653,14 @@ class PeriodicFourCenterFockBuilder
         auto bf0_offset = rng0.first;
         size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
 
+        // pre-compute index of the first basis functions in screener bases
+        const auto screen_bf1_offset = nbf_ket_per_uc * RJ;
+        const auto R_stride = R * RJ_size_ * RD_size_;
+        const auto RJ_stride = RJ * RD_size_;
+        const auto old_uc_ord = R_stride + RJ_stride + RD;
+        const auto new_uc_ord = translation_map_[old_uc_ord];
+        const auto screen_bf3_offset = new_uc_ord * nbf_ket_per_uc;
+
         // loop over all shell sets
         for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
           const auto &shell0 = cluster0[sh0];
@@ -662,8 +672,7 @@ class PeriodicFourCenterFockBuilder
             const auto &shell1 = clusterRJ[sh1];
             const auto nf1 = shell1.size();
 
-            const auto bf1_in_screener = bf1_offset + nbf_ket_per_uc * RJ;
-            const auto RJ_stride = RJ * RD_size_;
+            const auto bf1_in_screener = bf1_offset + screen_bf1_offset;
 
             auto cf2_offset = 0;
             auto bf2_offset = rngR.first;
@@ -672,8 +681,6 @@ class PeriodicFourCenterFockBuilder
               const auto &shell2 = clusterR[sh2];
               const auto nf2 = shell2.size();
 
-              const auto R = bf2_offset / nbf_bra_per_uc;
-              const auto R_stride = R * RJ_size_ * RD_size_;
               const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
@@ -682,12 +689,8 @@ class PeriodicFourCenterFockBuilder
                 const auto &shell3 = clusterRD[sh3];
                 const auto nf3 = shell3.size();
 
-                const auto RD = bf3_offset / nbf_ket_per_uc;
-                const auto old_uc_ord = R_stride + RJ_stride + RD;
-                const auto new_uc_ord = translation_map_[old_uc_ord];
-                const auto bf3_in_uc = bf3_offset % nbf_ket_per_uc;
                 const auto bf3_in_screener =
-                    bf3_in_uc + new_uc_ord * nbf_ket_per_uc;
+                    bf3_offset % nbf_ket_per_uc + screen_bf3_offset;
 
                 const auto sh13 = sh1 * nshellsRD + sh3;
                 const auto Dnorm13 =

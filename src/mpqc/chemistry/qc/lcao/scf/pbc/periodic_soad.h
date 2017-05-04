@@ -70,7 +70,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
       world, normal_bs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
       RD_size, true, true, screen, screen_thresh);
   auto G = four_center_fock_builder->operator()(
-      D, std::numeric_limits<double>::epsilon());
+      D, std::numeric_limits<double>::epsilon(), true);
   F("mu, nu") += G("mu, nu");
 
   auto t1 = mpqc::now(world, true);

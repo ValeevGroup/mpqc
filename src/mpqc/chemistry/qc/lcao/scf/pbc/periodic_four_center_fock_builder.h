@@ -18,7 +18,7 @@ class ReferencePeriodicFourCenterFockBuilder
 
   ~ReferencePeriodicFourCenterFockBuilder() {}
 
-  array_type operator()(array_type const &D, double) override {
+  array_type operator()(array_type const &D, double, bool) override {
     // feed density matrix to Factory
     ao_factory_.set_density(D);
 
@@ -98,7 +98,8 @@ class PeriodicFourCenterFockBuilder
     if (compute_K_) k_engines_.resize(0);
   }
 
-  array_type operator()(array_type const &D, double target_precision) override {
+  array_type operator()(array_type const &D, double target_precision,
+                        bool is_density_diagonal) override {
     // validate preconditions
     auto trange = D.trange();
     auto elements_range = trange.elements_range();
@@ -113,7 +114,7 @@ class PeriodicFourCenterFockBuilder
       assert(tiles_range.extent(0) == ntilesRJ);
       assert(tiles_range.extent(1) == ntilesRD);
     }
-    return compute_JK_abcd(D, target_precision);
+    return compute_JK_abcd(D, target_precision, is_density_diagonal);
   }
 
   void register_fock(const array_type &fock,
@@ -121,8 +122,8 @@ class PeriodicFourCenterFockBuilder
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 
-  array_type compute_JK_abcd(array_type const &D,
-                             double target_precision) const {
+  array_type compute_JK_abcd(array_type const &D, double target_precision,
+                             bool is_density_diagonal) const {
     // Copy D and make it replicated.
     array_type D_repl;
     D_repl("i,j") = D("i,j");
@@ -135,6 +136,9 @@ class PeriodicFourCenterFockBuilder
     const auto me = compute_world.rank();
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
+    is_density_diagonal_ = is_density_diagonal;
+    if (is_density_diagonal)
+      assert(RD_size_ == 1 && "RD size is incorrect");
 
     // # of tiles per basis
     auto ntiles0 = bra_basis_->nclusters();
@@ -165,6 +169,8 @@ class PeriodicFourCenterFockBuilder
         const auto R = tile1 / ntiles0;
         for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
           for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
+            if (is_density_diagonal_ && tile3 != tile2)
+              continue;
             const auto RD = tile3 / ntiles2;
             auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
                               ? empty
@@ -271,8 +277,7 @@ class PeriodicFourCenterFockBuilder
           G.set(local_tile.first, local_tile.second);
       }
       // set the remaining local tiles to 0 (this should only be needed for
-      // dense
-      // policy)
+      // dense policy)
       G.fill_local(0.0, true);
       local_fock_tiles_.clear();
 
@@ -319,6 +324,7 @@ class PeriodicFourCenterFockBuilder
   mutable std::atomic<size_t> J_num_ints_computed_{0};
   mutable std::atomic<size_t> K_num_ints_computed_{0};
   mutable std::map<int64_t, int64_t> translation_map_;
+  mutable bool is_density_diagonal_;
 
   void init() {
     using ::mpqc::lcao::detail::direct_vector;
@@ -565,6 +571,9 @@ class PeriodicFourCenterFockBuilder
               const auto nf2 = shell2.size();
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
+                if (is_density_diagonal_ && sh3 != sh2)
+                  continue;
+
                 std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
                 const auto &shell3 = clusterRD[sh3];
@@ -684,6 +693,9 @@ class PeriodicFourCenterFockBuilder
               const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
+                if (is_density_diagonal_ && sh3 != sh1)
+                  continue;
+
                 std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
                 const auto &shell3 = clusterRD[sh3];

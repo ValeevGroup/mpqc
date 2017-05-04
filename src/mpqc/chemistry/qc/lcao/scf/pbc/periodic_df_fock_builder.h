@@ -129,7 +129,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
   ~PeriodicDFFockBuilder() {}
 
-  array_type operator()(array_type const &D, double target_precision) override {
+  array_type operator()(array_type const &D, double target_precision, bool) override {
     array_type G;
 
     // the '-' sign is embeded in K builder
@@ -270,7 +270,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
   }
 
   array_type compute_K(const array_type &D, double target_precision) {
-    return k_builder_->operator()(D, target_precision);
+    return k_builder_->operator()(D, target_precision, false);
   }
 };
 

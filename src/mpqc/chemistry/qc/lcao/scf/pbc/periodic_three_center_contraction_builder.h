@@ -113,11 +113,6 @@ class PeriodicThreeCenterContractionBuilder
     auto ntilesR = basisR_->nclusters();
     auto ntiles_aux = aux_basis_->nclusters();
 
-    const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles0 * ntilesR * ntiles_aux * RJ_size_);
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
-                                                                ntile_tasks);
-
     // make shell block norm of D
     auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basisR_, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
@@ -133,7 +128,8 @@ class PeriodicThreeCenterContractionBuilder
           auto norm_D_0R = (shblk_norm_D.is_zero({tile0, tileR}))
                                ? empty
                                : shblk_norm_D.find({tile0, tileR});
-
+          if (D_0R.get().data() == nullptr || norm_D_0R.get().data() == nullptr)
+            continue;
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
             if (tile012 % nproc == me)
               WorldObject_::task(
@@ -243,16 +239,13 @@ class PeriodicThreeCenterContractionBuilder
     auto ntilesR = basisR_->nclusters();
     auto ntiles_aux = aux_basis_->nclusters();
 
-    const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles0 * ntilesR * ntiles_aux * RJ_size_);
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
-                                                                ntile_tasks);
-
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile_aux = 0ul, tile012 = 0ul; tile_aux != ntiles_aux;
          ++tile_aux) {
       auto X_aux =
           (X_repl.is_zero({tile_aux})) ? empty : X_repl.find({tile_aux});
+      if (X_aux.get().data() == nullptr) continue;
+
       for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
         for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
@@ -461,13 +454,9 @@ class PeriodicThreeCenterContractionBuilder
     // 1-d tile ranges
     const auto &tr0 = arg_trange_.dim(0);
     const auto &tr1 = arg_trange_.dim(1);
-    const auto ntiles0 = tr0.tile_extent();
-    const auto ntiles1 = tr1.tile_extent();
     const auto &rng_aux = trange1_aux_.tile(tile_aux);
     const auto &rng0 = tr0.tile(tile0);
     const auto &rngR = tr1.tile(tileR);
-    const auto rng_aux_size = rng_aux.second - rng_aux.first;
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rngR_size = rngR.second - rngR.first;
 
     // 2-d tile ranges describing the contribution blocks produced by this
@@ -479,6 +468,8 @@ class PeriodicThreeCenterContractionBuilder
     auto *result_ptr = result_tile.data();
     const auto *D_0R_ptr = D_0R.data();
     const auto *norm_D_0R_ptr = norm_D_0R.data();
+    assert(D_0R_ptr != nullptr);
+    assert(norm_D_0R_ptr != nullptr);
 
     // compute contributions to all result matrices
     {
@@ -541,8 +532,7 @@ class PeriodicThreeCenterContractionBuilder
 
             const auto sh0R =
                 sh0 * nshellsR + shR;  // index of {sh0, shR} in norm_D0R
-            const double Dnorm0R =
-                (norm_D_0R_ptr != nullptr) ? norm_D_0R_ptr[sh0R] : 0.0;
+            const double Dnorm0R = norm_D_0R_ptr[sh0R];
 
             if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset,
                             Dnorm0R))
@@ -564,8 +554,7 @@ class PeriodicThreeCenterContractionBuilder
 
                     const auto value = eri_aux_0R[f_aux_0R];
 
-                    result_ptr[cf_aux] +=
-                        (D_0R_ptr != nullptr) ? D_0R_ptr[cf0R] * value : 0.0;
+                    result_ptr[cf_aux] += D_0R_ptr[cf0R] * value;
                   }
                 }
               }
@@ -597,13 +586,10 @@ class PeriodicThreeCenterContractionBuilder
     // 1-d tile ranges
     const auto &tr0 = result_trange_.dim(0);
     const auto &tr1 = result_trange_.dim(1);
-    const auto ntiles0 = tr0.tile_extent();
     const auto ntilesR = tr1.tile_extent();
     const auto &rng_aux = trange1_aux_.tile(tile_aux);
     const auto &rng0 = tr0.tile(tile0);
     const auto &rngR = tr1.tile(tileR);
-    const auto rng_aux_size = rng_aux.second - rng_aux.first;
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rngR_size = rngR.second - rngR.first;
 
     // 2-d tile ranges describing the contribution blocks produced by this
@@ -614,6 +600,7 @@ class PeriodicThreeCenterContractionBuilder
     // grab ptrs to tile data to make addressing more efficient
     auto *result_ptr = result_tile.data();
     const auto *X_aux_ptr = X_aux.data();
+    assert(X_aux_ptr != nullptr);
 
     // TODO: check the sparsity of X. Will screening (X|mu) M_X be useful?
     {
@@ -633,7 +620,6 @@ class PeriodicThreeCenterContractionBuilder
       // number of shells in each cluster
       const auto nshellsRJ_aux = clusterRJ_aux.size();
       const auto nshells0 = cluster0.size();
-      const auto nshellsR = clusterR.size();
 
       auto &screen = *(p_screener_);
       auto engine = engines_[RJ]->local();
@@ -694,9 +680,7 @@ class PeriodicThreeCenterContractionBuilder
 
                     const auto value = eri_aux_0R[f_aux_0R];
 
-                    result_ptr[cf0R] += (X_aux_ptr != nullptr)
-                                            ? X_aux_ptr[cf_aux] * value
-                                            : 0.0;
+                    result_ptr[cf0R] += X_aux_ptr[cf_aux] * value;
                   }
                 }
               }

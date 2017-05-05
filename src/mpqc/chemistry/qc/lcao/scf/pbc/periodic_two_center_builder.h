@@ -85,10 +85,6 @@ class PeriodicTwoCenterBuilder
     // # of tiles per basis
     auto ntiles0 = basis0_->nclusters();
     auto ntilesR = basisR_->nclusters();
-    const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles0 * ntilesR * RJ_size_);
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
-                                                                ntile_tasks);
 
     for (auto tile0 = 0ul, tile01 = 0ul; tile0 != ntiles0; ++tile0) {
       for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {

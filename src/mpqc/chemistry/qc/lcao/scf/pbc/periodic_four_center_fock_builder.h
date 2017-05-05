@@ -137,19 +137,13 @@ class PeriodicFourCenterFockBuilder
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
     is_density_diagonal_ = is_density_diagonal;
-    if (is_density_diagonal)
-      assert(RD_size_ == 1 && "RD size is incorrect");
+    if (is_density_diagonal) assert(RD_size_ == 1 && "RD size is incorrect");
 
     // # of tiles per basis
     auto ntiles0 = bra_basis_->nclusters();
     auto ntiles1 = bra_basis_->nclusters() * R_size_;
     auto ntiles2 = ket_basis_->nclusters();
     auto ntiles3 = ket_basis_->nclusters() * RD_size_;
-
-    const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles0 * ntiles1 * ntiles2 * ntiles3 * RJ_size_);
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
-                                                                ntile_tasks);
 
     auto t0 = mpqc::fenced_now(compute_world);
 
@@ -169,8 +163,7 @@ class PeriodicFourCenterFockBuilder
         const auto R = tile1 / ntiles0;
         for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
           for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
-            if (is_density_diagonal_ && tile3 != tile2)
-              continue;
+            if (is_density_diagonal_ && tile3 != tile2) continue;
             const auto RD = tile3 / ntiles2;
             auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
                               ? empty
@@ -178,7 +171,9 @@ class PeriodicFourCenterFockBuilder
             auto norm_D_RJRD = (shblk_norm_D.is_zero({tile2, tile3}))
                                    ? empty
                                    : shblk_norm_D.find({tile2, tile3});
-
+            if (D_RJRD.get().data() == nullptr ||
+                norm_D_RJRD.get().data() == nullptr)
+              continue;
             for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile0123) {
               if (tile0123 % nproc == me)
                 WorldObject_::task(
@@ -487,9 +482,7 @@ class PeriodicFourCenterFockBuilder
     const auto &rngR = trange_fock_.dim(1).tile(tileR);
     const auto &rngRJ = trange_D_.dim(0).tile(tileRJ);
     const auto &rngRD = trange_D_.dim(1).tile(tileRD);
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rngR_size = rngR.second - rngR.first;
-    const auto rngRJ_size = rngRJ.second - rngRJ.first;
     const auto rngRD_size = rngRD.second - rngRD.first;
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this
@@ -502,6 +495,8 @@ class PeriodicFourCenterFockBuilder
     auto *F0R_ptr = F0R.data();
     const auto *D_RJRD_ptr = D_RJRD.data();
     const auto *norm_D_RJRD_ptr = norm_D_RJRD.data();
+    assert(D_RJRD_ptr != nullptr);
+    assert(norm_D_RJRD_ptr != nullptr);
 
     // compute Coulomb and/or Exchange contributions to all Fock matrices
     {
@@ -571,8 +566,7 @@ class PeriodicFourCenterFockBuilder
               const auto nf2 = shell2.size();
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
-                if (is_density_diagonal_ && sh3 != sh2)
-                  continue;
+                if (is_density_diagonal_ && sh3 != sh2) continue;
 
                 std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
@@ -581,8 +575,7 @@ class PeriodicFourCenterFockBuilder
 
                 const auto sh23 =
                     sh2 * nshellsRD + sh3;  // index of {sh2, sh3} in norm_D23
-                const auto Dnorm23 =
-                    (norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh23] : 0.0;
+                const auto Dnorm23 = norm_D_RJRD_ptr[sh23];
 
                 if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
                                 Dnorm23))
@@ -617,9 +610,7 @@ class PeriodicFourCenterFockBuilder
 
                           const auto value = eri_0123[f0123];
 
-                          F0R_ptr[cf01] += (D_RJRD_ptr != nullptr)
-                                               ? 2.0 * D_RJRD_ptr[cf23] * value
-                                               : 0.0;
+                          F0R_ptr[cf01] += 2.0 * D_RJRD_ptr[cf23] * value;
                         }
                       }
                     }
@@ -693,8 +684,7 @@ class PeriodicFourCenterFockBuilder
               const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
 
               for (const auto &sh3 : ket_shellpair_list[sh2]) {
-                if (is_density_diagonal_ && sh3 != sh1)
-                  continue;
+                if (is_density_diagonal_ && sh3 != sh1) continue;
 
                 std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
@@ -705,8 +695,7 @@ class PeriodicFourCenterFockBuilder
                     bf3_offset % nbf_ket_per_uc + screen_bf3_offset;
 
                 const auto sh13 = sh1 * nshellsRD + sh3;
-                const auto Dnorm13 =
-                    (norm_D_RJRD_ptr != nullptr) ? norm_D_RJRD_ptr[sh13] : 0.0;
+                const auto Dnorm13 = norm_D_RJRD_ptr[sh13];
 
                 if (screen.skip(bf0_offset, bf1_in_screener, bf2_in_screener,
                                 bf3_in_screener, Dnorm13))
@@ -741,9 +730,7 @@ class PeriodicFourCenterFockBuilder
 
                           const auto value = eri_0123[f0123];
 
-                          F0R_ptr[cf02] -= (D_RJRD_ptr != nullptr)
-                                               ? D_RJRD_ptr[cf13] * value
-                                               : 0.0;
+                          F0R_ptr[cf02] -= D_RJRD_ptr[cf13] * value;
                         }
                       }
                     }

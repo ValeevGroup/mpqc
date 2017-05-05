@@ -164,10 +164,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                          // density matrix
   array_type inv_;       // A inverse where A = V_perp + P_para
   array_type identity_;  // idensity matrix
-  std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
-                                         // integrals. vector size = RJ_size_
-  array_type CD_;                        // intermediate for C_Xμν D_μν
-  array_type IP_;                        // intermediate for inv_XY P_perp_YZ
+  array_type CD_;        // intermediate for C_Xμν D_μν
+  array_type IP_;        // intermediate for inv_XY P_perp_YZ
 
  private:
   array_type compute_J(const array_type &D, double target_precision) {
@@ -188,7 +186,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
       // intermediate for C_para_Xμν D_μν
       t0 = mpqc::fenced_now(world);
       array_type interm;
-      interm("X") = (1.0 / q_) * M_("mu, nu") * n_("X") * D("mu, nu");
+      double prefactor = M_("mu, nu") * D("mu, nu");
+      interm("X") = (prefactor / q_)  * n_("X");
       t1 = mpqc::fenced_now(world);
       t_w_para = mpqc::duration_in_s(t0, t1);
 

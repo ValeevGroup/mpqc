@@ -629,18 +629,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     typename LCAOFactory<Tile,Policy>::DirectTArray g_abcd_direct;
     TArray g_abcd;
 
-    auto abcd_time0 = mpqc::fenced_now(world);
     if(!reduced_abcd_memory_){
       g_abcd = this->lcao_factory().compute(L"<a b|G|c d>[df]");
     }
     else{
       g_abcd_direct = this->lcao_factory().compute_direct(L"<a b|G|c d>[df]");
-      TArray tmp;
-      tmp("a,b,c,d") = g_abcd_direct("a,b,c,d");
     }
-    auto abcd_time1 = mpqc::fenced_now(world);
-    auto abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
-    ExEnv::out0() << "G_ABCD Compute Time: " << abcd_time << "\n";
 
     TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
@@ -890,16 +884,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         // compute b intermediate
         // avoid store b_abcd
         TArray b_abij;
-        abcd_time0 = mpqc::fenced_now(world);
         if(!reduced_abcd_memory_){
           b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
         }
         else{
           b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_direct("a,b,c,d");
         }
-        abcd_time1 = mpqc::fenced_now(world);
-        abcd_time = mpqc::duration_in_s(abcd_time0, abcd_time1);
-        ExEnv::out0() << "G_ABCD*Tau_CDIJ Term Time: " << abcd_time << "\n";
 
         b_abij("a,b,i,j") -= g_iabc("k,a,d,c") * tau("c,d,i,j") * t1("b,k");
 

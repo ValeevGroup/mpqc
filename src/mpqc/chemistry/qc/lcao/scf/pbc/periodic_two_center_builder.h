@@ -6,6 +6,8 @@
 namespace mpqc {
 namespace scf {
 
+/// PeriodicTwoCenterBuilder computes 2-center integral in zRHF that takes
+/// advantage of parallelized summation over unit cells for coulomb interaction
 template <typename Tile, typename Policy>
 class PeriodicTwoCenterBuilder
     : public madness::WorldObject<PeriodicTwoCenterBuilder<Tile, Policy>> {
@@ -77,10 +79,6 @@ class PeriodicTwoCenterBuilder
     const auto me = compute_world.rank();
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
-
-    // compute significant shell pair list
-    //    ExEnv::out0() << "Computing shell pair list...\n" << std::endl;
-    //    sig_shellpair_list_ = parallel_compute_shellpair_list(basis0, basisR);
 
     // # of tiles per basis
     auto ntiles0 = basis0_->nclusters();
@@ -249,11 +247,9 @@ class PeriodicTwoCenterBuilder
     // 1-d tile ranges
     const auto &tr0 = result_trange_.dim(0);
     const auto &tr1 = result_trange_.dim(1);
-    const auto ntiles0 = tr0.tile_extent();
     const auto ntilesR = tr1.tile_extent();
     const auto &rng0 = tr0.tile(tile0);
     const auto &rngR = tr1.tile(tileR);
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rngR_size = rngR.second - rngR.first;
 
     // 2-d tile ranges describing the contribution blocks produced by this
@@ -274,7 +270,6 @@ class PeriodicTwoCenterBuilder
 
       // number of shells in each cluster
       const auto nshells0 = cluster0.size();
-      const auto nshellsR = clusterR.size();
 
       auto engine = engines_[RJ]->local();
       engine.set_precision(engine_precision);

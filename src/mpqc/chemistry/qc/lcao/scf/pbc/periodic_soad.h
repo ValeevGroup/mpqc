@@ -59,15 +59,15 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   auto screen = pao_factory.screen();
   auto screen_thresh = pao_factory.screen_threshold();
 
-  // get normal basis
-  auto normal_bs = pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  // get orbital basis
+  auto obs = pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
   // F = H
   auto F = H;
 
   // F += 2J - K
   auto four_center_fock_builder = std::make_unique<Builder>(
-      world, normal_bs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
+      world, obs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
       RD_size, true, true, screen, screen_thresh);
   auto G = four_center_fock_builder->operator()(
       D, std::numeric_limits<double>::epsilon(), true);

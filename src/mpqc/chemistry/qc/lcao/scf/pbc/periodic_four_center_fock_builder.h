@@ -7,6 +7,13 @@
 namespace mpqc {
 namespace scf {
 
+/// ReferencePeriodicFourCenterFockBuilder is a reference implemenation in zRHF
+/// that uses 4-center (stored or direct) integrals.
+
+/// @warning This is a very inefficient builder when used with direct integrals:
+/// the sparsity of density matrix is not considered and sum over unit cells for
+/// coulomb interaction is not parallelized. It is only useful for reference
+/// computation
 template <typename Tile, typename Policy, typename Factory>
 class ReferencePeriodicFourCenterFockBuilder
     : public PeriodicFockBuilder<Tile, Policy> {
@@ -40,6 +47,10 @@ class ReferencePeriodicFourCenterFockBuilder
   Factory &ao_factory_;
 };
 
+/// PeriodicFourCenterFockBuilder is an integral-direct implementation of
+/// PeriodicFockBuilder with periodic Gaussian AO basis that uses 4-center
+/// integrals. This builder takes advantage of shell-level screening and
+/// parallelized summation over unit cells for coulomb interaction
 template <typename Tile, typename Policy>
 class PeriodicFourCenterFockBuilder
     : public PeriodicFockBuilder<Tile, Policy>,
@@ -160,9 +171,9 @@ class PeriodicFourCenterFockBuilder
       const auto basisRJ = *(basisRJ_[ref_uc]);
       const auto basisRD = *(basisRD_[ref_uc]);
       engines_ = make_engine_pool(
-            oper_type,
-            utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
-            libint2::BraKet::xx_xx);
+          oper_type,
+          utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+          libint2::BraKet::xx_xx);
     }
 
     J_num_ints_computed_ = 0;

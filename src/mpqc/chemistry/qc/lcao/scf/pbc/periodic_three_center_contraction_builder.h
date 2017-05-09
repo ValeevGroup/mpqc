@@ -8,6 +8,10 @@
 namespace mpqc {
 namespace scf {
 
+/// PeriodicThreeCenterContractionBuilder is an integral-direct implementation
+/// of two types of contractions (X|μν) D_μν and (X|μν) X that appear in
+/// periodic RI-J method. This builder takes advantage of shell-level screening
+/// and parallelized summation over unit cells for coulomb interaction
 template <typename Tile, typename Policy>
 class PeriodicThreeCenterContractionBuilder
     : public madness::WorldObject<
@@ -59,6 +63,13 @@ class PeriodicThreeCenterContractionBuilder
 
   ~PeriodicThreeCenterContractionBuilder() {}
 
+  /*!
+   * \brief This computes either (X|μν) D_μν or (X|μν) X contraction.
+   * \tparam target_rank is 1 for (X|μν) D_μν and is 2 for (X|μν) X
+   * \param M is density matrix or X
+   * \param target_precision
+   * \return result array should have same rank as \tparam target_rank
+   */
   template <size_t target_rank>
   array_type contract_with(array_type const &M, double target_precision) {
     auto arg_trange = M.trange();
@@ -88,6 +99,12 @@ class PeriodicThreeCenterContractionBuilder
     }
   }
 
+  /*!
+   * \brief This is the implementation of (X|μν) D_μν contraction
+   * \param D density matrix
+   * \param target_precision
+   * \return
+   */
   array_type compute_contr_Xmn_mn(array_type const &D,
                                   double target_precision) const {
     // Copy D and make it replicated.
@@ -127,8 +144,8 @@ class PeriodicThreeCenterContractionBuilder
       const auto basis0 = *basis0_;
       const auto basisR = *basisR_;
       engines_ = make_engine_pool(
-            oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
-            libint2::BraKet::xs_xx);
+          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+          libint2::BraKet::xs_xx);
     }
 
     auto empty = TA::Future<Tile>(Tile());
@@ -226,6 +243,12 @@ class PeriodicThreeCenterContractionBuilder
     }
   }
 
+  /*!
+   * \brief This is the implementation of (X|μν) X contraction
+   * \param X is array X
+   * \param target_precision
+   * \return
+   */
   array_type compute_contr_Xmn_X(array_type const &X,
                                  double target_precision) const {
     // copy X and make it replicated
@@ -257,8 +280,8 @@ class PeriodicThreeCenterContractionBuilder
       auto ref_uc = (RJ_size_ - 1) / 2;
       const auto aux_basis_RJ = *(aux_basis_RJ_[ref_uc]);
       engines_ = make_engine_pool(
-            oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
-            libint2::BraKet::xs_xx);
+          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+          libint2::BraKet::xs_xx);
     }
 
     // # of tiles per basis
@@ -642,7 +665,6 @@ class PeriodicThreeCenterContractionBuilder
       // number of shells in each cluster
       const auto nshellsRJ_aux = clusterRJ_aux.size();
       const auto nshells0 = cluster0.size();
-
 
       // make non-negligible shell pair list
       auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);

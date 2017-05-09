@@ -1439,82 +1439,73 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   // using physical notation <ab|ij>
 
   /// <ij|ab>
-  const TArray get_ijab() {
+  virtual const TArray get_ijab() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i j|G|a b>" + postfix);
   }
 
-  /// <ij|ab>
-  virtual const TArray get_ijab() {
-    if (df_) {
-      return this->lcao_factory().compute(L"<i j|G|a b>[df]");
-    } else {
-      return this->lcao_factory().compute(L"<i j|G|a b>");
-    }
-  }
-
   /// <ij|kl>
-  const TArray get_ijkl() {
+  virtual const TArray get_ijkl() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i j|G|k l>" + postfix);
   }
 
   /// <ab|cd>
-  const TArray get_abcd() {
+  virtual const TArray get_abcd() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a b|G|c d>" + postfix);
   }
 
   /// <ia|bc>
-  const TArray get_iabc() {
+  virtual const TArray get_iabc() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i a|G|b c>" + postfix);
   }
 
   /// <ai|bc>
-  const TArray get_aibc() {
+  virtual const TArray get_aibc() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a i|G|b c>" + postfix);
   }
 
   /// <ij|ak>
-  const TArray get_ijak() {
+  virtual const TArray get_ijak() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i j|G|a k>" + postfix);
   }
 
   /// <ia|jb>
-  const TArray get_iajb() {
+  virtual const TArray get_iajb() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i a|G|j b>" + postfix);
   }
 
   /// <ij|ka>
-  const TArray get_ijka() {
+  virtual const TArray get_ijka() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i j|G|k a>" + postfix);
   }
 
   /// <a|f|i>
-  const TArray get_fock_ai() {
+  virtual const TArray get_fock_ai() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a|F|i>" + postfix);
   }
 
   /// <i|f|j>
-  const TArray get_fock_ij() {
+  virtual const TArray get_fock_ij() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i|F|j>" + postfix);
   }
 
   /// <a|f|b>
-  const TArray get_fock_ab() {
+  virtual const TArray get_fock_ab() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a|F|b>" + postfix);
   }
 
   /// <p|f|q>
-  const TArray get_fock_pq() {
+  virtual const TArray get_fock_pq() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<p|F|q>" + postfix);
   }

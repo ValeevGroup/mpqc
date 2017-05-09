@@ -43,7 +43,8 @@ class PeriodicFockBuilder {
 
   virtual array_type operator()(
       array_type const &D,
-      double target_precision = std::numeric_limits<double>::epsilon()) = 0;
+      double target_precision = std::numeric_limits<double>::epsilon(),
+      bool is_density_diagonal = false) = 0;
 
   virtual void register_fock(const array_type &,
                              FormulaRegistry<array_type> &) = 0;

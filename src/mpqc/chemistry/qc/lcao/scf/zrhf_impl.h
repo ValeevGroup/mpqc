@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
 
 namespace mpqc {
 namespace lcao {
@@ -25,6 +26,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   maxiter_ = kv.value<int64_t>("max_iter", 30);
   bool soad_guess = kv.value<bool>("soad_guess", true);
   print_detail_ = kv.value<bool>("print_detail", false);
+  print_max_item_ = kv.value<int64_t>("print_max_item", 100);
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
 
   auto& ao_factory = this->ao_factory();
@@ -34,10 +36,8 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 
   auto init_start = mpqc::fenced_now(world);
 
-  if (world.rank() == 0) {
-    std::cout << ao_factory << std::endl;
-    std::cout << unitcell << std::endl;
-  }
+  ExEnv::out0() << ao_factory << std::endl;
+  ExEnv::out0() << unitcell << std::endl;
 
   // the unit cell must be electrically neutral
   const auto charge = 0;
@@ -64,9 +64,27 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
                 << nk_.transpose() << "]" << std::endl;
 
   T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
-  V_ = ao_factory.compute(L"<κ|V|λ>");  // Nuclear-attraction
-  S_ = ao_factory.compute(L"<κ|λ>");    // Overlap in real space
-  Sk_ = transform_real2recip(S_);       // Overlap in reciprocal space
+
+  // Nuclear-attraction
+  {
+    ExEnv::out0()
+        << "\nComputing Two Center Integral for Periodic System: < κ |V| λ >"
+        << std::endl;
+    auto t0 = mpqc::fenced_now(world);
+    using Builder = scf::PeriodicTwoCenterBuilder<Tile, Policy>;
+    auto basis =
+        this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+    auto two_center_builder = std::make_unique<Builder>(
+        world, basis, std::make_shared<const UnitCell>(unitcell), dcell_,
+        R_max_, RJ_max_, R_size_, RJ_size_);
+    V_ = two_center_builder->eval(Operator::Type::Nuclear);
+    auto t1 = mpqc::fenced_now(world);
+    auto dur = mpqc::duration_in_s(t0, t1);
+    ExEnv::out0() << " Time: " << dur << " s" << std::endl;
+  }
+
+  S_ = ao_factory.compute(L"<κ|λ>");  // Overlap in real space
+  Sk_ = transform_real2recip(S_);     // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -81,7 +99,8 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   // transform Fock from real to reciprocal space
   Fk_ = transform_real2recip(F_);
   // compute orthogonalizer matrix
-  X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
+  X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_,
+                                           print_max_item_);
   // compute guess density
   D_ = compute_density();
 
@@ -89,6 +108,8 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
+  ExEnv::out0() << "Periodic RHF Init Time: " << init_duration_ << " s"
+                << std::endl;
 }
 
 template <typename Tile, typename Policy>
@@ -204,7 +225,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_
               << std::endl;
 
-    if (print_detail_) {
+    if (print_detail_ && k_size_ < print_max_item_) {
       Eigen::IOFormat fmt(5);
       std::cout << "\n k | orbital energies" << std::endl;
       for (auto k = 0; k < k_size_; ++k) {
@@ -388,9 +409,8 @@ double zRHF<Tile, Policy>::compute_energy() {
 
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::init_fock_builder() {
-  using Builder =
-      scf::PeriodicFourCenterFockBuilder<Tile, Policy,
-                                         zRHF<Tile, Policy>::factory_type>;
+  using Builder = scf::ReferencePeriodicFourCenterFockBuilder<
+      Tile, Policy, zRHF<Tile, Policy>::factory_type>;
   this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
@@ -413,6 +433,36 @@ void DFzRHF<Tile, Policy>::init_fock_builder() {
       scf::PeriodicDFFockBuilder<Tile, Policy,
                                  DFzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
+/**
+ *  FourCenterzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
+  auto& factory = this->ao_factory();
+  auto& world = factory.world();
+  auto screen = factory.screen();
+  auto screen_threshold = factory.screen_threshold();
+  auto basis =
+      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  auto dcell = factory.unitcell().dcell();
+  auto R_max = factory.R_max();
+  auto RJ_max = factory.RJ_max();
+  auto RD_max = factory.RD_max();
+  auto R_size = factory.R_size();
+  auto RJ_size = factory.RJ_size();
+  auto RD_size = factory.RD_size();
+
+  using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(
+      world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
+      RD_size, true, true, screen, screen_threshold);
 }
 
 }  // namespace lcao

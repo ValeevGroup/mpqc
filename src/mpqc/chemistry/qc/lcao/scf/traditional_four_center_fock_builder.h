@@ -240,24 +240,20 @@ class FourCenterFockBuilder
                     ? empty
                     : shblk_norm_D.find({tile1, tile3});
 
+            // clang-format off
             // Using lambda as a task argument fails
-            // because madness cannot find type trait (constness) of lambda.
+            // because madness cannot find type trait (constness) of
+            // lambda.
             // To be fixed ...
-            //						auto task_func = [&,
-            //this](){
-            //							this->compute_task(D01, D23, D02, D03, D12,
-            //D13,
-            //													 std::array<size_t, 4>{{tile0, tile1,
-            //tile2, tile3}},
-            //													 std::array<Tile, 6>{{norm_D01,
-            //norm_D23, norm_D02, norm_D03,
-            //																								norm_D12,
-            //norm_D13}});
-            //						};
-            //						if
-            //(pmap->is_local(tile0123))
-            //							WorldObject_::task(me,
-            //task_func);
+//            auto task_func = [&, this]() {
+//              this->compute_task(
+//                  D01, D23, D02, D03, D12, D13,
+//                  std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
+//                  std::array<Tile, 6>{{norm_D01, norm_D23, norm_D02, norm_D03,
+//                                       norm_D12, norm_D13}});
+//            };
+//            if (pmap->is_local(tile0123)) WorldObject_::task(me, task_func);
+            // clang-format on
 
             if (pmap->is_local(tile0123))
               WorldObject_::task(
@@ -804,7 +800,6 @@ class FourCenterFockBuilder
       }
       s0_first += s0_size;
     }
-
     return shblk_norm;
   }
 

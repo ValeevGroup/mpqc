@@ -136,6 +136,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return f_pq_diagonal_;
   }
 
+  void set_orbital_energy(const Eigen::VectorXd &orbital_energy) {
+    f_pq_diagonal_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  }
+
  public:
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
@@ -168,6 +172,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   void set_t2(const TArray &t2) { T2_ = t2; }
 
   bool print_detail() const { return print_detail_; }
+
+  void set_target_precision(double precision) {
+      target_precision_ = precision;
+  }
 
   const typename AOFactory::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
@@ -244,7 +252,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
   }
 
- private:
+ protected:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -611,6 +619,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return E1;
   }
 
+ private:
   double compute_ccsd_df(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
@@ -1433,6 +1442,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   const TArray get_ijab() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i j|G|a b>" + postfix);
+  }
+
+  /// <ij|ab>
+  virtual const TArray get_ijab() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<i j|G|a b>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<i j|G|a b>");
+    }
   }
 
   /// <ij|kl>

@@ -9,9 +9,9 @@ namespace lcao {
 template <typename Tile, typename Policy>
 class PeriodicLCAOFactory;
 
-
 template <typename Tile, typename Policy>
-using PeriodicLCAOFactoryBase = Factory<TA::DistArray<Tile,Policy>, TA::DistArray<Tile,Policy>>;
+using PeriodicLCAOFactoryBase =
+    Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>;
 
 namespace detail {
 /*!
@@ -38,7 +38,7 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
+class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactoryType = gaussian::PeriodicAOFactory<Tile, Policy>;
@@ -48,9 +48,9 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
    * \param kv the KeyVal object
    */
   PeriodicLCAOFactory(const KeyVal &kv)
-      : PeriodicLCAOFactoryBase<Tile,Policy>(kv),
+      : PeriodicLCAOFactoryBase<Tile, Policy>(kv),
         pao_factory_(
-            *gaussian::construct_periodic_ao_factory<Tile, Policy>(kv)) {
+            *gaussian::construct_periodic_ao_factory<TA::TensorD, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -89,8 +89,8 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
    */
   TArray compute(const Formula &formula) override;
 
-  using PeriodicLCAOFactoryBase<Tile,Policy>::compute;
-  using PeriodicLCAOFactoryBase<Tile,Policy>::compute_direct;
+  using PeriodicLCAOFactoryBase<Tile, Policy>::compute;
+  using PeriodicLCAOFactoryBase<Tile, Policy>::compute_direct;
 
   /// return reference to PeriodicAOFactory object
   AOFactoryType &pao_factory() const { return pao_factory_; }
@@ -107,9 +107,8 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile,Policy> {
   /// compute integrals that has four dimensions
   TArray compute4(const Formula &formula_string);
 
-  /// find the corresponding AO formula, if index is already AO, it will be
-  /// ignored
-  Formula mo_to_ao(const Formula &formula);
+  /// find the correct range of summation for σ in <μ0 νR|ρR_j σ(R_j+R)>
+  std::vector<int64_t> restricted_latt_range(int64_t R, int64_t RJ);
 
   AOFactoryType &pao_factory_;
   std::shared_ptr<UnitCell> unitcell_;
@@ -169,7 +168,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   TArray result;
 
   // get AO formula
-  auto ao_formula = mo_to_ao(formula);
+  auto ao_formula = detail::lcao_to_ao(formula, this->orbital_registry());
 
   // get AO bases
   auto bra_index = ao_formula.bra_indices()[0];
@@ -418,7 +417,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   TArray result;
 
   // get AO formula
-  auto ao_formula = mo_to_ao(formula);
+  auto ao_formula = detail::lcao_to_ao(formula, this->orbital_registry());
 
   // get AO bases
   auto bra_index0 = ao_formula.bra_indices()[0];
@@ -458,7 +457,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     auto vec_R = direct_vector(R, R_max_, dcell_);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      for (auto RD = 0; RD < RD_size_; ++RD) {
+
+      auto selected_RD_list = restricted_latt_range(R, RJ);
+      for (auto RD_idx = 0; RD_idx < selected_RD_list.size(); ++RD_idx) {
+        auto RD = selected_RD_list[RD_idx];
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 
         auto t_pao0 = mpqc::now(world, this->accurate_time_);
@@ -550,48 +552,23 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
-  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
+std::vector<int64_t> PeriodicLCAOFactory<Tile, Policy>::restricted_latt_range(
+    int64_t R, int64_t RJ) {
+  std::vector<int64_t> result;
+  using ::mpqc::lcao::detail::direct_vector;
 
-  int increment = 0;
-  auto left_index = formula.bra_indices();
-  for (const auto &index : left_index) {
-    // find the correspoding ao index
-    if (index.is_lcao()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_left_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_left_index.push_back(index);
-    }
+  auto vec_max = direct_vector(RJ_size_ - 1, RJ_max_, dcell_);
+  auto distance_max = vec_max.norm();
+  auto vec_R = direct_vector(R, R_max_, dcell_);
+  auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+
+  for (int64_t R_select = 0; R_select < RD_size_; ++R_select) {
+    auto vec_R_select = direct_vector(R_select, RD_max_, dcell_);
+    auto distance = (vec_RJ + vec_R_select - vec_R).norm();
+    if (distance <= distance_max) result.push_back(R_select);
   }
 
-  auto right_index = formula.ket_indices();
-  for (const auto &index : right_index) {
-    // find the correspoding ao index
-    if (index.is_lcao()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_right_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_right_index.push_back(index);
-    }
-  }
-
-  // set formula with ao index
-  auto ao_formula = formula;
-  ao_formula.set_bra_indices(ao_left_index);
-  ao_formula.set_ket_indices(ao_right_index);
-
-  return ao_formula;
+  return result;
 }
 
 #if TA_DEFAULT_POLICY == 1

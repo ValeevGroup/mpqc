@@ -14,10 +14,10 @@ namespace utility {
  * \return
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
+MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
                    int64_t k) {
   double S_condition_num;
-  Matrixz X;
+  MatrixZ X;
   auto &world = S.world();
   auto S_eig = array_ops::array_to_eigen(S);
 
@@ -27,7 +27,7 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
   // if symmetric, X = U.s_sqrtinv.Ut
   // if canonical, X = U.s_sqrtinv
   // where s and U are eigenvalues and eigenvectors of S
-  Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(S_eig);
+  Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
   //  integrals::detail::sort_eigen(s, U);
@@ -102,9 +102,9 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
  * \return conditioned orthogonalizer
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-std::vector<Matrixz> conditioned_orthogonalizer(
+std::vector<MatrixZ> conditioned_orthogonalizer(
     const TArray overlap, int64_t k_size, double max_condition_num = 1.0e8) {
-  std::vector<Matrixz> X;
+  std::vector<MatrixZ> X;
   X.resize(k_size);
 
   auto tr0 = overlap.trange().data()[0];

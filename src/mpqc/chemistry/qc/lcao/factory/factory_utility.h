@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include <libint2/engine.h>
+
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
@@ -18,9 +20,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals.h"
 #include "mpqc/util/meta/make_array.h"
-
 #include "mpqc/util/misc/pool.h"
-#include <libint2/engine.h>
 
 namespace mpqc {
 namespace lcao {
@@ -119,6 +119,43 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula);
  */
 // clang-format on
 OrbitalIndex get_jk_orbital_space(const Operator &operation);
+
+/*!
+ * \brief This takes real or imaginary part from a complex array
+ * \tparam Policy can be TA::SparsePolicy or TA::DensePolicy
+ * \tparam Is_real true if user requests real part, false if imaginary
+ * \param a TensorZ array
+ * \return a TensorD array
+ */
+template <typename Policy, bool is_real = true>
+TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
+    const TA::DistArray<TA::TensorZ, Policy> &complex_array) {
+  TA::DistArray<TA::TensorD, Policy> result_array;
+
+  auto take_part_from_tile = [=](TA::TensorD &result_tile,
+                                 const TA::TensorZ &arg_tile) {
+    const auto &range = arg_tile.range();
+    const auto volume = range.volume();
+    result_tile = TA::TensorD(range);
+
+    float norm = 0.0;
+    for (auto ord = 0; ord < volume; ++ord) {
+      const auto z = arg_tile[ord];
+      auto result_el = (is_real) ? z.real() : z.imag();
+      norm += result_el * result_el;
+      result_tile[ord] = result_el;
+    }
+
+    return std::sqrt(norm);
+  };
+
+  result_array =
+      TA::foreach<TA::TensorD, TA::TensorZ>(complex_array, take_part_from_tile);
+
+  complex_array.world().gop.fence();
+
+  return result_array;
+}
 
 }  // namespace detail
 

@@ -57,7 +57,7 @@ class PeriodicThreeCenterContractionBuilder
     init();
   }
 
-  ~PeriodicThreeCenterContractionBuilder() { engines_.resize(0); }
+  ~PeriodicThreeCenterContractionBuilder() {}
 
   template <size_t target_rank>
   array_type contract_with(array_type const &M, double target_precision) {
@@ -117,6 +117,20 @@ class PeriodicThreeCenterContractionBuilder
     auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basisR_, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
+    // initialize engines
+    {
+      using ::mpqc::lcao::gaussian::make_engine_pool;
+      auto oper_type = libint2::Operator::coulomb;
+      assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
+      auto ref_uc = (RJ_size_ - 1) / 2;
+      const auto aux_basis_RJ = *(aux_basis_RJ_[ref_uc]);
+      const auto basis0 = *basis0_;
+      const auto basisR = *basisR_;
+      engines_ = make_engine_pool(
+            oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+            libint2::BraKet::xs_xx);
+    }
+
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile_aux = 0ul, tile012 = 0ul; tile_aux != ntiles_aux;
          ++tile_aux) {
@@ -143,6 +157,9 @@ class PeriodicThreeCenterContractionBuilder
     }
 
     compute_world.gop.fence();
+
+    // clean up
+    engines_.reset();
 
     // collect local tiles
     if (arg_pmap_repl_->is_replicated() && compute_world.size() > 1) {
@@ -223,8 +240,8 @@ class PeriodicThreeCenterContractionBuilder
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
-    // make trange and pmap for the result
     {
+      // make trange and pmap for the result
       const auto basis0 = *basis0_;
       const auto basisR = *basisR_;
       auto result_bases = ::mpqc::lcao::gaussian::BasisVector{{basis0, basisR}};
@@ -232,6 +249,16 @@ class PeriodicThreeCenterContractionBuilder
           ::mpqc::lcao::gaussian::detail::create_trange(result_bases);
       result_pmap_ = Policy::default_pmap(
           compute_world, result_trange_.tiles_range().volume());
+
+      // initialize engines
+      using ::mpqc::lcao::gaussian::make_engine_pool;
+      auto oper_type = libint2::Operator::coulomb;
+      assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
+      auto ref_uc = (RJ_size_ - 1) / 2;
+      const auto aux_basis_RJ = *(aux_basis_RJ_[ref_uc]);
+      engines_ = make_engine_pool(
+            oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+            libint2::BraKet::xs_xx);
     }
 
     // # of tiles per basis
@@ -260,6 +287,9 @@ class PeriodicThreeCenterContractionBuilder
     }
 
     compute_world.gop.fence();
+
+    // clean up
+    engines_.reset();
 
     // collect local tiles
     if (arg_pmap_repl_->is_replicated() && compute_world.size() > 1) {
@@ -348,8 +378,6 @@ class PeriodicThreeCenterContractionBuilder
   mutable std::shared_ptr<lcao::Screener> p_screener_;
   mutable std::shared_ptr<Basis> basisR_;
   mutable std::vector<std::shared_ptr<Basis>> aux_basis_RJ_;
-  // mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
-  // mutable std::vector<std::shared_ptr<Basis>> basisRD_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
   mutable TA::TiledRange arg_trange_;
@@ -359,10 +387,8 @@ class PeriodicThreeCenterContractionBuilder
   mutable std::shared_ptr<TA::Pmap> dist_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> arg_pmap_repl_;
   mutable double target_precision_ = 0.0;
-  mutable std::vector<Engine> engines_;
+  mutable Engine engines_;
   mutable array_type shblk_norm_D_;
-  // mutable std::atomic<size_t> J_num_ints_computed_{0};
-  // mutable std::atomic<size_t> K_num_ints_computed_{0};
 
   void init() {
     trange1_aux_ = aux_basis_->create_trange1();
@@ -383,13 +409,6 @@ class PeriodicThreeCenterContractionBuilder
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       // make compound basis set for bra (aux)
       aux_basis_RJ_.emplace_back(shift_basis_origin(*aux_basis_, vec_RJ));
-
-      const auto aux_basis_RJ = *(aux_basis_RJ_.back());
-
-      // initialize engines
-      engines_.emplace_back(make_engine_pool(
-          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
-          libint2::BraKet::xs_xx));
     }
 
     auto &world = this->get_world();
@@ -473,7 +492,11 @@ class PeriodicThreeCenterContractionBuilder
 
     // compute contributions to all result matrices
     {
+      auto &screen = *(p_screener_);
+      auto engine = engines_->local();
       const auto engine_precision = target_precision_;
+      engine.set_precision(engine_precision);
+      const auto &computed_shell_sets = engine.results();
 
       const auto &basisRJ_aux = aux_basis_RJ_[RJ];
       const auto &basis0 = basis0_;
@@ -490,11 +513,6 @@ class PeriodicThreeCenterContractionBuilder
       const auto nshellsRJ_aux = clusterRJ_aux.size();
       const auto nshells0 = cluster0.size();
       const auto nshellsR = clusterR.size();
-
-      auto &screen = *(p_screener_);
-      auto engine = engines_[RJ]->local();
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
 
       // make non-negligible shell pair list
       auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);
@@ -604,7 +622,11 @@ class PeriodicThreeCenterContractionBuilder
 
     // TODO: check the sparsity of X. Will screening (X|mu) M_X be useful?
     {
+      auto &screen = *(p_screener_);
+      auto engine = engines_->local();
       const auto engine_precision = target_precision_;
+      engine.set_precision(engine_precision);
+      const auto &computed_shell_sets = engine.results();
 
       const auto &basisRJ_aux = aux_basis_RJ_[RJ];
       const auto &basis0 = basis0_;
@@ -621,10 +643,6 @@ class PeriodicThreeCenterContractionBuilder
       const auto nshellsRJ_aux = clusterRJ_aux.size();
       const auto nshells0 = cluster0.size();
 
-      auto &screen = *(p_screener_);
-      auto engine = engines_[RJ]->local();
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
 
       // make non-negligible shell pair list
       auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);

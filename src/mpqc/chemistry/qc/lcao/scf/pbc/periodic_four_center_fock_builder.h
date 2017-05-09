@@ -93,10 +93,7 @@ class PeriodicFourCenterFockBuilder
     init();
   }
 
-  ~PeriodicFourCenterFockBuilder() {
-    if (compute_J_) j_engines_.resize(0);
-    if (compute_K_) k_engines_.resize(0);
-  }
+  ~PeriodicFourCenterFockBuilder() {}
 
   array_type operator()(array_type const &D, double target_precision,
                         bool is_density_diagonal) override {
@@ -154,6 +151,20 @@ class PeriodicFourCenterFockBuilder
         compute_shellblock_norm(*ket_basis_, *(basisRD_[ref_uc]), D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
+    // initialize engines
+    {
+      using ::mpqc::lcao::gaussian::make_engine_pool;
+      auto oper_type = libint2::Operator::coulomb;
+      const auto basis0 = *bra_basis_;
+      const auto basisR = *basisR_;
+      const auto basisRJ = *(basisRJ_[ref_uc]);
+      const auto basisRD = *(basisRD_[ref_uc]);
+      engines_ = make_engine_pool(
+            oper_type,
+            utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+            libint2::BraKet::xx_xx);
+    }
+
     J_num_ints_computed_ = 0;
     K_num_ints_computed_ = 0;
 
@@ -187,6 +198,9 @@ class PeriodicFourCenterFockBuilder
     }
 
     compute_world.gop.fence();
+
+    // cleanup
+    engines_.reset();
 
     // print out # of ints computed per MPI process
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
@@ -314,8 +328,7 @@ class PeriodicFourCenterFockBuilder
   mutable std::shared_ptr<TA::Pmap> repl_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> dist_pmap_fock_;
   mutable double target_precision_ = 0.0;
-  mutable std::vector<Engine> j_engines_;
-  mutable std::vector<Engine> k_engines_;
+  mutable Engine engines_;
   mutable std::atomic<size_t> J_num_ints_computed_{0};
   mutable std::atomic<size_t> K_num_ints_computed_{0};
   mutable std::map<int64_t, int64_t> translation_map_;
@@ -341,23 +354,6 @@ class PeriodicFourCenterFockBuilder
       basisRJ_.emplace_back(shift_basis_origin(*ket_basis_, vec_RJ));
       basisRD_.emplace_back(
           shift_basis_origin(*ket_basis_, vec_RJ, RD_max_, dcell_));
-
-      const auto basisRJ = *(basisRJ_.back());
-      const auto basisRD = *(basisRD_.back());
-
-      // initialize engines
-      if (compute_J_) {
-        j_engines_.emplace_back(make_engine_pool(
-            oper_type,
-            utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
-            libint2::BraKet::xx_xx));
-      }
-      if (compute_K_) {
-        k_engines_.emplace_back(make_engine_pool(
-            oper_type,
-            utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
-            libint2::BraKet::xx_xx));
-      }
     }
 
     auto &world = this->get_world();
@@ -500,7 +496,10 @@ class PeriodicFourCenterFockBuilder
 
     // compute Coulomb and/or Exchange contributions to all Fock matrices
     {
+      auto engine = engines_->local();
       const auto engine_precision = target_precision_;
+      engine.set_precision(engine_precision);
+      const auto &computed_shell_sets = engine.results();
 
       const auto &basis0 = bra_basis_;
       const auto &basisR = basisR_;
@@ -525,9 +524,6 @@ class PeriodicFourCenterFockBuilder
       // compute Coulomb contributions to all Fock matrices
       if (compute_J_) {
         auto &screen = *(j_p_screener_);
-        auto engine = j_engines_[RJ]->local();
-        engine.set_precision(engine_precision);
-        const auto &computed_shell_sets = engine.results();
 
         // make non-negligible shell pair list
         shellpair_list_t bra_shellpair_list, ket_shellpair_list;
@@ -630,9 +626,6 @@ class PeriodicFourCenterFockBuilder
 
       if (compute_K_) {
         auto &screen = *(k_p_screener_);
-        auto engine = k_engines_[RJ]->local();
-        engine.set_precision(engine_precision);
-        const auto &computed_shell_sets = engine.results();
 
         // make non-negligible shell pair list
         shellpair_list_t bra_shellpair_list, ket_shellpair_list;

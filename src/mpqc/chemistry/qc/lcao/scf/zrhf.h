@@ -173,9 +173,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 template <typename Tile, typename Policy>
 class DFzRHF : public zRHF<Tile, Policy> {
  public:
-  using array_type = typename zRHF<Tile, Policy>::array_type;
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
-  using DirectTArray = typename factory_type::DirectTArray;
 
   DFzRHF(const KeyVal& kv);
 
@@ -184,30 +182,10 @@ class DFzRHF : public zRHF<Tile, Policy> {
  private:
   /// initializes necessary arrays for DFzRHF Fock builder
   void init_fock_builder() override;
-
- private:
-  array_type M_;         // charge matrix of product density <μ|ν>
-  array_type n_;         // normalized charge vector <Κ>
-  double q_;             // total charge of auxiliary basis functions
-  array_type P_para_;    // projection matrix that projects X onto auxiliary
-                         // charge vector
-  array_type P_perp_;    // projection matrix that projects X onto the subspace
-                         // orthogonal to auxiliary charge vector
-  array_type V_;         // 2-center 2-electron integrals
-  array_type V_perp_;    // part of 2-center 2-electron integrals that is
-                         // orthogonal to auxiliary charge vector
-  array_type G_;         // 3-center 2-electron direct integrals contracted with
-                         // density matrix
-  array_type inv_;       // A inverse where A = V_perp + P_para
-  array_type identity_;  // idensity matrix
-  std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
-                                         // integrals. vector size = RJ_size_
-  array_type CD_;                        // intermediate for C_Xμν D_μν
-  array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 };
 
 /*!
- * \breif four-center zRHF class uses shell-level&screening 4-center Fock
+ * \brief four-center zRHF class uses shell-level&screening 4-center Fock
  * builder
  */
 template <typename Tile, typename Policy>

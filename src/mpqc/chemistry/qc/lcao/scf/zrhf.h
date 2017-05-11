@@ -199,12 +199,29 @@ class FourCenterzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
 };
 
+/*!
+ * \brief RIJCADFKzRHF uses RI-J for coulomb and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class RIJCADFKzRHF : public zRHF<Tile, Policy> {
+public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+
+  RIJCADFKzRHF(const KeyVal& kv);
+
+  ~RIJCADFKzRHF() {}
+
+private:
+  void init_fock_builder() override;
+};
+
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
 extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

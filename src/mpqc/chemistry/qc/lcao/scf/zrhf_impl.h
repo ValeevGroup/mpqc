@@ -7,6 +7,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
 
@@ -464,6 +465,22 @@ void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
       world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
       RD_size, true, true, screen, screen_threshold);
 }
+
+/**
+ *  RIJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+RIJCADFKzRHF<Tile, Policy>::RIJCADFKzRHF(const KeyVal& kv)
+  : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicRIJCADFKFockBuilder<
+      Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
 
 }  // namespace lcao
 }  // namespace mpqc

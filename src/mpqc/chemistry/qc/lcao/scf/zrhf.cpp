@@ -16,4 +16,6 @@ MPQC_CLASS_EXPORT2("DF-zRHF",
 template class mpqc::lcao::FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("FourCenter-zRHF", mpqc::lcao::FourCenterzRHF<TA::TensorD, TA::SparsePolicy>);
 
+template class mpqc::lcao::RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("RIJ-CADFK-zRHF", mpqc::lcao::RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>);
 #endif

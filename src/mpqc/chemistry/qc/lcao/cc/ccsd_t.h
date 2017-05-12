@@ -1983,7 +1983,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
 if (t1.world().rank() == 0) {
   std::cout << "Laplace-transform-(T): " << std::endl;
-  std::cout << "number of quadrature points = " << n_laplace_quad_ << std::endl;
+  std::cout << "number of quadrature points Marjory = " << n_laplace_quad_ << std::endl;
 }
 
 triple_energy = -triple_energy / (3.0 * alpha);

@@ -7,6 +7,7 @@
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 
 namespace mpqc {
@@ -33,86 +34,49 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
 
   using TArray = typename FactoryType::TArray;
   using DirectTArray = typename FactoryType::DirectTArray;
-
-  // get necessary information for periodic AO integrals
-  auto RJ_size = pao_factory.RJ_size();
-  auto RJ_max = pao_factory.RJ_max();
-  auto dcell = unitcell.dcell();
-  auto screen = pao_factory.screen();
-  auto screen_thresh = pao_factory.screen_threshold();
-
-  // declare necessary variables for periodic AO integrals
-  auto g_J_vector = std::vector<DirectTArray>(RJ_size, DirectTArray());
-  auto g_K_vector = std::vector<DirectTArray>(RJ_size, DirectTArray());
-  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-  BasisVector bases;
-  auto p_screener = std::make_shared<Screener>(Screener{});
+  using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
 
   // soad density
   auto D_eig = soad_density_eig_matrix(unitcell);
 
   // get minimal basis
-  auto min_bs = parallel_make_basis(world, Basis::Factory("sto-3g"), unitcell);
+  auto min_bs = std::make_shared<const Basis>(
+      parallel_make_basis(world, Basis::Factory("sto-3g"), unitcell));
 
-  // transform soad density from Eigen to TA
-  auto min_bases = BasisVector{{min_bs, min_bs}};
-  auto min_trange = detail::create_trange(min_bases);
-  auto min_tr0 = min_trange.data()[0];
-  auto min_tr1 = min_trange.data()[1];
+  // transform soad density from Eigen to TA array
+  auto trange1 = min_bs->create_trange1();
   auto D =
-      array_ops::eigen_to_array<Tile, Policy>(world, D_eig, min_tr0, min_tr1);
+      array_ops::eigen_to_array<Tile, Policy>(world, D_eig, trange1, trange1);
 
-  // get normal basis
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
+  // get necessary information for PeriodicFourCenterFockBuilder ctor
+  auto dcell = unitcell.dcell();
   auto R_max = pao_factory.R_max();
-  auto normal_bs = *pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-  auto normal_bs0 = std::make_shared<Basis>(normal_bs);
-  auto normal_bs1 =
-      detail::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell);
+  auto RJ_max = pao_factory.RJ_max();
+  Vector3i RD_max = {0, 0, 0};
+  auto R_size = pao_factory.R_size();
+  auto RJ_size = pao_factory.RJ_size();
+  int64_t RD_size = 1;
+  auto screen = pao_factory.screen();
+  auto screen_thresh = pao_factory.screen_threshold();
+
+  // get orbital basis
+  auto obs = pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
   // F = H
   auto F = H;
 
-  // F += (2J - K)
-  for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-    using ::mpqc::lcao::detail::direct_vector;
-    auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-    auto min_bs0 = detail::shift_basis_origin(min_bs, vec_RJ);
-    auto min_bs1 = min_bs0;
-    // F += 2 J
-    DirectTArray &g_J = g_J_vector[RJ];
-    if (!g_J.array().is_initialized()) {
-      bases = BasisVector{{*normal_bs0, *normal_bs1, *min_bs0, *min_bs1}};
-      engine_pool = make_engine_pool(
-          libint2::Operator::coulomb,
-          utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener = detail::make_screener(world, engine_pool, bases, screen,
-                                         screen_thresh);
-
-      g_J = pao_factory.compute_direct_integrals(world, engine_pool, bases,
-                                                 p_screener);
-    }
-    F("mu, nu") += 2.0 * g_J("mu, nu, lambda, rho") * D("lambda, rho");
-    // F -= K
-    DirectTArray &g_K = g_K_vector[RJ];
-    if (!g_K.array().is_initialized()) {
-      bases = BasisVector{{*normal_bs0, *min_bs0, *normal_bs1, *min_bs1}};
-      engine_pool = make_engine_pool(
-          libint2::Operator::coulomb,
-          utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-      p_screener = detail::make_screener(world, engine_pool, bases, screen,
-                                         screen_thresh);
-
-      g_K = pao_factory.compute_direct_integrals(world, engine_pool, bases,
-                                                 p_screener);
-    }
-    F("mu, nu") -= g_K("mu, lambda, nu, rho") * D("lambda, rho");
-  }
+  // F += 2J - K
+  auto four_center_fock_builder = std::make_unique<Builder>(
+      world, obs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
+      RD_size, true, true, screen, screen_thresh);
+  auto G = four_center_fock_builder->operator()(
+      D, std::numeric_limits<double>::epsilon(), true);
+  F("mu, nu") += G("mu, nu");
 
   auto t1 = mpqc::now(world, true);
   double time = mpqc::duration_in_s(t0, t1);
 
-  ExEnv::out0() << " Time: " << time << " s" << std::endl;
+  ExEnv::out0() << "\nSOAD Time: " << time << " s" << std::endl;
 
   return F;
 }

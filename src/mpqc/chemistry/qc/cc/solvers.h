@@ -18,6 +18,10 @@ class Solver {
   virtual ~Solver() = default;
 
   /// Updates amplitudes \c t1 and \c t2 using the residuals \c r1 and \c r2 .
+  /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
+  ///          are congruent, but does not assume any particular structure.
+  ///          Derived classes \em may impose additional assumptions on the
+  ///          structure of the arguments.
   /// @param t1 the 1-body amplitude set (current values on input, updated
   /// values on output)
   /// @param t2 the 2-body amplitude set (current values on input, updated
@@ -56,6 +60,10 @@ class DIISSolver : public Solver<T1, T2> {
   virtual ~DIISSolver() = default;
 
   /// Update the amplitudes using update_only() and extrapolate using DIIS.
+  /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
+  ///          are congruent, but does not assume any particular structure.
+  ///          Derived classes \em may impose additional assumptions on the
+  ///          structure of the arguments.
   /// @param t1 the 1-body amplitude set (current values on input, updated
   /// values on output)
   /// @param t2 the 2-body amplitude set (current values on input, updated
@@ -77,6 +85,10 @@ class DIISSolver : public Solver<T1, T2> {
 
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
+  /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
+  ///          are congruent, but does not assume any particular structure.
+  ///          Derived classes \em may impose additional assumptions on the
+  ///          structure of the arguments.
   virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) {
     throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
                            __FILE__, __LINE__);

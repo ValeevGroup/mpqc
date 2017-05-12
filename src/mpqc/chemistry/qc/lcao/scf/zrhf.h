@@ -204,14 +204,14 @@ class FourCenterzRHF : public zRHF<Tile, Policy> {
  */
 template <typename Tile, typename Policy>
 class RIJCADFKzRHF : public zRHF<Tile, Policy> {
-public:
+ public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
   RIJCADFKzRHF(const KeyVal& kv);
 
   ~RIJCADFKzRHF() {}
 
-private:
+ private:
   void init_fock_builder() override;
 };
 

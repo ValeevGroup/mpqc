@@ -472,7 +472,7 @@ void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 RIJCADFKzRHF<Tile, Policy>::RIJCADFKzRHF(const KeyVal& kv)
-  : zRHF<Tile, Policy>(kv) {}
+    : zRHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
@@ -480,7 +480,6 @@ void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
       Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
-
 
 }  // namespace lcao
 }  // namespace mpqc

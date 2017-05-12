@@ -42,6 +42,7 @@ addons:
     - clang-3.8
     - cmake
     - cmake-data
+    - gdb
 before_install:
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
 - "./bin/build-libint-$TRAVIS_OS_NAME.sh"

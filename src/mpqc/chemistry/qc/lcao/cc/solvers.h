@@ -392,11 +392,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
               const T& F_osv_diag, const T& pnos, const T& osvs) override {
 
 
-          // t1("a,i") += detail::jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs)("a,i");
-          // t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
-          // t1.truncate();
-          // t2.truncate();
-
+          
     ////////// t1, t2, r1, and r2 are DistArray's, NOT individual tiles
     ////////// put this into lambdas that act on *tiles* of r1 and r2,
     ////////// use this lambda to compute a DistArray containing the delta_t's as follows:
@@ -421,7 +417,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
     // DIIS extrapolate in OSV/PNO basis
 //////////////////////////// cope DIISSolver::update here, minus the call to update_only (since that's what you had just done)
-    assert(false && "not yet implemented");
+    
+    t1("a,i") += detail::jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs)("a,i");
+    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
+    t1.truncate();
+    t2.truncate();
+
+
+
+    //assert(false && "not yet implemented");
 
 
 

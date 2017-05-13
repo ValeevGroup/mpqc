@@ -522,7 +522,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const std::vector<Eigen::MatrixXd>& pnos) {
     auto back2 = [pnos](Tile& result_tile, const Tile& arg_tile) {
 
-      const auto nocc_act = (pnos.size())/2;
+      const auto nocc_act = std::sqrt(pnos.size());
 
       result_tile = Tile(arg_tile.range());
 

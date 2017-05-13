@@ -12,159 +12,212 @@ namespace cc {
 
 namespace detail {
 
-template <typename Tile, typename Policy>         
+template <typename Tile, typename Policy,
+          typename EigenVectorX =
+              Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
-    const TA::DistArray<Tile, Policy>& r2_abij, const Eigen::MatrixXd& F_occ,
-    const std::vector<Eigen::MatrixXd>& F_pno_diag,
-    const std::vector<Eigen::MatrixXd>& pnos,
-    const int& nocc_act) {
-  auto update2 = [F_occ, F_pno_diag, pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
+    const TA::DistArray<Tile, Policy>& r2_abij, const EigenVectorX& ens_occ,
+    const EigenVectorX& ens_uocc) {
+  auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
-    // determine i and j indices
-    const auto i = result_tile.range().lobound()[1];
-    const auto j = result_tile.range().lobound()[3];
-
-    // Select appropriate matrix of PNOs
-    Eigen::MatrixXd pno_ij = pnos[i*nocc_act + j];
-
-    // Extent data of tile
-    const auto ext = result_tile.range().extent_data();
-
-    // Convert data in tile to Eigen Matrix
-    //const Eigen::MatrixXd r2 = TA::eigen_map(result_tile, ext[2]*ext[3], ext[0]*ext[1]);
-
-    // Convert data in tile to Eigen::Map and transform to PNO basis
-    const Eigen::MatrixXd r2_pno = pno_ij.transpose() * 
-          TA::eigen_map(result_tile, ext[0]*ext[1], ext[2]*ext[3]) * pno_ij;
-
-    // Select correct vector containing diagonal elements of Fock matrix in PNO basis
-    const Eigen::VectorXd ens_uocc = F_pno_diag[i*nocc_act + j];
-
-    // Determine number of PNOs
-    const auto npno = ens_uocc.rows();
-
-    // Select e_i and e_j
-    const auto e_i = F_occ(i, i);
-    const auto e_j = F_occ(j, j);
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto b0 = result_tile.range().lobound()[1];
+    const auto bn = result_tile.range().upbound()[1];
+    const auto i0 = result_tile.range().lobound()[2];
+    const auto in = result_tile.range().upbound()[2];
+    const auto j0 = result_tile.range().lobound()[3];
+    const auto jn = result_tile.range().upbound()[3];
 
     auto tile_idx = 0;
     typename Tile::scalar_type norm = 0.0;
-    for (auto a=0; a<npno; ++a) {
+    for (auto a = a0; a < an; ++a) {
       const auto e_a = ens_uocc[a];
-      for (auto b=0; b<npno; ++b, ++tile_idx) {
+      for (auto b = b0; b < bn; ++b) {
         const auto e_b = ens_uocc[b];
-        const auto e_iajb = e_i + e_j - e_a - e_b;
-        const auto old = arg_tile[tile_idx];
-        const auto result_abij = old / e_iajb;
-        const auto abs_result_abij = std::abs(result_abij);
-        norm += abs_result_abij * abs_result_abij;
-        result_tile[tile_idx] = result_abij;
+        for (auto i = i0; i < in; ++i) {
+          const auto e_i = ens_occ[i];
+          for (auto j = j0; j < jn; ++j, ++tile_idx) {
+            const auto e_j = ens_occ[j];
+            const auto e_iajb = e_i + e_j - e_a - e_b;
+            const auto old = arg_tile[tile_idx];
+            const auto result_abij = old / (e_iajb);
+            const auto abs_result_abij = std::abs(result_abij);
+            norm += abs_result_abij * abs_result_abij;
+            result_tile[tile_idx] = result_abij;
+          }
+        }
       }
     }
-
     return std::sqrt(norm);
   };
 
-  auto delta_t2_abij = TA::foreach (r2_abij, update2);
+  auto delta_t2_abij = TA::foreach (r2_abij, denom);
   delta_t2_abij.world().gop.fence();
   return delta_t2_abij;
 }
 
-
-    
-template <typename Tile, typename Policy>
+template <typename Tile, typename Policy,
+          typename EigenVectorX =
+              Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
-    const TA::DistArray<Tile, Policy>& r1_ai, const Eigen::MatrixXd& F_occ,
-    const Eigen::MatrixXd& F_osv_diag,
-    const std::vector<Eigen::MatrixXd>& osvs) {
-  auto update1 = [F_occ, F_osv_diag, osvs](Tile& result_tile, const Tile& arg_tile) {
+    const TA::DistArray<Tile, Policy>& r1_ai, const EigenVectorX& ens_occ,
+    const EigenVectorX& ens_uocc) {
+  auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
-    // determine i index
-    const auto i = result_tile.range().lobound()[1];
-
-    // Select appropriate matrix of OSVs
-    Eigen::MatrixXd osv_i = osvs[i];
-
-    // Extent data of tile
-    const auto ext = result_tile.range().extent_data();
-
-    // Convert data in tile to Eigen Matrix
-    //const Eigen::MatrixXd r1 = TA::eigen_map(result_tile, ext[1], ext[0]);
-
-    // Convert data in tile to Eigen::Map and transform to OSV basis
-    const Eigen::MatrixXd r1_osv = osv_i.transpose() * 
-          TA::eigen_map(result_tile, ext[1], ext[0]) * osv_i;
-
-    // Select correct vector containing diagonal elements of Fock matrix in OSV basis
-    const Eigen::VectorXd ens_uocc = F_osv_diag[i];
-
-    // Determine number of OSVs
-    const auto nosv = ens_uocc.rows();
-
-    // Select e_i
-    const auto e_i = F_occ(i,i);
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto i0 = result_tile.range().lobound()[1];
+    const auto in = result_tile.range().upbound()[1];
 
     auto tile_idx = 0;
     typename Tile::scalar_type norm = 0.0;
-    for (auto a=0; a<nosv; ++a) {
+    for (auto a = a0; a < an; ++a) {
       const auto e_a = ens_uocc[a];
-      const auto e_ia = e_i - e_a;
-      const auto old = arg_tile[tile_idx];
-      const auto result_ai = old / e_ia;
-      const auto abs_result_ai = std::abs(result_ai);
-      norm += abs_result_ai * abs_result_ai;
-      result_tile[tile_idx] = result_ai;
+      for (auto i = i0; i < in; ++i, ++tile_idx) {
+        const auto e_i = ens_occ[i];
+        const auto e_ia = e_i - e_a;
+        const auto old = arg_tile[tile_idx];
+        const auto result_ai = old / (e_ia);
+        const auto abs_result_ai = std::abs(result_ai);
+        norm += abs_result_ai * abs_result_ai;
+        result_tile[tile_idx] = result_ai;
+      }
     }
     return std::sqrt(norm);
   };
 
-  auto delta_t1_ai = TA::foreach (r1_ai, update1);
+  auto delta_t1_ai = TA::foreach (r1_ai, denom);
   delta_t1_ai.world().gop.fence();
   return delta_t1_ai;
 }
+
+// template <typename Tile, typename Policy>         
+// TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
+//     const TA::DistArray<Tile, Policy>& r2_abij, const Eigen::MatrixXd& F_occ,
+//     const std::vector<Eigen::MatrixXd>& F_pno_diag,
+//     const std::vector<Eigen::MatrixXd>& pnos,
+//     const int& nocc_act) {
+//   auto update2 = [F_occ, F_pno_diag, pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
+
+//     result_tile = Tile(arg_tile.range());
+
+//     // determine i and j indices
+//     const auto i = result_tile.range().lobound()[1];
+//     const auto j = result_tile.range().lobound()[3];
+
+//     // Select appropriate matrix of PNOs
+//     Eigen::MatrixXd pno_ij = pnos[i*nocc_act + j];
+
+//     // Extent data of tile
+//     const auto ext = result_tile.range().extent_data();
+
+//     // Convert data in tile to Eigen Matrix
+//     //const Eigen::MatrixXd r2 = TA::eigen_map(result_tile, ext[2]*ext[3], ext[0]*ext[1]);
+
+//     // Convert data in tile to Eigen::Map and transform to PNO basis
+//     const Eigen::MatrixXd r2_pno = pno_ij.transpose() * 
+//           TA::eigen_map(result_tile, ext[0]*ext[1], ext[2]*ext[3]) * pno_ij;
+
+//     // Select correct vector containing diagonal elements of Fock matrix in PNO basis
+//     const Eigen::VectorXd ens_uocc = F_pno_diag[i*nocc_act + j];
+
+//     // Determine number of PNOs
+//     const auto npno = ens_uocc.rows();
+
+//     // Select e_i and e_j
+//     const auto e_i = F_occ(i, i);
+//     const auto e_j = F_occ(j, j);
+
+//     auto tile_idx = 0;
+//     typename Tile::scalar_type norm = 0.0;
+//     for (auto a=0; a<npno; ++a) {
+//       const auto e_a = ens_uocc[a];
+//       for (auto b=0; b<npno; ++b, ++tile_idx) {
+//         const auto e_b = ens_uocc[b];
+//         const auto e_iajb = e_i + e_j - e_a - e_b;
+//         const auto old = arg_tile[tile_idx];
+//         const auto result_abij = old / e_iajb;
+//         const auto abs_result_abij = std::abs(result_abij);
+//         norm += abs_result_abij * abs_result_abij;
+//         result_tile[tile_idx] = result_abij;
+//       }
+//     }
+
+//     return std::sqrt(norm);
+//   };
+
+//   auto delta_t2_abij = TA::foreach (r2_abij, update2);
+//   delta_t2_abij.world().gop.fence();
+//   return delta_t2_abij;
+// }
+
+
+    
+// template <typename Tile, typename Policy>
+// TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
+//     const TA::DistArray<Tile, Policy>& r1_ai, const Eigen::MatrixXd& F_occ,
+//     const Eigen::MatrixXd& F_osv_diag,
+//     const std::vector<Eigen::MatrixXd>& osvs) {
+//   auto update1 = [F_occ, F_osv_diag, osvs](Tile& result_tile, const Tile& arg_tile) {
+
+//     result_tile = Tile(arg_tile.range());
+
+//     // determine i index
+//     const auto i = result_tile.range().lobound()[1];
+
+//     // Select appropriate matrix of OSVs
+//     Eigen::MatrixXd osv_i = osvs[i];
+
+//     // Extent data of tile
+//     const auto ext = result_tile.range().extent_data();
+
+//     // Convert data in tile to Eigen Matrix
+//     //const Eigen::MatrixXd r1 = TA::eigen_map(result_tile, ext[1], ext[0]);
+
+//     // Convert data in tile to Eigen::Map and transform to OSV basis
+//     const Eigen::MatrixXd r1_osv = osv_i.transpose() * 
+//           TA::eigen_map(result_tile, ext[1], ext[0]) * osv_i;
+
+//     // Select correct vector containing diagonal elements of Fock matrix in OSV basis
+//     const Eigen::VectorXd ens_uocc = F_osv_diag[i];
+
+//     // Determine number of OSVs
+//     const auto nosv = ens_uocc.rows();
+
+//     // Select e_i
+//     const auto e_i = F_occ(i,i);
+
+//     auto tile_idx = 0;
+//     typename Tile::scalar_type norm = 0.0;
+//     for (auto a=0; a<nosv; ++a) {
+//       const auto e_a = ens_uocc[a];
+//       const auto e_ia = e_i - e_a;
+//       const auto old = arg_tile[tile_idx];
+//       const auto result_ai = old / e_ia;
+//       const auto abs_result_ai = std::abs(result_ai);
+//       norm += abs_result_ai * abs_result_ai;
+//       result_tile[tile_idx] = result_ai;
+//     }
+//     return std::sqrt(norm);
+//   };
+
+//   auto delta_t1_ai = TA::foreach (r1_ai, update1);
+//   delta_t1_ai.world().gop.fence();
+//   return delta_t1_ai;
+// }
 
 } // namespace detail
 
 
 
 // // JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
-// template <typename T>
-// class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
-//  public:
-//   // clang-format off
-//   /**
-//    * @brief The KeyVal constructor.
-//    *
-//    * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver<T,T> .
-//    */
-//   // clang-format on
-
-//   JacobiDIISSolver(const KeyVal& kv,
-//                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
-//                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
-//       : ::mpqc::cc::DIISSolver<T, T>(kv) {
-//     std::swap(f_ii_, f_ii);
-//     std::swap(f_aa_, f_aa);
-//   }
-//   virtual ~JacobiDIISSolver() = default;
-
-//  private:
-//   Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
-//   Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
-
-//   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-//     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
-//     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
-//     t1.truncate();
-//     t2.truncate();
-//   }
-// };
-
-// JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
 template <typename T>
 class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
@@ -177,28 +230,61 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   // clang-format on
 
   JacobiDIISSolver(const KeyVal& kv,
-                   const T& F_occ, const T& F_pno_diag,
-                   const T& F_osv_diag, const T& pnos,
-                   const T& osvs)
-    : ::mpqc::cc::DIISSolver<T, T>(kv) {
-
+                   Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
+                   Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
+      : ::mpqc::cc::DIISSolver<T, T>(kv) {
+    std::swap(f_ii_, f_ii);
+    std::swap(f_aa_, f_aa);
   }
   virtual ~JacobiDIISSolver() = default;
 
  private:
-  // Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
-  // Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
+  Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
+  Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
 
-  void update_only(T& t1, T& t2, const T& r1, const T& r2,
-                    const T& F_occ, const T& F_pno_diag,
-                    const T& F_osv_diag, const T& pnos,
-                    const T& osvs) override{
-    t1("a,i") += detail::jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs)("a,i");
-    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
+  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+    t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
+    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
     t1.truncate();
     t2.truncate();
   }
 };
+
+// JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
+// template <typename T>
+// class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
+//  public:
+//   // clang-format off
+//   /**
+//    * @brief The KeyVal constructor.
+//    *
+//    * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver<T,T> .
+//    */
+//   // clang-format on
+
+//   JacobiDIISSolver(const KeyVal& kv,
+//                    const T& F_occ, const T& F_pno_diag,
+//                    const T& F_osv_diag, const T& pnos,
+//                    const T& osvs)
+//     : ::mpqc::cc::DIISSolver<T, T>(kv) {
+
+//   }
+//   virtual ~JacobiDIISSolver() = default;
+
+//  private:
+//   // Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
+//   // Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
+
+//   void update_only(T& t1, T& t2, const T& r1, const T& r2,
+//                     const T& F_occ, const T& F_pno_diag,
+//                     const T& F_osv_diag, const T& pnos,
+//                     const T& osvs) override{
+//     t1("a,i") += detail::jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs)("a,i");
+//     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
+//     t1.truncate();
+//     t2.truncate();
+//   }
+// };
 
 /// PNOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PNO
 /// space
@@ -391,6 +477,122 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
               const T& F_occ, const T& F_pno_diag,
               const T& F_osv_diag, const T& pnos, const T& osvs) override {
 
+    template <typename Tile, typename Policy>         
+    TA::DistArray<Tile, Policy> jacobi_update_t2(
+    const TA::DistArray<Tile, Policy>& r2_abij, const Eigen::MatrixXd& F_occ,
+    const std::vector<Eigen::MatrixXd>& F_pno_diag,
+    const std::vector<Eigen::MatrixXd>& pnos,
+    const int& nocc_act) {
+  auto update2 = [F_occ, F_pno_diag, pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // determine i and j indices
+    const auto i = result_tile.range().lobound()[1];
+    const auto j = result_tile.range().lobound()[3];
+
+    // Select appropriate matrix of PNOs
+    Eigen::MatrixXd pno_ij = pnos[i*nocc_act + j];
+
+    // Extent data of tile
+    const auto ext = result_tile.range().extent_data();
+
+    // Convert data in tile to Eigen Matrix
+    //const Eigen::MatrixXd r2 = TA::eigen_map(result_tile, ext[2]*ext[3], ext[0]*ext[1]);
+
+    // Convert data in tile to Eigen::Map and transform to PNO basis
+    const Eigen::MatrixXd r2_pno = pno_ij.transpose() * 
+          TA::eigen_map(result_tile, ext[0]*ext[1], ext[2]*ext[3]) * pno_ij;
+
+    // Select correct vector containing diagonal elements of Fock matrix in PNO basis
+    const Eigen::VectorXd ens_uocc = F_pno_diag[i*nocc_act + j];
+
+    // Determine number of PNOs
+    const auto npno = ens_uocc.rows();
+
+    // Select e_i and e_j
+    const auto e_i = F_occ(i, i);
+    const auto e_j = F_occ(j, j);
+
+    auto tile_idx = 0;
+    typename Tile::scalar_type norm = 0.0;
+    for (auto a=0; a<npno; ++a) {
+      const auto e_a = ens_uocc[a];
+      for (auto b=0; b<npno; ++b, ++tile_idx) {
+        const auto e_b = ens_uocc[b];
+        const auto e_iajb = e_i + e_j - e_a - e_b;
+        const auto old = arg_tile[tile_idx];
+        const auto result_abij = old / e_iajb;
+        const auto abs_result_abij = std::abs(result_abij);
+        norm += abs_result_abij * abs_result_abij;
+        result_tile[tile_idx] = result_abij;
+      }
+    }
+
+    return std::sqrt(norm);
+  };
+
+  auto delta_t2_abij = TA::foreach (r2_abij, update2);
+  delta_t2_abij.world().gop.fence();
+  return delta_t2_abij;
+}
+
+
+    
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> jacobi_update_t1(
+    const TA::DistArray<Tile, Policy>& r1_ai, const Eigen::MatrixXd& F_occ,
+    const Eigen::MatrixXd& F_osv_diag,
+    const std::vector<Eigen::MatrixXd>& osvs) {
+  auto update1 = [F_occ, F_osv_diag, osvs](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // determine i index
+    const auto i = result_tile.range().lobound()[1];
+
+    // Select appropriate matrix of OSVs
+    Eigen::MatrixXd osv_i = osvs[i];
+
+    // Extent data of tile
+    const auto ext = result_tile.range().extent_data();
+
+    // Convert data in tile to Eigen Matrix
+    //const Eigen::MatrixXd r1 = TA::eigen_map(result_tile, ext[1], ext[0]);
+
+    // Convert data in tile to Eigen::Map and transform to OSV basis
+    const Eigen::MatrixXd r1_osv = osv_i.transpose() * 
+          TA::eigen_map(result_tile, ext[1], ext[0]) * osv_i;
+
+    // Select correct vector containing diagonal elements of Fock matrix in OSV basis
+    const Eigen::VectorXd ens_uocc = F_osv_diag[i];
+
+    // Determine number of OSVs
+    const auto nosv = ens_uocc.rows();
+
+    // Select e_i
+    const auto e_i = F_occ(i,i);
+
+    auto tile_idx = 0;
+    typename Tile::scalar_type norm = 0.0;
+    for (auto a=0; a<nosv; ++a) {
+      const auto e_a = ens_uocc[a];
+      const auto e_ia = e_i - e_a;
+      const auto old = arg_tile[tile_idx];
+      const auto result_ai = old / e_ia;
+      const auto abs_result_ai = std::abs(result_ai);
+      norm += abs_result_ai * abs_result_ai;
+      result_tile[tile_idx] = result_ai;
+    }
+    return std::sqrt(norm);
+  };
+
+  auto delta_t1_ai = TA::foreach (r1_ai, update1);
+  delta_t1_ai.world().gop.fence();
+  return delta_t1_ai;
+}
+
+
 
           
     ////////// t1, t2, r1, and r2 are DistArray's, NOT individual tiles
@@ -418,8 +620,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     // DIIS extrapolate in OSV/PNO basis
 //////////////////////////// cope DIISSolver::update here, minus the call to update_only (since that's what you had just done)
     
-    t1("a,i") += detail::jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs)("a,i");
-    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
+    t1("a,i") += jacobi_update_t1(r1, F_occ, F_osv_diag, osvs)("a,i");
+    t2("a,b,i,j") += jacobi_update_t2(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
     t1.truncate();
     t2.truncate();
 

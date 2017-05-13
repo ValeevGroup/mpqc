@@ -330,15 +330,28 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     ::mpqc::cc::DIISSolver<T, T>::update(t1, t2, r1, r2);
 
+    // T r1_copy = r1;
+    // T r2_copy = r2;
+    // T1T2<T, T> r(r1_copy, r2_copy);
+    // T1T2<T, T> t(t1, t2);
+    // diis_.extrapolate(t, r);
+    // t1 = t.t1();
+    // t2 = t.t2();
+
+
     // back-transform extrapolated t1 and t2 from OSV and PNO to full virtual
     // space
     ////////////////////////////////// again, this must be done by applying
     /// lambdas to delta_t1_ai and delta_t2_abij one tile at a time
-    assert(false && "not yet implemented");
+    //assert(false && "not yet implemented");
 
-    // t1 = osv_ii * delta_t1_ai * osv_ii.transpose();
-    // t2 = pno_ij * delta_t2_abij * pno_ij.transpose();
   }
+
+  void back_transform(T& t1, T& t2) {
+    t1 = back_transform_t1(t1, osvs_);
+    t2 = back_transform_t2(t2, pnos_);
+  }
+
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t2(
@@ -462,6 +475,91 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     return delta_t1_ai;
   }
 
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> back_transform_t1(
+      const TA::DistArray<Tile, Policy>& t1,
+      const std::vector<Eigen::MatrixXd>& osvs) {
+    auto back1 = [osvs](Tile& result_tile, const Tile& arg_tile) {
+
+      result_tile = Tile(arg_tile.range());
+
+      const auto ext = result_tile.range().extent_data();
+
+      // determine i index
+      const auto i = result_tile.range().lobound()[1];
+
+
+      // back transform
+      const Eigen::MatrixXd result_tile_tr =
+          osvs[i] * TA::eigen_map(result_tile, ext[1], ext[0]) *
+          osvs[i].transpose();
+
+
+      const auto rows = result_tile_tr.rows();
+      const auto cols = result_tile_tr.cols();
+
+      // Replace the original tile with the back-transformed tile
+      for (auto r=0; r<rows; ++r) {
+        for (auto c=0; c<cols; ++c) {
+          auto idx = r*cols + c;
+          result_tile[idx] = result_tile_tr(r,c);
+        }
+      }
+
+      return 0;
+
+    };
+
+    auto transformed_t1 = TA::foreach (t1, back1);
+    transformed_t1.world().gop.fence();
+    return transformed_t1;
+  }
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> back_transform_t2(
+      const TA::DistArray<Tile, Policy>& t2,
+      const std::vector<Eigen::MatrixXd>& pnos) {
+    auto back2 = [pnos](Tile& result_tile, const Tile& arg_tile) {
+
+      const auto nocc_act = (pnos.size())/2;
+
+      result_tile = Tile(arg_tile.range());
+
+      const auto ext = result_tile.range().extent_data();
+
+      // determine i and j indices
+      const auto i = result_tile.range().lobound()[1];
+      const auto j = result_tile.range().lobound()[3];
+
+
+      // back transform
+      const Eigen::MatrixXd result_tile_tr =
+          pnos[i*nocc_act + j] * TA::eigen_map(result_tile, ext[0] * ext[1], ext[2] * ext[3]) * 
+          (pnos[i*nocc_act + j]).transpose();
+
+
+      const auto rows = result_tile_tr.rows();
+      const auto cols = result_tile_tr.cols();
+
+      // Replace the original tile with the back-transformed tile
+      for (auto r=0; r<rows; ++r) {
+        for (auto c=0; c<cols; ++c) {
+          auto idx = r*cols + c;
+          result_tile[idx] = result_tile_tr(r,c);
+        }
+      }
+
+      return 0;
+
+    };
+
+    auto transformed_t2 = TA::foreach (t2, back2);
+    transformed_t2.world().gop.fence();
+    return transformed_t2;
+  }
+
+
   Factory<T>& factory_;
   std::string pno_method_;  //!< the PNO construction method
   double tpno_;             //!< the PNO truncation threshold
@@ -477,6 +575,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   // the OSV basis
   std::vector<Eigen::MatrixXd> osvs_;
   std::vector<Eigen::VectorXd> F_osv_diag_;
+
 
 };
 

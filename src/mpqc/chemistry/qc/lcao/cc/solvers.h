@@ -271,10 +271,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
         pnos_[i * nocc_act + j] = pno_trunc;
 
-        // Transform the Fock matrix to the PNO basis and store
-
-        // Originally was transforming F_uocc using untruncated PNO matrix:
-        // F_pno[i*nocc_act + j] = pno_ij.transpose() * F_uocc * pno_ij;
 
         // Now transforming using truncated PNO matrix; store just diag
         // elements:
@@ -295,7 +291,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           nosv = nvir - osvdrop;
 
           // Store truncated OSVs
-          // osvs[i] = pno_ij.block(0, osvdrop, nvir, nosv);
           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);
           osvs_[i] = osv_trunc;
 
@@ -321,17 +316,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
-    back_transform(delta_t1_ai, delta_t2_abij);
     t1("a,i") += delta_t1_ai("a,i");
     t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
     t1.truncate();
     t2.truncate();
   }
 
-  void back_transform(T& t1, T& t2) {
-    t1 = back_transform_t1(t1, osvs_);
-    t2 = back_transform_t2(t2, pnos_);
-  }
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t2(
@@ -347,23 +337,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       result_tile = Tile(arg_tile.range());
 
       // determine i and j indices
-      const auto i = result_tile.range().lobound()[1];
-      const auto j = result_tile.range().lobound()[3];
+      const auto i = arg_tile.range().lobound()[1];
+      const auto j = arg_tile.range().lobound()[3];
 
       // Select appropriate matrix of PNOs
       Eigen::MatrixXd pno_ij = pnos[i * nocc_act + j];
 
       // Extent data of tile
-      const auto ext = result_tile.range().extent_data();
-
-      // Convert data in tile to Eigen Matrix
-      // const Eigen::MatrixXd r2 = TA::eigen_map(result_tile, ext[2]*ext[3],
-      // ext[0]*ext[1]);
+      const auto ext = arg_tile.range().extent_data();
 
       // Convert data in tile to Eigen::Map and transform to PNO basis
       const Eigen::MatrixXd r2_pno =
           pno_ij.transpose() *
-          TA::eigen_map(result_tile, ext[0] * ext[1], ext[2] * ext[3]) * pno_ij;
+          TA::eigen_map(arg_tile, ext[0] * ext[1], ext[2] * ext[3]) * pno_ij;
+
+      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO basis
+      // this matrix will then be back transformed to full basis before
+      // being converted to a tile
+      Eigen::MatrixXd delta_t2_pno = r2_pno;
+
 
       // Select correct vector containing diagonal elements of Fock matrix in
       // PNO basis
@@ -372,22 +364,35 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Determine number of PNOs
       const auto npno = ens_uocc.rows();
 
+      // Determine number of uocc
+      const auto nuocc = pno_ij.rows();
+
       // Select e_i and e_j
       const auto e_i = F_occ_act(i, i);
       const auto e_j = F_occ_act(j, j);
 
-      auto tile_idx = 0;
       typename Tile::scalar_type norm = 0.0;
       for (auto a = 0; a < npno; ++a) {
         const auto e_a = ens_uocc[a];
-        for (auto b = 0; b < npno; ++b, ++tile_idx) {
+        for (auto b = 0; b < npno; ++b) {
           const auto e_b = ens_uocc[b];
           const auto e_iajb = e_i + e_j - e_a - e_b;
-          const auto old = arg_tile[tile_idx];
+          const auto old = r2_pno(a,b);
           const auto result_abij = old / e_iajb;
           const auto abs_result_abij = std::abs(result_abij);
           norm += abs_result_abij * abs_result_abij;
-          result_tile[tile_idx] = result_abij;
+          delta_t2_pno(a,b) = result_abij;
+        }
+      }
+
+      // Back transform delta_t2_pno to full space
+      Eigen::MatrixXd delta_t2_full = pno_ij * delta_t2_pno * pno_ij.transpose();
+
+      // Convert delta_t2_full to tile
+      for (auto r=0; r<nuocc; ++r) {
+        for (auto c=0; c<nuocc; ++c) {
+          auto idx = r*nuocc + c;
+          result_tile[idx] = delta_t2_full(r,c);
         }
       }
 
@@ -410,21 +415,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       result_tile = Tile(arg_tile.range());
 
       // determine i index
-      const auto i = result_tile.range().lobound()[1];
+      const auto i = arg_tile.range().lobound()[1];
 
       // Select appropriate matrix of OSVs
       Eigen::MatrixXd osv_i = osvs[i];
 
       // Extent data of tile
-      const auto ext = result_tile.range().extent_data();
-
-      // Convert data in tile to Eigen Matrix
-      // const Eigen::MatrixXd r1 = TA::eigen_map(result_tile, ext[1], ext[0]);
+      const auto ext = arg_tile.range().extent_data();
 
       // Convert data in tile to Eigen::Map and transform to OSV basis
       const Eigen::MatrixXd r1_osv =
-          osv_i.transpose() * TA::eigen_map(result_tile, ext[1], ext[0]) *
+          osv_i.transpose() * TA::eigen_map(arg_tile, ext[1], ext[0]) *
           osv_i;
+
+      // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV basis
+      // this matrix will then be back transformed to full basis before
+      // being converted to a tile
+      Eigen::MatrixXd delta_t1_osv = r1_osv;
+
+
 
       // Select correct vector containing diagonal elements of Fock matrix in
       // OSV basis
@@ -433,20 +442,34 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Determine number of OSVs
       const auto nosv = ens_uocc.rows();
 
+      // Determine number of uocc
+      const auto nuocc = osv_i.rows();
+
       // Select e_i
       const auto e_i = F_occ_act(i, i);
 
-      auto tile_idx = 0;
       typename Tile::scalar_type norm = 0.0;
       for (auto a = 0; a < nosv; ++a) {
         const auto e_a = ens_uocc[a];
         const auto e_ia = e_i - e_a;
-        const auto old = arg_tile[tile_idx];
+        const auto old = r1_osv(0, a);
         const auto result_ai = old / e_ia;
         const auto abs_result_ai = std::abs(result_ai);
         norm += abs_result_ai * abs_result_ai;
-        result_tile[tile_idx] = result_ai;
+        delta_t1_osv(0, a) = result_ai;
       }
+
+      // Back transform delta_t1_osv to full space
+      Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv * osv_i.transpose();
+
+      // Convert delta_t1_full to tile
+      for (auto r=0; r<nuocc; ++r) {
+        for (auto c=0; c<nuocc; ++c) {
+          auto idx = r*nuocc + c;
+          result_tile[idx] = delta_t1_full(r,c);
+        }
+      }
+
       return std::sqrt(norm);
     };
 
@@ -456,96 +479,96 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   }
 
 
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> back_transform_t1(
-      const TA::DistArray<Tile, Policy>& t1,
-      const std::vector<Eigen::MatrixXd>& osvs) {
-    auto back1 = [osvs](Tile& result_tile, const Tile& arg_tile) {
+  // template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> back_transform_t1(
+  //     const TA::DistArray<Tile, Policy>& t1,
+  //     const std::vector<Eigen::MatrixXd>& osvs) {
+  //   auto back1 = [osvs](Tile& result_tile, const Tile& arg_tile) {
 
-      result_tile = Tile(arg_tile.range());
+  //     result_tile = Tile(arg_tile.range());
 
-      const auto ext = result_tile.range().extent_data();
+  //     const auto ext = result_tile.range().extent_data();
 
-      // determine i index
-      const auto i = result_tile.range().lobound()[1];
-
-
-      // back transform
-      const Eigen::MatrixXd result_tile_tr =
-          osvs[i] * TA::eigen_map(result_tile, ext[1], ext[0]) *
-          osvs[i].transpose();
+  //     // determine i index
+  //     const auto i = result_tile.range().lobound()[1];
 
 
-      const auto rows = result_tile_tr.rows();
-      const auto cols = result_tile_tr.cols();
-
-      // Replace the original tile with the back-transformed tile
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r=0; r<rows; ++r) {
-        for (auto c=0; c<cols; ++c) {
-          auto idx = r*cols + c;
-          const auto elem = result_tile_tr(r,c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
-        }
-      }
-
-      return std::sqrt(norm);
-
-    };
-
-    auto transformed_t1 = TA::foreach (t1, back1);
-    transformed_t1.world().gop.fence();
-    return transformed_t1;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> back_transform_t2(
-      const TA::DistArray<Tile, Policy>& t2,
-      const std::vector<Eigen::MatrixXd>& pnos) {
-    auto back2 = [pnos](Tile& result_tile, const Tile& arg_tile) {
-
-      const auto nocc_act = std::sqrt(pnos.size());
-
-      result_tile = Tile(arg_tile.range());
-
-      const auto ext = result_tile.range().extent_data();
-
-      // determine i and j indices
-      const auto i = result_tile.range().lobound()[1];
-      const auto j = result_tile.range().lobound()[3];
+  //     // back transform
+  //     const Eigen::MatrixXd result_tile_tr =
+  //         osvs[i] * TA::eigen_map(result_tile, ext[1], ext[0]) *
+  //         osvs[i].transpose();
 
 
-      // back transform
-      const Eigen::MatrixXd result_tile_tr =
-          pnos[i*nocc_act + j] * TA::eigen_map(result_tile, ext[0] * ext[1], ext[2] * ext[3]) * 
-          (pnos[i*nocc_act + j]).transpose();
+  //     const auto rows = result_tile_tr.rows();
+  //     const auto cols = result_tile_tr.cols();
+
+  //     // Replace the original tile with the back-transformed tile
+  //     typename Tile::scalar_type norm = 0.0;
+  //     for (auto r=0; r<rows; ++r) {
+  //       for (auto c=0; c<cols; ++c) {
+  //         auto idx = r*cols + c;
+  //         const auto elem = result_tile_tr(r,c);
+  //         const auto abs_elem = std::abs(elem);
+  //         norm += abs_elem * abs_elem;
+  //         result_tile[idx] = elem;
+  //       }
+  //     }
+
+  //     return std::sqrt(norm);
+
+  //   };
+
+  //   auto transformed_t1 = TA::foreach (t1, back1);
+  //   transformed_t1.world().gop.fence();
+  //   return transformed_t1;
+  // }
+
+  // template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> back_transform_t2(
+  //     const TA::DistArray<Tile, Policy>& t2,
+  //     const std::vector<Eigen::MatrixXd>& pnos) {
+  //   auto back2 = [pnos](Tile& result_tile, const Tile& arg_tile) {
+
+  //     const auto nocc_act = std::sqrt(pnos.size());
+
+  //     result_tile = Tile(arg_tile.range());
+
+  //     const auto ext = arg_tile.range().extent_data();
+
+  //     // determine i and j indices
+  //     const auto i = arg_tile.range().lobound()[1];
+  //     const auto j = arg_tile.range().lobound()[3];
 
 
-      const auto rows = result_tile_tr.rows();
-      const auto cols = result_tile_tr.cols();
+  //     // back transform
+  //     const Eigen::MatrixXd result_tile_tr =
+  //         pnos[i*nocc_act + j] * TA::eigen_map(result_tile, ext[0] * ext[1], ext[2] * ext[3]) * 
+  //         (pnos[i*nocc_act + j]).transpose();
 
-      // Replace the original tile with the back-transformed tile
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r=0; r<rows; ++r) {
-        for (auto c=0; c<cols; ++c) {
-          auto idx = r*cols + c;
-          const auto elem = result_tile_tr(r,c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
-        }
-      }
 
-      return std::sqrt(norm);
+  //     const auto rows = result_tile_tr.rows();
+  //     const auto cols = result_tile_tr.cols();
 
-    };
+  //     // Replace the original tile with the back-transformed tile
+  //     typename Tile::scalar_type norm = 0.0;
+  //     for (auto r=0; r<rows; ++r) {
+  //       for (auto c=0; c<cols; ++c) {
+  //         auto idx = r*cols + c;
+  //         const auto elem = result_tile_tr(r,c);
+  //         const auto abs_elem = std::abs(elem);
+  //         norm += abs_elem * abs_elem;
+  //         result_tile[idx] = elem;
+  //       }
+  //     }
 
-    auto transformed_t2 = TA::foreach (t2, back2);
-    transformed_t2.world().gop.fence();
-    return transformed_t2;
-  }
+  //     return std::sqrt(norm);
+
+  //   };
+
+  //   auto transformed_t2 = TA::foreach (t2, back2);
+  //   transformed_t2.world().gop.fence();
+  //   return transformed_t2;
+  // }
 
 
   Factory<T>& factory_;

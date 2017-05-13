@@ -170,33 +170,67 @@ class PeriodicFourCenterFockBuilder
       const auto basisR = *basisR_;
       const auto basisRJ = *(basisRJ_[ref_uc]);
       const auto basisRD = *(basisRD_[ref_uc]);
-      engines_ = make_engine_pool(
-          oper_type,
-          utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
-          libint2::BraKet::xx_xx);
+      if (compute_J_) {
+        j_engines_ = make_engine_pool(
+            oper_type,
+            utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+            libint2::BraKet::xx_xx);
+      }
+      if (compute_K_) {
+        k_engines_ = make_engine_pool(
+            oper_type,
+            utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
+            libint2::BraKet::xx_xx);
+      }
     }
+
+//    auto sparse_thresh = 1e-12;
 
     J_num_ints_computed_ = 0;
     K_num_ints_computed_ = 0;
 
+    K_task_computed_ = 0;
+    K_01shellpair_ = 0;
+    dur_preloop0_ = 0.0;
+    dur_preloop1_ = 0.0;
+    dur_preloop2_ = 0.0;
+
+    size_t num_tasks = 0;
+
     auto empty = TA::Future<Tile>(Tile());
-    for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles0; ++tile0) {
-      for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
-        const auto R = tile1 / ntiles0;
-        for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
-          for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
-            if (is_density_diagonal_ && tile3 != tile2) continue;
-            const auto RD = tile3 / ntiles2;
-            auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
-                              ? empty
-                              : D_repl.find({tile2, tile3});
-            auto norm_D_RJRD = (shblk_norm_D.is_zero({tile2, tile3}))
-                                   ? empty
-                                   : shblk_norm_D.find({tile2, tile3});
-            if (D_RJRD.get().data() == nullptr ||
-                norm_D_RJRD.get().data() == nullptr)
-              continue;
+
+    for (auto tile2 = 0ul, tile0123 = 0ul; tile2 != ntiles2; ++tile2) {
+      for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
+        if (is_density_diagonal_ && tile3 != tile2) continue;
+        const auto RD = tile3 / ntiles2;
+        auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
+                          ? empty
+                          : D_repl.find({tile2, tile3});
+        auto norm_D_RJRD = (shblk_norm_D.is_zero({tile2, tile3}))
+                               ? empty
+                               : shblk_norm_D.find({tile2, tile3});
+        if (D_RJRD.get().data() == nullptr ||
+            norm_D_RJRD.get().data() == nullptr)
+          continue;
+
+//        const auto tvolume_D = D_RJRD.get().range().volume();
+//        const auto tvolume_norm_D = norm_D_RJRD.get().range().volume();
+//        ExEnv::out0() << " tile2 = " << tile2
+//                      << " tile3 = " << tile3
+//                      << " norm = " << D_RJRD.get().norm()
+//                      << " volume = " << tvolume_D
+//                      << " vol*thresh = " << tvolume_D * sparse_thresh
+//                      << std::endl;
+//        if (D_RJRD.get().norm() < tvolume_D * sparse_thresh ||
+//            norm_D_RJRD.get().norm() < tvolume_norm_D * sparse_thresh)
+//          continue;
+
+        for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
+          for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
+            const auto R = tile1 / ntiles0;
+
             for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile0123) {
+              num_tasks++;
               if (tile0123 % nproc == me)
                 WorldObject_::task(
                     me, &PeriodicFourCenterFockBuilder_::compute_task_abcd,
@@ -211,7 +245,16 @@ class PeriodicFourCenterFockBuilder
     compute_world.gop.fence();
 
     // cleanup
-    engines_.reset();
+    j_engines_.reset();
+
+    // print out # of tasks
+    ExEnv::out0() << "\n# of tasks: " << num_tasks << std::endl;
+    ExEnv::out0() << "\n# of actual computed K tasks: " << K_task_computed_ << std::endl;
+    ExEnv::out0() << "\n# of K 01 shell pairs: " << K_01shellpair_ << std::endl;
+
+    ExEnv::out0() << "\npre-loop0 time: " << dur_preloop0_ << " s" << std::endl;
+    ExEnv::out0() << "pre-loop1 time: " << dur_preloop1_ << " s" << std::endl;
+    ExEnv::out0() << "pre-loop2 time: " << dur_preloop2_ << " s" << std::endl;
 
     // print out # of ints computed per MPI process
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
@@ -339,11 +382,28 @@ class PeriodicFourCenterFockBuilder
   mutable std::shared_ptr<TA::Pmap> repl_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> dist_pmap_fock_;
   mutable double target_precision_ = 0.0;
-  mutable Engine engines_;
+  mutable Engine j_engines_;
+  mutable Engine k_engines_;
   mutable std::atomic<size_t> J_num_ints_computed_{0};
   mutable std::atomic<size_t> K_num_ints_computed_{0};
   mutable std::map<int64_t, int64_t> translation_map_;
   mutable bool is_density_diagonal_;
+
+  mutable shellpair_list_t sig_j_bra_shellpair_list_;
+  mutable shellpair_list_t sig_j_ket_shellpair_list_;
+  mutable shellpair_list_t sig_k_bra_shellpair_list_;
+  mutable shellpair_list_t sig_k_ket_shellpair_list_;
+  mutable std::unordered_map<size_t, size_t> basis0_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisR_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisRJ_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisRD_shell_offset_map_;
+
+
+  mutable std::atomic<size_t> K_01shellpair_{0};
+  mutable std::atomic<size_t> K_task_computed_{0};
+  mutable double dur_preloop0_;
+  mutable double dur_preloop1_;
+  mutable double dur_preloop2_;
 
   void init() {
     using ::mpqc::lcao::detail::direct_vector;
@@ -431,6 +491,24 @@ class PeriodicFourCenterFockBuilder
       throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
     }
 
+    // compute significant shell pair list
+    {
+      if (compute_K_) {
+        const auto basisRJ = *(
+            shift_basis_origin(*ket_basis_, zero_shift_base, RJ_max_, dcell_));
+        sig_k_bra_shellpair_list_ = parallel_compute_shellpair_list(basis0, basisRJ);
+        basis0_shell_offset_map_ = compute_shell_offset(basis0);
+        basisRJ_shell_offset_map_ = compute_shell_offset(basisRJ);
+
+//        for (auto sh0 = 0; sh0 != basis0.flattened_shells().size(); ++sh0) {
+//          for (const auto shRJ : sig_k_bra_shellpair_list_[sh0]) {
+//            ExEnv::out0() << "\tsh0 = " << sh0 << " shRJ = " << shRJ << std::endl;
+//          }
+//        }
+      }
+
+    }
+
     // get TiledRange of Fock
     trange_fock_ = ::mpqc::lcao::gaussian::detail::create_trange(
         BasisVector{{basis0, basisR}});
@@ -479,10 +557,48 @@ class PeriodicFourCenterFockBuilder
 
   void compute_task_abcd(Tile D_RJRD, Tile norm_D_RJRD, int64_t R, int64_t RJ,
                          int64_t RD, std::array<size_t, 4> tile_idx) {
+    const auto t0 = mpqc::now();
     const auto tile0 = tile_idx[0];
     const auto tileR = tile_idx[1];
     const auto tileRJ = tile_idx[2];
     const auto tileRD = tile_idx[3];
+
+    // get reference to basis sets
+    const auto &basis0 = bra_basis_;
+    const auto &basisR = basisR_;
+    const auto &basisRJ = basisRJ_[RJ];
+    const auto &basisRD = basisRD_[RJ];
+
+    // shell clusters for this tile
+    const auto &cluster0 = basis0->cluster_shells()[tile0];
+    const auto &clusterR = basisR->cluster_shells()[tileR];
+    const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
+    const auto &clusterRD = basisRD->cluster_shells()[tileRD];
+
+    // number of shells in each cluster
+    const auto nshells0 = cluster0.size();
+    const auto nshellsR = clusterR.size();
+    const auto nshellsRJ = clusterRJ.size();
+    const auto nshellsRD = clusterRD.size();
+
+    // index of first shell in this cluster
+    const auto sh0_offset = basis0_shell_offset_map_[tile0];
+    const auto shRJ_offset = basisRJ_shell_offset_map_[tileRJ + RJ * basisRJ->cluster_shells().size()];
+    const auto shRJ_max = shRJ_offset + nshellsRJ;
+
+    // determine if this task contains significant shell-pairs
+    auto is_significant_K = false;
+    for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+      const auto sh0_in_basis = sh0 + sh0_offset;
+      for (const auto &shRJ_in_basis : sig_k_bra_shellpair_list_[sh0_in_basis]) {
+        if (shRJ_in_basis >= shRJ_offset && shRJ_in_basis < shRJ_max) {
+          is_significant_K = true;
+          break;
+        }
+      }
+      if (is_significant_K) break;
+    }
+
 
     // 1-d tile ranges
     const auto &rng0 = trange_fock_.dim(0).tile(tile0);
@@ -505,35 +621,21 @@ class PeriodicFourCenterFockBuilder
     assert(D_RJRD_ptr != nullptr);
     assert(norm_D_RJRD_ptr != nullptr);
 
+    const auto nbf_bra_per_uc = bra_basis_->nfunctions();
+    const auto nbf_ket_per_uc = ket_basis_->nfunctions();
+
+    const auto t1 = mpqc::now();
+    dur_preloop0_ += mpqc::duration_in_s(t0, t1);
+
     // compute Coulomb and/or Exchange contributions to all Fock matrices
     {
-      auto engine = engines_->local();
-      const auto engine_precision = target_precision_;
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
-
-      const auto &basis0 = bra_basis_;
-      const auto &basisR = basisR_;
-      const auto &basisRJ = basisRJ_[RJ];
-      const auto &basisRD = basisRD_[RJ];
-
-      const auto nbf_bra_per_uc = bra_basis_->nfunctions();
-      const auto nbf_ket_per_uc = ket_basis_->nfunctions();
-
-      // shell clusters for this tile
-      const auto &cluster0 = basis0->cluster_shells()[tile0];
-      const auto &clusterR = basisR->cluster_shells()[tileR];
-      const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
-      const auto &clusterRD = basisRD->cluster_shells()[tileRD];
-
-      // number of shells in each cluster
-      const auto nshells0 = cluster0.size();
-      const auto nshellsR = clusterR.size();
-      const auto nshellsRJ = clusterRJ.size();
-      const auto nshellsRD = clusterRD.size();
-
       // compute Coulomb contributions to all Fock matrices
       if (compute_J_) {
+        auto engine = j_engines_->local();
+        const auto engine_precision = target_precision_;
+        engine.set_precision(engine_precision);
+        const auto &computed_shell_sets = engine.results();
+
         auto &screen = *(j_p_screener_);
 
         // make non-negligible shell pair list
@@ -635,12 +737,19 @@ class PeriodicFourCenterFockBuilder
         }
       }
 
-      if (compute_K_) {
+      if (compute_K_ && is_significant_K) {
+        K_task_computed_++;
+        const auto t4 = mpqc::now();
+        auto engine = k_engines_->local();
+        const auto engine_precision = target_precision_;
+        engine.set_precision(engine_precision);
+        const auto &computed_shell_sets = engine.results();
+
         auto &screen = *(k_p_screener_);
 
         // make non-negligible shell pair list
         shellpair_list_t bra_shellpair_list, ket_shellpair_list;
-        bra_shellpair_list = compute_shellpair_list(cluster0, clusterRJ);
+//        bra_shellpair_list = compute_shellpair_list(cluster0, clusterRJ);
         ket_shellpair_list = compute_shellpair_list(clusterR, clusterRD);
 
         // compute offset list of cluster1 and cluster3
@@ -664,13 +773,22 @@ class PeriodicFourCenterFockBuilder
         const auto old_uc_ord = R_stride + RJ_stride + RD;
         const auto new_uc_ord = translation_map_[old_uc_ord];
         const auto screen_bf3_offset = new_uc_ord * nbf_ket_per_uc;
+        const auto t5 = mpqc::now();
+        dur_preloop2_ += mpqc::duration_in_s(t4, t5);
 
         // loop over all shell sets
         for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
           const auto &shell0 = cluster0[sh0];
           const auto nf0 = shell0.size();
 
-          for (const auto &sh1 : bra_shellpair_list[sh0]) {
+          const auto sh0_in_basis = sh0 + sh0_offset;
+          for (const auto &shRJ_in_basis : sig_k_bra_shellpair_list_[sh0_in_basis]) {
+            if (shRJ_in_basis < shRJ_offset || shRJ_in_basis >= shRJ_max)
+              continue;
+
+            const auto sh1 = shRJ_in_basis - shRJ_offset;
+            K_01shellpair_++;
+
             std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
 
             const auto &shell1 = clusterRJ[sh1];
@@ -850,7 +968,87 @@ class PeriodicFourCenterFockBuilder
   /*!
    * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
    * form a non-negligible pair if they share a center or the Frobenius norm of
-   * their overlap isgreater than threshold
+   * their overlap is greater than threshold
+   * \param basis1 a basis
+   * \param basis2 a basis
+   * \param threshold
+   *
+   * \return a list of pairs with
+   * key: shell index
+   * mapped value: a vector of shell indices
+   */
+  shellpair_list_t parallel_compute_shellpair_list(
+      const Basis &basis1, const Basis &basis2,
+      double threshold = 1e-12) const {
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    // initialize engine
+    auto engine_pool = make_engine_pool(
+        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+        libint2::BraKet::x_x);
+
+    auto &world = this->get_world();
+
+    // TODO fix the tasking issue
+//    std::mutex mx;
+    shellpair_list_t result;
+
+    const auto &shv1 = basis1.flattened_shells();
+    const auto &shv2 = basis2.flattened_shells();
+    const auto nsh1 = shv1.size();
+    const auto nsh2 = shv2.size();
+
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      auto n1 = shv1[s1].size();
+
+      auto compute = [&](int64_t s1) {
+
+        const auto engine_precision = target_precision_;
+        auto engine = engine_pool->local();
+        engine.set_precision(engine_precision);
+        const auto &buf = engine.results();
+
+        for (auto s2 = 0l; s2 != nsh2; ++s2) {
+          auto on_same_center = (shv1[s1].O == shv2[s2].O);
+          bool significant = on_same_center;
+          if (!on_same_center) {
+            auto n2 = shv2[s2].size();
+            engine.compute(shv1[s1], shv2[s2]);
+            Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+            auto norm = buf_mat.norm();
+            significant = (norm >= threshold);
+          }
+
+          if (significant) {
+//            mx.lock();
+            result[s1].emplace_back(s2);
+//            mx.unlock();
+          }
+        }
+
+      };
+
+//      world.taskq.add(compute, s1);
+      compute(s1);
+    }
+    world.gop.fence();
+
+    engine_pool.reset();
+
+    // resort shell list in increasing order
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      auto &list = result[s1];
+      std::sort(list.begin(), list.end());
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+   * form a non-negligible pair if they share a center or the Frobenius norm of
+   * their overlap is greater than threshold
    * \param shv1 a cluster (a.k.a. std::vector<Shell>)
    * \param shv2 a cluster (a.k.a. std::vector<Shell>)
    * \param threshold
@@ -986,6 +1184,29 @@ class PeriodicFourCenterFockBuilder
 
     return result;
   }
+
+   /*!
+    * \brief This computes shell offsets for every cluster in a basis
+    * \param basis
+    * \return a list of <key, mapped value> pairs with
+    * key: cluster index
+    * mapped value: index of first shell in a cluster
+    */
+   std::unordered_map<size_t, size_t> compute_shell_offset(const Basis &basis) const {
+     std::unordered_map<size_t, size_t> result;
+
+     auto shell_offset = 0;
+     const auto &cluster_shells = basis.cluster_shells();
+     const auto nclusters = cluster_shells.size();
+     for (auto c = 0; c != nclusters; ++c) {
+       const auto nshells = cluster_shells[c].size();
+       result.insert(std::make_pair(c, shell_offset));
+       shell_offset += nshells;
+     }
+
+     return result;
+   }
+
 };
 
 }  // namespace scf

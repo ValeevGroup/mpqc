@@ -319,39 +319,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    t1("a,i") += jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_)("a,i");
-    t2("a,b,i,j") += jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_)("a,b,i,j");
+    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+    auto delta_t2_abij += jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+    back_transform(delta_t1_ai, delta_t2_abij);
+    t1("a,i") += delta_t1_ai("a,i");
+    t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
     t1.truncate();
     t2.truncate();
-  }
-
-  /// Overrides DIISSolver::update() .
-  /// @note call DIISSolver::update(), then backtransform updated PNO amplitudes to the full space
-  void update(T& t1, T& t2, const T& r1, const T& r2) override {
-    ::mpqc::cc::DIISSolver<T, T>::update(t1, t2, r1, r2);
-
-    // T r1_copy = r1;
-    // T r2_copy = r2;
-    // T1T2<T, T> r(r1_copy, r2_copy);
-    // T1T2<T, T> t(t1, t2);
-    // diis_.extrapolate(t, r);
-    // t1 = t.t1();
-    // t2 = t.t2();
-
-
-    // back-transform extrapolated t1 and t2 from OSV and PNO to full virtual
-    // space
-    ////////////////////////////////// again, this must be done by applying
-    /// lambdas to delta_t1_ai and delta_t2_abij one tile at a time
-    //assert(false && "not yet implemented");
-
   }
 
   void back_transform(T& t1, T& t2) {
     t1 = back_transform_t1(t1, osvs_);
     t2 = back_transform_t2(t2, pnos_);
   }
-
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t2(

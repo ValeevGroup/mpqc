@@ -166,7 +166,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
 
-    auto& fac = this->factory();
+    auto& fac = factory_;
     auto& world = fac.world();
     auto& ofac = fac.orbital_registry();
 
@@ -189,7 +189,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     Eigen::MatrixXd F_all = TA::array_to_eigen(F);
 
     // Select just the occupied portion of the Fock matrix
-    Eigen::MatrixXd F_occ = F_all.block(0, 0, nocc_act, nocc_act);
+    F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
 
     // Select just the unoccupied portion of the Fock matrix
     Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
@@ -205,13 +205,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     }
 
     // For storing PNOs and and the Fock matrix in the PNO basis
-    std::vector<Eigen::MatrixXd> pnos(nocc_act * nocc_act);
-    std::vector<Eigen::VectorXd> F_pno_diag(nocc_act * nocc_act);
+    pnos_.resize(nocc_act * nocc_act);
+    F_pno_diag_.resize(nocc_act * nocc_act);
 
     // For storing OSVs (PNOs when i = j) and the Fock matrix in
     // the OSV basis
-    std::vector<Eigen::MatrixXd> osvs(nocc_act);
-    std::vector<Eigen::VectorXd> F_osv_diag(nocc_act);
+    osvs_.resize(nocc_act);
+    F_osv_diag_.resize(nocc_act);
 
     // Loop over each pair of occupieds to form PNOs
     for (int i = 0; i < nocc_act; ++i) {
@@ -269,7 +269,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         // Store truncated PNOs
         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nvir,npno);
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
-        pnos[i * nocc_act + j] = pno_trunc;
+        pnos_[i * nocc_act + j] = pno_trunc;
 
         // Transform the Fock matrix to the PNO basis and store
 
@@ -278,7 +278,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
         // Now transforming using truncated PNO matrix; store just diag
         // elements:
-        F_pno_diag[i * nocc_act + j] =
+        F_pno_diag_[i * nocc_act + j] =
             (pno_trunc.transpose() + F_uocc * pno_trunc).diagonal();
 
         auto nosv = 0;
@@ -297,10 +297,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           // Store truncated OSVs
           // osvs[i] = pno_ij.block(0, osvdrop, nvir, nosv);
           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);
-          osvs[i] = osv_trunc;
+          osvs_[i] = osv_trunc;
 
           // Store Fock matrix transformed to diagonal OSV basis
-          F_osv_diag[i] =
+          F_osv_diag_[i] =
               (osv_trunc.transpose() * F_uocc * osv_trunc).diagonal();
         }
       }
@@ -314,50 +314,21 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   double tosv() const { return tosv_; }
 
  private:
-  /// Overrides DIISSolver::update() .
-  /// @note not overriding DIISSolver::update_only() since the update must be
+
+  /// Overrides DIISSolver::update_only() .
+  /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
-  void update(T& t1, T& t2, const T& r1, const T& r2, const T& F_occ,
-              const T& F_pno_diag, const T& F_osv_diag, const T& pnos,
-              const T& osvs) override {
-    ////////// t1, t2, r1, and r2 are DistArray's, NOT individual tiles
-    ////////// put this into lambdas that act on *tiles* of r1 and r2,
-    ////////// use this lambda to compute a DistArray containing the delta_t's
-    ///as follows:
-    ////////// auto delta_t1_ai = TA::foreach (r1_ai, update1);
-    ////////// auto delta_t2_abij = TA::foreach (r2_abij, update2);
-    ////////// delta_t1_ai.world().gop.fence();
-    ////////// delta_t2_abij.world().gop.fence();
-    ////////// e.g. see how jacobi_update_t2_abij does it ... a lambda used in a
-    ///foreach
-    //////////
-    ////////// NOTE that you will implement the Jacobi update in the lambdas
-    ///yourself since jacobi_update_t2_abij
-    ////////// does not do the right thing: it uses same set of diagonal
-    ///elements of the Fock matrix,
-    ////////// whereas you need to use the diagonals of *orbital- and
-    ///pair-specific Fock matrices*!!!
-
-    // auto delta_t2_abij = jacobi_update_t2_abij(r2, F_occ, F_pno_diag, pnos);
-    // auto delta_t1_ai = jacobi_update_t1_ai(r1, F_occ, F_osv_diag, osvs);
-
-    ///////////////////////////////// end of lambdas block
-
-    t1("a,i") += jacobi_update_t1(r1, F_occ, F_osv_diag, osvs)("a,i");
-    t2("a,b,i,j") += jacobi_update_t2(r2, F_occ, F_pno_diag, pnos)("a,b,i,j");
+  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+    t1("a,i") += jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_)("a,i");
+    t2("a,b,i,j") += jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_)("a,b,i,j");
     t1.truncate();
     t2.truncate();
+  }
 
-    // DIIS extrapolate in OSV/PNO basis
-    //////////////////////////// cope DIISSolver::update here, minus the call to
-    ///update_only (since that's what you had just done)
-    T r1_copy = r1;
-    T r2_copy = r2;
-    T1T2<T, T> r(r1_copy, r2_copy);
-    T1T2<T, T> t(t1, t2);
-    diis_.extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
+  /// Overrides DIISSolver::update() .
+  /// @note call DIISSolver::update(), then backtransform updated PNO amplitudes to the full space
+  void update(T& t1, T& t2, const T& r1, const T& r2) override {
+    ::mpqc::cc::DIISSolver<T, T>::update(t1, t2, r1, r2);
 
     // back-transform extrapolated t1 and t2 from OSV and PNO to full virtual
     // space
@@ -371,10 +342,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t2(
-      const TA::DistArray<Tile, Policy>& r2_abij, const Eigen::MatrixXd& F_occ,
-      const std::vector<Eigen::MatrixXd>& F_pno_diag,
-      const std::vector<Eigen::MatrixXd>& pnos, const int& nocc_act) {
-    auto update2 = [F_occ, F_pno_diag, pnos, nocc_act](Tile& result_tile,
+      const TA::DistArray<Tile, Policy>& r2_abij, const Eigen::MatrixXd& F_occ_act,
+      const std::vector<Eigen::VectorXd>& F_pno_diag,
+      const std::vector<Eigen::MatrixXd>& pnos) {
+
+    auto nocc_act = F_occ_act.rows();
+
+    auto update2 = [F_occ_act, F_pno_diag, pnos, nocc_act](Tile& result_tile,
                                                        const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -406,8 +380,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const auto npno = ens_uocc.rows();
 
       // Select e_i and e_j
-      const auto e_i = F_occ(i, i);
-      const auto e_j = F_occ(j, j);
+      const auto e_i = F_occ_act(i, i);
+      const auto e_j = F_occ_act(j, j);
 
       auto tile_idx = 0;
       typename Tile::scalar_type norm = 0.0;
@@ -434,10 +408,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t1(
-      const TA::DistArray<Tile, Policy>& r1_ai, const Eigen::MatrixXd& F_occ,
-      const Eigen::MatrixXd& F_osv_diag,
+      const TA::DistArray<Tile, Policy>& r1_ai, const Eigen::MatrixXd& F_occ_act,
+      const std::vector<Eigen::VectorXd>& F_osv_diag,
       const std::vector<Eigen::MatrixXd>& osvs) {
-    auto update1 = [F_occ, F_osv_diag, osvs](Tile& result_tile,
+    auto update1 = [F_occ_act, F_osv_diag, osvs](Tile& result_tile,
                                              const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -467,7 +441,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const auto nosv = ens_uocc.rows();
 
       // Select e_i
-      const auto e_i = F_occ(i, i);
+      const auto e_i = F_occ_act(i, i);
 
       auto tile_idx = 0;
       typename Tile::scalar_type norm = 0.0;
@@ -493,6 +467,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   double tpno_;             //!< the PNO truncation threshold
   double tosv_;             //!< the OSV (diagonal PNO) truncation threshold
   Array T_;
+
+  Eigen::MatrixXd F_occ_act_;
+  // For storing PNOs and and the Fock matrix in the PNO basis
+  std::vector<Eigen::MatrixXd> pnos_;
+  std::vector<Eigen::VectorXd> F_pno_diag_;
+
+  // For storing OSVs (PNOs when i = j) and the Fock matrix in
+  // the OSV basis
+  std::vector<Eigen::MatrixXd> osvs_;
+  std::vector<Eigen::VectorXd> F_osv_diag_;
+
 };
 
 }  // namespace cc

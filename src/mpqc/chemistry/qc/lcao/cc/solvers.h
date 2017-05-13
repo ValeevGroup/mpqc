@@ -320,7 +320,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-    auto delta_t2_abij += jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+    auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
     back_transform(delta_t1_ai, delta_t2_abij);
     t1("a,i") += delta_t1_ai("a,i");
     t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
@@ -480,14 +480,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const auto cols = result_tile_tr.cols();
 
       // Replace the original tile with the back-transformed tile
+      typename Tile::scalar_type norm = 0.0;
       for (auto r=0; r<rows; ++r) {
         for (auto c=0; c<cols; ++c) {
           auto idx = r*cols + c;
-          result_tile[idx] = result_tile_tr(r,c);
+          const auto elem = result_tile_tr(r,c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
         }
       }
 
-      return 0;
+      return std::sqrt(norm);
 
     };
 
@@ -523,14 +527,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const auto cols = result_tile_tr.cols();
 
       // Replace the original tile with the back-transformed tile
+      typename Tile::scalar_type norm = 0.0;
       for (auto r=0; r<rows; ++r) {
         for (auto c=0; c<cols; ++c) {
           auto idx = r*cols + c;
-          result_tile[idx] = result_tile_tr(r,c);
+          const auto elem = result_tile_tr(r,c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
         }
       }
 
-      return 0;
+      return std::sqrt(norm);
 
     };
 

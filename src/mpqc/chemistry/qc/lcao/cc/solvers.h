@@ -371,7 +371,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const auto e_i = F_occ_act(i, i);
       const auto e_j = F_occ_act(j, j);
 
-      typename Tile::scalar_type norm = 0.0;
       for (auto a = 0; a < npno; ++a) {
         const auto e_a = ens_uocc[a];
         for (auto b = 0; b < npno; ++b) {
@@ -379,8 +378,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           const auto e_iajb = e_i + e_j - e_a - e_b;
           const auto old = r2_pno(a,b);
           const auto result_abij = old / e_iajb;
-          const auto abs_result_abij = std::abs(result_abij);
-          norm += abs_result_abij * abs_result_abij;
           delta_t2_pno(a,b) = result_abij;
         }
       }
@@ -388,11 +385,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Back transform delta_t2_pno to full space
       Eigen::MatrixXd delta_t2_full = pno_ij * delta_t2_pno * pno_ij.transpose();
 
-      // Convert delta_t2_full to tile
+      // Convert delta_t2_full to tile and compute norm
+      typename Tile::scalar_type norm = 0.0; 
       for (auto r=0; r<nuocc; ++r) {
         for (auto c=0; c<nuocc; ++c) {
-          auto idx = r*nuocc + c;
-          result_tile[idx] = delta_t2_full(r,c);
+          const auto idx = r*nuocc + c;
+          const auto elem = delta_t2_full(r,c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
         }
       }
 
@@ -448,25 +449,27 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Select e_i
       const auto e_i = F_occ_act(i, i);
 
-      typename Tile::scalar_type norm = 0.0;
+      
       for (auto a = 0; a < nosv; ++a) {
         const auto e_a = ens_uocc[a];
         const auto e_ia = e_i - e_a;
         const auto old = r1_osv(0, a);
         const auto result_ai = old / e_ia;
-        const auto abs_result_ai = std::abs(result_ai);
-        norm += abs_result_ai * abs_result_ai;
         delta_t1_osv(0, a) = result_ai;
       }
 
       // Back transform delta_t1_osv to full space
       Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv * osv_i.transpose();
 
-      // Convert delta_t1_full to tile
+      // Convert delta_t1_full to tile and compute norm
+      typename Tile::scalar_type norm = 0.0;
       for (auto r=0; r<nuocc; ++r) {
         for (auto c=0; c<nuocc; ++c) {
-          auto idx = r*nuocc + c;
-          result_tile[idx] = delta_t1_full(r,c);
+          const auto idx = r*nuocc + c;
+          const auto elem = delta_t1_full(r,c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
         }
       }
 

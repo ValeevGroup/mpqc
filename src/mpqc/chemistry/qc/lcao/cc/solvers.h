@@ -230,10 +230,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     pnos_.resize(nocc_act * nocc_act);
     F_pno_diag_.resize(nocc_act * nocc_act);
 
+    // For storing canonical PNOs
+    canonical_pnos_.resize(nocc_act * nocc_act);
+
     // For storing OSVs (PNOs when i = j) and the Fock matrix in
     // the OSV basis
     osvs_.resize(nocc_act);
     F_osv_diag_.resize(nocc_act);
+
+    // For storing canonical OSVs
+    canonical_osvs_.resize(nocc_act);
 
     // Loop over each pair of occupieds to form PNOs
     for (int i = 0; i < nocc_act; ++i) {
@@ -293,15 +299,29 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
         pnos_[i * nocc_act + j] = pno_trunc;
 
+        // Transform F to PNO space
+        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-        // Now transforming using truncated PNO matrix; store just diag
-        // elements:
-        F_pno_diag_[i * nocc_act + j] =
-            (pno_trunc.transpose() * F_uocc * pno_trunc).diagonal();
+        // Store just the diagonal elements of F_pno_ij
+        F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
+
+
+        /////// Transform PNOs to canonical PNOs
+
+        // Compute eigenvectors of F in PNO space
+        es.compute(F_pno_ij);
+        Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+
+        // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+        Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+
+        // Store canonical PNOs
+        canonical_pnos_[i * nocc_act + j] = can_pno_ij;
+
+        // truncate OSVs
 
         auto nosv = 0;
 
-        // truncate OSVs
         if (i == j) {
           size_t osvdrop = 0;
           for (size_t i = 0; i != occ_ij.rows(); ++i) {
@@ -316,9 +336,24 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);
           osvs_[i] = osv_trunc;
 
-          // Store Fock matrix transformed to diagonal OSV basis
-          F_osv_diag_[i] =
-              (osv_trunc.transpose() * F_uocc * osv_trunc).diagonal();
+          // Transform F to OSV space
+          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+
+          // Store just the diagonal elements of F_osv_i
+          F_osv_diag_[i] = F_osv_i.diagonal();
+
+
+          /////// Transform OSVs to canonical OSVs
+
+          // Compute eigenvectors of F in OSV space
+          es.compute(F_osv_i);
+          Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+
+          // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+          Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+
+          // Store canonical OSVs
+          canonical_osvs_[i] = can_osv_i;
         }
       }
     }
@@ -336,12 +371,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-    auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
-    t1("a,i") += delta_t1_ai("a,i");
-    t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
-    t1.truncate();
-    t2.truncate();
+
+    if (pno_canonical_ == "false") {
+      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+      t1("a,i") += delta_t1_ai("a,i");
+      t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
+      t1.truncate();
+      t2.truncate();
+    }
+
+    else {
+      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, canonical_osvs_);
+      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, canonical_pnos_);
+      t1("a,i") += delta_t1_ai("a,i");
+      t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
+      t1.truncate();
+      t2.truncate();
+
+    }
   }
 
 
@@ -511,6 +559,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   Array T_;
 
   Eigen::MatrixXd F_occ_act_;
+
   // For storing PNOs and and the Fock matrix in the PNO basis
   std::vector<Eigen::MatrixXd> pnos_;
   std::vector<Eigen::VectorXd> F_pno_diag_;
@@ -519,6 +568,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   // the OSV basis
   std::vector<Eigen::MatrixXd> osvs_;
   std::vector<Eigen::VectorXd> F_osv_diag_;
+
+  // For storing canonical PNOs and canonical OSVs
+  std::vector<Eigen::MatrixXd> canonical_pnos_;
+  std::vector<Eigen::MatrixXd> canonical_osvs_;
 
 
 };

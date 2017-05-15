@@ -159,10 +159,32 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       : ::mpqc::cc::DIISSolver<T, T>(kv),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
+        pno_canonical_(kv.value<std::string>("pno_canonical", "false")),
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)) {
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
+
+    // Check that tiling is done appropriately
+    if (kv.exists("occ_block_size")) {
+      int occ_block_size_ = (kv.value<int>("occ_block_size"));
+      if (occ_block_size_ != 1) {
+        throw InputError("occ_block_size must be set to 1 in the input file.");
+      }
+    }
+    else {
+      throw InputError("occ_block_size was not specified in the input file.");
+    }
+
+    if (kv.exists("unocc_block_size")) {
+      int unocc_block_size_ = (kv.value<int>("unocc_block_size"));
+      if (unocc_block_size_ < 1000000000) {
+        throw InputError("unocc_block_size must be greater than or equal to 1000000000 in the input file.");
+      }
+    }
+    else {
+      throw InputError("unocc_block_size was not specified in the input file.");
+    }
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
 
@@ -482,9 +504,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
 
   Factory<T>& factory_;
-  std::string pno_method_;  //!< the PNO construction method
-  double tpno_;             //!< the PNO truncation threshold
-  double tosv_;             //!< the OSV (diagonal PNO) truncation threshold
+  std::string pno_method_;      //!< the PNO construction method
+  std::string pno_canonical_;   // !< whether or not to canonicalize PNO/OSV
+  double tpno_;                 //!< the PNO truncation threshold
+  double tosv_;                 //!< the OSV (diagonal PNO) truncation threshold
   Array T_;
 
   Eigen::MatrixXd F_occ_act_;

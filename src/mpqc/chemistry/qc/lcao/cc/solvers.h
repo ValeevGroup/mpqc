@@ -306,17 +306,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
 
 
-        /////// Transform PNOs to canonical PNOs
+        /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-        // Compute eigenvectors of F in PNO space
-        es.compute(F_pno_ij);
-        Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+        if (pno_canonical_ == "true") {
 
-        // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-        Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+          // Compute eigenvectors of F in PNO space
+          es.compute(F_pno_ij);
+          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-        // Store canonical PNOs
-        canonical_pnos_[i * nocc_act + j] = can_pno_ij;
+          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+
+          // Store canonical PNOs
+          canonical_pnos_[i * nocc_act + j] = can_pno_ij;
+        }
 
         // truncate OSVs
 
@@ -343,17 +346,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           F_osv_diag_[i] = F_osv_i.diagonal();
 
 
-          /////// Transform OSVs to canonical OSVs
+          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
 
-          // Compute eigenvectors of F in OSV space
-          es.compute(F_osv_i);
-          Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+          if (pno_canonical_ == "true") {
 
-          // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-          Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+            // Compute eigenvectors of F in OSV space
+            es.compute(F_osv_i);
+            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-          // Store canonical OSVs
-          canonical_osvs_[i] = can_osv_i;
+            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+
+            // Store canonical OSVs
+            canonical_osvs_[i] = can_osv_i;
+          }
         }
       }
     }
@@ -372,9 +378,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
 
-    if (pno_canonical_ == "false") {
-      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+    if (pno_canonical_ == "true") {
+      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, canonical_osvs_);
+      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, canonical_pnos_);
       t1("a,i") += delta_t1_ai("a,i");
       t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
       t1.truncate();
@@ -382,8 +388,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     }
 
     else {
-      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, canonical_osvs_);
-      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, canonical_pnos_);
+      auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+      auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
       t1("a,i") += delta_t1_ai("a,i");
       t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
       t1.truncate();

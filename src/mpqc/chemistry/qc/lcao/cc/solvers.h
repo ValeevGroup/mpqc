@@ -195,7 +195,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
 
     // Compute all K_aibj
-    auto K = fac.compute(L"(a i|G|b j)");
+    auto K = fac.compute(L"(a b|G|i j)");
     const auto ktrange = K.trange();
 
     // zero out amplitudes
@@ -220,8 +220,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       for (int j = 0; j < nocc_act; ++j) {
         double eps_j = eps_o[j];
         int delta_ij = (i == j) ? 1 : 0;
-        std::array<int, 4> tile_ij = {{0, i, 0, j}};
-        std::array<int, 4> tile_ji = {{0, j, 0, i}};
+        std::array<int, 4> tile_ij = {{0, 0, i, j}};
+        std::array<int, 4> tile_ji = {{0, 0, j, i}};
         const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
         const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
         TA::TensorD K_ij = K.find(ord_ij);
@@ -229,9 +229,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         auto ext_ij = K_ij.range().extent_data();
         auto ext_ji = K_ji.range().extent_data();
         Eigen::MatrixXd K_ij_mat =
-            TA::eigen_map(K_ij, ext_ij[0] * ext_ij[1], ext_ij[2] * ext_ij[3]);
+            TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
         Eigen::MatrixXd K_ji_mat =
-            TA::eigen_map(K_ji, ext_ji[0] * ext_ji[1], ext_ji[2] * ext_ji[3]);
+            TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
         Eigen::MatrixXd T_ij(nvir, nvir);
         Eigen::MatrixXd T_ji(nvir, nvir);
@@ -258,7 +258,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
         // truncate PNOs
         size_t pnodrop = 0;
-        for (size_t i = 0; i != occ_ij.cols(); ++i) {
+        for (size_t i = 0; i != occ_ij.rows(); ++i) {
           if (!(occ_ij(i) >= tpno_))
             ++pnodrop;
           else
@@ -275,14 +275,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         // Now transforming using truncated PNO matrix; store just diag
         // elements:
         F_pno_diag_[i * nocc_act + j] =
-            (pno_trunc.transpose() + F_uocc * pno_trunc).diagonal();
+            (pno_trunc.transpose() * F_uocc * pno_trunc).diagonal();
 
         auto nosv = 0;
 
         // truncate OSVs
         if (i == j) {
           size_t osvdrop = 0;
-          for (size_t i = 0; i != occ_ij.cols(); ++i) {
+          for (size_t i = 0; i != occ_ij.rows(); ++i) {
             if (!(occ_ij(i) >= tosv_))
               ++osvdrop;
             else
@@ -337,7 +337,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       result_tile = Tile(arg_tile.range());
 
       // determine i and j indices
-      const auto i = arg_tile.range().lobound()[1];
+      const auto i = arg_tile.range().lobound()[2];
       const auto j = arg_tile.range().lobound()[3];
 
       // Select appropriate matrix of PNOs
@@ -349,7 +349,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Convert data in tile to Eigen::Map and transform to PNO basis
       const Eigen::MatrixXd r2_pno =
           pno_ij.transpose() *
-          TA::eigen_map(arg_tile, ext[0] * ext[1], ext[2] * ext[3]) * pno_ij;
+          TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
 
       // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO basis
       // this matrix will then be back transformed to full basis before
@@ -375,10 +375,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         const auto e_a = ens_uocc[a];
         for (auto b = 0; b < npno; ++b) {
           const auto e_b = ens_uocc[b];
-          const auto e_iajb = e_i + e_j - e_a - e_b;
-          const auto old = r2_pno(a,b);
-          const auto result_abij = old / e_iajb;
-          delta_t2_pno(a,b) = result_abij;
+          const auto e_abij = e_i + e_j - e_a - e_b;
+          const auto r_abij = r2_pno(a,b);
+          delta_t2_pno(a,b) = r_abij / e_abij;
         }
       }
 
@@ -423,16 +422,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Extent data of tile
       const auto ext = arg_tile.range().extent_data();
+      //ExEnv::out0() << ext[0] << ext[1] << ext[2] << ext[3] << std::endl;
 
       // Convert data in tile to Eigen::Map and transform to OSV basis
-      const Eigen::MatrixXd r1_osv =
-          osv_i.transpose() * TA::eigen_map(arg_tile, ext[1], ext[0]) *
-          osv_i;
+      const Eigen::VectorXd r1_osv =
+          osv_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
+      
+      
 
       // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV basis
       // this matrix will then be back transformed to full basis before
       // being converted to a tile
-      Eigen::MatrixXd delta_t1_osv = r1_osv;
+      Eigen::VectorXd delta_t1_osv = r1_osv;
 
 
 
@@ -452,27 +453,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       
       for (auto a = 0; a < nosv; ++a) {
         const auto e_a = ens_uocc[a];
-        const auto e_ia = e_i - e_a;
-        const auto old = r1_osv(0, a);
-        const auto result_ai = old / e_ia;
-        delta_t1_osv(0, a) = result_ai;
+        const auto e_ai = e_i - e_a;
+        const auto r_ai = r1_osv(a);
+        delta_t1_osv(a) = r_ai / e_ai;
       }
 
       // Back transform delta_t1_osv to full space
-      Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv * osv_i.transpose();
+      //Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv * osv_i.transpose();
+      Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
+
 
       // Convert delta_t1_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
       for (auto r=0; r<nuocc; ++r) {
-        for (auto c=0; c<nuocc; ++c) {
-          const auto idx = r*nuocc + c;
-          const auto elem = delta_t1_full(r,c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
-        }
+        const auto elem = delta_t1_full(r);
+        const auto abs_elem = std::abs(elem);
+        norm += abs_elem * abs_elem;
+        result_tile[r] = elem;
       }
-
+      
       return std::sqrt(norm);
     };
 

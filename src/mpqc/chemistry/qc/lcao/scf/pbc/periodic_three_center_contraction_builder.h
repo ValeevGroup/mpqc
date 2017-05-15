@@ -5,6 +5,8 @@
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
+#include <mutex>
+
 namespace mpqc {
 namespace scf {
 

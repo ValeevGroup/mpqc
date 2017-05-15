@@ -4,6 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
+#include <mutex>
+
 namespace mpqc {
 namespace scf {
 

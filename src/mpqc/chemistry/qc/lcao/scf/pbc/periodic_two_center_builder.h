@@ -3,6 +3,8 @@
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
+#include <mutex>
+
 namespace mpqc {
 namespace scf {
 

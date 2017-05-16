@@ -186,6 +186,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       throw InputError("unocc_block_size was not specified in the input file.");
     }
 
+    std::cout << "This is Marjory's PNO solver. Fabijan, have faith in me." << std::endl;
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
 
     auto& fac = factory_;
@@ -193,13 +194,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     auto& ofac = fac.orbital_registry();
 
     auto nocc = ofac.retrieve("m").rank();
+    std::cout << "nocc = " << nocc << std::endl;
     // ExEnv::out0() << "nocc = " << nocc;
     auto nocc_act = ofac.retrieve("i").rank();
+    std::cout << "nocc_act = " << nocc_act << std::endl;
     auto nvir = ofac.retrieve("a").rank();
+    std::cout << "nvir = " << nvir << std::endl;
     auto nfzc = nocc - nocc_act;
+    std::cout << "nfzc = " << nfzc << std::endl;
 
     // Form Fock array
-    auto F = fac.compute(L"(p|F|q)");
+    auto F = fac.compute(L"<p|F|q>[df]");
 
     // Select just diagonal elements of Fock aray and transform
     // to Eigen vector; use for computing PNOs
@@ -217,8 +222,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
 
     // Compute all K_aibj
-    auto K = fac.compute(L"(a b|G|i j)");
+    //auto K = fac.compute(L"(a b|G|i j)");
+    auto K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
+    std::cout << "ktrange" << ktrange << std::endl;
+
 
     // zero out amplitudes
     if (!T_.is_initialized()) {
@@ -236,10 +244,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     F_osv_diag_.resize(nocc_act);
 
     // Loop over each pair of occupieds to form PNOs
-    for (int i = 0, ij=0; i < nocc_act; ++i) {
+    for (int i = 0; i < nocc_act; ++i) {
       double eps_i = eps_o[i];
 
-      for (int j = 0; j < nocc_act; ++j, ++ij) {
+      for (int j = 0; j < nocc_act; ++j) {
         double eps_j = eps_o[j];
         int delta_ij = (i == j) ? 1 : 0;
         std::array<int, 4> tile_ij = {{0, 0, i, j}};
@@ -255,6 +263,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         Eigen::MatrixXd K_ji_mat =
             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
+        // std::cout << "K_ij for " << i << "," << j << " has dimensions (" << K_ij_mat.rows()
+        // << "," << K_ij_mat.cols() << ")" << std::endl;
+
+        // std::cout << "K_ji for " << i << "," << j << " has dimensions (" << K_ji_mat.rows()
+        // << "," << K_ji_mat.cols() << ")" << std::endl;
+
         Eigen::MatrixXd T_ij(nvir, nvir);
         Eigen::MatrixXd T_ji(nvir, nvir);
         Eigen::MatrixXd T_tilde_ij(nvir, nvir);
@@ -268,40 +282,48 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
             T_ji(a, b) = -K_ji_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
           }
         }
+
+        std::cout << "K_ij for i = " << i << ", j = " << j << " is\n" << K_ij_mat << std::endl;
+        std::cout << "K_ji for i = " << i << ", j = " << j << " is\n" << K_ji_mat << std::endl;
+
+
         T_tilde_ij = 2 * T_ij - T_ji;
         Eigen::MatrixXd D_ij =
-            (T_tilde_ij.adjoint() * T_ij + T_tilde_ij * T_ij.adjoint()) /
-            (1 + delta_ij);
+            (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
+            (1.0 + delta_ij);
 
         // Diagonalize D_ij to get PNOs and corresponding occupation numbers.
         es.compute(D_ij);
         Eigen::MatrixXd pno_ij = es.eigenvectors();
         auto occ_ij = es.eigenvalues();
 
-        std::cout << "i=" << i << " j=" << j << " occ_ij=" << occ_ij << std::endl;
+        std::cout << "i=" << i << " j=" << j << " occ_ij=\n" << occ_ij << std::endl;
 
         // truncate PNOs
         size_t pnodrop = 0;
         if (tpno_ != 0.0) {
-          for (size_t i = 0; i != occ_ij.rows(); ++i) {
-            if (!(occ_ij(i) >= tpno_))
+          for (size_t k = 0; k != occ_ij.rows(); ++k) {
+            if (!(occ_ij(k) >= tpno_))
               ++pnodrop;
             else
               break;
           }
         }
         const auto npno = nvir - pnodrop;
+        std::cout << "For i = " << i << " and j = " << j << " npno = " << npno << std::endl;
 
         // Store truncated PNOs
         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nvir,npno);
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
-        pnos_[ij] = pno_trunc;
+        //pnos_[ij] = pno_trunc;
+        pnos_[i * nocc_act + j] = pno_trunc;
 
         // Transform F to PNO space
         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
         // Store just the diagonal elements of F_pno_ij
-        F_pno_diag_[ij] = F_pno_ij.diagonal();
+        //F_pno_diag_[ij] = F_pno_ij.diagonal();
+        F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
 
         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
@@ -315,27 +337,30 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
           // Replace standard with canonical PNOs
-          pnos_[ij] = can_pno_ij;
-          F_pno_diag_[ij] = es.eigenvalues();
-          std::cout << "i=" << i << " j=" << j << " pnos_[ij]=" << pnos_[ij] << std::endl;
-          std::cout << "i=" << i << " j=" << j << " F_pno_diag_[ij]=" << F_pno_diag_[ij] << std::endl;
+          //pnos_[ij] = can_pno_ij;
+          //F_pno_diag_[ij] = es.eigenvalues();
+          pnos_[i * nocc_act + j] = can_pno_ij;
+          F_pno_diag_[i * nocc_act + j] = es.eigenvalues();
+          //std::cout << "i=" << i << " j=" << j << " pnos_[ij]=" << pnos_[i*nocc_act + j] << "\n\n" << std::endl;
+          //std::cout << "i=" << i << " j=" << j << " F_pno_diag_[ij]=" << F_pno_diag_[i*nocc_act + j] << std::endl;
         }
 
         // truncate OSVs
 
-        auto nosv = 0;
+        //auto nosv = 0;
 
+        // auto osvdrop = 0;
         if (i == j) {
           size_t osvdrop = 0;
           if (tosv_ != 0.0) {
-            for (size_t i = 0; i != occ_ij.rows(); ++i) {
-              if (!(occ_ij(i) >= tosv_))
+            for (size_t k = 0; k != occ_ij.rows(); ++k) {
+              if (!(occ_ij(k) >= tosv_))
                 ++osvdrop;
               else
                 break;
             }
           }
-          nosv = nvir - osvdrop;
+          const auto nosv = nvir - osvdrop;
 
           // Store truncated OSVs
           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);
@@ -384,13 +409,23 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+    //T r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+
+    std::cout << "r2 = " << r2.trange() << std::endl;
+
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
     t1("a,i") += delta_t1_ai("a,i");
-//    T t1_new(t1.world(), t1.trange(), t1.shape()); t1_new.fill(0.0); t1("a,i") = t1_new("a,i");
+    //T t1_new(t1.world(), t1.trange(), t1.shape()); t1_new.fill(0.0); t1("a,i") = t1_new("a,i");
     t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
     t1.truncate();
     t2.truncate();
+    // std::cout << "r1.trange = " << r1.trange() << std::endl;
+    // std::cout << "t1.trange = " << t1.trange() << std::endl;
+    // std::cout << "r2.trange = " << r2.trange() << std::endl;
+    // std::cout << "t2.trange = " << t2.trange() << std::endl;
+    //std::cout << "t1:\n" << t1 << std::endl;
+    //std::cout << "t2:\n" << t2 << std::endl;
   }
 
   template <typename Tile, typename Policy>
@@ -400,15 +435,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       const std::vector<Eigen::MatrixXd>& pnos) {
 
     auto nocc_act = F_occ_act.rows();
+    //std::cout << "nocc_act = " << nocc_act << std::endl;
 
     auto update2 = [F_occ_act, F_pno_diag, pnos, nocc_act](Tile& result_tile,
                                                        const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
 
+      //std::cout << "arg_tile = " << arg_tile.range() << std::endl;
       // determine i and j indices
       const auto i = arg_tile.range().lobound()[2];
       const auto j = arg_tile.range().lobound()[3];
+
+      //std::cout << "i = " << i << std::endl;
+      //std::cout << "j = " << j << std::endl;
 
       // Select appropriate matrix of PNOs
       Eigen::MatrixXd pno_ij = pnos[i * nocc_act + j];
@@ -416,10 +456,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Extent data of tile
       const auto ext = arg_tile.range().extent_data();
 
+      //std::cout << arg_tile << std::endl;
       // Convert data in tile to Eigen::Map and transform to PNO basis
       const Eigen::MatrixXd r2_pno =
           pno_ij.transpose() *
-          TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
+          TA::eigen_map(arg_tile, ext[0], ext[1]) * pno_ij;
+
+      std::cout << "r2_pno:\n" << r2_pno << std::endl;
 
       // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO basis
       // this matrix will then be back transformed to full basis before
@@ -433,9 +476,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Determine number of PNOs
       const auto npno = ens_uocc.rows();
+      //std::cout << "npno = " << npno << std::endl;
 
       // Determine number of uocc
       const auto nuocc = pno_ij.rows();
+      //std::cout << "nvir = " << nuocc << std::endl;
 
       // Select e_i and e_j
       const auto e_i = F_occ_act(i, i);
@@ -453,6 +498,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Back transform delta_t2_pno to full space
       Eigen::MatrixXd delta_t2_full = pno_ij * delta_t2_pno * pno_ij.transpose();
+      //std::cout << "delta_t2_full has " << delta_t2_full.rows() << " rows" << std::endl;
 
       // Convert delta_t2_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0; 
@@ -486,6 +532,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // determine i index
       const auto i = arg_tile.range().lobound()[1];
+      //std::cout << "i = " << i << std::endl;
 
       // Select appropriate matrix of OSVs
       Eigen::MatrixXd osv_i = osvs[i];
@@ -511,9 +558,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Determine number of OSVs
       const auto nosv = ens_uocc.rows();
+      //std::cout << "nosv = " << nosv << std::endl;
 
       // Determine number of uocc
       const auto nuocc = osv_i.rows();
+      //std::cout << "nvir = " << nuocc << std::endl;
 
       // Select e_i
       const auto e_i = F_occ_act(i, i);
@@ -529,6 +578,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Back transform delta_t1_osv to full space
       //Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv * osv_i.transpose();
       Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
+      //std::cout << "delta_t1_full has " << delta_t1_full.rows() << " rows" << std::endl;
 
 
       // Convert delta_t1_full to tile and compute norm

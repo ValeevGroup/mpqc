@@ -186,7 +186,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       throw InputError("unocc_block_size was not specified in the input file.");
     }
 
-    std::cout << "This is Marjory's PNO solver. Fabijan, have faith in me." << std::endl;
+    //std::cout << "This is Marjory's PNO solver. Fabijan, have faith in me." << std::endl;
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
 
     auto& fac = factory_;
@@ -283,11 +283,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           }
         }
 
-        std::cout << "K_ij for i = " << i << ", j = " << j << " is\n" << K_ij_mat << std::endl;
-        std::cout << "K_ji for i = " << i << ", j = " << j << " is\n" << K_ji_mat << std::endl;
+        // std::cout << "K_ij for i = " << i << ", j = " << j << " is\n" << K_ij_mat << std::endl;
+        // std::cout << "K_ji for i = " << i << ", j = " << j << " is\n" << K_ji_mat << std::endl;
 
 
-        T_tilde_ij = 2 * T_ij - T_ji;
+        // Eq. 23, JCP 128 034106 (2013)
+        T_tilde_ij = 4 * T_ij - 2 * T_ji;
         Eigen::MatrixXd D_ij =
             (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
             (1.0 + delta_ij);
@@ -412,7 +413,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     //T r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
 
-    std::cout << "r2 = " << r2.trange() << std::endl;
+    //std::cout << "r2 = " << r2.trange() << std::endl;
 
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
     t1("a,i") += delta_t1_ai("a,i");
@@ -460,9 +461,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
       // Convert data in tile to Eigen::Map and transform to PNO basis
       const Eigen::MatrixXd r2_pno =
           pno_ij.transpose() *
-          TA::eigen_map(arg_tile, ext[0], ext[1]) * pno_ij;
+          TA::eigen_map(arg_tile, ext[0]*ext[2], ext[1]*ext[3]) * pno_ij;
 
-      std::cout << "r2_pno:\n" << r2_pno << std::endl;
+      //std::cout << "r2_pno:\n" << r2_pno << std::endl;
 
       // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO basis
       // this matrix will then be back transformed to full basis before
@@ -476,7 +477,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Determine number of PNOs
       const auto npno = ens_uocc.rows();
-      //std::cout << "npno = " << npno << std::endl;
+      std::cout << "npno = " << npno << std::endl;
 
       // Determine number of uocc
       const auto nuocc = pno_ij.rows();

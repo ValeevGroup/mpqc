@@ -642,6 +642,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     t1.truncate();
 
     t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
+    t2("a,b,i,j") = t2("a,b,i,j") * 0.0;
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -901,7 +902,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
 
       // zero out singles if want CCD
-      //TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
+      TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
       error = solver_->error(r1, r2);
 
       // recompute energy

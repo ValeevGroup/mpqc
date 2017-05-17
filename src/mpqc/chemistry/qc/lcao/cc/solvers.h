@@ -298,7 +298,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         Eigen::MatrixXd pno_ij = es.eigenvectors();
         auto occ_ij = es.eigenvalues();
 
-        std::cout << "i=" << i << " j=" << j << " occ_ij=\n" << occ_ij << std::endl;
+        //std::cout << "i=" << i << " j=" << j << " occ_ij=\n" << occ_ij << std::endl;
 
         // truncate PNOs
         size_t pnodrop = 0;
@@ -311,7 +311,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
           }
         }
         const auto npno = nvir - pnodrop;
-        std::cout << "For i = " << i << " and j = " << j << " npno = " << npno << std::endl;
+        //std::cout << "For i = " << i << " and j = " << j << " npno = " << npno << std::endl;
 
         // Store truncated PNOs
         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nvir,npno);
@@ -391,6 +391,23 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
         }
       }
     }
+    auto sum_osv = 0;
+    for (int i=0; i<nocc_act; ++i) {
+      sum_osv += osvs_[i].cols();
+    }
+    auto ave_nosv = sum_osv / nocc_act;
+    std::cout << "The average number of OSVs is " << ave_nosv << std::endl;
+
+
+    auto sum_pno = 0;
+    for (int i=0; i<nocc_act; ++i) {
+      for (int j=0; j<nocc_act; ++j) {
+        sum_pno += pnos_[i*nocc_act + j].cols();
+      }
+    }
+    auto ave_npno = sum_pno / (nocc_act * nocc_act);
+    std::cout << "The average number of PNOs is " << ave_npno << std::endl;
+
   }
   virtual ~PNOSolver() = default;
 
@@ -410,17 +427,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    //T r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-
-    //std::cout << "r2 = " << r2.trange() << std::endl;
-
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
     t1("a,i") += delta_t1_ai("a,i");
-    //T t1_new(t1.world(), t1.trange(), t1.shape()); t1_new.fill(0.0); t1("a,i") = t1_new("a,i");
     t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
     t1.truncate();
     t2.truncate();
+
+
+    //T r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
+    //T t1_new(t1.world(), t1.trange(), t1.shape()); t1_new.fill(0.0); t1("a,i") = t1_new("a,i");
     // std::cout << "r1.trange = " << r1.trange() << std::endl;
     // std::cout << "t1.trange = " << t1.trange() << std::endl;
     // std::cout << "r2.trange = " << r2.trange() << std::endl;
@@ -477,7 +493,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
       // Determine number of PNOs
       const auto npno = ens_uocc.rows();
-      std::cout << "npno = " << npno << std::endl;
+      //std::cout << "npno = " << npno << std::endl;
 
       // Determine number of uocc
       const auto nuocc = pno_ij.rows();

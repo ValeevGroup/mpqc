@@ -362,6 +362,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
             }
           }
           const auto nosv = nvir - osvdrop;
+          if(nosv == 0) {  // all OSV truncated indicates total nonsense
+            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__, __LINE__, 1, 0);
+          }
 
           // Store truncated OSVs
           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);

@@ -328,7 +328,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-        if (pno_canonical_ == "true") {
+        if (pno_canonical_ == "true" && npno > 0) {
 
           // Compute eigenvectors of F in PNO space
           es.compute(F_pno_ij);

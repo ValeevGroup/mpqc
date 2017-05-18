@@ -17,13 +17,16 @@ template <typename Tile, typename Policy>
 PurificationDensityBuilder<Tile, Policy>::PurificationDensityBuilder(
     PurificationDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<PurificationDensityBuilder<Tile, Policy>::array_type> r_xyz,
-    int64_t occ, int64_t nclusters, double TcutC, bool localize)
+    int64_t occ, int64_t ncore, int64_t nclusters, double TcutC, bool localize,
+    std::string localization_method)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
       localize_(localize),
+      localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
-      occ_(occ) {
+      occ_(occ),
+      ncore_(ncore) {
   M_inv_ = array_ops::inverse_sqrt(S_);
   I_ = array_ops::create_diagonal_matrix(S_, 1.0);
 }
@@ -83,7 +86,7 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
       array_ops::eigen_to_array<Tile,Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localize_) {
-    auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
+    auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
     Cao("mu,i") = Cao("mu,k") * U("k,i");
 
     auto obs_ntiles = Cao.trange().tiles_range().extent()[0];

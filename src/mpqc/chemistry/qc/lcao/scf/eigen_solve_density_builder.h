@@ -24,9 +24,11 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
 
   double TcutC_;
   bool localize_;
+  std::string localization_method_;
   int64_t n_coeff_clusters_;
   std::string metric_decomp_type_;
   int64_t nocc_;  //!< # of occupied orbitals
+  int64_t ncore_;  //!< # of core orbitals (will be skipped in localization)
 
   double condition_num_thresh_ = 1e-10;
 
@@ -46,11 +48,14 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   ESolveDensityBuilder &operator=(ESolveDensityBuilder &&) = default;
   ~ESolveDensityBuilder() noexcept = default;
 
+  /// @param[in] localization_method defined the localization method; valid choices are "boys-foster" (default),
+  ///            "boys-foster(valence)" (do not localize the core).
   ESolveDensityBuilder(
       array_type const &S, std::vector<array_type> r_xyz, int64_t nocc,
-      int64_t nclusters, double TcutC = 0.0,
+      int64_t ncore, int64_t nclusters, double TcutC = 0.0,
       std::string const &metric_decomp_type = "cholesky_inverse",
-      bool localize = true);
+      bool localize = true,
+      std::string localization_method = "boys-foster");
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;
 

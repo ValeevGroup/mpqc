@@ -139,7 +139,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T>
-class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
+class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>, public madness::WorldObject<PNOSolver<T>> {
  public:
   // clang-format off
   /**
@@ -156,12 +156,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T>& factory)
-      : ::mpqc::cc::DIISSolver<T, T>(kv),
+      : ::mpqc::cc::DIISSolver<T, T>(kv), madness::WorldObject<PNOSolver<T>>(factory.world()),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
         pno_canonical_(kv.value<std::string>("pno_canonical", "false")),
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)) {
+    // part of WorldObject initialization
+    this->process_pending();
+
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
 

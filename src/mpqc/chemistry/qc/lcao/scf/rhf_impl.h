@@ -311,7 +311,7 @@ void RHF<Tile, Policy>::evaluate(PopulatedOrbitalSpace<array_type>* result,
                                  std::size_t target_blocksize) {
   if (!can_evaluate(result))
     throw ProgrammingError(
-        "RHF: populatd orbitals requested, but can't compute them", __FILE__,
+        "RHF: populated orbitals requested, but can't compute them", __FILE__,
         __LINE__);
 
   do_evaluate(target_energy_precision);

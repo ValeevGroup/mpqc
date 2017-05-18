@@ -21,7 +21,7 @@ macro (import_tbb)
           )
     elseif(TBB_LIBRARIES_RELEASE)
       set_target_properties(tbb PROPERTIES IMPORTED_LOCATION "${TBB_LIBRARY_RELEASE}")
-    else()
+    elseif(TBB_LIBRARIES_DEBUG)
       set_target_properties(tbb PROPERTIES
           INTERFACE_COMPILE_DEFINITIONS "TBB_USE_DEBUG=1"
           IMPORTED_LOCATION              "${TBB_LIBRARY_DEBUG}"

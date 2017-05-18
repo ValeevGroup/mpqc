@@ -197,6 +197,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     std::cout << "nocc = " << nocc << std::endl;
     // ExEnv::out0() << "nocc = " << nocc;
     auto nocc_act = ofac.retrieve("i").rank();
+    nocc_act_ = nocc_act;
     std::cout << "nocc_act = " << nocc_act << std::endl;
     auto nvir = ofac.retrieve("a").rank();
     std::cout << "nvir = " << nvir << std::endl;
@@ -419,10 +420,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// @return OSV truncation threshold
   double tosv() const { return tosv_; }
 
-  /// Overrides Solver<T,T>::error()
-//  virtual double error(const T& r1, const T& r2) override {
-//    return 0.0;
-//  }
+  const auto& pno(int i, int j) const {
+    return pnos_[i * nocc_act_ + j];
+  }
+  const auto& osv(int i) const {
+    return osvs_[i];
+  }
 
  private:
 
@@ -618,12 +621,83 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     return delta_t1_ai;
   }
 
+  // squared norm of 1-body residual in OSV subspace
+  struct R1SquaredNormReductionOp {
+    // typedefs
+    typedef typename TA::detail::scalar_type<T>::type result_type;
+    typedef typename T::value_type argument_type;
 
+    R1SquaredNormReductionOp(PNOSolver<T>* solver) : solver_(solver) {}
+
+    // Reduction functions
+    // Make an empty result object
+    result_type operator()() const { return 0; }
+    // Post process the result (no operation, passthrough)
+    const result_type& operator()(const result_type& result) const {
+      return result;
+    }
+    void operator()(result_type& result, const result_type& arg) const {
+      result += arg;
+    }
+    /// Reduce an argument pair
+    void operator()(result_type& result, const argument_type& arg) const {
+      const auto i = arg.range().lobound()[1];
+      const auto nuocc = arg.range().extent_data()[0];
+      const Eigen::MatrixXd arg_osv = TA::eigen_map(arg, 1, nuocc) *
+                                      solver_->osv(i);
+      result += arg_osv.squaredNorm();
+    }
+
+    PNOSolver<T>* solver_;
+  };  // R1SquaredNormReductionOp
+
+  // squared norm of 2-body residual in PNO subspace
+  struct R2SquaredNormReductionOp {
+    // typedefs
+    typedef typename TA::detail::scalar_type<T>::type result_type;
+    typedef typename T::value_type argument_type;
+
+    R2SquaredNormReductionOp(PNOSolver<T>* solver) : solver_(solver) {}
+
+    // Reduction functions
+    // Make an empty result object
+    result_type operator()() const { return 0; }
+    // Post process the result (no operation, passthrough)
+    const result_type& operator()(const result_type& result) const {
+      return result;
+    }
+    void operator()(result_type& result, const result_type& arg) const {
+      result += arg;
+    }
+    /// Reduce an argument pair
+    void operator()(result_type& result, const argument_type& arg) const {
+      const auto i = arg.range().lobound()[2];
+      const auto j = arg.range().lobound()[3];
+      const auto nuocc = arg.range().extent_data()[0];
+      const Eigen::MatrixXd arg_pno = solver_->pno(i, j).transpose() *
+                                      TA::eigen_map(arg, nuocc, nuocc) *
+                                      solver_->pno(i, j);
+      result += arg_pno.squaredNorm();
+    }
+
+    PNOSolver<T>* solver_;
+  };  // R2SquaredNormReductionOp
+
+ public:
+  /// Overrides Solver<T,T>::error()
+  virtual double error(const T& r1, const T& r2) override {
+    R1SquaredNormReductionOp op1(this);
+    R2SquaredNormReductionOp op2(this);
+    return sqrt(r1("a,i").reduce(op1).get() + r2("a,b,i,j").reduce(op2).get()) / (size(r1) + size(r2));
+  }
+
+ private:
   Factory<T>& factory_;
   std::string pno_method_;      //!< the PNO construction method
-  std::string pno_canonical_;   // !< whether or not to canonicalize PNO/OSV
+  std::string pno_canonical_;   //!< whether or not to canonicalize PNO/OSV
   double tpno_;                 //!< the PNO truncation threshold
   double tosv_;                 //!< the OSV (diagonal PNO) truncation threshold
+  int nocc_act_;                //!< the number of axctive occupied orbitals
   Array T_;
 
   Eigen::MatrixXd F_occ_act_;

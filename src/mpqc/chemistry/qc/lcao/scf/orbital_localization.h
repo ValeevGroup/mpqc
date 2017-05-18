@@ -22,7 +22,9 @@ using Mat =
 double boys_object(std::array<Mat, 3> const &xyz);
 
 double gamma(double Aij, double Bij);
-void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz);
+void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
+                   double convergence_threshold = 1e-4,
+                   size_t max_iter = 50);
 
 /// Performs Boys-Foster localization
 class BoysLocalization {

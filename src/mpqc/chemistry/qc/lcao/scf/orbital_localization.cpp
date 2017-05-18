@@ -3,6 +3,7 @@
 namespace mpqc {
 namespace scf {
 
+/// Boys-Foster objective function
 double boys_object(std::array<Mat, 3> const &xyz) {
   auto sum = 0.0;
   for (auto i = 0; i < xyz[0].cols(); ++i) {
@@ -22,7 +23,9 @@ double gamma(double Aij, double Bij) {
   return (std::abs(ang) < 1e-7) ? 0 : ang;
 };
 
-void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
+void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
+                   double convergence_threshold,
+                   size_t max_iter) {
   std::array<Mat, 3> mo_xyz;
   mo_xyz[0] = Cm.transpose() * ao_xyz[0] * Cm;
   mo_xyz[1] = Cm.transpose() * ao_xyz[1] * Cm;
@@ -35,7 +38,7 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
   auto crit = boys_object(mo_xyz);
   auto iter = 1;
   auto error = crit - 0;
-  while (error > 1e-4 && iter <= 50) {
+  while (error > convergence_threshold && iter <= max_iter) {
     for (auto i = 0; i < Cm.cols(); ++i) {
       for (auto j = i + 1; j < Cm.cols(); ++j) {
         Vector3d vij = {mx(i, j), my(i, j), mz(i, j)};

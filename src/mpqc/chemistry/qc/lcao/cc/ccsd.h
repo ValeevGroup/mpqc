@@ -902,7 +902,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
 
       // zero out singles if want CCD
-      TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
+      //TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
       error = solver_->error(r1, r2);
 
       // recompute energy

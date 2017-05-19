@@ -100,6 +100,16 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    */
   MatrixZ reverse_phase_factor(MatrixZ& mat0);
 
+  /*!
+   * \brief This reduces the size of density matrix to fit the size of Fock
+   * when RD_max_ > R_max_
+   *
+   * \param D original density matrix
+   * \param F Fock matrix
+   * \return reduced-size density matrix
+   */
+  array_type reduced_size_density(const array_type &D, const array_type &F);
+
  protected:
   array_type S_;
   array_type D_;

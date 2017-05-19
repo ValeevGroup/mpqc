@@ -411,7 +411,7 @@ class PeriodicFourCenterFockBuilder
         // make Qmatrix for ket
         // (ket0 ket1 | ket0 ket1) = (bra0 bra1 | bra0 bra1)
         // using translational symmetry
-        if (bra_basis_ == ket_basis_) {
+        if (bra_basis_ == ket_basis_ && R_max_ == RD_max_) {
           j_p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
               lcao::gaussian::SchwarzScreen(Qbra, Qbra, screen_threshold_));
         } else {
@@ -471,7 +471,7 @@ class PeriodicFourCenterFockBuilder
             basis0, basisR, shell_pair_threshold_);
         j_basisR_shell_offset_map_ = compute_shell_offset(basisR);
 
-        if (bra_basis_ == ket_basis_) {
+        if (bra_basis_ == ket_basis_ && R_max_ == RD_max_) {
           sig_j_ket_shellpair_list_ = sig_j_bra_shellpair_list_;
           j_basisRJ_shell_offset_map_ = basis0_shell_offset_map_;
           j_basisRD_shell_offset_map_ = j_basisR_shell_offset_map_;

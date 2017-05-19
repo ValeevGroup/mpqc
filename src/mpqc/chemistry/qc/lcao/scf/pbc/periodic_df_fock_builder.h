@@ -96,12 +96,13 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     auto RD_size = ao_factory_.RD_size();
     auto screen = ao_factory_.screen();
     auto screen_threshold = ao_factory_.screen_threshold();
+    auto shell_pair_threshold = ao_factory_.shell_pair_threshold();
 
     // construct PerioidcThreeCenterContractionBuilder for contractions
     // involving 3-center ints
     three_center_builder_ = std::make_unique<PTC_Builder>(
         world, basis, aux_basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-        RD_size, screen, screen_threshold);
+        RD_size, screen, screen_threshold, shell_pair_threshold);
 
     auto t1_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_init, t1_init);
@@ -110,7 +111,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     // construct PerioidcFourCenterFockBuilder for exchange term
     k_builder_ = std::make_unique<PFC_Builder>(
         world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-        RD_size, false, true, screen, screen_threshold);
+        RD_size, false, true, screen, screen_threshold, shell_pair_threshold);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

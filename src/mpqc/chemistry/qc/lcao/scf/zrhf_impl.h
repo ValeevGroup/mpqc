@@ -9,6 +9,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace lcao {
@@ -382,30 +383,6 @@ MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(MatrixZ& mat0) {
 }
 
 template <typename Tile, typename Policy>
-typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::reduced_size_density(
-    const array_type& D, const array_type& F) {
-  auto& world = F.world();
-
-  const auto tr0 = F.trange().data()[0];
-  const auto tr1 = F.trange().data()[1];
-  const auto ext = tr0.extent();
-  assert(ext == D.trange().data()[0].extent());
-
-  const auto D_eig = array_ops::array_to_eigen(D);
-  Matrix result_eig(ext, ext * R_size_);
-
-  for (auto R = 0; R != R_size_; ++R) {
-    const auto R_3D = ::mpqc::lcao::detail::direct_3D_idx(R, R_max_);
-    const auto RD = ::mpqc::lcao::detail::direct_ord_idx(R_3D(0), R_3D(1),
-                                                         R_3D(2), RD_max_);
-
-    result_eig.block(0, R * ext, ext, ext) = D_eig.block(0, RD * ext, ext, ext);
-  }
-
-  return array_ops::eigen_to_array<Tile, Policy>(world, result_eig, tr0, tr1);
-}
-
-template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::obsolete() {
   Wavefunction::obsolete();
 }
@@ -428,15 +405,9 @@ void zRHF<Tile, Policy>::evaluate(Energy* result) {
 
 template <typename Tile, typename Policy>
 double zRHF<Tile, Policy>::compute_energy() {
-  assert(R_max_(0) <= RD_max_(0) && R_max_(1) <= RD_max_(1) &&
-         R_max_(2) <= RD_max_(2));
-  double ezrhf;
-  if (R_max_ == RD_max_) {
-    ezrhf = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
-  } else {
-    auto D = reduced_size_density(D_, F_);
-    ezrhf = (H_("mu, nu") + F_("mu, nu")) * D("mu, nu");
-  }
+  array_type H_plus_F;
+  H_plus_F("mu, nu") = H_("mu, nu") + F_("mu, nu");
+  auto ezrhf = ::mpqc::pbc::detail::dot_product(H_plus_F, D_, R_max_, RD_max_);
   return ezrhf;
 }
 

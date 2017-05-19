@@ -5,6 +5,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace scf {
@@ -187,7 +188,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
       // intermediate for C_para_Xμν D_μν
       t0 = mpqc::fenced_now(world);
       array_type interm;
-      double prefactor = M_("mu, nu") * D("mu, nu");
+      auto R_max = ao_factory_.R_max();
+      auto RD_max = ao_factory_.RD_max();
+      double prefactor = ::mpqc::pbc::detail::dot_product(M_, D, R_max, RD_max);
+
       interm("X") = (prefactor / q_)  * n_("X");
       t1 = mpqc::fenced_now(world);
       t_w_para = mpqc::duration_in_s(t0, t1);

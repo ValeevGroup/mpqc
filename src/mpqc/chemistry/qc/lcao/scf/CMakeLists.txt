@@ -38,6 +38,7 @@ list(APPEND sources
         pbc/periodic_three_center_contraction_builder.h
         pbc/periodic_four_center_fock_builder.h
         pbc/periodic_df_fock_builder.h
+        pbc/util.h
         )
 endif()
 

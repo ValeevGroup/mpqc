@@ -6,9 +6,10 @@ set(sources
         factory.cpp
         factory.h
         lcao_factory.h
-        periodic_ao_factory.cpp
         periodic_ao_factory.h
         periodic_lcao_factory.h
+        periodic_util.h
+        periodic_util.cpp
         set_oper.h
 )
 

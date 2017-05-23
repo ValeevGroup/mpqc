@@ -6,6 +6,7 @@
 #define MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/direct_task_integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h"
@@ -31,6 +32,10 @@ gaussian::Basis by_center_basis(gaussian::Basis const &in);
 TA::TiledRange cadf_trange(gaussian::Basis const &obs_by_atom,
                            gaussian::Basis const &dfbs_by_atom);
 
+TA::TiledRange cadf_trange(gaussian::Basis const &bs0_by_atom,
+                           gaussian::Basis const &bs1_by_atom,
+                           gaussian::Basis const &dfbs_by_atom);
+
 // Computes the correct shape for the cadf by atom tensor
 TA::SparseShape<float> cadf_shape(madness::World &world,
                                   TA::TiledRange const &trange);
@@ -52,18 +57,32 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Array const &, DirectArray const &, TA::TiledRange const &);
 
 // Function to compute the CADF coefficients in a by atom fashion
+template <typename Array, typename DirectArray>
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
+    Array const &, DirectArray const &, TA::TiledRange const &,
+    Vector3i const &, Vector3i const &, Vector3i const &, size_t const &);
+
+// Function to compute the CADF coefficients in a by atom fashion
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     madness::World &world, gaussian::Basis const &by_cluster_obs,
     gaussian::Basis const &by_cluster_dfbs);
 
-// Function to actually construct the cadf by atom array
-template <typename Array, typename DirectArray>
-TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
-    Array const &, DirectArray const &, TA::TiledRange const &);
+// Function to compute the CADF coefficients in a by atom fashion
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+    madness::World &world, gaussian::Basis const &by_cluster_bs0,
+    gaussian::Basis const &by_cluster_bs1,
+    gaussian::Basis const &by_cluster_dfbs, Vector3i const &lattice_range0,
+    Vector3i const &lattice_range1, Vector3i const &lattice_range_df,
+    size_t const &natoms_per_uc);
 
 template <typename Array>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
     Array const &, gaussian::Basis const &, gaussian::Basis const &);
+
+template <typename Array>
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
+    Array const &, gaussian::Basis const &, gaussian::Basis const &,
+    gaussian::Basis const &);
 
 // Function to create the iii tiles of the coefficients
 template <typename DirectTile, typename Tile>
@@ -82,6 +101,10 @@ void create_ij_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
 std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
     madness::World &world, gaussian::Basis const &obs,
     gaussian::Basis const &dfbs, double threshold);
+
+std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
+    madness::World &world, gaussian::Basis const &bs0,
+    gaussian::Basis const &bs1, gaussian::Basis const &dfbs, double threshold);
 
 }  // namespace detail
 
@@ -107,6 +130,22 @@ cadf_fitting_coefficients<TA::Tensor<double>, TA::DensePolicy>(
       cadf_fitting_coefficients<TA::Tensor<double>, TA::SparsePolicy>(
           world, obs, dfbs);
   return TA::to_dense(sparse_array);
+}
+
+/// Function to compute CADF fitting coefficients
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
+    madness::World &world, const gaussian::Basis &by_cluster_bs0,
+    const gaussian::Basis &by_cluster_bs1,
+    const gaussian::Basis &by_cluster_dfbs, const Vector3i &lattice_range0,
+    const Vector3i &lattice_range1, const Vector3i &lattice_range_df,
+    const size_t &natoms_per_uc) {
+  auto by_atom_cadf = detail::cadf_by_atom_coeffs(
+      world, by_cluster_bs0, by_cluster_bs1, by_cluster_dfbs, lattice_range0,
+      lattice_range1, lattice_range_df, natoms_per_uc);
+
+  return detail::reblock_atom_to_clusters(by_atom_cadf, by_cluster_bs0,
+                                          by_cluster_bs1, by_cluster_dfbs);
 }
 
 /// Function to compute seCADF 4center abab correction
@@ -186,7 +225,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   ExEnv::out0() << indent << "\tTime for abab shape: " << time_apply << "\n";
   ExEnv::out0() << indent << "\tTime for integrals: " << time_ints << "\n";
 
-
   //
   // Compute C, M and 3 center integrals for robust fitting
   //
@@ -224,7 +262,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
         out.emplace_back(std::make_pair(Idx_t{{b, a, b}}, in(b, a, b)));
         if (aaab) {
           // Realistically this one isn't needed since aaa will always get
-          // included, but it is here for completeness. 
+          // included, but it is here for completeness.
           const auto Caab = c_shape_data(a, a, b);
           const auto Caba = c_shape_data(a, b, a);
           const auto Xa_max = std::max(Caab, Caba);
@@ -252,7 +290,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
 
   auto E = direct_sparse_integrals(world, eng3, three_array, E_sparse_norms,
                                    std::move(eri3_screener));
-
 
   auto C_contract_shape_func = [&](TA::Tensor<float> const &Cin) {
     auto const &range = Cin.range();
@@ -402,6 +439,102 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
   return C;
 }
 
+template <typename Array, typename DirectArray>
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
+    Array const &M, DirectArray const &eri3, TA::TiledRange const &trange,
+    Vector3i const &lattice_range0, Vector3i const &lattice_range1,
+    Vector3i const &lattice_range_df, size_t const &natoms_per_uc) {
+  auto &world = M.world();
+  auto Cshape = eri3.array().shape();  // cadf_shape(world, trange);
+
+  // Use same pmap to ensure some locality
+  auto pmap = eri3.array().pmap();
+  TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> C(
+      world, trange, std::move(Cshape), pmap);
+
+  const auto natoms0 = trange.tiles_range().extent_data()[1];
+  const auto natoms1 = trange.tiles_range().extent_data()[2];
+  auto const &eri3_tiles = trange.tiles_range();
+
+  using ArrayType =
+      typename std::remove_reference<decltype(eri3.array())>::type;
+  using DirectTile = typename ArrayType::value_type;
+  using Tile = TA::Tensor<double>;
+
+  using ::mpqc::lcao::detail::direct_3D_idx;
+  using ::mpqc::lcao::detail::direct_ord_idx;
+  auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range) {
+    if (std::abs(in_idx(0)) <= range(0) && std::abs(in_idx(1)) <= range(1) &&
+        std::abs(in_idx(2)) <= range(2))
+      return true;
+    else
+      return false;
+  };
+
+  for (auto i = 0ul; i < natoms0; ++i) {
+    const auto uc0_ord = i / natoms_per_uc;
+    const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0);
+    const auto uc0_ord_in_df = direct_ord_idx(uc0_3D, lattice_range_df);
+    const auto i_in_df = uc0_ord_in_df * natoms_per_uc + i % natoms_per_uc;
+
+    if (is_in_lattice_range(uc0_3D, lattice_range1)) {
+      const auto uc0_ord_in_bs1 = direct_ord_idx(uc0_3D, lattice_range1);
+      const auto i_in_bs1 = uc0_ord_in_bs1 * natoms_per_uc + i % natoms_per_uc;
+      std::array<unsigned long, 3> idx_iii = {{i_in_df, i, i_in_bs1}};
+      std::array<unsigned long, 2> idx_ii = {{i_in_df, i_in_df}};
+
+      if (!C.is_zero(idx_iii) && C.is_local(idx_iii)) {
+        auto eri3_iii = eri3.array().find(idx_iii);
+        auto M_ii = M.find(idx_ii);
+
+        unsigned long ord_iii = eri3_tiles.ordinal(idx_iii);
+        world.taskq.add(create_ii_tile<DirectTile, Tile>, &C, eri3_iii, M_ii,
+                        ord_iii);
+      }
+    }
+
+    for (auto j = 0ul; j < natoms1; ++j) {
+      const auto uc1_ord = j / natoms_per_uc;
+      const auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1);
+      if (uc0_3D == uc1_3D && (j % natoms_per_uc) == (i % natoms_per_uc)) {
+        continue;
+      }
+
+      const auto uc1_ord_in_df = direct_ord_idx(uc1_3D, lattice_range_df);
+      const auto j_in_df = uc1_ord_in_df * natoms_per_uc + j % natoms_per_uc;
+      std::array<unsigned long, 3> idx_iij = {{i_in_df, i, j}};
+      std::array<unsigned long, 3> idx_jij = {{j_in_df, i, j}};
+
+      if (!C.is_zero(idx_iij) && !C.is_zero(idx_jij)) {
+        if (C.is_local(idx_iij) || C.is_local(idx_jij)) {
+          auto ord_iij = eri3_tiles.ordinal(idx_iij);
+          auto ord_jij = eri3_tiles.ordinal(idx_jij);
+
+          std::array<unsigned long, 2> M_idx_ii = {{i_in_df, i_in_df}};
+          std::array<unsigned long, 2> M_idx_ij = {{i_in_df, j_in_df}};
+          std::array<unsigned long, 2> M_idx_ji = {{j_in_df, i_in_df}};
+          std::array<unsigned long, 2> M_idx_jj = {{j_in_df, j_in_df}};
+
+          auto eri3_iij = eri3.array().find(idx_iij);
+          auto eri3_jij = eri3.array().find(idx_jij);
+
+          auto M_ii = M.find(M_idx_ii);
+          auto M_ij = M.find(M_idx_ij);
+          auto M_ji = M.find(M_idx_ji);
+          auto M_jj = M.find(M_idx_jj);
+
+          world.taskq.add(create_ij_tile<DirectTile, Tile>, &C, eri3_iij,
+                          eri3_jij, M_ii, M_ij, M_ji, M_jj, ord_iij, ord_jij);
+        }
+      }
+    }
+  }
+  world.gop.fence();
+  C.truncate();
+
+  return C;
+}
+
 template <typename DirectTile, typename Tile>
 void create_ii_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
                     DirectTile eri3_iii, Tile M_tile, unsigned long ord) {
@@ -507,6 +640,45 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
     gaussian::Basis const &dfbs) {
   auto trange = gaussian::detail::create_trange(
       std::array<gaussian::Basis, 3>{{dfbs, obs, obs}});
+
+  std::unordered_map<int64_t, std::vector<int64_t>> c2a;
+  auto shape = cadf_shape_cluster(C_atom, trange, c2a);
+
+  auto &world = C_atom.world();
+
+  TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> C(world, trange, shape);
+  C.fill(0.0);
+
+  auto write_inner_tile = [&](TA::Tensor<double> const &inner,
+                              TA::Tensor<double> &out) {
+    auto in_start = inner.range().lobound();
+    auto in_end = inner.range().upbound();
+
+    out.block(in_start, in_end) = inner;
+  };
+
+  const auto volume = trange.tiles_range().volume();
+  for (auto ord = 0ul; ord < volume; ++ord) {
+    if (!C.is_zero(ord) && C.is_local(ord)) {
+      auto &tile = C.find(ord).get();
+
+      for (auto const &atom_ord : c2a.find(int64_t(ord))->second) {
+        write_inner_tile(C_atom.find(atom_ord), tile);
+      }
+    }
+  }
+  world.gop.fence();
+  C.truncate();
+
+  return C;
+}
+
+template <typename Array>
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
+    Array const &C_atom, gaussian::Basis const &bs0, gaussian::Basis const &bs1,
+    gaussian::Basis const &dfbs) {
+  auto trange = gaussian::detail::create_trange(
+      std::array<gaussian::Basis, 3>{{dfbs, bs0, bs1}});
 
   std::unordered_map<int64_t, std::vector<int64_t>> c2a;
   auto shape = cadf_shape_cluster(C_atom, trange, c2a);

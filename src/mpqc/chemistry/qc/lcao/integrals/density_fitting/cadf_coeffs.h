@@ -59,8 +59,14 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 // Function to compute the CADF coefficients in a by atom fashion
 template <typename Array, typename DirectArray>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
-    Array const &, DirectArray const &, TA::TiledRange const &,
-    Vector3i const &, Vector3i const &, Vector3i const &, size_t const &);
+    Array const &M, DirectArray const &eri3, TA::TiledRange const &trange,
+    size_t const &natoms_per_uc,
+    Vector3i const &lattice_range0 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_range1 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_range_df = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center0 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center1 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center_df = Vector3i({0, 0, 0}));
 
 // Function to compute the CADF coefficients in a by atom fashion
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
@@ -71,9 +77,13 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     madness::World &world, gaussian::Basis const &by_cluster_bs0,
     gaussian::Basis const &by_cluster_bs1,
-    gaussian::Basis const &by_cluster_dfbs, Vector3i const &lattice_range0,
-    Vector3i const &lattice_range1, Vector3i const &lattice_range_df,
-    size_t const &natoms_per_uc);
+    gaussian::Basis const &by_cluster_dfbs, size_t const &natoms_per_uc,
+    Vector3i const &lattice_range0 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_range1 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_range_df = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center0 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center1 = Vector3i({0, 0, 0}),
+    Vector3i const &lattice_center_df = Vector3i({0, 0, 0}));
 
 template <typename Array>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
@@ -137,12 +147,16 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
     madness::World &world, const gaussian::Basis &by_cluster_bs0,
     const gaussian::Basis &by_cluster_bs1,
-    const gaussian::Basis &by_cluster_dfbs, const Vector3i &lattice_range0,
-    const Vector3i &lattice_range1, const Vector3i &lattice_range_df,
-    const size_t &natoms_per_uc) {
+    const gaussian::Basis &by_cluster_dfbs, const size_t &natoms_per_uc,
+    const Vector3i &lattice_range0 = Vector3i({0, 0, 0}),
+    const Vector3i &lattice_range1 = Vector3i({0, 0, 0}),
+    const Vector3i &lattice_range_df = Vector3i({0, 0, 0}),
+    const Vector3i &lattice_center0 = Vector3i({0, 0, 0}),
+    const Vector3i &lattice_center1 = Vector3i({0, 0, 0}),
+    const Vector3i &lattice_center_df = Vector3i({0, 0, 0})) {
   auto by_atom_cadf = detail::cadf_by_atom_coeffs(
-      world, by_cluster_bs0, by_cluster_bs1, by_cluster_dfbs, lattice_range0,
-      lattice_range1, lattice_range_df, natoms_per_uc);
+      world, by_cluster_bs0, by_cluster_bs1, by_cluster_dfbs, natoms_per_uc, lattice_range0,
+      lattice_range1, lattice_range_df, lattice_center0, lattice_center1, lattice_center_df);
 
   return detail::reblock_atom_to_clusters(by_atom_cadf, by_cluster_bs0,
                                           by_cluster_bs1, by_cluster_dfbs);
@@ -442,8 +456,13 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 template <typename Array, typename DirectArray>
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Array const &M, DirectArray const &eri3, TA::TiledRange const &trange,
-    Vector3i const &lattice_range0, Vector3i const &lattice_range1,
-    Vector3i const &lattice_range_df, size_t const &natoms_per_uc) {
+    size_t const &natoms_per_uc,
+    Vector3i const &lattice_range0,
+    Vector3i const &lattice_range1,
+    Vector3i const &lattice_range_df,
+    Vector3i const &lattice_center0,
+    Vector3i const &lattice_center1,
+    Vector3i const &lattice_center_df) {
   auto &world = M.world();
   auto Cshape = eri3.array().shape();  // cadf_shape(world, trange);
 
@@ -463,9 +482,10 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   using ::mpqc::lcao::detail::direct_3D_idx;
   using ::mpqc::lcao::detail::direct_ord_idx;
-  auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range) {
-    if (std::abs(in_idx(0)) <= range(0) && std::abs(in_idx(1)) <= range(1) &&
-        std::abs(in_idx(2)) <= range(2))
+  auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range, Vector3i const &center) {
+    if (in_idx(0) <= center(0) + range(0) && in_idx(0) >= center(0) - range(0) &&
+        in_idx(1) <= center(1) + range(1) && in_idx(1) >= center(1) - range(1) &&
+        in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
       return true;
     else
       return false;
@@ -473,12 +493,12 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   for (auto i = 0ul; i < natoms0; ++i) {
     const auto uc0_ord = i / natoms_per_uc;
-    const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0);
-    const auto uc0_ord_in_df = direct_ord_idx(uc0_3D, lattice_range_df);
+    const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
+    const auto uc0_ord_in_df = direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
     const auto i_in_df = uc0_ord_in_df * natoms_per_uc + i % natoms_per_uc;
 
-    if (is_in_lattice_range(uc0_3D, lattice_range1)) {
-      const auto uc0_ord_in_bs1 = direct_ord_idx(uc0_3D, lattice_range1);
+    if (is_in_lattice_range(uc0_3D, lattice_range1, lattice_center1)) {
+      const auto uc0_ord_in_bs1 = direct_ord_idx(uc0_3D - lattice_center1, lattice_range1);
       const auto i_in_bs1 = uc0_ord_in_bs1 * natoms_per_uc + i % natoms_per_uc;
       std::array<unsigned long, 3> idx_iii = {{i_in_df, i, i_in_bs1}};
       std::array<unsigned long, 2> idx_ii = {{i_in_df, i_in_df}};
@@ -495,12 +515,12 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
     for (auto j = 0ul; j < natoms1; ++j) {
       const auto uc1_ord = j / natoms_per_uc;
-      const auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1);
+      const auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
       if (uc0_3D == uc1_3D && (j % natoms_per_uc) == (i % natoms_per_uc)) {
         continue;
       }
 
-      const auto uc1_ord_in_df = direct_ord_idx(uc1_3D, lattice_range_df);
+      const auto uc1_ord_in_df = direct_ord_idx(uc1_3D - lattice_center_df, lattice_range_df);
       const auto j_in_df = uc1_ord_in_df * natoms_per_uc + j % natoms_per_uc;
       std::array<unsigned long, 3> idx_iij = {{i_in_df, i, j}};
       std::array<unsigned long, 3> idx_jij = {{j_in_df, i, j}};

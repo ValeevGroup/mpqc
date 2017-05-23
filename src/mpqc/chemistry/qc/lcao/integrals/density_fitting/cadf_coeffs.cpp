@@ -232,9 +232,13 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     madness::World &world, gaussian::Basis const &by_cluster_bs0,
     gaussian::Basis const &by_cluster_bs1,
-    gaussian::Basis const &by_cluster_dfbs, Vector3i const &lattice_range0,
-    Vector3i const &lattice_range1, Vector3i const &lattice_range_df,
-    size_t const &natoms_per_uc) {
+    gaussian::Basis const &by_cluster_dfbs, size_t const &natoms_per_uc,
+    Vector3i const &lattice_range0,
+    Vector3i const &lattice_range1,
+    Vector3i const &lattice_range_df,
+    Vector3i const &lattice_center0,
+    Vector3i const &lattice_center1,
+    Vector3i const &lattice_center_df) {
   auto bs0 = detail::by_center_basis(by_cluster_bs0);
   auto bs1 = detail::by_center_basis(by_cluster_bs1);
   auto dfbs = detail::by_center_basis(by_cluster_dfbs);
@@ -266,14 +270,14 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     auto val_max = std::numeric_limits<float>::max();
     for (auto a = 0; a < ext[1]; ++a) {
       const auto uc0_ord = a / natoms_per_uc;
-      const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0);
-      const auto uc0_ord_in_df = direct_ord_idx(uc0_3D, lattice_range_df);
+      const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
+      const auto uc0_ord_in_df = direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
       const auto a_in_df = uc0_ord_in_df * natoms_per_uc + a % natoms_per_uc;
 
       for (auto b = 0; b < ext[2]; ++b) {
         auto uc1_ord = b / natoms_per_uc;
-        auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1);
-        auto uc1_ord_in_df = direct_ord_idx(uc1_3D, lattice_range_df);
+        auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
+        auto uc1_ord_in_df = direct_ord_idx(uc1_3D - lattice_center_df, lattice_range_df);
         auto b_in_df = uc1_ord_in_df * natoms_per_uc + b % natoms_per_uc;
 
         auto in_val = std::max(in(a_in_df, a, b), in(b_in_df, a, b));
@@ -303,9 +307,9 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
   auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
                                       std::move(screener));
 
-  return cadf_by_atom_array(M, eri3, detail::cadf_trange(bs0, bs1, dfbs),
+  return cadf_by_atom_array(M, eri3, detail::cadf_trange(bs0, bs1, dfbs), natoms_per_uc,
                             lattice_range0, lattice_range1, lattice_range_df,
-                            natoms_per_uc);
+                            lattice_center0, lattice_center1, lattice_center_df);
 }
 
 }  // namespace detail

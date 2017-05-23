@@ -1,6 +1,13 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 
+// set to 1, must have libint-2.4.0-beta.2
+#define PRODUCE_PNO_MOLDEN_FILES 0
+#if PRODUCE_PNO_MOLDEN_FILES
+#include "libint2/lcao/molden.h"
+#endif
+
+#include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory.h"
 
@@ -241,6 +248,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     osvs_.resize(nocc_act);
     F_osv_diag_.resize(nocc_act);
 
+#if PRODUCE_PNO_MOLDEN_FILES
+    // prepare to Molden
+    const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
+    const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
+    const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
+    const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
+#endif
+
     // Loop over each pair of occupieds to form PNOs
     for (int i = 0; i < nocc_act; ++i) {
       double eps_i = eps_o[i];
@@ -303,6 +318,30 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
         // pnos_[ij] = pno_trunc;
         pnos_[i * nocc_act + j] = pno_trunc;
+
+#if PRODUCE_PNO_MOLDEN_FILES
+        // write PNOs to Molden
+        {
+          Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
+          molden_coefs.col(0) = C_i_eig.col(i);
+          molden_coefs.col(1) = C_i_eig.col(j);
+          molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) = C_a_eig * pno_trunc;
+
+          Eigen::VectorXd occs(2 + pno_trunc.cols());
+          occs.setZero();
+          occs[0] = 2.0;
+          occs[1] = 2.0;
+
+          Eigen::VectorXd evals(2 + pno_trunc.cols());
+          evals(0) = 0.0;
+          evals(1) = 0.0;
+          evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
+
+          libint2::molden::Export xport(libint2_atoms, libint2_shells, molden_coefs, occs, evals);
+          std::ofstream molden_file(std::string("pno_") + std::to_string(i) + "_" + std::to_string(j) + ".molden");
+          xport.write(molden_file);
+        }
+#endif
 
         // Transform F to PNO space
         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;

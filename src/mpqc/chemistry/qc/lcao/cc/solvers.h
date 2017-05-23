@@ -254,6 +254,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
     const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
     const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
+
+    // write out active occupied orbitals
+    auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
+    libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig, occs);
+    xport.write("occ.molden");
 #endif
 
     // Loop over each pair of occupieds to form PNOs
@@ -337,9 +342,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           evals(1) = 0.0;
           evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
 
-          libint2::molden::Export xport(libint2_atoms, libint2_shells, molden_coefs, occs, evals);
-          std::ofstream molden_file(std::string("pno_") + std::to_string(i) + "_" + std::to_string(j) + ".molden");
-          xport.write(molden_file);
+          libint2::molden::Export xport(libint2_atoms, libint2_shells,
+                                        molden_coefs, occs, evals);
+          xport.write(std::string("pno_") + std::to_string(i) + "_" +
+                      std::to_string(j) + ".molden");
         }
 #endif
 

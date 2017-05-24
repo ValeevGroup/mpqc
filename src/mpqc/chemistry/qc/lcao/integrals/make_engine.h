@@ -38,7 +38,7 @@ libint2::Engine make_engine(const libint2::Operator &oper,
   }
   const auto deriv_order = 0;
   libint2::Engine result{oper, max_nprim, max_am, deriv_order,
-                         std::numeric_limits<libint2::real_t>::epsilon(),
+                         std::numeric_limits<libint2::scalar_type>::epsilon(),
                          oper_params, braket};
   return result;
 }

@@ -427,12 +427,10 @@ class FourCenterFockBuilder
 
     // 1-d tile ranges
     const auto& trange1 = trange_D_.dim(0);
-    const auto ntiles = trange1.tile_extent();
     const auto& rng0 = trange1.tile(tile0);
     const auto& rng1 = trange1.tile(tile1);
     const auto& rng2 = trange1.tile(tile2);
     const auto& rng3 = trange1.tile(tile3);
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rng1_size = rng1.second - rng1.first;
     const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;

@@ -8,6 +8,8 @@
 #include "mpqc/util/misc/time.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/four_center_exact_k_diagonal_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
 
 #include <tiledarray.h>
 
@@ -29,7 +31,10 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   ArrayType Mchol_inv_;  // Chol(<Κ |G| Λ >)^-1
   ArrayType C_;          // CADF fitting coeffs
   ArrayType Iac_;        // Transforms cluster blocks into atom blocks
-  ArrayType seC_;        // seCADF correction
+
+  // SeCadf builder
+  std::unique_ptr<ExactKDiagonalBuilder<Tile, Policy>> exactK_;
+  std::unique_ptr<FourCenterFockBuilder<Tile, Policy>> exactK4_;
 
   float force_threshold_ = 0.0;
   double LMO_chop_threshold_ = 0.0;
@@ -55,12 +60,42 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   std::vector<std::array<double, 2>> E_LMO_sizes_;
   std::vector<std::array<double, 2>> F_sizes_;
 
+  TA::SparseShape<float> K_diagonal_;      // For SECADF
+  TA::SparseShape<float> K_off_diagonal_;  // For SECADF
+
+  inline TA::Tensor<float> diagonal_shape(TA::Tensor<float> const &in) {
+    auto range = in.range();
+    TA::Tensor<float> out(range, 0.0);
+    auto lo = range.lobound_data();
+    auto up = range.upbound_data();
+
+    for (auto i = lo[0]; i < up[0]; ++i) {
+      out(i, i) = in(i, i);  // Assume K is always symmetric
+    }
+
+    return out;
+  }
+
+  inline TA::Tensor<float> off_diagonal_shape(
+      TA::Tensor<float> const &in) {
+    auto range = in.range();
+    TA::Tensor<float> out = in.clone();
+    auto lo = range.lobound_data();
+    auto up = range.upbound_data();
+
+    for (auto i = lo[0]; i < up[0]; ++i) {
+      out(i, i) = 0.0;
+    }
+
+    return out;
+  }
+
  public:
   using BasisFactory = lcao::gaussian::Basis::Factory;
 
   template <typename Factory>
   CADFFockBuilder(Factory &ao_factory, double force_threshold,
-                  double lmo_chop_threshold, bool do_secadf, bool aaab = false)
+                  double lmo_chop_threshold, bool do_secadf)
       : force_threshold_(force_threshold),
         LMO_chop_threshold_(lmo_chop_threshold),
         secadf_(do_secadf) {
@@ -72,29 +107,45 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     M_ = ao_factory.compute(L"( Κ | G| Λ )");
 
     if (secadf_) {  // compute seCadf Correction
-      lcao::gaussian::Basis obs = *ao_factory.basis_registry()->retrieve(L"κ");
-      lcao::gaussian::Basis dfbs = *ao_factory.basis_registry()->retrieve(L"Κ");
+      /* lcao::gaussian::Basis obs =
+       * *ao_factory.basis_registry()->retrieve(L"κ"); */
+      /* lcao::gaussian::Basis dfbs =
+       * *ao_factory.basis_registry()->retrieve(L"Κ"); */
+
+      /* auto t0 = mpqc::fenced_now(world); */
+      /* seC_ = */
+      /*     lcao::secadf_by_atom_correction<Tile, Policy>(world, obs, dfbs,
+       * aaab); */
+
+      /* // Precompute the transpose so we don't do it every iteration. */
+      /* seC_("p,r,q,s") = seC_("p,q,r,s"); */
+      /* auto t1 = mpqc::fenced_now(world); */
+      /* auto time = mpqc::duration_in_s(t0, t1); */
+
+      /* auto size = mpqc::detail::array_size(seC_); */
+      /* ExEnv::out0() << "SeCadf Correction Time: " << time */
+      /*               << ", with stored size: " << size << std::endl; */
+
+      /* auto trange_atom = seC_.trange().data()[0]; */
+      /* auto trange_cluster = C_.trange().data()[2]; */
+      /* const auto nelements = seC_.trange().elements_range().extent_data()[0];
+       */
+      /* RowMatrixXd Iac(nelements, nelements); */
+      /* Iac.setIdentity(); */
+      /* Iac_ = array_ops::eigen_to_array<Tile, Policy>(world, Iac, trange_atom,
+       */
+      /*                                                trange_cluster); */
 
       auto &world = C_.world();
-      auto t0 = mpqc::fenced_now(world);
-      seC_ =
-          lcao::secadf_by_atom_correction<Tile, Policy>(world, obs, dfbs, aaab);
-      // Precompute the transpose so we don't do it every iteration.
-      seC_("p,r,q,s") = seC_("p,q,r,s");
-      auto t1 = mpqc::fenced_now(world);
-      auto time = mpqc::duration_in_s(t0, t1);
+      auto &ao_factory_ref = ::mpqc::lcao::gaussian::to_ao_factory(ao_factory);
+      auto screen = ao_factory_ref.screen();
+      auto screen_threshold = ao_factory_ref.screen_threshold();
+      auto obs = ao_factory.basis_registry()->retrieve(L"κ");
 
-      auto size = mpqc::detail::array_size(seC_);
-      ExEnv::out0() << "SeCadf Correction Time: " << time
-                    << ", with stored size: " << size << std::endl;
-
-      auto trange_atom = seC_.trange().data()[0];
-      auto trange_cluster = C_.trange().data()[2];
-      const auto nelements = seC_.trange().elements_range().extent_data()[0];
-      RowMatrixXd Iac(nelements, nelements);
-      Iac.setIdentity();
-      Iac_ = array_ops::eigen_to_array<Tile, Policy>(world, Iac, trange_atom,
-                                                     trange_cluster);
+      exactK_ = std::make_unique<ExactKDiagonalBuilder<Tile, Policy>>(
+          world, obs, obs, obs, screen, screen_threshold);
+      exactK4_ = std::make_unique<FourCenterFockBuilder<Tile, Policy>>(
+          world, obs, obs, obs, false, true, screen, screen_threshold);
     }
 
     // Form L^{-1} for M
@@ -107,7 +158,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
                                                          trange1_M, trange1_M);
   }
 
-  ~CADFFockBuilder() { }
+  ~CADFFockBuilder() {}
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {
@@ -115,9 +166,11 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &LMO,
-                       double target_precision = std::numeric_limits<double>::epsilon()) override {
+                       double target_precision =
+                           std::numeric_limits<double>::epsilon()) override {
     ArrayType G;
-    G("m, n") = 2 * compute_J(D)("m, n") - compute_K(LMO, D)("m, n");
+    G("m, n") =
+        2 * compute_J(D)("m, n") - compute_K(LMO, D, target_precision)("m, n");
     return G;
   }
 
@@ -149,7 +202,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     return J;
   }
 
-  ArrayType compute_K(ArrayType const &LMO_in, ArrayType const &D) {
+  ArrayType compute_K(ArrayType const &LMO_in, ArrayType const &D,
+                      double target_precision) {
     auto &world = M_.world();
     auto Exch0 = mpqc::fenced_now(world);
     ArrayType L, K;  // Matrices
@@ -259,17 +313,36 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     L_times_.push_back(mpqc::duration_in_s(l0, l1));
 
     auto k0 = mpqc::fenced_now(world);
-    K("mu, nu") = L("mu, nu") + L("nu, mu");
+    if (!secadf_) {
+      K("mu, nu") = L("mu, nu") + L("nu, mu");
+    } else {
+      if (K_off_diagonal_.empty()) {
+        K("mu, nu") = L("mu, nu") + L("nu, mu");
+        world.gop.fence();
+        auto off = [this](TA::Tensor<float> const &t) {
+          return this->off_diagonal_shape(t);
+        };
+        K_off_diagonal_ = K.shape().transform(off);
+      }
+      K("mu, nu") = (L("mu, nu") + L("nu, mu")).set_shape(K_off_diagonal_);
+    }
     K.truncate();
 
     // SeCadf correction
     if (secadf_) {
       auto se0 = mpqc::fenced_now(world);
-      ArrayType Datom, Katom;
-      Datom("i,j") = Iac_("i,k") * D("k,l") * Iac_("j, l");
-      Katom("mu, nu") = seC_("mu, nu, rho, sig") * Datom("rho, sig");
-      K("mu, nu") += Iac_("k, mu") * Katom("k,l") * Iac_("l, nu");
-      K.truncate();
+      auto K_se = exactK_->operator()(D, LMO, target_precision);
+
+      if (K_diagonal_.empty()) {
+        auto diag = [this](TA::Tensor<float> const &t) {
+          return this->diagonal_shape(t);
+        };
+        K_diagonal_ = K_se.shape().transform(diag);
+      }
+      K_se("mu, nu") = K_se("mu, nu").set_shape(K_diagonal_);
+
+      // Use - because exactK_ returns negative K
+      K("mu, nu") = K("mu, nu") - K_se("mu, nu");
       auto se1 = mpqc::fenced_now(world);
       se_times_.push_back(mpqc::duration_in_s(se0, se1));
     }

@@ -360,13 +360,10 @@ class ExactKDiagonalBuilder
 
     // 1-d tile ranges
     const auto& trange1 = trange_D_.dim(0);
-    const auto ntiles = trange1.tile_extent();
     const auto& rng0 = trange1.tile(tile0);
     const auto& rng1 = trange1.tile(tile1);
     const auto& rng2 = trange1.tile(tile2);
     const auto& rng3 = trange1.tile(tile3);
-    const auto rng0_size = rng0.second - rng0.first;
-    const auto rng1_size = rng1.second - rng1.first;
     const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;
 
@@ -435,7 +432,6 @@ class ExactKDiagonalBuilder
 
       // number of shells in each cluster
       const auto nshells0 = cluster0.size();
-      const auto nshells1 = cluster1.size();
       const auto nshells2 = cluster2.size();
       const auto nshells3 = cluster3.size();
 
@@ -471,9 +467,6 @@ class ExactKDiagonalBuilder
 
           const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
-          const auto sh01 =
-              sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
-
           auto cf2_offset = 0;
           auto bf2_offset = rng2.first;
 
@@ -508,8 +501,6 @@ class ExactKDiagonalBuilder
                   sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
               const auto sh13 =
                   sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
-              const auto sh23 =
-                  sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
               const auto Dnorm03 =
                   (norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
               const auto Dnorm13 =
@@ -545,8 +536,6 @@ class ExactKDiagonalBuilder
                                                      // cluster)
                   for (auto f1 = 0; f1 != nf1; ++f1) {
                     const auto cf1 = f1 + cf1_offset;
-                    const auto cf01 = cf0 * rng1_size +
-                                      cf1;  // index of {cf0,cf1} in D01 or F01
                     for (auto f2 = 0; f2 != nf2; ++f2) {
                       const auto cf2 = f2 + cf2_offset;
                       const auto cf02 =
@@ -563,9 +552,6 @@ class ExactKDiagonalBuilder
                         const auto cf13 =
                             cf1 * rng3_size +
                             cf3;  // index of {cf1,cf3} in D13 or F13
-                        const auto cf23 =
-                            cf2 * rng3_size +
-                            cf3;  // index of {cf2,cf3} in D23 or F23
 
                         const auto value = eri_0123[f0123];
 

@@ -19,21 +19,23 @@ namespace scf {
 using Mat =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-double boys_object(std::array<Mat, 3> const &xyz);
-
-double gamma(double Aij, double Bij);
+/// @param[in,out] Cm on input: LCAOs to be localized; on output: localized LCAOs
+/// @param[in,out] U on output: transformation matrix converting original to localized LCAOs
+/// @param[in] ao_xyz the {x,y,z} electric dipole integral matrices in AO basis
+/// @param convergence_threshold stop once maximum rotation angle (in rad) changes between iterations by less than this
+/// @param max_iter do not exceed this many iterations
 void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
                    double convergence_threshold = 1e-4,
                    size_t max_iter = 50);
 
-/// Performs Boys-Foster localization
-class BoysLocalization {
+/// Performs Foster-Boys localization (see J. Foster and S. Boys, Rev Mod Phys 32, 300 (1960)).
+class FosterBoysLocalization {
  public:
-  /// @param[in] C input vectors (rows = AOs)
-  /// @param[in] r_ao input 1st (dipole) moment vectors, in AO basis
+  /// @param C input LCAOs
+  /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
-  /// @return unitary transformation that "localizes" C
+  /// @return transformation matrix U that converts C to localized LCAOs
   template <typename Tile, typename Policy>
   TA::DistArray<Tile,Policy> operator()(TA::DistArray<Tile,Policy> const &C,
                                         std::vector<TA::DistArray<Tile,Policy>> const &r_ao,

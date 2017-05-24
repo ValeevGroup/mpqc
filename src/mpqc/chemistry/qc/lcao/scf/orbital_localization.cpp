@@ -1,10 +1,13 @@
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 
+#include <algorithm>
+#include <limits>
+
 namespace mpqc {
 namespace scf {
 
-/// Boys-Foster objective function
-double boys_object(std::array<Mat, 3> const &xyz) {
+/// Foster-Boys maximizes this function
+double fb_objective_function(std::array<Mat, 3> const &xyz) {
   auto sum = 0.0;
   for (auto i = 0; i < xyz[0].cols(); ++i) {
     sum += xyz[0](i, i) * xyz[0](i, i);
@@ -15,17 +18,16 @@ double boys_object(std::array<Mat, 3> const &xyz) {
   return sum;
 }
 
-double gamma(double Aij, double Bij) {
+double compute_angle(double Aij, double Bij) {
   auto AB = std::sqrt(Aij * Aij + Bij * Bij);
-  auto cos_gamma = -Aij / AB;
-  auto sin_gamma = Bij / AB;
-  auto ang = 0.25 * std::acos(cos_gamma) * ((sin_gamma < 0) ? -1 : 1);
-  return (std::abs(ang) < 1e-7) ? 0 : ang;
+  auto cos_4gamma = -Aij / AB;
+  auto sin_4gamma = Bij / AB;
+  auto gamma = 0.25 * std::acos(cos_4gamma) * ((sin_4gamma < 0) ? -1 : 1);
+  return (std::abs(gamma) < 1e-7) ? 0.0 : gamma;
 };
 
 void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
-                   double convergence_threshold,
-                   size_t max_iter) {
+                   double convergence_threshold, size_t max_iter) {
   std::array<Mat, 3> mo_xyz;
   mo_xyz[0] = Cm.transpose() * ao_xyz[0] * Cm;
   mo_xyz[1] = Cm.transpose() * ao_xyz[1] * Cm;
@@ -35,12 +37,14 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
   auto &my = mo_xyz[1];
   auto &mz = mo_xyz[2];
 
-  auto crit = boys_object(mo_xyz);
+  auto D = fb_objective_function(mo_xyz);
   auto iter = 1;
-  auto error = crit - 0;
+  double max_abs_angle_prev_iter = std::numeric_limits<double>::max();
+  double error = max_abs_angle_prev_iter;
   while (error > convergence_threshold && iter <= max_iter) {
+    double max_abs_angle = 0.0;
     for (auto i = 0; i < Cm.cols(); ++i) {
-      for (auto j = i + 1; j < Cm.cols(); ++j) {
+      for (auto j = 0; j < i; ++j) {
         Vector3d vij = {mx(i, j), my(i, j), mz(i, j)};
         Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
         Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
@@ -48,9 +52,11 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         double Aij = vij.squaredNorm() - 0.25 * (vii - vjj).squaredNorm();
         double Bij = (vii - vjj).dot(vij);
 
-        auto g = gamma(Aij, Bij);
-        auto cg = std::cos(g);
-        auto sg = std::sin(g);
+        double gamma;
+        gamma = compute_angle(Aij, Bij);
+        max_abs_angle = std::max(max_abs_angle, std::abs(gamma));
+        auto cg = std::cos(gamma);
+        auto sg = std::sin(gamma);
 
         Eigen::VectorXd col_Ui = U.col(i);
         Eigen::VectorXd col_Uj = U.col(j);
@@ -75,10 +81,11 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
       }
     }
 
-    auto old_crit = crit;
-    crit = boys_object(mo_xyz);
-    error = std::abs(old_crit - crit);
+    D = fb_objective_function(mo_xyz);
+    error = iter > 1 ? std::abs(max_abs_angle - max_abs_angle_prev_iter)
+                     : max_abs_angle;
     ++iter;
+    max_abs_angle_prev_iter = max_abs_angle;
   }
 }
 

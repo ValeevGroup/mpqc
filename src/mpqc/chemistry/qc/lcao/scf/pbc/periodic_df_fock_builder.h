@@ -4,6 +4,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace scf {

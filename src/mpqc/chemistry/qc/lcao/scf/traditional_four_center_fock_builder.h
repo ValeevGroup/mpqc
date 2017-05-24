@@ -152,19 +152,12 @@ class FourCenterFockBuilder
     // prepare input data
     auto& compute_world = this->get_world();
     const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
-    auto nsh = bra_basis_->nshells();
     auto ntiles = bra_basis_->nclusters();
     trange_D_ = D_repl.trange();
     pmap_D_ = D_repl.pmap();
-    auto trange1 = trange_D_.dim(0);
-    auto trange = TA::TiledRange({trange1, trange1, trange1, trange1});
-    const auto ntile_tasks =
-        static_cast<uint64_t>(ntiles * (ntiles + 1)) *
-        static_cast<uint64_t>((ntiles + 2) * (3 * ntiles + 1)) / 24;
-    auto pmap = std::make_shared<const TA::detail::BlockedPmap>(compute_world,
-                                                                ntile_tasks);
 
     // make the engine pool
     auto oper_type = libint2::Operator::coulomb;
@@ -255,7 +248,7 @@ class FourCenterFockBuilder
 //            if (pmap->is_local(tile0123)) WorldObject_::task(me, task_func);
             // clang-format on
 
-            if (pmap->is_local(tile0123))
+            if (tile0123 % nproc == me)
               WorldObject_::task(
                   me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03,
                   D12, D13, std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
@@ -434,12 +427,10 @@ class FourCenterFockBuilder
 
     // 1-d tile ranges
     const auto& trange1 = trange_D_.dim(0);
-    const auto ntiles = trange1.tile_extent();
     const auto& rng0 = trange1.tile(tile0);
     const auto& rng1 = trange1.tile(tile1);
     const auto& rng2 = trange1.tile(tile2);
     const auto& rng3 = trange1.tile(tile3);
-    const auto rng0_size = rng0.second - rng0.first;
     const auto rng1_size = rng1.second - rng1.first;
     const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;

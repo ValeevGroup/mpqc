@@ -98,7 +98,10 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 
 }  // namespace detail
 
-/// JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
+/// JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS.
+/// @warning This class assumes that the 1- and 2-body amplitudes/residuals
+///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
+///          respectively
 template <typename T>
 class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
@@ -109,7 +112,6 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
    * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver<T,T> .
    */
   // clang-format on
-
   JacobiDIISSolver(const KeyVal& kv,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
@@ -123,6 +125,9 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
   Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
 
+  /// Overrides DIISSolver::update_only() .
+  /// @warning This function assumes that the 1- and 2-body amplitudes/residuals
+  ///          are laid out as "a,i" and "a,b,i,j", respectively
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
@@ -133,6 +138,9 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 
 /// PNOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PNO
 /// space
+/// @warning This class assumes that the 1- and 2-body amplitudes/residuals
+///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
+///          respectively
 template <typename T>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
@@ -171,8 +179,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   double tosv() const { return tosv_; }
 
  private:
-  // note: not update_only since DIIS is done in the PNO subspace, must be followed by
-  //       backtransform updated amplitudes to full space
+  /// Overrides DIISSolver::update() .
+  /// @note not overriding DIISSolver::update_only() since the update must be
+  ///      followed by backtransform updated amplitudes to the full space
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     // transform r1 and r2 to OSV and PNO basis, respectively
     assert(false && "not yet implemented");

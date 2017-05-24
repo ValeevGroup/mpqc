@@ -100,7 +100,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
 
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
-    screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
+    screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-20);
+    shell_pair_threshold_ =
+        kv.value<double>(prefix + "shell_pair_threshold", 1.0e-12);
+    ExEnv::out0() << indent << "Non-negligible shell-pair threshold = "
+                  << shell_pair_threshold_ << "\n";
 
     // This functor converts TensorD to TensorZ
     // Uncomment if \tparam Tile = TensorZ
@@ -184,6 +188,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   /// @return screen threshold
   double screen_threshold() const { return screen_threshold_; }
+
+  /// @return shell pair threshold
+  double shell_pair_threshold() const { return shell_pair_threshold_; }
 
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }
@@ -325,6 +332,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::string screen_;
   double precision_;
   double screen_threshold_;
+  double shell_pair_threshold_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;

@@ -83,6 +83,8 @@ class PeriodicFourCenterFockBuilder
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
+        screen_(screen),
+        screen_threshold_(screen_threshold),
         dcell_(dcell),
         R_max_(R_max),
         RJ_max_(RJ_max),
@@ -91,9 +93,8 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         bra_basis_(bra_basis),
-        ket_basis_(ket_basis),
-        screen_(screen),
-        screen_threshold_(screen_threshold) {
+        ket_basis_(ket_basis)
+         {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -314,8 +315,6 @@ class PeriodicFourCenterFockBuilder
   // set by ctor
   const bool compute_J_;
   const bool compute_K_;
-  std::shared_ptr<const Basis> bra_basis_;
-  std::shared_ptr<const Basis> ket_basis_;
   const std::string screen_;
   const double screen_threshold_;
   const Vector3d dcell_;
@@ -325,6 +324,8 @@ class PeriodicFourCenterFockBuilder
   const int64_t R_size_;
   const int64_t RJ_size_;
   const int64_t RD_size_;
+  std::shared_ptr<const Basis> bra_basis_;
+  std::shared_ptr<const Basis> ket_basis_;
 
   // mutated by compute_ functions
   mutable std::shared_ptr<lcao::Screener> j_p_screener_;

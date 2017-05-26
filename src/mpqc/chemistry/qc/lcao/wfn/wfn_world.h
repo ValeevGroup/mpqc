@@ -49,8 +49,8 @@ class WavefunctionWorld : virtual public DescribedClass {
   /// Return a reference to the molecule in the world
   const std::shared_ptr<Molecule>& atoms() const { return atoms_; }
 
-  /// Return Basis Registry
-  std::shared_ptr<gaussian::OrbitalBasisRegistry> const basis_registry() { return basis_registry_; }
+  /// Return a reference to Basis Registry
+  std::shared_ptr<gaussian::OrbitalBasisRegistry>& const basis_registry() { return basis_registry_; }
 
 };
 

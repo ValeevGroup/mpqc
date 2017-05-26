@@ -111,10 +111,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
  protected:
   TArray T1_;
   TArray T2_;
-  const KeyVal kv_;
 
-  /// private members
- protected:
   const KeyVal kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
   std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;

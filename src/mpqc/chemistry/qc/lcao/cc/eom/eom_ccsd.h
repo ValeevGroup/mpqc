@@ -138,6 +138,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   }
 
  protected:
+
+  using CCSD<Tile,Policy>::can_evaluate;
+  using CCSD<Tile,Policy>::evaluate;
+
   bool can_evaluate(ExcitationEnergy *ex_energy) override {
     return ex_energy->order() == 0;
   }

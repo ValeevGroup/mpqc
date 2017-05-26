@@ -29,7 +29,7 @@ struct T1T2 {
   T1 t1;
   T2 t2;
 
-  auto norm() {
+  auto norm() const{
     auto t1_norm = norm2(t1);
     auto t2_norm = norm2(t2);
     return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm));

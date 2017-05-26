@@ -109,7 +109,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
 
   AOFactory(AOFactory&&) = default;
   AOFactory& operator=(AOFactory&&) = default;
-  virtual ~AOFactory() noexcept = default;
+  virtual ~AOFactory() noexcept {}
 
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters

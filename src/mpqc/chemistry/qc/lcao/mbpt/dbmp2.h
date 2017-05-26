@@ -83,7 +83,7 @@ class DBRMP2 : public RMP2<Tile,Policy> {
 
   DBRMP2() = default;
 
-  virtual ~DBRMP2() = default;
+  virtual ~DBRMP2() { }
 
   DBRMP2(const KeyVal &kv) : RMP2<Tile,Policy>(kv) {
     method_ = kv.value<std::string>("method", "valeev");
@@ -294,7 +294,7 @@ public:
    */
 
   RIDBRMP2(const KeyVal& kv) : DBRMP2<Tile,Policy>(kv) {};
-  ~RIDBRMP2() = default;
+  ~RIDBRMP2() { }
 
   /// override DBRMP2's compute_scf_correction function
   double compute_scf_correction() override;

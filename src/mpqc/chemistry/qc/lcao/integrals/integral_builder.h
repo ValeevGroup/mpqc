@@ -23,8 +23,7 @@ namespace gaussian {
 /*! \brief Builds integrals from an  array of bases and an integral engine pool.
  *
  * \param Op is a function or functor that takes a TA::Tensor && and returns a
- *tile.
- * The simplest type of Op is simply the following:
+ * tile. The simplest type of Op is simply the following:
  * ```
  * auto op = [](TA::Tensor<double> && t){ return std::move(t) };
  * ```
@@ -68,7 +67,7 @@ class IntegralBuilder
     TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
 
-  virtual ~IntegralBuilder() = default;
+  virtual ~IntegralBuilder() { }
 
   Tile operator()(std::vector<std::size_t> const &idx, TA::Range range) {
     return op_(integrals(idx, std::move(range)));

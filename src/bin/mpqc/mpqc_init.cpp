@@ -5,6 +5,7 @@
 
 #include <libgen.h>
 #include <clocale>
+#include <memory>
 #include <sstream>
 
 #include <libint2.hpp>
@@ -24,7 +25,6 @@
 #include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/formio.h"
 #include "mpqc/util/misc/exenv.h"
-#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/external/madworld/parallel_file.h"
 
 namespace mpqc {

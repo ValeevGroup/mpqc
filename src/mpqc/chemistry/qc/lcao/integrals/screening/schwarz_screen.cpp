@@ -3,7 +3,6 @@
 #include "mpqc/math/groups/petite_list.h"
 #include "mpqc/util/misc/exenv.h"
 
-
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
@@ -40,24 +39,25 @@ SchwarzScreen::SchwarzScreen(std::shared_ptr<Qmatrix> Qbra,
 
 double SchwarzScreen::skip_threshold() const { return thresh_; }
 
-bool SchwarzScreen::skip(int64_t a) { return skip_(a); }
 bool SchwarzScreen::skip(int64_t a) const { return skip_(a); }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b) { return skip_(a, b); }
 bool SchwarzScreen::skip(int64_t a, int64_t b) const { return skip_(a, b); }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c) {
-  return skip_(a, b, c);
-}
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c) const {
   return skip_(a, b, c);
 }
 
-bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
-  return skip_(a, b, c, d);
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, double D) const {
+  return skip_(D, a, b, c);
 }
+
 bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d) const {
   return skip_(a, b, c, d);
+}
+
+bool SchwarzScreen::skip(int64_t a, int64_t b, int64_t c, int64_t d,
+                         double D) const {
+  return skip_(D, a, b, c, d);
 }
 
 boost::optional<double> SchwarzScreen::estimate(int64_t a) const {
@@ -101,13 +101,11 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     auto ord = 0ul;
     for (auto a = 0ul; a < Ta.size(); ++a) {
       const float a_val = Ta(a);
-      for (auto b = 0ul; b < Tbc.cols(); ++b) {
-        for (auto c = 0ul; c < Tbc.rows(); ++c, ++ord) {
-
-          if (pmap.is_local(ord)){ 
+      for (auto b = 0ul; b < Tbc.rows(); ++b) {
+        for (auto c = 0ul; c < Tbc.cols(); ++c, ++ord) {
+          if (pmap.is_local(ord)) {
             norms[ord] = std::sqrt(a_val * Tbc(b, c));
           }
-
         }
       }
     }
@@ -120,11 +118,9 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         const float ab = Tab(a, b);
         for (auto c = 0ul; c < Tcd.rows(); ++c) {
           for (auto d = 0ul; d < Tcd.cols(); ++d, ++ord) {
-
-            if (pmap.is_local(ord)){ 
+            if (pmap.is_local(ord)) {
               norms[ord] = std::sqrt(ab * Tcd(c, d));
             }
-
           }
         }
       }
@@ -134,8 +130,35 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
   }
   world.gop.fence();
 
+  // If we want to replicate and the size of the tensor is larger than max_int
+  // then we will have to do it using multiple sums.  This is necessary because
+  // MPI_ISend can only send an integer (int) number of things in a single
+  // message.
   if (replicate) {  // construct the sum
-    world.gop.sum(norms.data(), norms.size());
+    // First get the size in a 64 bit int, if that overflows then it probably
+    // wasn't going to fit on 1 node anyways (2017, maybe one day I'll be wrong)
+    int64_t size = norms.size();
+
+    const int64_t int_max = std::numeric_limits<int>::max();
+    if (size < int_max) {  // If size fits into an int then life is easy
+      world.gop.sum(norms.data(), size);
+    } else {
+      // Blah, testing on NewRiver gave failures when trying to write in chunks
+      // of both int_max and int_max/2.  For now I'll be conservative and just
+      // write in small chunks.  Writing in chunks of int_max/10 is slow, but
+      // worked on NR.
+      const int64_t write_size = int_max / 10;
+      auto i = 0;
+      while (size > write_size) {
+        const auto next_ptr = norms.data() + i * write_size;
+        world.gop.sum(next_ptr, write_size);
+        size -= write_size;
+        ++i;
+      }
+
+      // get the remaining elements
+      world.gop.sum(norms.data() + i * write_size, size);
+    }
   }
   world.gop.fence();
 

@@ -6,7 +6,7 @@
 
 namespace mpqc {
 
-std::shared_ptr<const AtomicData> AtomicData::instance_ = nullptr;
+std::shared_ptr<const AtomicData> AtomicData::instance_(nullptr);
 
 std::shared_ptr<const AtomicData> AtomicData::get_default() {
   if (!instance_) instance_ = std::make_shared<const NIST_v41_AtomicData>();
@@ -31,7 +31,7 @@ boost::optional<double> AtomicData::isotope_mass(size_t atomic_number,
       (mass_number == -1)
           ? most_abundant_(range.first, range.second)
           : std::find_if(range.first, range.second,
-                         [=](const std::pair<size_t, Isotope>& a) -> bool {
+                         [=](const std::pair<size_t, Isotope>& a) {
                            assert(a.first == atomic_number);
                            return a.second.mass_number == mass_number;
                          });
@@ -61,7 +61,7 @@ AtomicData::most_abundant_(
     const std::multimap<size_t, AtomicData::Isotope>::const_iterator& second) {
   return std::max_element(
       first, second, [](const std::pair<size_t, Isotope>& a,
-                        const std::pair<size_t, Isotope>& b) -> bool {
+                        const std::pair<size_t, Isotope>& b) {
         const auto& a_ab = a.second.abundance;
         const auto& b_ab = b.second.abundance;
         if (std::isnan(

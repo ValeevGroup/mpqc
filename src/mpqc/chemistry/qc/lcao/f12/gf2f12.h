@@ -88,7 +88,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   using Matrix = RowMatrix<real_t>;
 
   GF2F12() = default;
-  virtual ~GF2F12() = default;
+  virtual ~GF2F12() { }
 
   // clang-format off
   /**

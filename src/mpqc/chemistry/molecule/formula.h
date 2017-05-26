@@ -38,7 +38,7 @@ class MolecularFormula {
 
  public:
   explicit MolecularFormula(const Molecule& m);
-  ~MolecularFormula() = default;
+  ~MolecularFormula() { }
 
   /// computes and returns molecular formula
   /// @return std::string containing the molecular formula.

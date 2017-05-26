@@ -50,6 +50,9 @@ integer non_pivoted_lq(double *data, double *Tau, integer rows, integer cols);
 integer svd(double *data, double *s, double *u, double *vt, integer rows,
             integer cols);
 
+integer svd(double *data, double *s, double *u, double *vt, integer rows,
+            integer cols, const char JOBZ);
+
 integer form_q(double *data, double *Tau, integer rows, integer rank);
 
 integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows,

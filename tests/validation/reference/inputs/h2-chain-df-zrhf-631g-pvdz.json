@@ -1,0 +1,43 @@
+{
+  "units": "2006CODATA",
+  "unitcell": {
+    "file_name": "h2.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "lattice_param": [0.0, 0.0, 3.7]
+  },
+  "basis": {
+    "name": "6-31g",
+    "molecule": "$:unitcell"
+  },
+  "dfbs": {
+    "name": "cc-pvdz",
+    "molecule": "$:unitcell"
+  },
+  "wfn_world":{
+    "molecule" : "$:unitcell",
+    "basis" : "$:basis",
+    "df_basis" :"$:dfbs",
+    "screen": "schwarz",
+    "threshold": 1.0e-20,
+    "rmax":  [0, 0, 2],
+    "rjmax": [0, 0, 3],
+    "rdmax": [0, 0, 2]
+  },
+  "wfn":{
+    "type": "DF-zRHF",
+    "molecule" : "$:unitcell",
+    "wfn_world": "$:wfn_world",
+    "max_iter": 100,
+    "soad_guess": true,
+    "print_detail": false,
+    "max_condition_num": 1e8,
+    "k_points": [1, 1, 5]
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-9
+  }
+}
+

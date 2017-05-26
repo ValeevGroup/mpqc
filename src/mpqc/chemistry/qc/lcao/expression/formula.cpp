@@ -83,7 +83,7 @@ Formula::Formula(std::wstring string) {
       // check if this is one of Options
       auto opt_iter = std::find_if(
           begin(option_to_string), end(option_to_string),
-          [=](const std::pair<Formula::Option, std::wstring> item) -> bool {
+          [=](const std::pair<Formula::Option, std::wstring> item) {
             return item.second == op;
           });
       const auto has_opt = (opt_iter != option_to_string.end());
@@ -93,8 +93,9 @@ Formula::Formula(std::wstring string) {
       auto symm_iter = std::find_if(
           begin(math::PetiteList::symmetry_to_string),
           end(math::PetiteList::symmetry_to_string),
-          [=](const std::pair<math::PetiteList::Symmetry, std::string> item)
-              -> bool { return item.second == op_str; });
+          [=](const std::pair<math::PetiteList::Symmetry, std::string> item) {
+            return item.second == op_str;
+          });
       const auto has_symm =
           (symm_iter != math::PetiteList::symmetry_to_string.end());
 
@@ -230,7 +231,7 @@ std::wstring Formula::string() const {
   }
 
   // append options
-  auto option_string = [=]() -> std::wstring {
+  auto option_string = [=]() {
     std::wstring result;
     const auto has_options = !options_.empty();
     const auto has_symm = symm_ != math::PetiteList::Symmetry::e;

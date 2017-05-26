@@ -13,7 +13,7 @@ namespace gaussian {
 template class AOFactory<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 template class AOFactory<TA::TensorD, TA::SparsePolicy>;
-template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
+template class PeriodicAOFactory<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace gaussian
@@ -22,7 +22,7 @@ template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
 template class LCAOFactory<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
-template class PeriodicLCAOFactory<TA::TensorZ, TA::SparsePolicy>;
+template class PeriodicLCAOFactory<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

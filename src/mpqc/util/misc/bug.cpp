@@ -69,7 +69,7 @@ static Debugger *signals[NSIG];
 //////////////////////////////////////////////////////////////////////
 // Debugger class definition
 
-std::shared_ptr<Debugger> Debugger::default_debugger_ = nullptr;
+std::shared_ptr<Debugger> Debugger::default_debugger_(nullptr);
 
 Debugger::Debugger(const char *exec) {
   init();

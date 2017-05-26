@@ -47,7 +47,7 @@ class RHF
   // clang-format on
   RHF(const KeyVal& kv);
 
-  virtual ~RHF() = default;
+  virtual ~RHF() { }
 
   void obsolete() override;
 

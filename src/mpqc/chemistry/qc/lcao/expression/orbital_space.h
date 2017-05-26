@@ -148,7 +148,7 @@ class OrbitalSpace {
           __FILE__, __LINE__);
   }
 
-  virtual ~OrbitalSpace() = default;
+  virtual ~OrbitalSpace() { }
 
   /// @return the base OrbitalIndex object for this space
   const OrbitalIndex& index() const { return index_; }
@@ -267,7 +267,7 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
                         const std::vector<OrbitalAttribute>& attributes)
       : OrbitalSpace<Array>(idx, ao_idx, tarray), attributes_(attributes) {}
 
-  ~DecoratedOrbitalSpace() = default;
+  ~DecoratedOrbitalSpace() { }
 
   /// constructs this DecoratedOrbitalSpace using a visiting Provider
   /// @tparam Visitor a class derived from OrbitalSpace::Provider

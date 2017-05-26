@@ -66,8 +66,8 @@ void Unit::parse() {
         eq(unitstring, "Hartree") || eq(unitstring, "Hartrees")) {
     } else if (eq(unitstring, "ev") || eq(unitstring, "eV")) {
       factor = 1.0 / constants_->Hartree_to_electron_volt();
-    } else if (eq(unitstring, "cm^-1")) {
-      factor = (100 * h * c) / Ea;
+    } else if (eq(unitstring, "energy_wavenumber[cm]")) {
+      factor = (100 * h * c) / Ea;  // the energy of photon with wave length of 1 cm
     } else if (eq(unitstring, "debye")) {
       factor = 1.0 / constants_->atomic_unit_to_debye();
     } else if (eq(unitstring, "radian") || eq(unitstring, "radians")) {
@@ -95,7 +95,8 @@ void Unit::parse() {
       factor = M_PI / 180.0;
     } else if (eq(unitstring, "second") || eq(unitstring, "seconds") ||
         eq(unitstring, "s")) {
-      factor = Ea / hbar;
+      factor = Ea / hbar;  // atomic unit of time = how long it takes electron
+                           // to travel 1 radian in bohr orbit
     } else {
       throw InputError("unknown Unit string", __FILE__, __LINE__, "unitstring",
                        unitstring.get());

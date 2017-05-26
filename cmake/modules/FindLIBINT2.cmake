@@ -51,6 +51,7 @@ else (LIBINT2_INCLUDE_DIRS)
   
     list(APPEND CMAKE_REQUIRED_INCLUDES ${EIGEN3_INCLUDE_DIR} ${LIBINT2_INCLUDE_DIR})
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBINT2_LIBRARY})
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION})
     
     # sanity check
     CHECK_CXX_SOURCE_COMPILES(
@@ -71,17 +72,24 @@ else (LIBINT2_INCLUDE_DIRS)
       "
           #include <libint2.hpp>
           #include <libint2/engine.h>
-          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==3 && LIBINT_MICRO_VERSION>=0)
+          #include <libint2/util/any.h>
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==3 && LIBINT_MICRO_VERSION>=1)
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) {
+          
             // need libint2::Engine
             libint2::Engine e0;
+            
+            // check for standard-conforming libint2::any
+            libint2::any x = 0;
+            bool has_value_exists = x.has_value();
+            
             return 0;
           }
       "  LIBINT2_IS_UP_TO_DATE)    
     if (NOT LIBINT2_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint2 library is too old: 2.3.0 (beta.1) is required")
+      message(FATAL_ERROR "Libint2 library is too old: 2.3.1 is required")
     endif()
 
     # make sure libint2 is properly configured

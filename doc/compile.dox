@@ -32,7 +32,6 @@ export TiledArray_INSTALL = /path/to/tiledarray/install/directory
 export LIBINT2_INSTALL = /path/to/libint/install/direcotry
 
 cmake \
-    -DCMAKE_CXX_FLAGS=-std=c++11 \
     -DTiledArray_INSTALL_DIR= ${TiledArray_INSTALL} \
     -DLIBINT2_INSTALL_DIR=${LIBINT2_INSTALL} \
     -DBOOST_ROOT=/path/to/boost/install/direcotry \

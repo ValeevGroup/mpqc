@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/7/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
 
 #include <cmath>
 #include <utility>
@@ -11,7 +11,10 @@
 namespace mpqc {
 namespace cc {
 
-/// {T1,T2} amplitude pair
+/// the {T1,T2} amplitude pair
+
+/// @tparam T1 the type representing the set of 1-body amplitudes
+/// @tparam T2 the type representing the set of 2-body amplitudes
 template <typename T1, typename T2>
 struct T1T2 {
   typedef typename T1::element_type element_type;
@@ -26,7 +29,7 @@ struct T1T2 {
   T1 t1;
   T2 t2;
 
-  auto norm() const -> decltype(norm2(std::declval<T1>())){
+  auto norm() {
     auto t1_norm = norm2(t1);
     auto t2_norm = norm2(t2);
     return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm));
@@ -45,8 +48,7 @@ inline void zero(T1T2<T1, T2> &a) {
 }
 
 template <typename T1, typename T2>
-inline auto dot_product(const T1T2<T1, T2> &a, const T1T2<T1, T2> &b)
-    -> decltype(dot_product(std::declval<T1>(), std::declval<T1>())) {
+inline auto dot_product(const T1T2<T1, T2> &a, const T1T2<T1, T2> &b) {
   return dot_product(a.t1, b.t1) + dot_product(a.t2, b.t2);
 }
 
@@ -70,4 +72,4 @@ inline void scale(T1T2<T1, T2> &y, Scalar a) {
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_

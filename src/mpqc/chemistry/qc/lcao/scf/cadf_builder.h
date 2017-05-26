@@ -107,16 +107,15 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
                                                          trange1_M, trange1_M);
   }
 
-  ~CADFFockBuilder() = default;
+  ~CADFFockBuilder() { }
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {
     registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
   }
 
-  ArrayType operator()(ArrayType const &D, ArrayType const &LMO) override {
-    auto &world = D.world();
-
+  ArrayType operator()(ArrayType const &D, ArrayType const &LMO,
+                       double target_precision = std::numeric_limits<double>::epsilon()) override {
     ArrayType G;
     G("m, n") = 2 * compute_J(D)("m, n") - compute_K(LMO, D)("m, n");
     return G;

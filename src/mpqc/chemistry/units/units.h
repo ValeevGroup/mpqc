@@ -2,9 +2,9 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_UNITS_UNITS_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 
-#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
@@ -178,7 +178,7 @@ class UnitFactory;
 /// \sa UnitFactory
 class Unit {
  public:
-  ~Unit() = default;
+  ~Unit() { }
 
   /// The conversion factor from this to \c u .
   double to(const Unit& u) const;
@@ -236,7 +236,7 @@ class UnitFactory {
   /// The default is currently "2014CODATA", and may be revised in the future.
   UnitFactory(std::string system);
 
-  ~UnitFactory() = default;
+  ~UnitFactory() { }
 
   /// \return the name of the fundamental constants system
   const std::string& system() const { return system_; }

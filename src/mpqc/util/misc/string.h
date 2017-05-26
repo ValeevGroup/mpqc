@@ -2,10 +2,8 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_MISC_STRING_H_
 #define MPQC4_SRC_MPQC_UTIL_MISC_STRING_H_
 
-#include <locale>
 #include <sstream>
 #include <string>
-//#include <codecvt> // no gcc support
 #include <boost/locale/encoding_utf.hpp>
 
 namespace mpqc {

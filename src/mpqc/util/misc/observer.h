@@ -79,7 +79,7 @@ class Observer {
   Observer(Observer &&other) = default;
   Observer &operator=(Observer &&other) = default;
 
-  virtual ~Observer() = default;
+  virtual ~Observer() { }
 
  protected:
   /// registers a message with an Observee object, will be called whenever

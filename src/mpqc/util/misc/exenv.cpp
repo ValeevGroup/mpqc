@@ -40,9 +40,9 @@
 #endif
 
 #include <cstring>
+#include <memory>
 
 #include "mpqc/util/misc/exenv.h"
-#include "mpqc/util/external/c++/memory"
 
 using namespace std;
 using namespace mpqc;

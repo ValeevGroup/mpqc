@@ -28,12 +28,11 @@ namespace cc {
 mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<CCSD_T<TA::TensorD, TA::DensePolicy>> fl2;
 mpqc::detail::ForceLink<DBCCSD<TA::TensorD, TA::DensePolicy>> fl3;
-mpqc::detail::ForceLink<GammaPointCCSD<TA::TensorZ, TA::DensePolicy>> fl4;
 mpqc::detail::ForceLink<EOM_CCSD<TA::TensorD,TA::DensePolicy>> fl5;
 #elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<CCSD_T<TA::TensorD, TA::SparsePolicy>> fl2;
-//mpqc::detail::ForceLink<GammaPointCCSD<TA::TensorZ, TA::SparsePolicy>> fl4;
+mpqc::detail::ForceLink<GammaPointCCSD<TA::TensorD, TA::SparsePolicy>> fl4;
 mpqc::detail::ForceLink<EOM_CCSD<TA::TensorD,TA::SparsePolicy>> fl3;
 #endif
 }  // namespace

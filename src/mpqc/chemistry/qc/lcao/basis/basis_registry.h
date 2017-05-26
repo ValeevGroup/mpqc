@@ -2,8 +2,8 @@
 // Created by Chong Peng on 9/9/16.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_REGISTRY_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_REGISTRY_H_
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
@@ -49,4 +49,4 @@ void gaussian::OrbitalBasisRegistry::clear();
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_BASIS_REGISTRY_H_

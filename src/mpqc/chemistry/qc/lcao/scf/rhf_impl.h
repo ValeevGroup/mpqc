@@ -7,19 +7,20 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 
+#include <memory>
+
+#include <madness/world/worldmem.h>
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
+#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/purification_density_build.h"
+#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
-#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/time.h"
-#include <madness/world/worldmem.h>
 
 namespace mpqc {
 namespace lcao {
@@ -97,9 +98,7 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
 
   if (!F_.is_initialized()) {
     // soad
-    auto eri_e = gaussian::make_engine_pool(libint2::Operator::coulomb,
-                                            utility::make_array_of_refs(basis));
-    F_ = gaussian::fock_from_soad(world, mol, basis, eri_e, H_);
+    F_ = gaussian::fock_from_soad(world, mol, basis, H_);
   }
 
   F_diis_ = F_;
@@ -111,7 +110,8 @@ void RHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder =
-      scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(eri4, eri4);
+      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4)>(eri4,
+                                                                        eri4);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -379,9 +379,9 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
 template <typename Tile, typename Policy>
 void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
-  scf::CADFFockBuilder<Tile, Policy, DirectArray> builder(
+  using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
+  this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
 /**
@@ -392,11 +392,15 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto eri4_J = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[aa_bb]");
-  auto eri4_K = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
-  auto builder =
-      scf::FourCenterBuilder<Tile, Policy, decltype(eri4_J)>(std::move(eri4_J),std::move(eri4_K));
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+  auto& factory = this->ao_factory();
+  auto& world = factory.world();
+  auto& ao_factory = ::mpqc::lcao::gaussian::to_ao_factory(factory);
+  auto screen = ao_factory.screen();
+  auto screen_threshold = ao_factory.screen_threshold();
+  auto basis =
+      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  this->f_builder_ = std::make_unique<scf::FourCenterFockBuilder<Tile, Policy>>(
+      world, basis, basis, basis, true, true, screen, screen_threshold);
 }
 
 /**
@@ -411,11 +415,12 @@ void RIJEXACTKRHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
-  auto eri4 = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)[a_bb]");
+  auto basis =
+      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
-  scf::RIJEXACTKBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3, eri4);
-  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+  using Builder = scf::RIJEXACTKBuilder<Tile, Policy, decltype(eri3)>;
+  this->f_builder_ = std::make_unique<Builder>(inv, eri3, basis, basis, basis);
 }
 
 }  // namespace lcao

@@ -186,7 +186,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     }
   }
 
-  ~ClrCADFFockBuilder() = default;
+  ~ClrCADFFockBuilder() { }
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {

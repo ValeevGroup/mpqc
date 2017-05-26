@@ -25,7 +25,7 @@ class TileModel {
   using size_type = std::size_t;
 
   TileModel() = default;
-  ~TileModel() = default;
+  ~TileModel() { }
   TileModel(TileModel const &) = default;
   TileModel(TileModel &&) = default;
   TileModel &operator=(TileModel &&) = default;
@@ -38,15 +38,15 @@ class TileModel {
   T const &tile() const { return tile_; }
 
   bool empty_() const { return empty(tile_); }
-  auto norm_() const -> decltype(norm(tile_)) { return norm(tile_); }
-  auto trace_() const -> decltype(trace(tile_)) { return trace(tile_); }
-  auto sum_() const -> decltype(sum(tile_)) { return sum(tile_); }
-  auto min_() const -> decltype(min(tile_)) { return min(tile_); }
-  auto max_() const -> decltype(max(tile_)) { return max(tile_); }
-  auto abs_min_() const -> decltype(abs_min(tile_)) { return abs_min(tile_); }
-  auto abs_max_() const -> decltype(abs_max(tile_)) { return abs_max(tile_); }
-  auto product_() const -> decltype(product(tile_)) { return product(tile_); }
-  auto squared_norm_() const -> decltype(squared_norm(tile_)) {
+  auto norm_() const { return norm(tile_); }
+  auto trace_() const { return trace(tile_); }
+  auto sum_() const { return sum(tile_); }
+  auto min_() const { return min(tile_); }
+  auto max_() const { return max(tile_); }
+  auto abs_min_() const { return abs_min(tile_); }
+  auto abs_max_() const { return abs_max(tile_); }
+  auto product_() const { return product(tile_); }
+  auto squared_norm_() const {
     return squared_norm(tile_);
   }
 
@@ -58,8 +58,7 @@ class TileModel {
    * Add
    */
   template <typename... Args>
-  auto add_(Args &&... args) const
-      -> decltype(add(tile_, std::forward<Args>(args)...)) {
+  auto add_(Args &&... args) const {
     return add(tile_, std::forward<Args>(args)...);
   }
 
@@ -73,8 +72,7 @@ class TileModel {
    * Subtract
    */
   template <typename... Args>
-  auto subt_(Args &&... args) const
-      -> decltype(subt(tile_, std::forward<Args>(args)...)) {
+  auto subt_(Args &&... args) const {
     return subt(tile_, std::forward<Args>(args)...);
   }
 
@@ -88,8 +86,7 @@ class TileModel {
    * Multiply
    */
   template <typename... Args>
-  auto mult_(Args &&... args) const
-      -> decltype(mult(tile_, std::forward<Args>(args)...)) {
+  auto mult_(Args &&... args) const {
     return mult(tile_, std::forward<Args>(args)...);
   }
 
@@ -103,8 +100,7 @@ class TileModel {
    * Negate
    */
   template <typename... Args>
-  auto neg_(Args &&... args) const
-      -> decltype(neg(tile_, std::forward<Args>(args)...)) {
+  auto neg_(Args &&... args) const {
     return neg(tile_, std::forward<Args>(args)...);
   }
 
@@ -118,8 +114,7 @@ class TileModel {
    * Scale
    */
   template <typename... Args>
-  auto scale_(Args &&... args) const
-      -> decltype(scale(tile_, std::forward<Args>(args)...)) {
+  auto scale_(Args &&... args) const {
     return scale(tile_, std::forward<Args>(args)...);
   }
 
@@ -133,8 +128,7 @@ class TileModel {
    * Gemm
    */
   template <typename... Args>
-  auto gemm_(Args &&... args) const
-      -> decltype(gemm(tile_, std::forward<Args>(args)...)) {
+  auto gemm_(Args &&... args) const {
     return gemm(tile_, std::forward<Args>(args)...);
   }
 
@@ -159,7 +153,7 @@ class Tile {
   using size_type = std::size_t;
 
   Tile() = default;
-  ~Tile() = default;
+  ~Tile() { }
   Tile(Tile const &) = default;
   Tile(Tile &&) = default;
   Tile &operator=(Tile &&) = default;
@@ -187,29 +181,29 @@ class Tile {
 
   bool empty() const { return (!tile_ || tile_->empty_()); }
 
-  auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
+  auto norm() const { return tile_->norm_(); }
 
-  auto trace() const -> decltype(tile_->trace_()) { return tile_->trace_(); }
+  auto trace() const { return tile_->trace_(); }
 
-  auto sum() const -> decltype(tile_->sum_()) { return tile_->sum_(); }
+  auto sum() const { return tile_->sum_(); }
 
-  auto min() const -> decltype(tile_->min_()) { return tile_->min_(); }
+  auto min() const { return tile_->min_(); }
 
-  auto max() const -> decltype(tile_->max_()) { return tile_->max_(); }
+  auto max() const { return tile_->max_(); }
 
-  auto abs_min() const -> decltype(tile_->abs_min_()) {
+  auto abs_min() const {
     return tile_->abs_min_();
   }
 
-  auto abs_max() const -> decltype(tile_->abs_max_()) {
+  auto abs_max() const {
     return tile_->abs_max_();
   }
 
-  auto product() const -> decltype(tile_->product_()) {
+  auto product() const {
     return tile_->product_();
   }
 
-  auto squared_norm() const -> decltype(tile_->squared_norm_()) {
+  auto squared_norm() {
     return tile_->squared_norm_();
   }
 
@@ -267,8 +261,7 @@ class Tile {
    * Add functions
    */
   template <typename... Args>
-  auto add(Args &&... args) const
-      -> Tile<decltype(tile_->add_(std::forward<Args>(args)...))> {
+  auto add(Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->add_(std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -276,8 +269,7 @@ class Tile {
 
   // Overload for tcc::Tile
   template <typename U, typename... Args>
-  auto add(Tile<U> const &u, Args &&... args) const
-      -> Tile<decltype(tile_->add_(u.tile(), std::forward<Args>(args)...))> {
+  auto add(Tile<U> const &u, Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->add_(u.tile(), std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -299,8 +291,7 @@ class Tile {
    * Subtract functions
    */
   template <typename... Args>
-  auto subt(Args &&... args) const
-      -> Tile<decltype(tile_->subt_(std::forward<Args>(args)...))> {
+  auto subt(Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->subt_(std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -308,8 +299,7 @@ class Tile {
 
   // Overload for tcc::Tile
   template <typename U, typename... Args>
-  auto subt(Tile<U> const &u, Args &&... args) const
-      -> Tile<decltype(tile_->subt_(u.tile(), std::forward<Args>(args)...))> {
+  auto subt(Tile<U> const &u, Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->subt_(u.tile(), std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -331,8 +321,7 @@ class Tile {
    * Multiplication functions
    */
   template <typename... Args>
-  auto mult(Args &&... args) const
-      -> Tile<decltype(tile_->mult_(std::forward<Args>(args)...))> {
+  auto mult(Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->mult_(std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -340,8 +329,7 @@ class Tile {
 
   // Overload for tcc::Tile
   template <typename U, typename... Args>
-  auto mult(Tile<U> const &u, Args &&... args) const
-      -> Tile<decltype(tile_->mult_(u.tile(), std::forward<Args>(args)...))> {
+  auto mult(Tile<U> const &u, Args &&... args) const {
     auto range = create_new_range(range_, args...);
     auto out = tile_->mult_(u.tile(), std::forward<Args>(args)...);
     return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -390,8 +378,7 @@ class Tile {
    */
   template <typename Other>
   auto gemm(Other const &o, const numeric_type factor,
-            TA::math::GemmHelper const &gemm_helper) const
-      -> Tile<decltype(tile_->gemm_(o, factor, gemm_helper))> {
+            TA::math::GemmHelper const &gemm_helper) const {
     auto range = gemm_helper.make_result_range<TA::Range>(range_, o.range());
 
     auto out = tile_->gemm_(o, factor, gemm_helper);
@@ -400,8 +387,7 @@ class Tile {
 
   template <typename U>
   auto gemm(Tile<U> const &u, const numeric_type factor,
-            TA::math::GemmHelper const &gemm_helper) const
-      -> Tile<decltype(tile_->gemm_(u.tile(), factor, gemm_helper))> {
+            TA::math::GemmHelper const &gemm_helper) const {
     auto range = gemm_helper.make_result_range<TA::Range>(range_, u.range());
     auto out = tile_->gemm_(u.tile(), factor, gemm_helper);
     return Tile<decltype(out)>{std::move(range), std::move(out)};

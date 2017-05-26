@@ -128,7 +128,7 @@ Molecule::Molecule(std::istream &file_stream, Vector3d const &point) {
   init_atoms(read_xyz(file_stream), true, &point);
 }
 
-Molecule::~Molecule() = default;
+Molecule::~Molecule() { }
 
 std::vector<AtomBasedClusterable> Molecule::read_xyz(std::istream &file) {
   auto unit_factory = UnitFactory::get_default();

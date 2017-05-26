@@ -14,10 +14,10 @@ namespace utility {
  * \return
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
-                   int64_t k) {
+MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
+                   int64_t k, bool print = false) {
   double S_condition_num;
-  Matrixz X;
+  MatrixZ X;
   auto &world = S.world();
   auto S_eig = array_ops::array_to_eigen(S);
 
@@ -27,7 +27,7 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
   // if symmetric, X = U.s_sqrtinv.Ut
   // if canonical, X = U.s_sqrtinv
   // where s and U are eigenvalues and eigenvectors of S
-  Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(S_eig);
+  Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
   //  integrals::detail::sort_eigen(s, U);
@@ -67,9 +67,9 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
   auto nbf_omitted = s_rows - s_cond;
   if (nbf_omitted < 0) throw "Error: dropping negative number of functions!";
 
-  if (world.rank() == 0) {
-    std::cout << "\n\toverlap condition number = " << S_condition_num
-              << " at k = " << k;
+  if (print) {
+    ExEnv::out0() << "\n\toverlap condition number = " << S_condition_num
+                  << " at k = " << k;
   }
 
   if (nbf_omitted > 0) {
@@ -81,13 +81,11 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
     auto I_comp = I_real.template cast<std::complex<double>>();
     auto should_be_zero = (should_be_I - I_comp).norm();
 
-    if (world.rank() == 0) {
-      std::cout << " (dropped " << nbf_omitted << " "
-                << (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
-                << result_condition_num << ")" << std::endl;
-      std::cout << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
-                << " (should be zero)" << std::endl;
-    }
+    ExEnv::out0() << " (dropped " << nbf_omitted << " "
+                  << (nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
+                  << result_condition_num << ")" << std::endl;
+    ExEnv::out0() << "\t\t||Xt*S*X - I||_2 = " << should_be_zero
+                  << " (should be zero)" << std::endl;
   }
 
   return X;
@@ -102,9 +100,10 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
  * \return conditioned orthogonalizer
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-std::vector<Matrixz> conditioned_orthogonalizer(
-    const TArray overlap, int64_t k_size, double max_condition_num = 1.0e8) {
-  std::vector<Matrixz> X;
+std::vector<MatrixZ> conditioned_orthogonalizer(
+    const TArray overlap, int64_t k_size, double max_condition_num = 1.0e8,
+    int64_t print_max_item = 100) {
+  std::vector<MatrixZ> X;
   X.resize(k_size);
 
   auto tr0 = overlap.trange().data()[0];
@@ -114,15 +113,17 @@ std::vector<Matrixz> conditioned_orthogonalizer(
 
   auto n_tr_nu = overlap.trange().data().front().tiles_range().second;
 
+  bool print = (k_size < print_max_item) ? true : false;
   for (auto k = 0; k < k_size; ++k) {
     std::vector<std::size_t> S_low{0, k * n_tr_nu};
     std::vector<std::size_t> S_up{n_tr_nu, (k + 1) * n_tr_nu};
 
     TArray S;
     S("mu, nu") = overlap("mu, nu").block(S_low, S_up);
-    X[k] = gensqrtinv(S, false, max_condition_num, k);
+    X[k] = gensqrtinv(S, false, max_condition_num, k, print);
   }
 
+  ExEnv::out0() << std::endl;
   return X;
 }
 

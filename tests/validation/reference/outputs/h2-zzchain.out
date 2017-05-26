@@ -1,8 +1,13 @@
-MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 71c6cc33bef1823082c11777790a0286e0ca6c64
+                 Revision 36171dc83deb6bc0e2f8dd95a965114cd63e4022
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Wed Feb 22 21:49:07 2017 UTC
+  Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
@@ -11,30 +16,11 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "true",
+        "n_cluster": "1",
         "lattice_param": [
             "0.0",
             "0.0",
             "1.481696"
-        ],
-        "rmax": [
-            "0",
-            "0",
-            "4"
-        ],
-        "rjmax": [
-            "0",
-            "0",
-            "6"
-        ],
-        "rdmax": [
-            "0",
-            "0",
-            "4"
-        ],
-        "k_points": [
-            "1",
-            "1",
-            "10"
         ]
     },
     "basis": {
@@ -45,106 +31,117 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
         "molecule": "$:unitcell",
         "basis": "$:basis",
         "screen": "schwarz",
-        "threshold": "1.0e-20"
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "2"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "3"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "2"
+        ]
     },
     "wfn": {
         "type": "zRHF",
         "molecule": "$:unitcell",
         "wfn_world": "$:wfn_world",
-        "converge": "1.0e-7",
         "max_iter": "100",
         "soad_guess": "true",
         "print_detail": "false",
-        "max_condition_num": "1e8"
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "5"
+        ]
     },
     "property": {
         "type": "Energy",
         "wfn": "$:wfn",
-        "precision": "1.0e-7"
+        "precision": "1.0e-11"
     },
-    "file_prefix": "\/Users\/work\/software\/mpqc4\/mpqc4_src\/tests\/validation\/reference\/inputs"
+    "g09_input": [
+        "#P HF\/sto-3g SCF=Tight",
+        "",
+        "hydrogen zz-chain, single point calculation",
+        "",
+        "0 1",
+        "H,            0.000000,       0.000000,        0.370426",
+        "H,            0.000000,       0.000000,       -0.370426",
+        "TV,           0.000000,       0.000000,        1.481696"
+    ]
 }
 
   Using fundamental constants system 2006CODATA
 
-
- Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
-
-OBS Basis Trange 
-( tiles = [ 0, 2 ), elements = [ 0, 2 ) )
-Min and Max block size: 1 1
-Average: 1
-
-Screen: schwarz
-Threshold: 1e-20
-Precision: 2.22044604925031e-16
+Constructing Basis Registry: 
+OBS Basis = sto-3g
+( tiles = [ 0, 1 ), elements = [ 0, 2 ) )
+Min and Max block size: 2 2
+Average: 2
 
 
-
- Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
-
-
-Periodic Hartree-Fock computational parameter:
-	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 4]
-	Rj_max (range of Coulomb operation): [0 0 6]
-	Rd_max (Range of density representation): [0 0 4]
-	# of k points in each direction: [ 1  1 10]
-
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
+	Rj_max (range of Coulomb operation): [0 0 3]
+	Rd_max (Range of density representation): [0 0 2]
 
 Molecule info:
 	C.O.M: 0 0 0
-	Charge: 0
-	Mass: 2.01568
+	Mass: 2.01565006446
 
 Elements:
-	Atom: {Z: 1, mass: 1.00784, pos:                  0                  0 -0.700003692500297}
-	Atom: {Z: 1, mass: 1.00784, pos:                 0                 0 0.700003692500297}
+	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}}}
 
 Unit cell info:
 	Lattice parameters (in Bohr): [               0                0 2.79999965219213]
 
+zRHF computational parameters:
+  # of k points in each direction: [1 1 5]
 
 Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 5.36441802978516e-07 GB Time: 0.004418306 s
+ Size: 2.98023223876953e-07 GB Time: 0.003928118 s
 
 Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 5.36441802978516e-07 GB Time: 0.028678004 s
+ Size: 2.98023223876953e-07 GB Time: 0.00983903 s
 
 Computing One Body Integral for Periodic System: < κ | λ >
- Size: 5.36441802978516e-07 GB Time: 0.001551088 s
+ Size: 2.98023223876953e-07 GB Time: 0.00076585 s
 
 Building Fock Matrix from SOAD Guess ...
 
-	overlap condition number = 1.69815819977789 at k = 0
-	overlap condition number = 4.73737051911483 at k = 1
-	overlap condition number = 11.8947772732314 at k = 2
-	overlap condition number = 24.5565956636698 at k = 3
-	overlap condition number = 37.1326493996036 at k = 4
-	overlap condition number = 37.1326493996037 at k = 5
-	overlap condition number = 24.5565956636698 at k = 6
-	overlap condition number = 11.8947772732314 at k = 7
-	overlap condition number = 4.73737051911483 at k = 8
-	overlap condition number = 1.69815819977789 at k = 9
-Nuclear Repulsion Energy: 4.48810370139753
+	overlap condition number = 2.81692296865225 at k = 0
+	overlap condition number = 18.0966097513074 at k = 1
+	overlap condition number = 37.8424991732889 at k = 2
+	overlap condition number = 18.0966097513074 at k = 3
+	overlap condition number = 2.81692296865225 at k = 4
+Nuclear Repulsion Energy: 3.60204118509941
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    1      -5.469800656061      -0.981696954663      -5.469800656061       0.001902180361                0.810
-    2      -5.482540965531      -0.994437264134      -0.012740309470       0.000432058836                0.821
-    3      -5.482543824482      -0.994440123084      -0.000002858950       0.000256141542                0.835
-    4      -5.482543900730      -0.994440199332      -0.000000076248       0.000174358429                1.119
+    0      -4.620720291544      -1.018679106445      -4.620720291544       0.000145275805                0.082
+    1      -4.620720305516      -1.018679120417      -0.000000013972       0.000015733261                0.068
+    2      -4.620720305693      -1.018679120594      -0.000000000177       0.000002934104                0.053
+    3      -4.620720305698      -1.018679120599      -0.000000000005       0.000001322249                0.056
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -0.994440199332262
+Total Periodic Hartree-Fock energy = -1.01867912059862
 
 Time(s):
-	Init:                               0.219
-	Coulomb term:                       1.790
-	Exchange term:                      1.766
-	Real->Recip trans:                  0.006
-	Diag + Density:                     0.010
-	Total:                              3.586
+	Init:                               0.062
+	Coulomb term:                       0.098
+	Exchange term:                      0.155
+	Real->Recip trans:                  0.001
+	Diag + Density:                     0.003
+	Total:                              0.259
 
   Output KeyVal (format=JSON):
 {
@@ -153,30 +150,11 @@ Time(s):
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "true",
+        "n_cluster": "1",
         "lattice_param": [
             "0.0",
             "0.0",
             "1.481696"
-        ],
-        "rmax": [
-            "0",
-            "0",
-            "4"
-        ],
-        "rjmax": [
-            "0",
-            "0",
-            "6"
-        ],
-        "rdmax": [
-            "0",
-            "0",
-            "4"
-        ],
-        "k_points": [
-            "1",
-            "1",
-            "10"
         ]
     },
     "basis": {
@@ -187,25 +165,54 @@ Time(s):
         "molecule": "$:unitcell",
         "basis": "$:basis",
         "screen": "schwarz",
-        "threshold": "1.0e-20"
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "2"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "3"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "2"
+        ]
     },
     "wfn": {
         "type": "zRHF",
         "molecule": "$:unitcell",
         "wfn_world": "$:wfn_world",
-        "converge": "1.0e-7",
         "max_iter": "100",
         "soad_guess": "true",
         "print_detail": "false",
-        "max_condition_num": "1e8"
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "5"
+        ]
     },
     "property": {
         "type": "Energy",
         "wfn": "$:wfn",
-        "precision": "1.0e-7",
+        "precision": "1.0e-11",
         "value": {
-            "value": "-0.9944401993322618"
+            "value": "-1.0186791205986223"
         }
-    }
+    },
+    "g09_input": [
+        "#P HF\/sto-3g SCF=Tight",
+        "",
+        "hydrogen zz-chain, single point calculation",
+        "",
+        "0 1",
+        "H,            0.000000,       0.000000,        0.370426",
+        "H,            0.000000,       0.000000,       -0.370426",
+        "TV,           0.000000,       0.000000,        1.481696"
+    ]
 }
 

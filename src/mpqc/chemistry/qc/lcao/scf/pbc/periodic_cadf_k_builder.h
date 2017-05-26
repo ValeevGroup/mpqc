@@ -5,7 +5,10 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
 
+#include "mpqc/math/external/tiledarray/array_info.h"
+
 #include <unordered_set>
+#include <boost/functional/hash.hpp>
 
 namespace mpqc {
 namespace scf {
@@ -253,8 +256,12 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     std::vector<array_type> Q_bra(RJ_size, array_type());
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      array_type &Q = Q_bra[RJ];
       array_type &C = C_bra_[RJ];
+      const double norm = C("i,j").norm();
+      if(norm == 0.0){
+        continue;
+      }
+      array_type &Q = Q_bra[RJ];
       Q("X, mu, sig") = C("X, mu, rho") * D("rho, sig");
       //      dump_shape(Q, RJ);
     }
@@ -265,22 +272,29 @@ class PeriodicCADFKBuilder {
     array_type F, K_part1;
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_ket_[RJ];
+      array_type &Q = Q_bra[RJ];
+      if(!Q.is_initialized()){
+        continue;
+      }
       DirectTArray &E = E_bra_[RJ];
 
       // force shape of F
-      auto norms = force_norms(Q_bra[RJ].shape().data(), 1, R_size);
+      // auto norms = force_norms(Q_bra[RJ].shape().data(), 1, R_size);
+      auto normsp = force_normsp(Q.shape().data(),
+                                 E.array().shape().data());
       auto trange = E.array().trange();
-      TA::SparseShape<float> forced_shape(world, norms, trange);
+      TA::SparseShape<float> forced_shape(world, normsp, trange);
 
       // compute F(X, ν_R, σ_(Rj+Rd)) =
       //           E(X, ν_R, σ_(Rj+Rd)) - M(X, Y) C(Y, ν_R, σ_(Rj+Rd))
       F("X, nu, sig") = (E("X, nu, sig")).set_shape(forced_shape);
       F.truncate();
       F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
+      F.truncate();
+      world.gop.fence();
+      detail::print_size_info(F, "F");
 
-      // compute K_part1
-      array_type &Q = Q_bra[RJ];
-      if (RJ == 0) {
+      if (!K_part1.is_initialized()) {
         K_part1("mu, nu") = Q("X, mu, sig") * F("X, nu, sig");
       } else {
         K_part1("mu, nu") += Q("X, mu, sig") * F("X, nu, sig");
@@ -293,8 +307,12 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     std::vector<array_type> Q_ket(RJ_size, array_type());
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      array_type &Q = Q_ket[RJ];
       array_type &C = C_ket_[RJ];
+      const double norm = C("i,j").norm();
+      if(norm == 0.0){
+        continue;
+      }
+      array_type &Q = Q_ket[RJ];
       Q("Y, nu, rho") = C("Y, nu, sig") * D("rho, sig");
     }
     t1 = mpqc::fenced_now(world);
@@ -304,10 +322,22 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     array_type K_part2;
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      if (RJ == 0) {
-        K_part2("mu, nu") = E_ket_[RJ]("Y, mu, rho") * Q_ket[RJ]("Y, nu, rho");
-      } else {
-        K_part2("mu, nu") += E_ket_[RJ]("Y, mu, rho") * Q_ket[RJ]("Y, nu, rho");
+      auto const& Q = Q_ket[RJ];
+      auto const& E = E_ket_[RJ];
+      if (Q_ket[RJ].is_initialized()) {
+        auto normsp = force_normsp(Q.shape().data(),
+        E.array().shape().data());
+
+        auto trange = E.array().trange();
+        TA::SparseShape<float> forced_shape(world, normsp, trange);
+
+        array_type F2;
+        F2("Y, mu, rho") = (E("Y, mu, rho")).set_shape(forced_shape);
+        if(!K_part2.is_initialized()){
+          K_part2("mu, nu") =  F2("Y, mu, rho") * Q("Y, nu, rho");
+        } else {
+          K_part2("mu, nu") += F2("Y, mu, rho") * Q("Y, nu, rho");
+        }
       }
     }
     t1 = mpqc::fenced_now(world);
@@ -334,6 +364,51 @@ class PeriodicCADFKBuilder {
     }
 
     return K;
+  }
+
+  auto force_normsp(TA::Tensor<float> const &in, TA::Tensor<float> const &F_norms){
+    auto const& irange = in.range();
+    auto iext = irange.extent_data();
+
+    // Q("X, mu, sigma") 
+    const auto X_size = iext[0];
+    const auto mu_size = iext[1];
+    const auto sig_size = iext[2];
+
+    using SigPair = std::pair<int64_t, int64_t>;
+    std::unordered_set<SigPair, boost::hash<SigPair>> Xsig;
+    Xsig.reserve(X_size * sig_size);
+
+    for(auto mu = 0; mu < mu_size; ++mu){
+      for(auto X = 0; X < X_size; ++X){
+        for(auto sig = 0; sig < sig_size; ++sig){
+          const auto val = in(X,mu,sig);
+          if(val > 0.0){
+            SigPair Xs_pair(X, sig);
+            Xsig.insert(Xs_pair);
+          }
+        }
+      }
+    }
+
+    auto const& orange = F_norms.range();
+    TA::Tensor<float> out(orange, 0.0);
+
+    // F("X, nu, sigma")
+    auto oext = orange.extent_data();
+    assert(X_size == oext[0]);
+    assert(sig_size == oext[2]);
+    const auto nu_size = oext[1];
+
+    for(auto nu = 0; nu < nu_size; ++nu){
+      for(auto const& Xspair : Xsig){
+        const auto X = Xspair.first; 
+        const auto sig = Xspair.second; 
+        out(X, nu, sig) = std::numeric_limits<float>::max();
+      }
+    }
+
+    return out;
   }
 
   TA::Tensor<float> force_norms(TA::Tensor<float> const &in_norms,

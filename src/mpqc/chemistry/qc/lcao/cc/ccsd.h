@@ -25,20 +25,20 @@ namespace detail {
 inline void print_ccsd(int iter, double dE, double error, double E1,
                        double time) {
   if (iter == 0) {
-    std::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
+    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
                 "residual", "energy", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE,
+  ExEnv::out0() << mpqc::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE,
               error, E1, time);
 }
 
 inline void print_ccsd_direct(int iter, double dE, double error, double E1,
                               double time1, double time2) {
   if (iter == 0) {
-    std::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
+    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
                 "deltaE", "residual", "energy", "u time/s", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
+  ExEnv::out0() << mpqc::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
               dE, error, E1, time1, time2);
 }
 }

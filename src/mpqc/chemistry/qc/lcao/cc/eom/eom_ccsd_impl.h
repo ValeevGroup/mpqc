@@ -311,8 +311,8 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDDC(TArray Cabij) {
 
 template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
-EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
-                                        double convergence) {
+EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
+                                                 double convergence) {
   madness::World& world =
       C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
   std::size_t iter = 0;
@@ -362,10 +362,11 @@ EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
     EigenVector<double> eig_new = dvd.extrapolate(HC, C_, pred);
     auto time2 = mpqc::fenced_now(world);
 
-    norm_r = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    norm_r = delta_e.norm();
 
-    detail::print_excitation_energy_iteration(
-        iter, norm_r, eig_new, mpqc::duration_in_s(time0, time1),
+    util::print_excitation_energy_iteration(
+        iter, delta_e, eig_new, mpqc::duration_in_s(time0, time1),
         mpqc::duration_in_s(time1, time2));
 
     eig = eig_new;
@@ -379,7 +380,7 @@ EOM_CCSD<Tile, Policy>::davidson_solver(std::size_t max_iter,
   }
 
   ExEnv::out0() << "\n";
-  detail::print_excitation_energy(eig, false);
+  util::print_excitation_energy(eig, false);
 
   return eig;
 }
@@ -428,7 +429,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       C_[i].t2.fill(0.0);
     }
 
-    auto result = davidson_solver(30, target_precision);
+    auto result = eom_ccsd_davidson_solver(30, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(

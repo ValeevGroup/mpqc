@@ -573,7 +573,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       // print the progress
       if (rank == 0) {
-        print_progress(a, a + 1, progress_points);
+        util::print_progress(a, a + 1, progress_points);
       }
     }  // loop of a
     this_world.gop.fence();
@@ -1020,7 +1020,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
 
       if (t1.world().rank() == 0) {
-        print_progress(a, a + increase, progress_points);
+        util::print_progress(a, a + increase, progress_points);
       }
       a += a_increase;
     }

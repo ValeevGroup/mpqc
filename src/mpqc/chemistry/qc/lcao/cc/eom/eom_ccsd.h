@@ -149,7 +149,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-  EigenVector<numeric_type> davidson_solver(std::size_t max_iter, double convergence);
+  EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter, double convergence);
 
 };
 

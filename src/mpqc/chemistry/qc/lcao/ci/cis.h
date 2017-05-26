@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
 #include "mpqc/math/linalg/davidson_diag.h"
+#include "mpqc/util/misc/print.h"
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
@@ -15,50 +16,9 @@ namespace lcao {
 
 namespace detail {
 
-template<typename T>
-inline void print_excitation_energy_iteration(std::size_t iter, T norm,
-                                              const EigenVector<T> &eig, double time1,
-                                              double time2) {
-  ExEnv::out0() << indent << "iteration: " << iter << "\n";
-  ExEnv::out0() << indent << "norm: " << norm << "\n";
-  ExEnv::out0() << indent << "excitation energy: "
-                << "\n";
 
-  const std::size_t size = eig.size();
-  for (std::size_t i = 0; i < size - 1; i++) {
-    ExEnv::out0() << indent << indent << eig[i] << "\n";
-  }
-  ExEnv::out0() << indent << indent << eig[size - 1];
 
-  ExEnv::out0() << "\n";
-  ExEnv::out0() << indent << "total time: " << time1 + time2 << " S\n";
-  ExEnv::out0() << indent << indent << "product time: " << time1 << " S\n";
-  ExEnv::out0() << indent << indent << "davidson time: " << time2 << " S\n\n";
-}
 
-template<typename T>
-inline void print_excitation_energy(const EigenVector<T> &eig,
-                                    bool triplets) {
-  const auto &unit_factory = UnitFactory::get_default();
-  const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
-  const auto Hartree_to_wavenumber =
-      unit_factory->make_unit("energy_wavenumber[cm]").from_atomic_units();
-
-  ExEnv::out0() << "Excitation Energy: ( "
-                << (triplets ? "Triplets" : "Singlets") << " )\n";
-
-  ExEnv::out0() << mpqc::printf("%5s \t %10s \t %10s \t %10s \n", "state", "au",
-                                "eV", "cm^-1");
-
-  const std::size_t size = eig.size();
-
-  for (std::size_t i = 1; i <= size; i++) {
-    T e = eig[i - 1];
-    ExEnv::out0() << mpqc::printf("%5i \t %10.8f \t %10.5f \t %10.2f \n", i, e,
-                                  e * Hartree_to_eV, e * Hartree_to_wavenumber);
-  }
-  ExEnv::out0() << "\n";
-}
 }  // namespace detail
 
 /**
@@ -337,9 +297,10 @@ CIS<Tile, Policy>::compute_cis(
 
     time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_excitation_energy_iteration(i, norm, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
                                               mpqc::duration_in_s(time0, time1),
                                               mpqc::duration_in_s(time1, time2));
 
@@ -351,7 +312,7 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -440,9 +401,10 @@ CIS<Tile, Policy>::compute_cis_df(
 
     auto time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_excitation_energy_iteration(i, norm, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
                                               mpqc::duration_in_s(time0, time1),
                                               mpqc::duration_in_s(time1, time2));
 
@@ -454,7 +416,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -550,9 +512,10 @@ CIS<Tile, Policy>::compute_cis_direct(
 
     auto time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_excitation_energy_iteration(i, norm, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
                                               mpqc::duration_in_s(time0, time1),
                                               mpqc::duration_in_s(time1, time2));
 
@@ -564,7 +527,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",

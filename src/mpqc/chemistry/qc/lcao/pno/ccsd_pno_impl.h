@@ -230,7 +230,7 @@ namespace mpqc {
       TArray g_ijka = this->get_ijka();
       auto tmp_time1 = mpqc::now(world, accurate_time);
       auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (this->print_detail_) {
+      if (this->verbose_) {
           mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
                                    "\n");
       }
@@ -272,7 +272,7 @@ namespace mpqc {
           std::cout << "Max Iteration: " << this->max_iter_ << std::endl;
           std::cout << "Target_precision: " << this->target_precision_ << std::endl;
           std::cout << "AccurateTime: " << accurate_time << std::endl;
-          std::cout << "PrintDetail: " << this->print_detail_ << std::endl;
+          std::cout << "Verbose: " << this->verbose_ << std::endl;
           if (less) {
               std::cout << "Less Memory Approach: Yes" << std::endl;
           } else {
@@ -323,7 +323,7 @@ namespace mpqc {
 
               tmp_time1 = mpqc::now(world, accurate_time);
               tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-              if (this->print_detail_) {
+              if (this->verbose_) {
                   mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
               }
 
@@ -342,13 +342,13 @@ namespace mpqc {
 
               tmp_time1 = mpqc::now(world, accurate_time);
               tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-              if (this->print_detail_) {
+              if (this->verbose_) {
                   mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
               }
           }
           auto t1_time1 = mpqc::now(world, accurate_time);
           auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t1 total time: ", t1_time, "\n");
           }
 
@@ -371,7 +371,7 @@ namespace mpqc {
           }
           tmp_time1 = mpqc::now(world, accurate_time);
           tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
           }
 
@@ -391,7 +391,7 @@ namespace mpqc {
           }
           tmp_time1 = mpqc::now(world, accurate_time);
           tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
           }
 
@@ -424,7 +424,7 @@ namespace mpqc {
                   + g_iabc("k,a,d,c") * t1("d,i")
 
                   - g_abij("d,c,k,l") * T("d,a,i,l");
-                  if (this->print_detail_) {
+                  if (this->verbose_) {
                       mpqc::detail::print_size_info(T, "T");
                       mpqc::detail::print_size_info(j_akic, "J_akic");
                       mpqc::detail::print_size_info(k_kaic, "K_kaic");
@@ -439,7 +439,7 @@ namespace mpqc {
           }
           tmp_time1 = mpqc::now(world, accurate_time);
           tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
           }
 
@@ -462,13 +462,13 @@ namespace mpqc {
 
               r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
-              if (this->print_detail_) {
+              if (this->verbose_) {
                   mpqc::detail::print_size_info(a_klij, "A_klij");
               }
           }
           tmp_time1 = mpqc::now(world, accurate_time);
           tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
           }
 
@@ -484,7 +484,7 @@ namespace mpqc {
 
                   b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
-                  if (this->print_detail_) {
+                  if (this->verbose_) {
                       mpqc::detail::print_size_info(b_abij, "B_abij");
                   }
 
@@ -496,7 +496,7 @@ namespace mpqc {
                   g_aibc("a,k,c,d") * t1("b,k") -
                   g_iabc("k,b,c,d") * t1("a,k");
 
-                  if (this->print_detail_) {
+                  if (this->verbose_) {
                       mpqc::detail::print_size_info(b_abcd, "B_abcd");
                   }
 
@@ -505,7 +505,7 @@ namespace mpqc {
           }
           tmp_time1 = mpqc::now(world, accurate_time);
           tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
           }
 
@@ -520,7 +520,7 @@ namespace mpqc {
 
           auto t2_time1 = mpqc::now(world, accurate_time);
           auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-          if (this->print_detail_) {
+          if (this->verbose_) {
               mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
           }
           // recompute energy
@@ -544,7 +544,7 @@ namespace mpqc {
               t1("a,i") = t.t1("a,i");
               t2("a,b,i,j") = t.t2("a,b,i,j");
 
-              if (this->print_detail_) {
+              if (this->verbose_) {
                   mpqc::detail::print_size_info(r2, "R2");
                   mpqc::detail::print_size_info(t2, "T2");
               }
@@ -552,7 +552,7 @@ namespace mpqc {
               tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
               tmp_time1 = mpqc::now(world, accurate_time);
               tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-              if (this->print_detail_) {
+              if (this->verbose_) {
                   mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
               }
 

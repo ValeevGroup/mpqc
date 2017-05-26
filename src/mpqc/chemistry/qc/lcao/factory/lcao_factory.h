@@ -200,12 +200,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    ExEnv::out0() << indent;
-    ExEnv::out0() << "Computed Identity: "
-                  << utility::to_string(formula_string.string());
-    double size = mpqc::detail::array_size(result);
-    ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+    if(this->verbose_){
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Identity: "
+                    << utility::to_string(formula_string.string());
+      double size = mpqc::detail::array_size(result);
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
+    }
     return result;
   }
 
@@ -233,13 +235,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
-
+  if(this->verbose_){
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+  }
   return result;
 }
 
@@ -322,12 +324,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
+  if(this->verbose_){
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+  }
 
   return result;
 };
@@ -402,12 +406,15 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
   result.truncate();
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
+  if(this->verbose_){
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+
+  }
 
   return result;
 }
@@ -503,11 +510,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
   if (iter != this->registry_.end()) {
     result = iter->second;
 
-    ExEnv::out0() << indent;
-    ExEnv::out0() << "Retrieved LCAO Integral: "
-                  << utility::to_string(formula.string());
-    double size = mpqc::detail::array_size(result);
-    ExEnv::out0() << " Size: " << size << " GB\n";
+    if(this->verbose_){
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Retrieved LCAO Integral: "
+                    << utility::to_string(formula.string());
+      double size = mpqc::detail::array_size(result);
+      ExEnv::out0() << " Size: " << size << " GB\n";
+    }
   } else {
     // find a permutation
     std::vector<Formula> permutes = permutations(formula);
@@ -525,13 +534,15 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
         mpqc::time_point time1 = mpqc::now(world, this->accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
-        ExEnv::out0() << indent;
-        ExEnv::out0() << "Permuted LCAO Integral: "
-                      << utility::to_string(formula.string()) << " From "
-                      << utility::to_string(permute.string());
-        double size = mpqc::detail::array_size(result);
-        ExEnv::out0() << " Size: " << size << " GB "
-                      << " Time: " << time << " s\n";
+        if(this->verbose_){
+          ExEnv::out0() << indent;
+          ExEnv::out0() << "Permuted LCAO Integral: "
+                        << utility::to_string(formula.string()) << " From "
+                        << utility::to_string(permute.string());
+          double size = mpqc::detail::array_size(result);
+          ExEnv::out0() << " Size: " << size << " GB "
+                        << " Time: " << time << " s\n";
+        }
 
         // store current array and delete old one
         this->registry_.insert(formula, result);

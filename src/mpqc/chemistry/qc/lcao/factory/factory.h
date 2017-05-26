@@ -22,6 +22,7 @@ class Factory : virtual public DescribedClass {
         direct_registry_(),
         orbital_space_registry_(),
         accurate_time_(false),
+        verbose_(false),
         wfn_world_(wfn_world) {}
 
   // clang-format off
@@ -33,6 +34,7 @@ class Factory : virtual public DescribedClass {
    *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
+   *  | verbose | bool | false | if true, it will do verbose printing |
    *  |accurate_time|bool|false|if true, do fence at timing|
    */
   // clang-format on
@@ -40,6 +42,9 @@ class Factory : virtual public DescribedClass {
   Factory(const KeyVal& kv)
       : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
     accurate_time_ = kv.value<bool>("accurate_time", false);
+    verbose_ = kv.value<bool>("verbose", false);
+    registry_.set_verbose(verbose_);
+    direct_registry_.set_verbose(verbose_);
   }
 
   /// @return MADNESS world
@@ -49,7 +54,7 @@ class Factory : virtual public DescribedClass {
   const std::shared_ptr<Molecule>& atoms() const { return wfn_world_->atoms(); }
 
   /// @return a pointer to Basis Registry
-  std::shared_ptr<gaussian::OrbitalBasisRegistry> const basis_registry() {
+  const std::shared_ptr<gaussian::OrbitalBasisRegistry>& basis_registry() {
     return wfn_world_->basis_registry();
   }
 
@@ -126,6 +131,8 @@ class Factory : virtual public DescribedClass {
 
   bool accurate_time() const { return accurate_time_; }
 
+  bool verbose() const { return verbose_; }
+
   /// abstract functions
   /// compute array
   virtual Array compute(const Formula& formula) = 0;
@@ -169,6 +176,8 @@ class Factory : virtual public DescribedClass {
   std::shared_ptr<OrbitalSpaceRegistry<Array>> orbital_space_registry_;
   /// if do fence when time
   bool accurate_time_;
+  /// if do verbose printting
+  bool verbose_;
 
  private:
   std::shared_ptr<WavefunctionWorld> wfn_world_;

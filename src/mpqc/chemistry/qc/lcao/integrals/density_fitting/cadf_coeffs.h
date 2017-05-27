@@ -75,7 +75,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
 
 // Function to compute the CADF coefficients in a by atom fashion
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
-    madness::World &world, gaussian::Basis const &by_cluster_bs0,
+    TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> const &M,
+    gaussian::Basis const &by_cluster_bs0,
     gaussian::Basis const &by_cluster_bs1,
     gaussian::Basis const &by_cluster_dfbs, size_t const &natoms_per_uc,
     Vector3i const &lattice_range0 = Vector3i({0, 0, 0}),
@@ -145,7 +146,8 @@ cadf_fitting_coefficients<TA::Tensor<double>, TA::DensePolicy>(
 /// Function to compute CADF fitting coefficients
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
-    madness::World &world, const gaussian::Basis &by_cluster_bs0,
+    const TA::DistArray<Tile, Policy> &M,
+    const gaussian::Basis &by_cluster_bs0,
     const gaussian::Basis &by_cluster_bs1,
     const gaussian::Basis &by_cluster_dfbs, const size_t &natoms_per_uc,
     const Vector3i &lattice_range0 = Vector3i({0, 0, 0}),
@@ -155,7 +157,7 @@ TA::DistArray<Tile, Policy> cadf_fitting_coefficients(
     const Vector3i &lattice_center1 = Vector3i({0, 0, 0}),
     const Vector3i &lattice_center_df = Vector3i({0, 0, 0})) {
   auto by_atom_cadf = detail::cadf_by_atom_coeffs(
-      world, by_cluster_bs0, by_cluster_bs1, by_cluster_dfbs, natoms_per_uc, lattice_range0,
+      M, by_cluster_bs0, by_cluster_bs1, by_cluster_dfbs, natoms_per_uc, lattice_range0,
       lattice_range1, lattice_range_df, lattice_center0, lattice_center1, lattice_center_df);
 
   return detail::reblock_atom_to_clusters(by_atom_cadf, by_cluster_bs0,
@@ -464,12 +466,17 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
     Vector3i const &lattice_center1,
     Vector3i const &lattice_center_df) {
   auto &world = M.world();
+  mpqc::time_point t0, t1;
+
+  t0 = mpqc::fenced_now(world);
   auto Cshape = eri3.array().shape();  // cadf_shape(world, trange);
 
   // Use same pmap to ensure some locality
   auto pmap = eri3.array().pmap();
   TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> C(
       world, trange, std::move(Cshape), pmap);
+  t1 = mpqc::fenced_now(world);
+  double t_force_Cshape = mpqc::duration_in_s(t0, t1);
 
   const auto natoms0 = trange.tiles_range().extent_data()[1];
   const auto natoms1 = trange.tiles_range().extent_data()[2];
@@ -491,7 +498,12 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
       return false;
   };
 
+  t0 = mpqc::fenced_now(world);
+//  double t_ii_loops = 0.0;
+//  double t_ij_loops = 0.0;
+//  mpqc::time_point t0_ii, t1_ii, t0_ij, t1_ij;
   for (auto i = 0ul; i < natoms0; ++i) {
+//    t0_ii = mpqc::now();
     const auto uc0_ord = i / natoms_per_uc;
     const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
     const auto uc0_ord_in_df = direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
@@ -512,7 +524,10 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
                         ord_iii);
       }
     }
+//    t1_ii = mpqc::now();
+//    t_ii_loops += mpqc::duration_in_s(t0_ii, t1_ii);
 
+//    t0_ij = mpqc::now();
     for (auto j = 0ul; j < natoms1; ++j) {
       const auto uc1_ord = j / natoms_per_uc;
       const auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
@@ -548,10 +563,19 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
         }
       }
     }
+//    t1_ij = mpqc::now();
+//    t_ij_loops += mpqc::duration_in_s(t0_ij, t1_ij);
   }
   world.gop.fence();
   C.truncate();
+  t1 = mpqc::fenced_now(world);
+  double t_C_loops = mpqc::duration_in_s(t0, t1);
 
+  ExEnv::out0() << "  force C shape:        " << t_force_Cshape << " s\n"
+                << "  C loops:              " << t_C_loops << " s\n"
+//                << "    ii loops:           " << t_ii_loops << " s\n"
+//                << "    ij loops:           " << t_ij_loops << " s\n"
+                << std::endl;
   return C;
 }
 
@@ -705,6 +729,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
 
   auto &world = C_atom.world();
 
+  auto t0 = mpqc::fenced_now(world);
+
   TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> C(world, trange, shape);
   C.fill(0.0);
 
@@ -728,6 +754,10 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> reblock_atom_to_clusters(
   }
   world.gop.fence();
   C.truncate();
+
+  auto t1 = mpqc::fenced_now(world);
+  double t_reblock = mpqc::duration_in_s(t0, t1);
+  ExEnv::out0() << "  rebloc atom->cluster: " << t_reblock << " s\n";
 
   return C;
 }

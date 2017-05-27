@@ -54,16 +54,21 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     auto X_dfbs = shift_basis_origin(*dfbs, zero_shift_base, RJ_max, dcell);
     {
-      if (C_bra_.empty())
-        C_bra_ = std::vector<array_type>(RJ_size, array_type());
+      C_bra_ = std::vector<array_type>(RJ_size, array_type());
+
+      ExEnv::out0() << "\nComputing C_bra ...\n";
+      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
+
+      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_bra_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
         auto bs1 = shift_basis_origin(*obs, vec_RJ);
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            world, *obs, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range,
+            M, *obs, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range,
             ref_latt_range, RJ_max, ref_latt_center, RJ_3D, ref_latt_center);
       }
     }
@@ -83,17 +88,22 @@ class PeriodicCADFKBuilder {
     auto Y_dfbs =
         shift_basis_origin(*dfbs, zero_shift_base, Y_latt_range, dcell);
     {
-      if (C_ket_.empty())
-        C_ket_ = std::vector<array_type>(RJ_size, array_type());
+      C_ket_ = std::vector<array_type>(RJ_size, array_type());
 
+      ExEnv::out0() << "\nComputing C_ket ...\n";
+
+      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
+
+      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
       auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_ket_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
         auto bs1 = shift_basis_origin(*obs, vec_RJ, RD_max, dcell);
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            world, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max,
+            M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max,
             Y_latt_range, ref_latt_center, RJ_3D, ref_latt_center);
       }
     }
@@ -103,12 +113,7 @@ class PeriodicCADFKBuilder {
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
     {
-      const auto dfbs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *Y_dfbs}};
-      auto engine = lcao::gaussian::make_engine_pool(
-          libint2::Operator::coulomb,
-          utility::make_array_of_refs(*X_dfbs, *Y_dfbs),
-          libint2::BraKet::xs_xs);
-      M_ = lcao::gaussian::sparse_integrals(world, engine, dfbs_vector);
+      M_ = compute_eri2(world, *X_dfbs, *Y_dfbs);
     }
     t1 = mpqc::fenced_now(world);
     double t_M = mpqc::duration_in_s(t0, t1);
@@ -487,6 +492,17 @@ class PeriodicCADFKBuilder {
     }
 
     return out;
+  }
+
+  array_type compute_eri2(madness::World &world,
+                          const lcao::gaussian::Basis &bs0,
+                          const lcao::gaussian::Basis &bs1) {
+    const auto bs_ref_array = utility::make_array_of_refs(bs0, bs1);
+    const auto bs_vector = lcao::gaussian::BasisVector{{bs0, bs1}};
+    auto engine = lcao::gaussian::make_engine_pool(libint2::Operator::coulomb,
+                                                   bs_ref_array,
+                                                   libint2::BraKet::xs_xs);
+    return lcao::gaussian::sparse_integrals(world, engine, bs_vector);
   }
 
   TA::Tensor<float> force_norms(TA::Tensor<float> const &in_norms,

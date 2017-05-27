@@ -220,29 +220,91 @@ class PeriodicCADFKBuilder {
     mpqc::time_point t0, t1;
     auto t0_k_builder = mpqc::fenced_now(world);
 
-    auto dump_shape = [](auto const &Q, int rj) {
+    auto dump_shape_02_1 = [](auto const &Q, std::string const& name, int rj) {
       std::cout << "Hi\n";
       auto norms = Q.shape().data();
       auto range = norms.range();
       auto ext = range.extent_data();
 
-      Eigen::MatrixXd M(ext[0], ext[1] * ext[2]);
+      Eigen::MatrixXd M(ext[0]* ext[2], ext[1]);
       M.setZero();
 
       for (auto X = 0; X < ext[0]; ++X) {
         for (auto mu = 0; mu < ext[1]; ++mu) {
-          for (auto nu = 0; nu < ext[2]; ++nu) {
-            M(X, mu * ext[2] + nu) = norms(X, mu, nu);
+          for (auto sig = 0; sig < ext[2]; ++sig) {
+            M(X * ext[2] + sig, mu) = norms(X, mu, sig);
           }
         }
       }
 
-      std::ofstream outfile("Q_shape" + std::to_string(rj) + ".csv");
+      std::ofstream outfile(name + std::to_string(rj) + ".csv");
       auto ncols = M.cols();
       auto nrows = M.rows();
       for (auto i = 0; i < nrows; ++i) {
         for (auto j = 0; j < ncols; ++j) {
           outfile << M(i, j);
+          if (j != ncols - 1) {
+            outfile << ", ";
+          } else {
+            outfile << "\n";
+          }
+        }
+      }
+    };
+
+    auto dump_shape_01_2 = [](auto const &C, std::string const& name, int rj) {
+      std::cout << "Dumping 3-D tensor ...\n";
+      auto norms = C.shape().data();
+      auto range = norms.range();
+      auto ext = range.extent_data();
+
+      Eigen::MatrixXd M(ext[0] * ext[1], ext[2]);
+      M.setZero();
+
+      for (auto X = 0; X < ext[0]; ++X) {
+        for (auto mu = 0; mu < ext[1]; ++mu) {
+          for (auto rho = 0; rho < ext[2]; ++rho) {
+            M(X * ext[1] + mu, rho) = norms(X, mu, rho);
+          }
+        }
+      }
+
+      std::ofstream outfile(name + std::to_string(rj) + ".csv");
+      auto ncols = M.cols();
+      auto nrows = M.rows();
+      for (auto i = 0; i < nrows; ++i) {
+        for (auto j = 0; j < ncols; ++j) {
+          outfile << M(i, j);
+          if (j != ncols - 1) {
+            outfile << ", ";
+          } else {
+            outfile << "\n";
+          }
+        }
+      }
+    };
+
+    auto dump_shape_d2 = [](auto const &M, std::string const& name, int rj) {
+      std::cout << "Dumping matrix ...\n";
+      auto norms = M.shape().data();
+      auto range = norms.range();
+      auto ext = range.extent_data();
+
+      Eigen::MatrixXd M_eig(ext[0], ext[1]);
+      M_eig.setZero();
+
+      for (auto r = 0; r < ext[0]; ++r) {
+        for (auto c = 0; c < ext[1]; ++c) {
+          M_eig(r, c) = norms(r, c);
+        }
+      }
+
+      std::ofstream outfile(name + std::to_string(rj) + ".csv");
+      auto ncols = M_eig.cols();
+      auto nrows = M_eig.rows();
+      for (auto i = 0; i < nrows; ++i) {
+        for (auto j = 0; j < ncols; ++j) {
+          outfile << M_eig(i, j);
           if (j != ncols - 1) {
             outfile << ", ";
           } else {
@@ -263,13 +325,15 @@ class PeriodicCADFKBuilder {
       }
       array_type &Q = Q_bra[RJ];
       Q("X, mu, sig") = C("X, mu, rho") * D("rho, sig");
-      //      dump_shape(Q, RJ);
     }
     t1 = mpqc::fenced_now(world);
     double t_Q_bra = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
     array_type F, K_part1;
+    double t_force_shape = 0.0;
+    double t_build_f = 0.0;
+    double t_contr = 0.0;
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_ket_[RJ];
       array_type &Q = Q_bra[RJ];
@@ -278,27 +342,37 @@ class PeriodicCADFKBuilder {
       }
       DirectTArray &E = E_bra_[RJ];
 
+      mpqc::time_point t0, t1;
       // force shape of F
       // auto norms = force_norms(Q_bra[RJ].shape().data(), 1, R_size);
+      t0 = mpqc::fenced_now(world);
       auto normsp = force_normsp(Q.shape().data(),
                                  E.array().shape().data());
       auto trange = E.array().trange();
       TA::SparseShape<float> forced_shape(world, normsp, trange);
+      t1 = mpqc::fenced_now(world);
+      t_force_shape += mpqc::duration_in_s(t0, t1);
 
       // compute F(X, ν_R, σ_(Rj+Rd)) =
       //           E(X, ν_R, σ_(Rj+Rd)) - M(X, Y) C(Y, ν_R, σ_(Rj+Rd))
+      t0 = mpqc::fenced_now(world);
       F("X, nu, sig") = (E("X, nu, sig")).set_shape(forced_shape);
       F.truncate();
       F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
       F.truncate();
       world.gop.fence();
       detail::print_size_info(F, "F");
+      t1 = mpqc::fenced_now(world);
+      t_build_f += mpqc::duration_in_s(t0, t1);
 
+      t0 = mpqc::fenced_now(world);
       if (!K_part1.is_initialized()) {
         K_part1("mu, nu") = Q("X, mu, sig") * F("X, nu, sig");
       } else {
         K_part1("mu, nu") += Q("X, mu, sig") * F("X, nu, sig");
       }
+      t1 = mpqc::fenced_now(world);
+      t_contr += mpqc::duration_in_s(t0, t1);
     }
     t1 = mpqc::fenced_now(world);
     double t_F_and_K1 = mpqc::duration_in_s(t0, t1);
@@ -357,6 +431,9 @@ class PeriodicCADFKBuilder {
       ExEnv::out0() << "\nCADF-K time decomposition:\n"
                     << "\tQ_bra:                " << t_Q_bra << " s\n"
                     << "\tF and Q F:            " << t_F_and_K1 << " s\n"
+                    << "\t\tforce shape:        " << t_force_shape << " s\n"
+                    << "\t\tbuild f:            " << t_build_f << " s\n"
+                    << "\t\tcontraction:        " << t_contr << " s\n"
                     << "\tQ_ket:                " << t_Q_ket << " s\n"
                     << "\tK_part2 = E Q:        " << t_K_part2 << " s\n"
                     << "\tK = K1 + K2:          " << t_K << " s\n"
@@ -379,13 +456,14 @@ class PeriodicCADFKBuilder {
     std::unordered_set<SigPair, boost::hash<SigPair>> Xsig;
     Xsig.reserve(X_size * sig_size);
 
-    for(auto mu = 0; mu < mu_size; ++mu){
-      for(auto X = 0; X < X_size; ++X){
-        for(auto sig = 0; sig < sig_size; ++sig){
-          const auto val = in(X,mu,sig);
-          if(val > 0.0){
+    for(auto X = 0ul; X < X_size; ++X){
+      for(auto sig = 0ul; sig < sig_size; ++sig){
+        for (auto mu = 0ul; mu < mu_size; ++mu) {
+          const auto val = in(X, mu, sig);
+          if(val > force_shape_threshold_){
             SigPair Xs_pair(X, sig);
             Xsig.insert(Xs_pair);
+            break;
           }
         }
       }
@@ -400,7 +478,7 @@ class PeriodicCADFKBuilder {
     assert(sig_size == oext[2]);
     const auto nu_size = oext[1];
 
-    for(auto nu = 0; nu < nu_size; ++nu){
+    for(auto nu = 0ul; nu < nu_size; ++nu){
       for(auto const& Xspair : Xsig){
         const auto X = Xspair.first; 
         const auto sig = Xspair.second; 

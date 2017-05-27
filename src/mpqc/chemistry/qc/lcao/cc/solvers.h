@@ -1103,11 +1103,9 @@ private:
   TA::DistArray<Tile, Policy> jacobi_update_t1(
       const TA::DistArray<Tile, Policy>& r1_ai,
       const Eigen::MatrixXd& F_occ_act,
-      const std::vector<Eigen::VectorXd>& F_l_psvo_diag,
       const std::vector<Eigen::VectorXd>& F_r_psvo_diag,
-      const std::vector<Eigen::MatrixXd>& l_psvos,
       const std::vector<Eigen::MatrixXd>& r_psvos) {
-    auto update1 = [F_occ_act, F_l_psvo_diag, F_r_psvo_diag, l_psvos, r_psvos](
+    auto update1 = [F_occ_act, F_r_psvo_diag, r_psvos](
                       Tile& result_tile, const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -1116,7 +1114,6 @@ private:
       const auto i = arg_tile.range().lobound()[1];
 
       // Select appropriate matrix of PSVOs
-      Eigen::MatrixXd l_psvo_i = l_psvos[i*nocc_act + i];
       Eigen::MatrixXd r_psvo_i = r_psvos[i*nocc_act + i];
 
       // Extent data of tile
@@ -1124,7 +1121,7 @@ private:
 
       // Convert data in tile to Eigen::Map and transform to PSVO basis
       const Eigen::VectorXd r1_psvo =
-          l_psvo_i.adjoint() * TA::eigen_map(arg_tile, ext[0], ext[1]) * r_psvo_i;
+          r_psvo_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
 
       // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
       // basis this matrix will then be back transformed to full basis before
@@ -1133,29 +1130,28 @@ private:
 
       // Select correct vector containing diagonal elements of Fock matrix in
       // PSVO basis
-      const Eigen::VectorXd& l_uocc = F_l_psvo_diag[i*nocc_act + i];
       const Eigen::VectorXd& r_uocc = F_r_psvo_diag[i*nocc_act + i];
 
       // Determine number of OSVs
-      const auto nosv = l_uocc.rows();
+      const auto nosv = r_uocc.rows();
 
       // Determine number of uocc
-      const auto nuocc = l_psvo_i.rows();
+      const auto nuocc = r_psvo_i.rows();
 
       // Select e_i
       const auto e_i = F_occ_act(i, i);
 
       for (auto a = 0; a < nosv; ++a) {
-        const auto e_a = ens_uocc[a];
+        const auto e_a = r_uocc[a];
         const auto e_ai = e_i - e_a;
-        const auto r_ai = r1_osv(a);
-        delta_t1_osv(a) = r_ai / e_ai;
+        const auto r_ai = r1_psvo(a);
+        delta_t1_psvo(a) = r_ai / e_ai;
       }
 
       // Back transform delta_t1_osv to full space
       // Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv *
       // osv_i.transpose();
-      Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
+      Eigen::VectorXd delta_t1_full = r_psvo_i * delta_t1_psvo;
 
       // Convert delta_t1_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
@@ -1172,6 +1168,89 @@ private:
     auto delta_t1_ai = TA::foreach (r1_ai, update1);
     delta_t1_ai.world().gop.fence();
     return delta_t1_ai;
+  }
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> psvo_transform_abij(
+      const TA::DistArray<Tile, Policy>& abij,
+      const std::vector<Eigen::MatrixXd>& l_psvos,
+      const std::vector<Eigen::MatrixXd>& r_psvos) {
+
+    auto tform = [l_psvos, r_psvos, this](
+        Tile& result_tile, const Tile& arg_tile) {
+
+      // determine i and j indices
+      const auto i = arg_tile.range().lobound()[2];
+      const auto j = arg_tile.range().lobound()[3];
+
+      // Select appropriate matrix of PNOs
+      const auto ij = i * nocc_act_ + j;
+      Eigen::MatrixXd l_psvo_ij = l_psvos[ij];
+      Eigen::MatrixXd r_psvo_ij = r_psvos[ij];
+      const auto nuocc = l_psvo_ij.rows();
+      const auto npsvo = l_psvo_ij.cols();
+
+      // Convert data in tile to Eigen::Map and transform to PNO basis
+      const Eigen::MatrixXd result_eig =
+          l_psvo_ij.transpose() * TA::eigen_map(arg_tile, nuocc, nuocc) * r_psvo_ij;
+
+      // Convert result_eig to tile and compute norm
+      result_tile = Tile(TA::Range{npsvo,npsvo,1l,1l});
+      typename Tile::scalar_type norm = 0.0;
+      for (auto r = 0; r < npsvo; ++r) {
+        for (auto c = 0; c < npsvo; ++c) {
+          const auto idx = r * npsvo + c;
+          const auto elem = result_eig(r, c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
+        }
+      }
+
+      return std::sqrt(norm);
+    };
+
+    auto result = TA::foreach(abij, tform);
+    result.world().gop.fence();
+    return result;
+  }
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> psvo_transform_ai(
+      const TA::DistArray<Tile, Policy>& ai,
+      const std::vector<Eigen::MatrixXd>& r_psvos) {
+
+    auto tform = [r_psvos, this](
+        Tile& result_tile, const Tile& arg_tile) {
+
+      // determine i index
+      const auto i = arg_tile.range().lobound()[1];
+
+      // Select appropriate matrix of OSVs
+      Eigen::MatrixXd r_psvo_i = r_psvos[i];
+      const auto nuocc = r_psvos_i.rows();
+      const auto npsvo = r_psvos_i.cols();
+
+      // Convert data in tile to Eigen::Map and transform to OSV basis
+      const Eigen::MatrixXd result_eig =
+          r_psvo_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
+
+      // Convert result_eig to tile and compute norm
+      result_tile = Tile(TA::Range{npsvo,1l});
+      typename Tile::scalar_type norm = 0.0;
+      for (auto r = 0; r < npsvo; ++r) {
+        const auto elem = result_eig(r, 0);
+        const auto abs_elem = std::abs(elem);
+        norm += abs_elem * abs_elem;
+        result_tile[r] = elem;
+      }
+
+      return std::sqrt(norm);
+    };
+
+    auto result = TA::foreach(ai, tform);
+    result.world().gop.fence();
+    return result;
   }
 
 

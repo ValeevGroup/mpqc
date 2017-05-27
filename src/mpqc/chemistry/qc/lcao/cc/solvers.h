@@ -2,7 +2,7 @@
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 
 // set to 1, must have libint-2.4.0-beta.2
-#define PRODUCE_PNO_MOLDEN_FILES 0
+#define PRODUCE_PNO_MOLDEN_FILES 1
 #if PRODUCE_PNO_MOLDEN_FILES
 #include "libint2/lcao/molden.h"
 #endif
@@ -780,7 +780,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   std::string pno_canonical_;  //!< whether or not to canonicalize PNO/OSV
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold
-  int nocc_act_;               //!< the number of axctive occupied orbitals
+  int nocc_act_;               //!< the number of active occupied orbitals
   Array T_;
 
   Eigen::MatrixXd F_occ_act_;
@@ -794,6 +794,390 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   std::vector<Eigen::MatrixXd> osvs_;
   std::vector<Eigen::VectorXd> F_osv_diag_;
 };
+
+
+////// PSVO solver ////////
+
+/// PSVOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PSVO
+/// space
+/// @warning This class assumes that the 1- and 2-body amplitudes/residuals
+///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
+///          respectively
+template <typename T>
+class PSVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
+                  public madness::WorldObject<PSVOSolver<T>> {
+ public:
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor.
+   *
+   * @param kv the KeyVal object; it will be queried for all keywords of ::mpqc::cc::DIISSolver , as well
+   * as the following additional keywords:
+   *
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
+   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
+   */
+  // clang-format on
+  PSVOSolver(const KeyVal& kv, Factory<T>& factory)
+      : ::mpqc::cc::DIISSolver<T, T>(kv),
+        madness::WorldObject<PSVOSolver<T>>(factory.world()),
+        factory_(factory),
+        tpsvo_(kv.value<double>("tpsvo", 1.e-9)) {
+    // part of WorldObject initialization
+    this->process_pending();
+
+    // Check that tiling is done appropriately
+    if (kv.exists("occ_block_size")) {
+      int occ_block_size_ = (kv.value<int>("occ_block_size"));
+      if (occ_block_size_ != 1) {
+        throw InputError("occ_block_size must be set to 1 in the input file.");
+      }
+    } 
+    else {
+      throw InputError("occ_block_size was not specified in the input file.");
+    }
+
+    if (kv.exists("unocc_block_size")) {
+      int unocc_block_size_ = (kv.value<int>("unocc_block_size"));
+      if (unocc_block_size_ < 1000000000) {
+        throw InputError(
+            "unocc_block_size must be greater than or equal to 1000000000 in "
+            "the input file.");
+      }
+    } 
+    else {
+      throw InputError("unocc_block_size was not specified in the input file.");
+    }
+
+    // Compute integrals
+
+    auto& fac = factory_;
+    auto& world = fac.world();
+    auto& ofac = fac.orbital_registry();
+
+    auto nocc = ofac.retrieve("m").rank();
+    auto nocc_act = ofac.retrieve("i").rank();
+    nocc_act_ = nocc_act;
+    auto nvir = ofac.retrieve("a").rank();
+    auto nfzc = nocc - nocc_act;
+
+    // Form Fock array
+    auto F = fac.compute(L"<p|F|q>[df]");
+
+    // Select just diagonal elements of Fock aray and transform
+    // to Eigen vector; use for computing PSVOs
+    Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+    auto eps_o = eps_p.segment(nfzc, nocc_act);
+    auto eps_v = eps_p.tail(nvir);
+
+    // Transform entire Fock array to Eigen Matrix
+    Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+
+    // Select just the occupied portion of the Fock matrix
+    F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
+
+    // Select just the unoccupied portion of the Fock matrix
+    Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
+
+    // Compute all K_aibj
+    // auto K = fac.compute(L"(a b|G|i j)");
+    auto K = fac.compute(L"<a b|G|i j>[df]");
+    const auto ktrange = K.trange();
+
+    // zero out amplitudes
+    if (!T_.is_initialized()) {
+      T_ = Array(world, K.trange(), K.shape());
+      T_.fill(0.0);
+    }
+
+
+    // For storing PSVOs and and the Fock matrix in the PSVO basis
+    l_psvos_.resize(nocc_act * nocc_act);
+    r_psvos_.resize(nocc_act * nocc_act);
+    F_l_psvo_diag_.resize(nocc_act * nocc_act);
+    F_r_psvo_daig_.resize(nocc_act * nocc_act_);
+
+    // Loop over each pair of occupieds to form amplitude matrices
+    for (int i = 0; i < nocc_act; ++i) {
+      double eps_i = eps_o[i];
+
+      for (int j = 0; j < nocc_act; ++j) {
+        double eps_j = eps_o[j];
+        int delta_ij = (i == j) ? 1 : 0;
+        std::array<int, 4> tile_ij = {{0, 0, i, j}};
+        std::array<int, 4> tile_ji = {{0, 0, j, i}};
+        const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
+        const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
+        TA::TensorD K_ij = K.find(ord_ij);
+        TA::TensorD K_ji = K.find(ord_ji);
+        auto ext_ij = K_ij.range().extent_data();
+        auto ext_ji = K_ji.range().extent_data();
+        Eigen::MatrixXd K_ij_mat =
+            TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
+        Eigen::MatrixXd K_ji_mat =
+            TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
+
+        Eigen::MatrixXd T_ij(nvir, nvir);
+
+        for (int a = 0; a < nvir; ++a) {
+          double eps_a = eps_v[a];
+          for (int b = 0; b < nvir; ++b) {
+            double eps_b = eps_v[b];
+
+            T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
+
+          } // for each b
+        } // for each a
+
+        // Compute SVD of each T_ij matrix
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(T_ij, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        auto sing_vals = svd.singularValues();
+
+        // truncate PSVOs
+        size_t psvo_drop = 0;
+        if (tpsvo_ != 0.0) {
+          for (size_t k = 0; k != sing_vals.rows(); ++k) {
+            if (!(sing_vals(k) >= t_psvo_))
+              ++psvo_drop;
+            else
+              break
+          } // for each k
+        } // if tpsvo != 0
+
+        const auto npsvo = nvir - psvo_drop;
+
+        // store truncated PSVOs
+        Eigen::MatrixXd r_psvo_trunc = svd.matrixV().block(0, psvo_drop, nvir, npsvo);
+        Eigen::MatrixXd l_psvo_trunc = svd.matrixU().block(0, psvo_drop, nvir, npsvo);
+        r_psvos_[i*nocc_act + j] = r_psvo_trunc;
+        l_psvos_[i*nocc_act + j] = l_psvo_trunc;
+
+        // transform F to right PSVO space and store just diagonal elements
+        Eigen::MatrixXd F_r_psvo = svd.matrixV().transpose() * F_uocc * svd.matrixV();
+        F_r_psvo_diag_[i*nocc_act + j] = F_r_psvo.diagonal();
+
+        // transform F to left PSVO space and store just diagonal elements
+        Eigen::MatrixXd F_l_psvo = svd.matrixU().transpose() * F_uocc.transpose() * svd.matrixU();
+        F_l_psvo_diag_[i*nocc_act + j] = F_l_psvo.diagonal();
+
+
+      } // for each j
+    } // for each i
+
+    // Compute average number of PSVOs per pair and print out
+
+    auto sum_psvo = 0;
+    for (int i=0; i<nocc_act; ++i) {
+      for (int j=0; j<nocc_act; ++j) {
+        sum_psvo += r_psvos_[i*nocc_act + j].cols();
+      }
+    } 
+    auto ave_npsvo = sum_psvo / (nocc_act * nocc_act);
+    ExEnv::out0() << "The average number of PSVOs is " << ave_npsvo << std::endl;
+  } // PSVOSolver
+
+  virtual ~PSVOSolver() = default;
+
+  /// @return PSVO truncation threshold
+  double tpsvo() const { return tpsvo_; }
+
+  const auto& l_psvo(int i, int j) const { return l_psvos_[i*nocc_act_ + j]; }
+  const auto& r_psvo(int i, int j) const { return r_psvos_[i*nocc_act_ + j]; }
+
+private:
+  /// Overrides DIISSolver::update_only() .
+  /// @note must override DIISSolver::update() also since the update must be
+  ///      followed by backtransform updated amplitudes to the full space
+  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_l_psvo_diag_, 
+                                        F_r_psvo_diag_, l_psvos_, r_psvos_);
+
+    auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_l_psvo_diag_,
+                                          F_r_psvo_diag_, l_psvos_, r_psvos_);
+    t1("a,i") += delta_t1_ai("a,i");
+    t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
+    t1.truncate();
+    t2.truncate();
+  }
+
+  void update(T& t1, T& t2, const T& r1, const T& r2) override {
+    update_only(t1, t2, r1, r2);
+    T r1_psvo = psvo_transform_ai(r1, l_psvos_, r_psvos_);
+    T r2_psvo = psvo_transform_abij(r2, l_psvos_, r_psvos_);
+    mpqc::cc::T1T2<T, T> r(r1_psvo, r2_psvo);
+    mpqc::cc::T1T2<T, T> t(t1, t2);
+    this->diis().extrapolate(t, r);
+    t1 = t.t1;
+    t2 = t.t2;
+  }
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> jacobi_update_t2(
+      const TA::DistArray<Tile, Policy>& r2_abij,
+      const Eigen::MatrixXd& F_occ_act,
+      const std::vector<Eigen::VectorXd>& F_l_psvo_diag,
+      const std::vector<Eigen::VectorXd>& F_r_psvo_diag,
+      const std::vector<Eigen::MatrixXd>& l_psvos,
+      const std::vector<Eigen::MatrixXd>& r_psvos) {
+
+    auto update2 = [F_occ_act, F_l_psvo_diag, F_r_psvo_diag, l_psvso, r_psvos, this](
+                       Tile& result_tile, const Tile& arg_tile) {
+
+      result_tile = Tile(arg_tile.range());
+
+      // determine i and j indices
+      const auto i = arg_tile.range().lobound()[2];
+      const auto j = arg_tile.range().lobound()[3];
+
+      // Select appropriate matrix of PNOs
+      auto ij = i * nocc_act_ + j;
+      Eigen::MatrixXd l_psvo_ij = l_psvos[ij];
+      Eigen::MatrixXd r_psvo_ij = r_psvos[ij];
+
+      // Extent data of tile
+      const auto ext = arg_tile.range().extent_data();
+
+      // Convert data in tile to Eigen::Map and transform to PNO basis
+      const Eigen::MatrixXd r2_psvo =
+          l_psvo_ij.adjoint() *
+          TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * r_psvo_ij;
+
+      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
+      // basis this matrix will then be back transformed to full basis before
+      // being converted to a tile
+      Eigen::MatrixXd delta_t2_psvo = r2_psvo;
+
+      // Select correct vector containing diagonal elements of Fock matrix in
+      // PNO basis
+      const Eigen::VectorXd& l_uocc = F_l_psvo_diag[ij];
+      const Eigen::VectorXd& r_uocc = F_r_psvo_diag[ij];
+
+      // Determine number of PNOs
+      const auto npno = l_uocc.rows();
+
+      // Determine number of uocc
+      const auto nuocc = l_psvo_ij.rows();
+
+      // Select e_i and e_j
+      const auto e_i = F_occ_act(i, i);
+      const auto e_j = F_occ_act(j, j);
+
+      for (auto a = 0; a < npno; ++a) {
+        const auto e_a = l_uocc[a];
+        for (auto b = 0; b < npno; ++b) {
+          const auto e_b = r_uocc[b];
+          const auto e_abij = e_i + e_j - e_a - e_b;
+          const auto r_abij = r2_psvo(a, b);
+          delta_t2_psvo(a, b) = r_abij / e_abij;
+        }
+      }
+
+      // Back transform delta_t2_psvo to full space
+      Eigen::MatrixXd delta_t2_full =
+          r_psvo_ij * delta_t2_pno * l_psvo_ij.adjoint();
+
+      // Convert delta_t2_full to tile and compute norm
+      typename Tile::scalar_type norm = 0.0;
+      for (auto r = 0; r < nuocc; ++r) {
+        for (auto c = 0; c < nuocc; ++c) {
+          const auto idx = r * nuocc + c;
+          const auto elem = delta_t2_full(r, c);
+          const auto abs_elem = std::abs(elem);
+          norm += abs_elem * abs_elem;
+          result_tile[idx] = elem;
+        }
+      }
+
+      return std::sqrt(norm);
+    };
+
+    auto delta_t2_abij = TA::foreach(r2_abij, update2);
+    delta_t2_abij.world().gop.fence();
+    return delta_t2_abij;
+  }
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> jacobi_update_t1(
+      const TA::DistArray<Tile, Policy>& r1_ai,
+      const Eigen::MatrixXd& F_occ_act,
+      const std::vector<Eigen::VectorXd>& F_l_psvo_diag,
+      const std::vector<Eigen::VectorXd>& F_r_psvo_diag,
+      const std::vector<Eigen::MatrixXd>& l_psvos,
+      const std::vector<Eigen::MatrixXd>& r_psvos) {
+    auto update1 = [F_occ_act, F_l_psvo_diag, F_r_psvo_diag, l_psvos, r_psvos](
+                      Tile& result_tile, const Tile& arg_tile) {
+
+      result_tile = Tile(arg_tile.range());
+
+      // determine i index
+      const auto i = arg_tile.range().lobound()[1];
+
+      // Select appropriate matrix of PSVOs
+      Eigen::MatrixXd l_psvo_i = l_psvos[i*nocc_act + i];
+      Eigen::MatrixXd r_psvo_i = r_psvos[i*nocc_act + i];
+
+      // Extent data of tile
+      const auto ext = arg_tile.range().extent_data();
+
+      // Convert data in tile to Eigen::Map and transform to PSVO basis
+      const Eigen::VectorXd r1_psvo =
+          l_psvo_i.adjoint() * TA::eigen_map(arg_tile, ext[0], ext[1]) * r_psvo_i;
+
+      // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
+      // basis this matrix will then be back transformed to full basis before
+      // being converted to a tile
+      Eigen::VectorXd delta_t1_psvo = r1_psvo;
+
+      // Select correct vector containing diagonal elements of Fock matrix in
+      // PSVO basis
+      const Eigen::VectorXd& l_uocc = F_l_psvo_diag[i*nocc_act + i];
+      const Eigen::VectorXd& r_uocc = F_r_psvo_diag[i*nocc_act + i];
+
+      // Determine number of OSVs
+      const auto nosv = l_uocc.rows();
+
+      // Determine number of uocc
+      const auto nuocc = l_psvo_i.rows();
+
+      // Select e_i
+      const auto e_i = F_occ_act(i, i);
+
+      for (auto a = 0; a < nosv; ++a) {
+        const auto e_a = ens_uocc[a];
+        const auto e_ai = e_i - e_a;
+        const auto r_ai = r1_osv(a);
+        delta_t1_osv(a) = r_ai / e_ai;
+      }
+
+      // Back transform delta_t1_osv to full space
+      // Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv *
+      // osv_i.transpose();
+      Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
+
+      // Convert delta_t1_full to tile and compute norm
+      typename Tile::scalar_type norm = 0.0;
+      for (auto r = 0; r < nuocc; ++r) {
+        const auto elem = delta_t1_full(r);
+        const auto abs_elem = std::abs(elem);
+        norm += abs_elem * abs_elem;
+        result_tile[r] = elem;
+      }
+
+      return std::sqrt(norm);
+    };
+
+    auto delta_t1_ai = TA::foreach (r1_ai, update1);
+    delta_t1_ai.world().gop.fence();
+    return delta_t1_ai;
+  }
+
+
+}; // class: PSVOSolver
+
+
 
 }  // namespace cc
 }  // namespace lcao

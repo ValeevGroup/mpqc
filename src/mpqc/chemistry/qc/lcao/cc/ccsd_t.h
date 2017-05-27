@@ -1092,9 +1092,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   // performs Laplace transform perturbative triple correction to CCSD energy
   double compute_ccsd_t_laplace_transform(const TArray &t1, const TArray &t2) {
-    auto &world = this->wfn_world()->world();
-    bool accurate_time = this->lcao_factory().accurate_time();
-
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_dabi = get_abci();

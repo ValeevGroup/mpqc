@@ -825,7 +825,7 @@ class PSVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       : ::mpqc::cc::DIISSolver<T, T>(kv),
         madness::WorldObject<PSVOSolver<T>>(factory.world()),
         factory_(factory),
-        tpsvo_(kv.value<double>("tpsvo", 1.e-9)) {
+        tpsvo_(kv.value<double>("tpsvo", 1.e-5)) {
     // part of WorldObject initialization
     this->process_pending();
 
@@ -898,7 +898,7 @@ class PSVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     l_psvos_.resize(nocc_act * nocc_act);
     r_psvos_.resize(nocc_act * nocc_act);
     F_l_psvo_diag_.resize(nocc_act * nocc_act);
-    F_r_psvo_daig_.resize(nocc_act * nocc_act_);
+    F_r_psvo_diag_.resize(nocc_act * nocc_act);
 
     // Loop over each pair of occupieds to form amplitude matrices
     for (int i = 0; i < nocc_act; ++i) {
@@ -940,10 +940,10 @@ class PSVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         size_t psvo_drop = 0;
         if (tpsvo_ != 0.0) {
           for (size_t k = 0; k != sing_vals.rows(); ++k) {
-            if (!(sing_vals(k) >= t_psvo_))
+            if (!(sing_vals(k) >= tpsvo_))
               ++psvo_drop;
             else
-              break
+              break;
           } // for each k
         } // if tpsvo != 0
 
@@ -1023,7 +1023,7 @@ private:
       const std::vector<Eigen::MatrixXd>& l_psvos,
       const std::vector<Eigen::MatrixXd>& r_psvos) {
 
-    auto update2 = [F_occ_act, F_l_psvo_diag, F_r_psvo_diag, l_psvso, r_psvos, this](
+    auto update2 = [F_occ_act, F_l_psvo_diag, F_r_psvo_diag, l_psvos, r_psvos, this](
                        Tile& result_tile, const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -1077,7 +1077,7 @@ private:
 
       // Back transform delta_t2_psvo to full space
       Eigen::MatrixXd delta_t2_full =
-          r_psvo_ij * delta_t2_pno * l_psvo_ij.adjoint();
+          r_psvo_ij * delta_t2_psvo * l_psvo_ij.adjoint();
 
       // Convert delta_t2_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
@@ -1105,7 +1105,7 @@ private:
       const Eigen::MatrixXd& F_occ_act,
       const std::vector<Eigen::VectorXd>& F_r_psvo_diag,
       const std::vector<Eigen::MatrixXd>& r_psvos) {
-    auto update1 = [F_occ_act, F_r_psvo_diag, r_psvos](
+    auto update1 = [F_occ_act, F_r_psvo_diag, r_psvos, this](
                       Tile& result_tile, const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -1114,7 +1114,7 @@ private:
       const auto i = arg_tile.range().lobound()[1];
 
       // Select appropriate matrix of PSVOs
-      Eigen::MatrixXd r_psvo_i = r_psvos[i*nocc_act + i];
+      Eigen::MatrixXd r_psvo_i = r_psvos[i*nocc_act_ + i];
 
       // Extent data of tile
       const auto ext = arg_tile.range().extent_data();
@@ -1130,7 +1130,7 @@ private:
 
       // Select correct vector containing diagonal elements of Fock matrix in
       // PSVO basis
-      const Eigen::VectorXd& r_uocc = F_r_psvo_diag[i*nocc_act + i];
+      const Eigen::VectorXd& r_uocc = F_r_psvo_diag[i*nocc_act_ + i];
 
       // Determine number of OSVs
       const auto nosv = r_uocc.rows();
@@ -1228,8 +1228,8 @@ private:
 
       // Select appropriate matrix of OSVs
       Eigen::MatrixXd r_psvo_i = r_psvos[i];
-      const auto nuocc = r_psvos_i.rows();
-      const auto npsvo = r_psvos_i.cols();
+      const auto nuocc = r_psvo_i.rows();
+      const auto npsvo = r_psvo_i.cols();
 
       // Convert data in tile to Eigen::Map and transform to OSV basis
       const Eigen::MatrixXd result_eig =
@@ -1252,6 +1252,22 @@ private:
     result.world().gop.fence();
     return result;
   }
+
+  private:
+  Factory<T>& factory_;
+  double tpsvo_;        //!< the truncation threshold for PSVOs
+  int nocc_act_;        //!< the number of active occupied orbitals
+  Array T_;
+
+  Eigen::MatrixXd F_occ_act_;
+
+  // For storing PSVOs and and the Fock matrix in the PSVO basis
+  std::vector<Eigen::MatrixXd> l_psvos_;
+  std::vector<Eigen::MatrixXd> r_psvos_;
+  std::vector<Eigen::VectorXd> F_l_psvo_diag_;
+  std::vector<Eigen::VectorXd> F_r_psvo_diag_;
+
+
 
 
 }; // class: PSVOSolver

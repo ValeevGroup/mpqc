@@ -32,6 +32,11 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIj(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& tau, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
+
   std::wstring postfix = df ? L"[df]" : L"";
   TA::DistArray<Tile, Policy> W_KlIj;
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
@@ -41,6 +46,14 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIj(
   W_KlIj("k,l,i,j") = t1("c,j") * g_ijka("k,l,i,c");
   W_KlIj("k,l,i,j") = W_KlIj("k,l,i,j") + W_KlIj("l,k,j,i") +
                       g_ijkl("k,l,i,j") + g_ijab("k,l,c,d") * tau("c,d,i,j");
+
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_KlIj Intermediates: " << time
+                  << " S\n";
+  }
   return W_KlIj;
 };
 
@@ -52,6 +65,11 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& t2, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
+
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_IbAj;
@@ -67,6 +85,14 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
       t2("d,b,j,l") * g_ijab("i,l,a,d") -
       t1("d,j") * (t1("b,l") * g_ijab("i,l,a,d"));
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_IbAj Intermediates: " << time
+                  << " S\n";
+  }
+
   return W_IbAj;
 };
 
@@ -75,6 +101,11 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& t2, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
+
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_IbaJ;
@@ -89,6 +120,13 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
                       t2("d,b,j,l") * g_ijab("i,l,d,a") +
                       t1("d,j") * (t1("b,l") * g_ijab("i,l,d,a"));
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_IbaJ Intermediates: " << time
+                  << " S\n";
+  }
   return W_IbaJ;
 };
 
@@ -96,6 +134,11 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AkCd(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
+
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_AkCd;
@@ -105,6 +148,13 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AkCd(
 
   W_AkCd("a,k,c,d") = g_iabc("k,a,d,c") - t1("a,l") * g_ijab("l,k,c,d");
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_AkCd Intermediates: " << time
+                  << " S\n";
+  }
   return W_AkCd;
 };
 
@@ -112,6 +162,10 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIc(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_KlIc;
@@ -121,6 +175,13 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIc(
 
   W_KlIc("k,l,i,c") = g_ijka("k,l,i,c") + t1("d,i") * g_ijab("k,l,d,c");
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_KlIc Intermediates: " << time
+                  << " S\n";
+  }
   return W_KlIc;
 };
 
@@ -132,6 +193,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KaIj(
     const TA::DistArray<Tile, Policy>& tau,
     const TA::DistArray<Tile, Policy>& FIA,
     const TA::DistArray<Tile, Policy>& W_KlIj, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_KaIj;
@@ -159,6 +224,13 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KaIj(
 
       t1("c,j") * (-g_iajb("i,c,k,a") + t2("a,d,l,i") * g_ijab("k,l,d,c"));
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_KaIj Intermediates: " << time
+                  << " S\n";
+  }
   return W_KaIj;
 };
 
@@ -171,6 +243,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
     const TA::DistArray<Tile, Policy>& tau,
     const TA::DistArray<Tile, Policy>& FIA,
     const TA::DistArray<Tile, Policy>& W_AbCd, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
@@ -202,20 +278,26 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
   // if W_AbCd term is computed and stored
   if (W_AbCd.is_initialized()) {
     W_AbCi("a,b,c,i") += t1("d,i") * W_AbCd("a,b,c,d");
-  }
-  else{
+  } else {
     W_AbCi("a,b,c,i") += -t1("d,i") * g_iabc("k,a,d,c") * t1("b,k") -
-        t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
-        t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+                         t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
+                         t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
 
     // integral direct term
     auto direct_integral = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
     auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
 
-    W_AbCi("a,b,c,i") += (t1("d,i")*Ca("s,d")*direct_integral("p,q,r,s"))*Ca("r,b")*Ca("q,c")*Ca("p,a");
-
+    W_AbCi("a,b,c,i") += (t1("d,i") * Ca("s,d") * direct_integral("p,q,r,s")) *
+                         Ca("r,b") * Ca("q,c") * Ca("p,a");
   }
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_AbCi Intermediates: " << time
+                  << " S\n";
+  }
   return W_AbCi;
 };
 
@@ -227,6 +309,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCd(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& tau, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
   TA::DistArray<Tile, Policy> W_AbCd;
@@ -239,6 +325,13 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCd(
                       t1("a,k") * g_iabc("k,b,c,d") +
                       tau("a,b,k,l") * g_ijab("k,l,c,d");
 
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent
+                  << "\nTime to Initialize W_AbCd Intermediates: " << time
+                  << " S\n";
+  }
   return W_AbCd;
 };
 
@@ -255,6 +348,10 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
                   gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
                   const TA::DistArray<Tile, Policy>& t1,
                   const TA::DistArray<Tile, Policy>& tau, bool df) {
+  bool verbose = lcao_factory.verbose();
+  auto& world = lcao_factory.world();
+  bool accurate_time = lcao_factory.accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
   auto g_ijab_bar = lcao_factory.compute(L"<i j|G|a b>" + postfix);
@@ -294,7 +391,12 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
       FAB("a,b") += t1("d,k") * (2.0 * g_iabc("k,a,d,b") - g_iabc("k,a,b,d"));
     }
   }
-
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+  if (verbose) {
+    ExEnv::out0() << indent << "\nTime to Initialize F Intermediates: " << time
+                  << " S\n";
+  }
   return std::make_tuple(FAB, FIA, FIJ);
 }
 

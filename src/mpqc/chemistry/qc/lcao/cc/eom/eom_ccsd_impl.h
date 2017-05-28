@@ -10,190 +10,54 @@ namespace lcao {
 
 template <typename Tile, typename Policy>
 void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
+
+  ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";
+
+  auto& world = this->wfn_world()->world();
+  bool accurate_time = this->lcao_factory().accurate_time();
+  auto time0 = mpqc::now(world, accurate_time);
+
   bool df = this->is_df();
   TArray Tau;
-  auto T2_ = this->t2();
-  auto T1_ = this->t1();
-  Tau("a,b,i,j") = T2_("a,b,i,j") + (T1_("a,i") * T1_("b,j"));
+  auto t2 = this->t2();
+  auto t1 = this->t1();
+  Tau("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
 
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
-      this->lcao_factory(), this->ao_factory(), T1_, Tau, df);
-
-  // \cal{F}
-  //   fia + t^b_j g^ij_ab
-  //  FIA_("i,a") = Fai_("a,i") + gabij_temp("a,b,i,j") * T1_("b,j");
-  //  FAB_("a,b") =  //   fab (1 - delta_ab) - fkb t^a_k
-  //      Fab_("a,b") - T1_("a,m")*Fai_("b,m") +
-  //      // + t^d_k g^ak_bd
-  //      T1_("d,k") * (2.0 * Giabc_("k,a,d,b") - Giabc_("k,a,b,d"))
-  //      // - 1/2 tau^ad_kl g^kl_bd
-  //      - tau_ab("a,d,k,l") * gabij_temp("b,d,k,l");
-  //  FIJ_("i,j") =  //   fij (1 - delta_ij) + 1/2 fic t^c_j
-  //      Fij_("i,j") +
-  //      // + t^c_l g^il_jc
-  //      T1_("c,l") * (2.0 * Gijka_("i,l,j,c") - Gijka_("l,i,j,c"))
-  //      // + 1/2 tau^cd_jl g^il_cd
-  //      + tau_ab("c,d,j,l") * gabij_temp("c,d,i,l");
+      this->lcao_factory(), this->ao_factory(), t1, Tau, df);
 
   // \cal{W}mnij
-  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), T1_, Tau, df);
-  //    WKlIj_("k,l,i,j") =  // g^kl_ij
-  //        Gijkl_("k,l,i,j")
-  //
-  //        // + P(ij) t^c_j g^kl_ic:
-  //        // + t^c_j g^kl_ic
-  //        + T1_("c,j") * Gijka_("k,l,i,c")
-  //        // + t^c_i g^kl_cj
-  //        + T1_("c,i") * Gijka_("l,k,j,c")
-  //
-  //        // + 1/2 * tau^cd_ij * g^kl_cd
-  //        + Tau("c,d,i,j") * Gabij_("c,d,k,l");
+  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), t1, Tau, df);
 
   // \cal{W}abef
   if (this->method_ != "direct" && this->method_ != "direct_df") {
-    WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), T1_, Tau, df);
+    WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), t1, Tau, df);
   }
-  //  WAbCd_("a,b,c,d") =  //  g^ab_cd
-  //      Gabcd_("a,b,c,d")
-  //
-  //      // - P(ab) t^b_k g^ak_cd:
-  //      // - t^b_k g^ak_cd
-  //      - T1_("b,k") * Giabc_("k,a,d,c")
-  //      // - t^a_k g^kb_cd
-  //      - T1_("a,k") * Giabc_("k,b,c,d")
-  //
-  //      // + 1/2 tau^ab_kl g^kl_cd
-  //      + Tau("a,b,k,l") * Gabij_("c,d,k,l");
 
   // \cal{W}mbej
-  WIbAj_ = cc::compute_cs_ccsd_W_IbAj(this->lcao_factory(), T1_, T2_, df);
-  //  WIbAj_("i,b,a,j") =  // g^ib_aj
-  //      Gabij_("a,b,i,j")
-  //      // + t^d_j g^ib_ad
-  //      + T1_("d,j") * Giabc_("i,b,a,d")
-  //      // - t^b_l g^il_aj
-  //      - T1_("b,l") * Gijka_("l,i,j,a")
-  //
-  //      // - (t^db_jl + t^d_j t^b_l) g^il_ad:
-  //      // + t^bd_jl g^il_ad
-  //      + T2_("b,d,j,l") * gabij_temp("a,d,i,l") -
-  //      T2_("d,b,j,l") * Gabij_("a,d,i,l")
-  //      // - t^d_j t^b_l g^il_ad
-  //      - T1_("d,j") * (T1_("b,l") * Gabij_("a,d,i,l"));
+  WIbAj_ = cc::compute_cs_ccsd_W_IbAj(this->lcao_factory(), t1, t2, df);
 
-  WIbaJ_ = cc::compute_cs_ccsd_W_IbaJ(this->lcao_factory(), T1_, T2_, df);
-  //  WIbaJ_("i,b,a,j") =     // g^ib_aj
-  //      -Giajb_("j,a,i,b")  // g_aibj("c,j,b,k")
-  //      // + t^d_j g^ib_ad
-  //      - T1_("d,j") * Giabc_("i,b,d,a")  // g_abci("c,d,b,k")
-  //      // - t^b_l g^il_aj
-  //      + T1_("b,l") * Gijka_("i,l,j,a")  // g_aikl("c,j,l,k")
-  //
-  //      // - (t^db_jl + t^d_j t^b_l) g^il_ad:
-  //      // + t^bd_jl g^il_ad
-  //      + T2_("d,b,j,l") * Gabij_("d,a,i,l")
-  //      // - t^d_j t^b_l g^il_ad
-  //      + T1_("d,j") * (T1_("b,l") * Gabij_("d,a,i,l"));
+  WIbaJ_ = cc::compute_cs_ccsd_W_IbaJ(this->lcao_factory(), t1, t2, df);
 
   // \cal{W}abei
   WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), this->ao_factory(),
-                                      T1_, T2_, Tau, FIA_, WAbCd_, df);
-  //  if (WAbCd_.is_initialized()) {
-  //    WAbCi_("a,b,c,i") =  //   g^ab_ci
-  //        Giabc_("i,c,b,a")
-  //
-  //        // - \cal{F}kc t^ab_ki
-  //        - FIA_("k,c") * T2_("a,b,k,i")
-  //
-  //        // + t^d_i \cal{W}abcd
-  //        + T1_("d,i") * WAbCd_("a,b,c,d")
-  //
-  //        // + 1/2 g^kl_ci tau^ab_kl
-  //        + Gijka_("l,k,i,c") * Tau("a,b,k,l")
-  //
-  //        // - P(ab) g^kb_cd t^ad_ki:
-  //        // - g^kb_cd t^ad_ki
-  //        - Giabc_("k,b,c,d") * T2_("a,d,k,i")
-  //        // + g^ka_cd t^bd_ki = + g^ak_cd t^db_ki
-  //        + (Giabc_("k,a,d,c") * t2_temp("b,d,i,k") -
-  //           Giabc_("k,a,c,d") * T2_("b,d,i,k"))
-  //
-  //        // - P(ab) t^a_k (g^kb_ci - t^bd_li g^kl_cd):
-  //        // - t^a_k (g^kb_ci - t^bd_li g^kl_cd) = - t^a_k (g^kb_ci + t^db_li
-  //        // g^kl_cd)
-  //        -
-  //        T1_("a,k") * (Gabij_("b,c,i,k")  // g_aijb("b,k,i,c") ***
-  //                      + (t2_temp("d,b,l,i") * Gabij_("c,d,k,l") -
-  //                         T2_("d,b,l,i") * Gabij_("d,c,k,l")))
-  //        // + t^b_k (g^ka_ci - t^ad_li g^kl_cd) = + t^b_k (- g^ak_ci +
-  //        t^ad_li
-  //        // g^lk_cd)
-  //        +
-  //        T1_("b,k") * (-Giajb_("k,a,i,c")  // g_aibj("a,k,c,i") ***
-  //                      + T2_("a,d,l,i") * Gabij_("c,d,l,k"));
-  //  } else {
-  //    throw std::runtime_error("WAbCd_ has not been computed");
-  //  }
+                                      t1, t2, Tau, FIA_, WAbCd_, df);
 
   // \cal{W}mbij
-  WKaIj_ = cc::compute_cs_ccsd_W_KaIj(this->lcao_factory(), T1_, T2_, Tau, FIA_,
+  WKaIj_ = cc::compute_cs_ccsd_W_KaIj(this->lcao_factory(), t1, t2, Tau, FIA_,
                                       WKlIj_, df);
-  //  if (WKlIj_.is_initialized()) {
-  //    WKaIj_("k,a,i,j") =  //   g^ka_ij
-  //        Gijka_("i,j,k,a")
-  //
-  //        // - \cal{F}kc t^bc_ij = + CFkc t^ca_ij
-  //        + FIA_("k,c") * T2_("c,a,i,j")
-  //
-  //        // - t^a_l \cal{W}klij
-  //        - T1_("a,l") * WKlIj_("k,l,i,j")
-  //
-  //        // + 0.5 g^ka_cd tau^cd_ij
-  //        + Giabc_("k,a,c,d") * Tau("c,d,i,j")
-  //
-  //        // + P(ij) g^kl_ic t^ac_jl
-  //        // + g^kl_ic t^ac_jl
-  //        + Gijka_("k,l,i,c") * t2_temp("a,c,j,l") -
-  //        Gijka_("l,k,i,c") * T2_("a,c,j,l")
-  //        // - g^kl_jc t^ac_il = - g^lk_jc t^ca_il
-  //        - Gijka_("l,k,j,c") * T2_("c,a,i,l")
-  //
-  //        // + P(ij) t^c_i (g^ka_cj - t^ad_lj g^kl_cd)
-  //        // + t^c_i (g^ka_cj - t^ad_lj g^kl_cd) = + t^c_i (g^ka_cj + t^ad_jl
-  //        // g^kl_cd)
-  //        +
-  //        T1_("c,i") * (Gabij_("a,c,j,k")  // g_aijb("c,j,k,b") ***
-  //                      + t2_temp("a,d,j,l") * Gabij_("c,d,k,l") -
-  //                      T2_("a,d,j,l") * Gabij_("d,c,k,l"))
-  //        // - t^c_j (g^ka_ci - t^ad_li g^kl_cd) = - t^c_j (- g^ka_ic +
-  //        t^ad_li
-  //        // g^kl_dc)
-  //        -
-  //        T1_("c,j") * (-Giajb_("i,c,k,a")  // g_aibj("c,i,b,k") ***
-  //                      + T2_("a,d,l,i") * Gabij_("d,c,k,l"));
-  //  } else {
-  //    throw std::runtime_error("WKlIj_ has not been computed");
-  //  }
 
   // \cal{W}amef
-  WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), T1_, df);
-  //  WAkCd_("a,k,c,d") =  //   g^ak_cd
-  //      Giabc_("k,a,d,c")
-  //      // - t^a_l g^lk_cd
-  //      - T1_("a,l") * Gabij_("c,d,l,k");
+  WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), t1, df);
 
   // \cal{W}mnie
-  WKlIc_ = cc::compute_cs_ccsd_W_KlIc(this->lcao_factory(), T1_, df);
-  //  WKlIc_("k,l,i,c") =  //   g^kl_ic
-  //      Gijka_("k,l,i,c")
-  //      // + t^d_i g^kl_dc
-  //      + T1_("d,i") * Gabij_("d,c,k,l");
-  //    WKliC_("k,l,i,c") =  //   g^kl_ic
-  //                       - Gijka_("l,k,i,c")
-  //                         // + t^d_i g^kl_dc
-  //                       - T1_("d,i") * Gabij_("d,c,l,k")
-  //                       ;
-  // WKliC_("k,l,i,c") = - WKliC_("l,k,i,c")
+  WKlIc_ = cc::compute_cs_ccsd_W_KlIc(this->lcao_factory(), t1, df);
+
+  auto time1 = mpqc::now(world, accurate_time);
+  auto time = mpqc::duration_in_s(time0, time1);
+
+  ExEnv::out0() << indent << "\nTime to Initialize Intermediates in EOM-CCSD: " << time << " S\n";
+
 }
 
 // compute [HSS_HSD C]^A_I
@@ -465,7 +329,6 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       kv_nonconst.assign("method", this->method_);
     }
 
-    ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";
     this->init();
 
     C_ = std::vector<GuessVector>(n_roots);
@@ -476,7 +339,8 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       C_[i].t2.fill(0.0);
     }
 
-    auto result = eom_ccsd_davidson_solver(30, target_precision);
+    std::size_ max_iter = this->max_iter_;
+    auto result = eom_ccsd_davidson_solver(max_iter, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(

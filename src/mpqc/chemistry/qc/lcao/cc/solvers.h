@@ -1039,9 +1039,9 @@ private:
       // Extent data of tile
       const auto ext = arg_tile.range().extent_data();
 
-      // Convert data in tile to Eigen::Map and transform to PNO basis
+      // Convert data in tile to Eigen::Map and transform to PSVO basis
       const Eigen::MatrixXd r2_psvo =
-          l_psvo_ij.adjoint() *
+          l_psvo_ij.transpose() *
           TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * r_psvo_ij;
 
       // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
@@ -1075,8 +1075,11 @@ private:
       }
 
       // Back transform delta_t2_psvo to full space
+      // Eigen::MatrixXd delta_t2_full =
+      //     r_psvo_ij * delta_t2_psvo * l_psvo_ij.transpose();
+
       Eigen::MatrixXd delta_t2_full =
-          r_psvo_ij * delta_t2_psvo * l_psvo_ij.adjoint();
+          l_psvo_ij * delta_t2_psvo * r_psvo_ij.transpose();
 
       // Convert delta_t2_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
@@ -1151,6 +1154,7 @@ private:
       // Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv *
       // osv_i.transpose();
       Eigen::VectorXd delta_t1_full = r_psvo_i * delta_t1_psvo;
+      //Eigen::VectorXd delta_t1_full = delta_t1_psvo * r_psvo_i;
 
       // Convert delta_t1_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
@@ -1182,14 +1186,14 @@ private:
       const auto i = arg_tile.range().lobound()[2];
       const auto j = arg_tile.range().lobound()[3];
 
-      // Select appropriate matrix of PNOs
+      // Select appropriate matrix of PSVOs
       const auto ij = i * nocc_act_ + j;
       Eigen::MatrixXd l_psvo_ij = l_psvos[ij];
       Eigen::MatrixXd r_psvo_ij = r_psvos[ij];
       const auto nuocc = l_psvo_ij.rows();
       const auto npsvo = l_psvo_ij.cols();
 
-      // Convert data in tile to Eigen::Map and transform to PNO basis
+      // Convert data in tile to Eigen::Map and transform to PSVO basis
       const Eigen::MatrixXd result_eig =
           l_psvo_ij.transpose() * TA::eigen_map(arg_tile, nuocc, nuocc) * r_psvo_ij;
 
@@ -1230,7 +1234,7 @@ private:
       const auto nuocc = r_psvo_i.rows();
       const auto npsvo = r_psvo_i.cols();
 
-      // Convert data in tile to Eigen::Map and transform to OSV basis
+      // Convert data in tile to Eigen::Map and transform to PSVO basis
       const Eigen::MatrixXd result_eig =
           r_psvo_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
 

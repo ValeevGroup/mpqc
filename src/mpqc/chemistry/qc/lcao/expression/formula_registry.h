@@ -171,7 +171,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
   void purge_if(const Pred& p) {
     auto i = this->registry_.begin();
     for (; i != this->registry_.end();) {
-      if (p(*i)) {
+      if (p(i->first)) {
         if (verbose_) {
           ExEnv::out0() << indent << "Removed from FormulaRegistry: ";
           ExEnv::out0() << utility::to_string(i->first.string()) << "\n";
@@ -185,8 +185,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges formulae that contain Operator whose type matches \c optype
   void purge_operator(const Operator::Type& optype) {
-    auto pred = [optype](const value_type& item) {
-      return item.first.oper().type() == optype;
+    auto pred = [optype](const Formula& item) {
+      return item.oper().type() == optype;
     };
 
     this->purge_if(pred);
@@ -201,8 +201,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges the Formula object that equals \c formula from the registry
   void purge_formula(const Formula& formula) {
-    auto pred = [&formula](const value_type& item) {
-      return item.first == formula;
+    auto pred = [&formula](const Formula& item) {
+      return item == formula;
     };
 
     this->purge_if(pred);
@@ -216,8 +216,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges formulae that contain index \c idx
   void purge_index(const OrbitalIndex& idx) {
-    auto pred = [&idx](const value_type& item) {
-      return item.first.has_index(idx);
+    auto pred = [&idx](const Formula& item) {
+      return item.has_index(idx);
     };
 
     this->purge_if(pred);
@@ -225,7 +225,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges all formula in registry
   void purge() {
-    auto pred = [](const value_type& item) { return true; };
+    auto pred = [](const Formula& item) { return true; };
 
     this->purge_if(pred);
   }

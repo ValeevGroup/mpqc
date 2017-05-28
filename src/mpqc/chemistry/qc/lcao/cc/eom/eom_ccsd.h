@@ -71,6 +71,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   };
 
   TArray g_ijab_;
+  TArray g_iabc_;
   TArray Fab_;
   TArray Fij_;
   TArray Fai_;
@@ -106,6 +107,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
   void init() {
     g_ijab_ = this->get_ijab();
+    if(this->method_ == "direct" || this->method_ == "direct_df" ){
+      g_iabc_ = this->get_iabc();
+    }
     Fij_ = this->get_fock_ij();
     Fab_ = this->get_fock_ab();
     Fai_ = this->get_fock_ai();
@@ -118,6 +122,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
     TArray g_ijab_ = TArray();
+    TArray g_iabc_ = TArray();
 
     TArray FAB_ = TArray();
     TArray FIJ_ = TArray();

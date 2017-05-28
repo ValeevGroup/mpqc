@@ -283,6 +283,7 @@ class DavidsonDiag {
       HB_.clear();
       subspace_.resize(0, 0);
       B.insert(B.end(), residual.begin(), residual.end());
+      // TODO this generates too much eigen vectors
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {
         B.insert(B.end(), vector.begin(), vector.end());

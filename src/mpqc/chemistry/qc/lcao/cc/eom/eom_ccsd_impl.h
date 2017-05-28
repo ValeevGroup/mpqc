@@ -330,27 +330,26 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
       //
       //      HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j");
 
-      auto g_iabc = this->g_iabc_;
-      auto g_ijab = this->g_ijab_;
       TArray tau;
       tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-      HDS_HDD_C("a,b,i,j") +=
-          -Cabij("c,d,i,j") * g_iabc("k,a,d,c") * t1("b,k") -
-          Cabij("c,d,i,j") * g_iabc("k,b,c,d") * t1("a,k") +
-          Cabij("c,d,i,j") * g_ijab("k,l,c,d") * tau("a,b,k,l");
 
       // integral direct term
       auto direct_integral = this->get_direct_ao_integral();
 
       auto Ca =
           this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"a"));
+      auto Ci =
+          this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"i"));
 
       TArray U;
       U("p,r,i,j") = Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") *
           direct_integral("p,q,r,s");
       U("p,r,i,j") =  0.5*( U("p,r,i,j") + U("r,p,j,i") );
-      HDS_HDD_C("a,b,i,j") += U("p,r,i,j") *
-                              Ca("p,a") * Ca("r,b");
+      HDS_HDD_C("a,b,i,j") += U("p,r,i,j") * Ca("p,a") * Ca("r,b")
+          - U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k")
+          - U("p,r,i,j") * Ci("p,k") * Ca("r,b") * t1("a,k")
+          + U("p,r,i,j") * Ci("p,k") * Ci("r,l") * tau("a,b,k,l");
+
     }
   }
 

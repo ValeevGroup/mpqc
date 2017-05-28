@@ -94,7 +94,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
-    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno")
+    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "psvo")
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
@@ -213,6 +213,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       }
       else if (solver_str_ == "pno")
         solver_ = std::make_shared<cc::PNOSolver<TArray>>(kv_, this->lcao_factory());
+      else if (solver_str_ == "psvo")
+        solver_ = std::make_shared<cc::PSVOSolver<TArray>>(kv_, this->lcao_factory());
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 

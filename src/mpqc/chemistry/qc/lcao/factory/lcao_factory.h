@@ -93,7 +93,11 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
                   << indent << "Keep partial transform = "
                   << (keep_partial_transforms_ ? "true" : "false")
                   << "\n" << indent << "Accurate time = "
-                  << (this->accurate_time_ ? "true" : "false") << "\n\n";
+                  << (this->accurate_time_ ? "true" : "false")
+                  << "\n" << indent << "Verbose = "
+                  << (this->verbose_ ? "true" : "false")
+                  << "\n\n";
+
   }
 
   void obsolete() override {

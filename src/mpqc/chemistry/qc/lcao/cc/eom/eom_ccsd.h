@@ -82,6 +82,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   TArray WIbAj_;
   TArray WIbaJ_;
 
+  //TODO avoid store WAbCd term
   TArray WAbCd_;
   TArray WAbCi_;
 
@@ -100,13 +101,11 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   // compute contractions of HSS, HSD, HDS, and HDD
   //                         with guess vector Ci
   // reference: CPL, 248 (1996), 189
-  TArray compute_HSSC(TArray Cai);
-  TArray compute_HSDC(TArray Cabij);
-  TArray compute_HDSC(TArray Cai);
-  TArray compute_HDDC(TArray Cabij);
+  TArray compute_HSS_HSD_C(const TArray &Cai, const TArray &Cabij);
+  TArray compute_HDS_HDD_C(const TArray &Cai, const TArray &Cabij);
 
   void init() {
-    g_ijab_("i,j,a,b") = this->get_abij()("a,b,i,j");
+    g_ijab_ = this->get_ijab();
     Fij_ = this->get_fock_ij();
     Fab_ = this->get_fock_ab();
     Fai_ = this->get_fock_ai();

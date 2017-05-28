@@ -50,7 +50,7 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   //        + Tau("c,d,i,j") * Gabij_("c,d,k,l");
 
   // \cal{W}abef
-  WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), T1_, Tau, df);
+    WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), T1_, Tau, df);
   //  WAbCd_("a,b,c,d") =  //  g^ab_cd
   //      Gabcd_("a,b,c,d")
   //
@@ -194,119 +194,122 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   // WKliC_("k,l,i,c") = - WKliC_("l,k,i,c")
 }
 
-// compute [HSS C]^A_I
+// compute [HSS_HSD C]^A_I
 template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSSC(TArray Cai) {
-  TArray HSSC;
-  HSSC("a,i") =  //   Fac C^c_i
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSS_HSD_C(
+    const TArray& Cai, const TArray& Cabij) {
+  TArray HSS_HSD_C;
+
+  // HSS * C part
+  HSS_HSD_C("a,i") =  //   Fac C^c_i
       FAB_("a,c") * Cai("c,i")
       // - Fki C^a_k
       - FIJ_("k,i") * Cai("a,k")
       // + Wakic C^c_k
       + (2.0 * WIbAj_("k,a,c,i") + WIbaJ_("k,a,c,i")) * Cai("c,k");
-  return HSSC;
+
+  // HSD * C part
+  {
+    TArray C;
+    C("a,c,i,k") = 2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k");
+    HSS_HSD_C("a,i") +=  //   Fkc C^ac_ik
+        FIA_("k,c") * C("a,c,i,k")
+        // + 1/2 Wakcd C^cd_ik
+
+        + WAkCd_("a,k,c,d") * C("c,d,i,k")
+        // - 1/2 Wklic C^ac_kl
+        - WKlIc_("k,l,i,c") * C("a,c,k,l");
+  }
+
+  return HSS_HSD_C;
 }
 
-// compute [HSD C]^A_I
+// compute [HDS_HDD C]^Ab_Ij
 template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSDC(TArray Cabij) {
-  TArray HSDC;
-  TArray C;
-  C("a,c,i,k") = 2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k");
-  HSDC("a,i") =  //   Fkc C^ac_ik
-      FIA_("k,c") * C("a,c,i,k")
-          // + 1/2 Wakcd C^cd_ik
-          + WAkCd_("a,k,c,d") * C("c,d,i,k")
-              // - 1/2 Wklic C^ac_kl
-          - WKlIc_("k,l,i,c") * C("a,c,k,l");
-  return HSDC;
-}
-
-// compute [HDS C]^Ab_Ij
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDSC(TArray Cai) {
-  TArray HDSC;
+TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
+    const TArray& Cai, const TArray& Cabij) {
+  TArray HDS_HDD_C;
   auto T2_ = this->t2();
   auto T1_ = this->t1();
-  HDSC("a,b,i,j") =  //   P(ab) Wkaij C^b_k
-      // - WkAjI C^b_k - WKbIj C^A_K
-      -WKaIj_("k,a,j,i") * Cai("b,k") - WKaIj_("k,b,i,j") * Cai("a,k")
-      // + P(ij) Wabcj C^c_i
-      // + WAbCj C^C_I + WbAcI C^c_j
-      + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") * Cai("c,j")
-      // + P(ab) Wbkdc C^c_k T^ad_ij
-      // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
-      // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
-      +
-      (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
-          T2_("a,d,i,j") +
-      (2.0 * WAkCd_("a,k,d,c") - WAkCd_("a,k,c,d")) * Cai("c,k") *
-          T2_("d,b,i,j")
-      // - P(ij) Wlkjc C^c_k t^ab_il
-      // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
-      // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
-      -
-      (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
-          T2_("a,b,i,l") -
-      (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c")) * Cai("c,k") *
-          T2_("a,b,l,j");
-  return HDSC;
-}
 
-// compute [HDD C]^Ab_Ij
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDDC(TArray Cabij) {
-  TArray GC_ab, GC_ij, HDDC;
-  auto T2_ = this->t2();
-  auto T1_ = this->t1();
-  GC_ab("a,b") =
-      g_ijab_("k,l,a,c") * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
-  GC_ij("i,j") =
-      g_ijab_("i,k,c,d") * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
+  // HDS * C part
+  {
+    HDS_HDD_C("a,b,i,j") =  //   P(ab) Wkaij C^b_k
+        // - WkAjI C^b_k - WKbIj C^A_K
+        -WKaIj_("k,a,j,i") * Cai("b,k") - WKaIj_("k,b,i,j") * Cai("a,k")
+        // + P(ij) Wabcj C^c_i
+        // + WAbCj C^C_I + WbAcI C^c_j
+//        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") * Cai("c,j")
+        // + P(ab) Wbkdc C^c_k T^ad_ij
+        // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
+        // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
+        +
+        (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
+            T2_("a,d,i,j") +
+        (2.0 * WAkCd_("a,k,d,c") - WAkCd_("a,k,c,d")) * Cai("c,k") *
+            T2_("d,b,i,j")
+        // - P(ij) Wlkjc C^c_k t^ab_il
+        // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
+        // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
+        -
+        (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
+            T2_("a,b,i,l") -
+        (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c")) * Cai("c,k") *
+            T2_("a,b,l,j");
 
-  HDDC("a,b,i,j") =  //   P(ab) Fbc C^ac_ij
-      //   Fbc C^ac_ij + Fac C^cb_ij
-      FAB_("b,c") * Cabij("a,c,i,j") + FAB_("a,c") * Cabij("c,b,i,j")
-      // - P(ij) Fkj C^ab_ik
-      // - Fkj C^ab_ik - Fki C^ab_kj
-      - FIJ_("k,j") * Cabij("a,b,i,k") - FIJ_("k,i") * Cabij("a,b,k,j")
-      // + 1/2 Wabcd C^cd_ij
-      + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
-      // + 1/2 Wklij C^ab_kl
-      + WKlIj_("k,l,i,j") * Cabij("a,b,k,l")
-      // + P(ab) P(ij) Wbkjc C^ac_ik
-      // + Wbkjc C^ac_ik - Wbkic C^ac_jk
-      // - Wakjc C^bc_ik + Wakic C^bc_jk
-      + WIbAj_("k,b,c,j") * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k")) +
-      WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
-      //
-      + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
-      //
-      + WIbaJ_("k,a,c,j") * Cabij("b,c,k,i")
-      //
-      + WIbAj_("k,a,c,i") * (2.0 * Cabij("b,c,j,k") - Cabij("c,b,j,k")) +
-      WIbaJ_("k,a,c,i") * Cabij("b,c,j,k")
-      // - 1/2 P(ab) g^lk_dc C^ca_kl t^db_ij
-      // - 1/2 g^kl_dc C^ac_kl t^db_ij
-      // - 1/2 g^kl_cd C^cb_kl t^ad_ij
-      -
-      GC_ab(
-          "d,a")  // Gabij_("d,c,k,l")*(2.0*Cabij_("a,c,k,l")-Cabij_("c,a,k,l"))
-          * T2_("d,b,i,j") -
-      GC_ab(
-          "d,b")  // Gabij_("c,d,k,l")*(2.0*Cabij_("c,b,k,l")-Cabij_("b,c,k,l"))
-          * T2_("a,d,i,j")
-      // + 1/2 P(ij) Wlkdc C^dc_ik t^ab_jl
-      // - 1/2 Wlkcd C^cd_ik t^ab_lj
-      // - 1/2 Wlkcd C^cd_jk t^ab_il
-      -
-      GC_ij(
-          "l,i")  // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,i,k")-Cabij_("d,c,i,k"))
-          * T2_("a,b,l,j") -
-      GC_ij(
-          "l,j")  // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,j,k")-Cabij_("d,c,j,k"))
-          * T2_("a,b,i,l");
-  return HDDC;
+    TArray tmp;
+    tmp("a,b,i,j") = WAbCi_("a,b,c,j") * Cai("c,i");
+    HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+
+  }
+
+  // HDD * C part
+  {
+    TArray GC_ab, GC_ij;
+    GC_ab("a,b") =
+        g_ijab_("k,l,a,c") * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
+    GC_ij("i,j") =
+        g_ijab_("i,k,c,d") * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
+
+    HDS_HDD_C("a,b,i,j") +=  //   P(ab) Fbc C^ac_ij
+        //   Fbc C^ac_ij + Fac C^cb_ij
+        FAB_("b,c") * Cabij("a,c,i,j") + FAB_("a,c") * Cabij("c,b,i,j")
+        // - P(ij) Fkj C^ab_ik
+        // - Fkj C^ab_ik - Fki C^ab_kj
+        - FIJ_("k,j") * Cabij("a,b,i,k") - FIJ_("k,i") * Cabij("a,b,k,j")
+        // + 1/2 Wabcd C^cd_ij
+        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
+        // + 1/2 Wklij C^ab_kl
+        + WKlIj_("k,l,i,j") * Cabij("a,b,k,l")
+        // + P(ab) P(ij) Wbkjc C^ac_ik
+        // + Wbkjc C^ac_ik - Wbkic C^ac_jk
+        // - Wakjc C^bc_ik + Wakic C^bc_jk
+        + WIbAj_("k,b,c,j") * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k")) +
+        WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
+        //
+        + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
+        //
+        + WIbaJ_("k,a,c,j") * Cabij("b,c,k,i")
+        //
+        + WIbAj_("k,a,c,i") * (2.0 * Cabij("b,c,j,k") - Cabij("c,b,j,k")) +
+        WIbaJ_("k,a,c,i") * Cabij("b,c,j,k")
+        // - 1/2 P(ab) g^lk_dc C^ca_kl t^db_ij
+        // - 1/2 g^kl_dc C^ac_kl t^db_ij
+        // - 1/2 g^kl_cd C^cb_kl t^ad_ij
+
+        // Gabij_("d,c,k,l")*(2.0*Cabij_("a,c,k,l")-Cabij_("c,a,k,l"))
+        // Gabij_("c,d,k,l")*(2.0*Cabij_("c,b,k,l")-Cabij_("b,c,k,l"))
+        - GC_ab("d,a") * T2_("d,b,i,j") - GC_ab("d,b") * T2_("a,d,i,j")
+
+        // + 1/2 P(ij) Wlkdc C^dc_ik t^ab_jl
+        // - 1/2 Wlkcd C^cd_ik t^ab_lj
+        // - 1/2 Wlkcd C^cd_jk t^ab_il
+        // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,i,k")-Cabij_("d,c,i,k"))
+        // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,j,k")-Cabij_("d,c,j,k"))
+        - GC_ij("l,i") * T2_("a,b,l,j") - GC_ij("l,j") * T2_("a,b,i,l");
+  }
+
+  return HDS_HDD_C;
 }
 
 template <typename Tile, typename Policy>
@@ -344,13 +347,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
       if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
-        TArray HSSC_ai = compute_HSSC(C_[i].t1);
-        TArray HDSC_abij = compute_HDSC(C_[i].t1);
-        TArray HSDC_ai = compute_HSDC(C_[i].t2);
-        TArray HDDC_abij = compute_HDDC(C_[i].t2);
+        HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
+        HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
 
-        HC[i].t1("a,i") = HSSC_ai("a,i") + HSDC_ai("a,i");
-        HC[i].t2("a,b,i,j") = HDSC_abij("a,b,i,j") + HDDC_abij("a,b,i,j");
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,
@@ -365,9 +364,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     EigenVector<numeric_type> delta_e = eig - eig_new;
     norm_r = delta_e.norm();
 
-    util::print_excitation_energy_iteration(
-        iter, delta_e, eig_new, mpqc::duration_in_s(time0, time1),
-        mpqc::duration_in_s(time1, time2));
+    util::print_excitation_energy_iteration(iter, delta_e, eig_new,
+                                            mpqc::duration_in_s(time0, time1),
+                                            mpqc::duration_in_s(time1, time2));
 
     eig = eig_new;
     iter++;
@@ -395,7 +394,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     if (triplets) {
       throw InputError("EOM-CCSD only supports Singlets at this moment!\n",
-                       __FILE__, __LINE__, "triplet","true");
+                       __FILE__, __LINE__, "triplet", "true");
     }
 
     auto ccsd_energy =

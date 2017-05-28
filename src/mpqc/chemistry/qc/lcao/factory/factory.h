@@ -41,8 +41,14 @@ class Factory : virtual public DescribedClass {
 
   Factory(const KeyVal& kv)
       : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
-    accurate_time_ = kv.value<bool>("accurate_time", false);
-    verbose_ = kv.value<bool>("verbose", false);
+
+    std::string prefix = "";
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
+      prefix = "wfn_world:";
+    }
+
+    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
+    verbose_ = kv.value<bool>(prefix + "verbose", false);
     registry_.set_verbose(verbose_);
     direct_registry_.set_verbose(verbose_);
   }

@@ -227,7 +227,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCd(
 };
 
 /**
- * compute closed shell one particle matrix of effective Himiltonian of CCSD
+ * compute closed shell one particle matrix of effective Hamiltonian of CCSD
  *
  * @return std::tuple of FAB, FIA, FIJ
  *

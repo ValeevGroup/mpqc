@@ -259,9 +259,6 @@ CIS<Tile, Policy>::compute_cis(
         G_iajb("i,a,j,b");
   }
 
-  factory.registry().purge_formula(L"<i j|G|a b>");
-  factory.registry().purge_formula(L"<i a|G|j b>");
-
   auto time1 = mpqc::fenced_now(world);
   // used later
   auto time2 = mpqc::fenced_now(world);

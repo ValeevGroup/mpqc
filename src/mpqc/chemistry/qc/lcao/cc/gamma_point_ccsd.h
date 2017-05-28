@@ -112,11 +112,6 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
     }
   }
 
-  /// <ab|ij>
-  const TArray get_abij() override {
-    return lcao_factory_->compute(L"<a b |G|i j>");
-  }
-
   /// <ij|ab>
   const TArray get_ijab() override {
     return lcao_factory_->compute(L"<i j |G|a b>");

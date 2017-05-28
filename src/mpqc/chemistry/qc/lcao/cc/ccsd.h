@@ -1497,7 +1497,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   }
 
   /// <a|f|i>
-  const TArray get_fock_ai() {
+  virtual const TArray get_fock_ai() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a|F|i>" + postfix);
   }

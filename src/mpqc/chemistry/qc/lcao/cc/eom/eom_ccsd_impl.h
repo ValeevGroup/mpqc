@@ -446,9 +446,14 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     std::vector<TArray> guess;
     {
+      // do not use cis direct method, not efficient
+      KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
+      std::string cis_method = (this->df_ ? "df" : "standard");
+      kv_nonconst.assign("method", cis_method);
       auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
       ::mpqc::evaluate(*ex_energy, cis);
       guess = cis->eigen_vector();
+      kv_nonconst.assign("method", this->method_);
     }
 
     ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";

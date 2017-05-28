@@ -96,8 +96,8 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   //      + T1_("d,j") * (T1_("b,l") * Gabij_("d,a,i,l"));
 
   // \cal{W}abei
-  WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), T1_, T2_, Tau, FIA_,
-                                      WAbCd_, df);
+  WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), this->ao_factory(),
+                                      T1_, T2_, Tau, FIA_, WAbCd_, df);
   //  if (WAbCd_.is_initialized()) {
   //    WAbCi_("a,b,c,i") =  //   g^ab_ci
   //        Giabc_("i,c,b,a")
@@ -241,8 +241,7 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         -WKaIj_("k,a,j,i") * Cai("b,k") - WKaIj_("k,b,i,j") * Cai("a,k")
         // + P(ij) Wabcj C^c_i
         // + WAbCj C^C_I + WbAcI C^c_j
-        //        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") *
-        //        Cai("c,j")
+        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") * Cai("c,j")
         // + P(ab) Wbkdc C^c_k T^ad_ij
         // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
         // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
@@ -260,26 +259,6 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c")) * Cai("c,k") *
             t2("a,b,l,j");
 
-    TArray tmp;
-    tmp("a,b,i,j") = WAbCi_("a,b,c,j") * Cai("c,i");
-    HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
-
-    // W_AbCd*t1 term is include in the W_AbCi term
-    if (!WAbCd_.is_initialized()) {
-      auto g_iabc = this->get_iabc();
-      auto g_ijab = this->g_ijab_;
-      auto g_abcd = this->get_abcd();
-      TArray tau;
-      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-      tmp("a,b,i,j") =
-          Cai("c,i") * (-t1("d,j") * g_iabc("k,a,d,c") * t1("b,k") -
-                        t1("d,j") * g_iabc("k,b,c,d") * t1("a,k") +
-                        t1("d,j") * g_ijab("k,l,c,d") * tau("a,b,k,l"));
-
-      tmp("a,b,i,j") += Cai("c,i") * g_abcd("a,b,c,d") * t1("d,j");
-
-      HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
-    }
   }
 
   // HDD * C part
@@ -330,15 +309,37 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
     if (WAbCd_.is_initialized()) {
       HDS_HDD_C("a,b,i,j") += WAbCd_("a,b,c,d") * Cabij("c,d,i,j");
     } else {
+      //      auto direct_integral = this->ao_factory().compute_direct(L"(μ ν|
+      //      G|κ λ)");
+      //      auto Ca =
+      //          this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"a"));
+      //      auto Ci =
+      //          this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"i"));
+      //
+      //      TArray tau;
+      //      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+      //
+      //      TArray U;
+      //      U("p,q,i,j") = Cabij("r,s,i,j") * direct_integral("p,r,q,s");
+      //
+      //      TArray tmp;
+      //      tmp("a,b,i,j") = -U("p,q,i,j") * Ci("p,k") * Ca("q,a") * t1("b,k")
+      //      -
+      //          U("p,q,i,j") * Ci("p,k") * Ca("q,b") * t1("a,k") +
+      //          U("p,q,i,j") * Ci("p,k") * Ci("q,l") * tau("a,b,k,l") +
+      //          U("p,q,i,j") * Ca("p,a") * Ca("q,b");
+      //
+      //      HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j");
+
       auto g_abcd = this->get_abcd();
       auto g_iabc = this->get_iabc();
       auto g_ijab = this->g_ijab_;
       TArray tau;
       tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
       HDS_HDD_C("a,b,i,j") +=
-          - Cabij("c,d,i,j") * g_iabc("k,a,d,c") * t1("b,k") -
-            Cabij("c,d,i,j") * g_iabc("k,b,c,d") * t1("a,k")  +
-            Cabij("c,d,i,j") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+          -Cabij("c,d,i,j") * g_iabc("k,a,d,c") * t1("b,k") -
+          Cabij("c,d,i,j") * g_iabc("k,b,c,d") * t1("a,k") +
+          Cabij("c,d,i,j") * g_ijab("k,l,c,d") * tau("a,b,k,l");
 
       HDS_HDD_C("a,b,i,j") += g_abcd("a,b,c,d") * Cabij("c,d,i,j");
     }

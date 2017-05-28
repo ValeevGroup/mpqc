@@ -165,6 +165,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KaIj(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
+    gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& t2,
     const TA::DistArray<Tile, Policy>& tau,
@@ -201,6 +202,18 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
   // if W_AbCd term is computed and stored
   if (W_AbCd.is_initialized()) {
     W_AbCi("a,b,c,i") += t1("d,i") * W_AbCd("a,b,c,d");
+  }
+  else{
+    W_AbCi("a,b,c,i") += -t1("d,i") * g_iabc("k,a,d,c") * t1("b,k") -
+        t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
+        t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+
+    // integral direct term
+    auto direct_integral = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
+    auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
+
+    W_AbCi("a,b,c,i") += (t1("d,i")*Ca("s,d")*direct_integral("p,q,r,s"))*Ca("r,b")*Ca("q,c")*Ca("p,a");
+
   }
 
   return W_AbCi;

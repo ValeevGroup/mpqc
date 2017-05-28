@@ -793,7 +793,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   // the OSV basis
   std::vector<Eigen::MatrixXd> osvs_;
   std::vector<Eigen::VectorXd> F_osv_diag_;
-};
+};  // class: PNO solver
 
 
 ////// PSVO solver ////////
@@ -992,8 +992,7 @@ private:
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_l_psvo_diag_, 
-                                        F_r_psvo_diag_, l_psvos_, r_psvos_);
+    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_r_psvo_diag_, r_psvos_);
 
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_l_psvo_diag_,
                                           F_r_psvo_diag_, l_psvos_, r_psvos_);
@@ -1005,7 +1004,7 @@ private:
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     update_only(t1, t2, r1, r2);
-    T r1_psvo = psvo_transform_ai(r1, l_psvos_, r_psvos_);
+    T r1_psvo = psvo_transform_ai(r1, r_psvos_);
     T r2_psvo = psvo_transform_abij(r2, l_psvos_, r_psvos_);
     mpqc::cc::T1T2<T, T> r(r1_psvo, r2_psvo);
     mpqc::cc::T1T2<T, T> t(t1, t2);
@@ -1276,7 +1275,7 @@ private:
       const auto i = arg.range().lobound()[1];
       const auto nuocc = arg.range().extent_data()[0];
       const Eigen::MatrixXd arg_psvo =
-          TA::eigen_map(arg, 1, nuocc) * solver_->psvo(i);
+          TA::eigen_map(arg, 1, nuocc) * solver_->r_psvo(i, i);
       result += arg_psvo.squaredNorm();
     }
 

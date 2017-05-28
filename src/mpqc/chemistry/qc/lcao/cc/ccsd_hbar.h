@@ -268,13 +268,13 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
       // refactorize with density fitting
       auto Xia = lcao_factory.compute(L"( Λ |G|i a)");
       auto Xab = lcao_factory.compute(L"( Λ |G|a b)");
-      auto X = lcao_factory.compute(L"( Κ |G| Λ)");
+      auto X = ao_factory.compute(L"( Κ |G| Λ)[inv]");
 
       FAB("a,b") += 2.0 * t1("d,k") * Xia("X,k,d") * X("X,Y") * Xab("Y,a,b") -
                     t1("d,k") * Xab("X,a,d") * X("X,Y") * Xia("Y,k,b");
 
     } else {
-      auto g_iabc = lcao_factory.compute(L"<i a|G|b c>");
+      auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
       FAB("a,b") += t1("d,k") * (2.0 * g_iabc("k,a,d,b") - g_iabc("k,a,b,d"));
     }
   }

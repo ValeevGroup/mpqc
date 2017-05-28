@@ -19,7 +19,18 @@ namespace lcao {
 template <typename Tile, typename Policy>
 std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
     LCAOFactoryBase<Tile, Policy> &lcao_factory,
-    gaussian::AOFactoryBase<Tile, Policy> &ao_factory) {
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory,
+    bool df ) {
+  auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
+  auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
+  return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
+}
+
+template <typename Tile, typename Policy>
+std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
+    LCAOFactoryBase<Tile, Policy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory)
+    {
   bool df = ao_factory.registry().have(Formula(L"<μ|F|ν>[df]"));
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));

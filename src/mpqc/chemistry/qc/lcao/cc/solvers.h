@@ -141,7 +141,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 /// @warning This class assumes that the 1- and 2-body amplitudes/residuals
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
-template <typename T>
+template <typename T, typename DT>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
  public:
   // clang-format off
@@ -158,7 +158,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
-  PNOSolver(const KeyVal& kv, Factory<T>& factory)
+  PNOSolver(const KeyVal& kv, Factory<T,DT>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv), factory_(factory),
       pno_method_(kv.value<std::string>("pno_method", "standard")),
       tpno_(kv.value<double>("tpno", 1.e-8)) {
@@ -192,7 +192,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
     // back-transform extrapolated t1 and t2 from OSV and PNO to full virtual space
     assert(false && "not yet implemented");
   }
-  Factory<T>& factory_;
+  Factory<T, DT>& factory_;
   std::string pno_method_;  //!< the PNO construction method
   double tpno_;  //!< the PNO truncation threshold
   double tosv_;  //!< the OSV (diagonal PNO) truncation threshold

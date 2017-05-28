@@ -82,9 +82,7 @@ class Formula {
   /// @sa Formula::to_ta_expression()
   std::wstring string() const;
 
-  /**
-   *  index functions
-   */
+  /// @name index functions
 
   /// dimension of formula(2, 3 or 4)
   std::size_t rank() const;
@@ -116,6 +114,7 @@ class Formula {
   void set_bra_indices(const std::vector<OrbitalIndex> &ket_idxs) {
     bra_indices_ = ket_idxs;
   }
+  /// @}
 
   /// @name Notation functions
   /// @{
@@ -158,12 +157,19 @@ class Formula {
   /// @name Formula options functions
   /// @{
 
+  /// @param op a Formula::Option object
   /// Calling this ensures that \c has_option(op) will return \c true
-  void set_option(Option op);
+  void add_option(Option op);
 
   /// @param op a Formula::Option object
   /// @return true if this formula has option \c op
   bool has_option(Option op) const;
+
+  /// clear vector<Option>
+  void clear_option();
+
+  /// remove Option op in options_
+  void remove_option(Option op);
 
   /// @}
 

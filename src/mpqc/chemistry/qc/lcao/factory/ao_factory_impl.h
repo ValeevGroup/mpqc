@@ -66,8 +66,8 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
     ExEnv::out0() << std::endl;
   }
   // other initialization
-  screen_ = kv.value<std::string>(prefix + "screen", "");
-  screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
+  screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
+  screen_threshold_ = kv.value<double>(prefix + "screen_threshold", 1.0e-12);
   auto default_precision = std::numeric_limits<double>::epsilon();
   precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
@@ -75,7 +75,8 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   ExEnv::out0() << indent << "Screen = " << (screen_.empty() ? "none" : screen_)
                 << "\n";
   if (!screen_.empty()) {
-    ExEnv::out0() << indent << "Threshold = " << screen_threshold_ << "\n";
+    ExEnv::out0() << indent << "ScreenThreshold = " << screen_threshold_
+                  << "\n";
   }
   ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
@@ -174,10 +175,10 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   auto& world = this->world();
 
   // get the inverse square root instead
-  if (iterative_inv_sqrt_ &&
-      formula.has_option(Formula::Option::Inverse)) {
+  if (iterative_inv_sqrt_ && formula.has_option(Formula::Option::Inverse)) {
     auto inv_sqrt_formula = formula;
-    inv_sqrt_formula.set_option(Formula::Option::InverseSquareRoot);
+    inv_sqrt_formula.clear_option();
+    inv_sqrt_formula.add_option(Formula::Option::InverseSquareRoot);
 
     result = this->compute(inv_sqrt_formula);
 
@@ -277,16 +278,16 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       if (formula.has_option(Formula::Option::DensityFitting)) {
         auto three_center_formula = detail::get_jk_df_formula(formula, obs);
 
-        auto left = compute(three_center_formula[0]);
+        auto left = compute_direct(three_center_formula[0]);
         auto center = compute(three_center_formula[1]);
-        auto right = compute(three_center_formula[2]);
+        auto right = compute_direct(three_center_formula[2]);
 
         time0 = mpqc::now(world, this->accurate_time_);
 
         // J case
         if (formula.oper().type() == Operator::Type::J) {
-          result("i,j") = center("K,Q") * right("Q,k,l") *
-                          (space("k,a") * space("l,a")) * left("K,i,j");
+          result("i,j") = space("k,a") * space("l,a") * right("Q,k,l") *
+                          center("K,Q") * left("K,i,j");
         }
         // K case
         else {
@@ -405,8 +406,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // check for other options
 
   // compute inverse square root first in this case
-  if (!iterative_inv_sqrt_ &&
-      formula.has_option(Formula::Option::Inverse)) {
+  if (!iterative_inv_sqrt_ && formula.has_option(Formula::Option::Inverse)) {
     time0 = mpqc::now(world, this->accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -513,7 +513,7 @@ AOFactory<Tile, Policy>::compute_cadf_coeffs(const Formula& formula) {
 
   auto obs = detail::index_to_basis(basis_registry, mu_nu_index[0]);
   auto dfbs = detail::index_to_basis(basis_registry, Xindex[0]);
-  
+
   auto C = cadf_fitting_coefficients<Tile, Policy>(world, *obs, *dfbs);
 
   time1 = mpqc::now(world, this->accurate_time_);
@@ -792,7 +792,8 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
   parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
   auto plist = math::PetiteList::make(formula.symmetry());
 
-  result = compute_direct_integrals(world, engine_pool, bs_array, p_screener, plist);
+  result =
+      compute_direct_integrals(world, engine_pool, bs_array, p_screener, plist);
 
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);

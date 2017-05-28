@@ -1097,7 +1097,7 @@ private:
     auto delta_t2_abij = TA::foreach(r2_abij, update2);
     delta_t2_abij.world().gop.fence();
     return delta_t2_abij;
-  }
+  } // jacobi_update_t2
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t1(
@@ -1168,7 +1168,7 @@ private:
     auto delta_t1_ai = TA::foreach (r1_ai, update1);
     delta_t1_ai.world().gop.fence();
     return delta_t1_ai;
-  }
+  } // jacobi_update_t1
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> psvo_transform_abij(
@@ -1213,7 +1213,7 @@ private:
     auto result = TA::foreach(abij, tform);
     result.world().gop.fence();
     return result;
-  }
+  } // psvo_transform_abij
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> psvo_transform_ai(
@@ -1251,6 +1251,77 @@ private:
     auto result = TA::foreach(ai, tform);
     result.world().gop.fence();
     return result;
+  } // psvo_transform_ai
+
+  // squared norm of 1-body residual in PSVO subspace
+  struct R1SquaredNormReductionOp {
+    // typedefs
+    typedef typename TA::detail::scalar_type<T>::type result_type;
+    typedef typename T::value_type argument_type;
+
+    R1SquaredNormReductionOp(PSVOSolver<T>* solver) : solver_(solver) {}
+
+    // Reduction functions
+    // Make an empty result object
+    result_type operator()() const { return 0; }
+    // Post process the result (no operation, passthrough)
+    const result_type& operator()(const result_type& result) const {
+      return result;
+    }
+    void operator()(result_type& result, const result_type& arg) const {
+      result += arg;
+    }
+    /// Reduce an argument pair
+    void operator()(result_type& result, const argument_type& arg) const {
+      const auto i = arg.range().lobound()[1];
+      const auto nuocc = arg.range().extent_data()[0];
+      const Eigen::MatrixXd arg_psvo =
+          TA::eigen_map(arg, 1, nuocc) * solver_->psvo(i);
+      result += arg_psvo.squaredNorm();
+    }
+
+    PSVOSolver<T>* solver_;
+  };  // R1SquaredNormReductionOp
+
+  // squared norm of 2-body residual in PSVO subspace
+  struct R2SquaredNormReductionOp {
+    // typedefs
+    typedef typename TA::detail::scalar_type<T>::type result_type;
+    typedef typename T::value_type argument_type;
+
+    R2SquaredNormReductionOp(PSVOSolver<T>* solver) : solver_(solver) {}
+
+    // Reduction functions
+    // Make an empty result object
+    result_type operator()() const { return 0; }
+    // Post process the result (no operation, passthrough)
+    const result_type& operator()(const result_type& result) const {
+      return result;
+    }
+    void operator()(result_type& result, const result_type& arg) const {
+      result += arg;
+    }
+    /// Reduce an argument pair
+    void operator()(result_type& result, const argument_type& arg) const {
+      const auto i = arg.range().lobound()[2];
+      const auto j = arg.range().lobound()[3];
+      const auto nuocc = arg.range().extent_data()[0];
+      const Eigen::MatrixXd arg_psvo = solver_->l_psvo(i, j).transpose() *
+                                      TA::eigen_map(arg, nuocc, nuocc) *
+                                      solver_->r_psvo(i, j);
+      result += arg_psvo.squaredNorm();
+    }
+
+    PSVOSolver<T>* solver_;
+  };  // R2SquaredNormReductionOp
+
+ public:
+  /// Overrides Solver<T,T>::error()
+  virtual double error(const T& r1, const T& r2) override {
+    R1SquaredNormReductionOp op1(this);
+    R2SquaredNormReductionOp op2(this);
+    return sqrt(r1("a,i").reduce(op1).get() + r2("a,b,i,j").reduce(op2).get()) /
+           (size(r1) + size(r2));
   }
 
   private:

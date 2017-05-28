@@ -188,17 +188,20 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
 
       - FIA("k,c") * t2("a,b,k,i")
 
-      + t1("d,i") * W_AbCd("a,b,c,d")
-
       + g_ijka("l,k,i,c") * tau("a,b,k,l")
 
-      - g_iabc("k,b,c,d") * t2("a,d,k,i") +
-      g_iabc("k,a,d,c") * t22("b,d,i,k") - g_iabc("k,a,c,d") * t2("b,d,i,k")
+      - g_iabc("k,b,c,d") * t2("a,d,k,i") + g_iabc("k,a,d,c") * t22("b,d,i,k") -
+      g_iabc("k,a,c,d") * t2("b,d,i,k")
 
       -
       t1("a,k") * (g_ijab("i,k,b,c") + (t22("d,b,l,i") * g_ijab("k,l,c,d") -
                                         t2("d,b,l,i") * g_ijab("k,l,d,c"))) +
       t1("b,k") * (-g_iajb("k,a,i,c") + t2("a,d,l,i") * g_ijab("l,k,c,d"));
+
+  // if W_AbCd term is computed and stored
+  if (W_AbCd.is_initialized()) {
+    W_AbCi("a,b,c,i") += t1("d,i") * W_AbCd("a,b,c,d");
+  }
 
   return W_AbCi;
 };
@@ -265,7 +268,7 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
         t1("a,m") * f_ia("m,b") + tau("a,d,k,l") * g_ijab_bar("k,l,b,d");
 
     if (df) {
-      // refactorize with density fitting
+      //     refactorize with density fitting
       auto Xia = lcao_factory.compute(L"( Λ |G|i a)");
       auto Xab = lcao_factory.compute(L"( Λ |G|a b)");
       auto X = ao_factory.compute(L"( Κ |G| Λ)[inv]");

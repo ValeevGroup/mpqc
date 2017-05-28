@@ -50,7 +50,9 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   //        + Tau("c,d,i,j") * Gabij_("c,d,k,l");
 
   // \cal{W}abef
+  if (this->method_ != "direct" && this->method_ != "direct_df") {
     WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), T1_, Tau, df);
+  }
   //  WAbCd_("a,b,c,d") =  //  g^ab_cd
   //      Gabcd_("a,b,c,d")
   //
@@ -229,8 +231,8 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
     const TArray& Cai, const TArray& Cabij) {
   TArray HDS_HDD_C;
-  auto T2_ = this->t2();
-  auto T1_ = this->t1();
+  auto t2 = this->t2();
+  auto t1 = this->t1();
 
   // HDS * C part
   {
@@ -239,28 +241,45 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         -WKaIj_("k,a,j,i") * Cai("b,k") - WKaIj_("k,b,i,j") * Cai("a,k")
         // + P(ij) Wabcj C^c_i
         // + WAbCj C^C_I + WbAcI C^c_j
-//        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") * Cai("c,j")
+        //        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") *
+        //        Cai("c,j")
         // + P(ab) Wbkdc C^c_k T^ad_ij
         // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
         // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
         +
         (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
-            T2_("a,d,i,j") +
+            t2("a,d,i,j") +
         (2.0 * WAkCd_("a,k,d,c") - WAkCd_("a,k,c,d")) * Cai("c,k") *
-            T2_("d,b,i,j")
+            t2("d,b,i,j")
         // - P(ij) Wlkjc C^c_k t^ab_il
         // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
         // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
         -
         (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
-            T2_("a,b,i,l") -
+            t2("a,b,i,l") -
         (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c")) * Cai("c,k") *
-            T2_("a,b,l,j");
+            t2("a,b,l,j");
 
     TArray tmp;
     tmp("a,b,i,j") = WAbCi_("a,b,c,j") * Cai("c,i");
     HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
 
+    // W_AbCd*t1 term is include in the W_AbCi term
+    if (!WAbCd_.is_initialized()) {
+      auto g_iabc = this->get_iabc();
+      auto g_ijab = this->g_ijab_;
+      auto g_abcd = this->get_abcd();
+      TArray tau;
+      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+      tmp("a,b,i,j") =
+          Cai("c,i") * (-t1("d,j") * g_iabc("k,a,d,c") * t1("b,k") -
+                        t1("d,j") * g_iabc("k,b,c,d") * t1("a,k") +
+                        t1("d,j") * g_ijab("k,l,c,d") * tau("a,b,k,l"));
+
+      tmp("a,b,i,j") += Cai("c,i") * g_abcd("a,b,c,d") * t1("d,j");
+
+      HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+    }
   }
 
   // HDD * C part
@@ -278,7 +297,7 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         // - Fkj C^ab_ik - Fki C^ab_kj
         - FIJ_("k,j") * Cabij("a,b,i,k") - FIJ_("k,i") * Cabij("a,b,k,j")
         // + 1/2 Wabcd C^cd_ij
-        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
+        //        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
         // + 1/2 Wklij C^ab_kl
         + WKlIj_("k,l,i,j") * Cabij("a,b,k,l")
         // + P(ab) P(ij) Wbkjc C^ac_ik
@@ -299,14 +318,30 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
 
         // Gabij_("d,c,k,l")*(2.0*Cabij_("a,c,k,l")-Cabij_("c,a,k,l"))
         // Gabij_("c,d,k,l")*(2.0*Cabij_("c,b,k,l")-Cabij_("b,c,k,l"))
-        - GC_ab("d,a") * T2_("d,b,i,j") - GC_ab("d,b") * T2_("a,d,i,j")
+        - GC_ab("d,a") * t2("d,b,i,j") - GC_ab("d,b") * t2("a,d,i,j")
 
         // + 1/2 P(ij) Wlkdc C^dc_ik t^ab_jl
         // - 1/2 Wlkcd C^cd_ik t^ab_lj
         // - 1/2 Wlkcd C^cd_jk t^ab_il
         // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,i,k")-Cabij_("d,c,i,k"))
         // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,j,k")-Cabij_("d,c,j,k"))
-        - GC_ij("l,i") * T2_("a,b,l,j") - GC_ij("l,j") * T2_("a,b,i,l");
+        - GC_ij("l,i") * t2("a,b,l,j") - GC_ij("l,j") * t2("a,b,i,l");
+
+    if (WAbCd_.is_initialized()) {
+      HDS_HDD_C("a,b,i,j") += WAbCd_("a,b,c,d") * Cabij("c,d,i,j");
+    } else {
+      auto g_abcd = this->get_abcd();
+      auto g_iabc = this->get_iabc();
+      auto g_ijab = this->g_ijab_;
+      TArray tau;
+      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+      HDS_HDD_C("a,b,i,j") +=
+          - Cabij("c,d,i,j") * g_iabc("k,a,d,c") * t1("b,k") -
+            Cabij("c,d,i,j") * g_iabc("k,b,c,d") * t1("a,k")  +
+            Cabij("c,d,i,j") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+
+      HDS_HDD_C("a,b,i,j") += g_abcd("a,b,c,d") * Cabij("c,d,i,j");
+    }
   }
 
   return HDS_HDD_C;
@@ -349,7 +384,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
       if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
         HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
         HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
-
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,

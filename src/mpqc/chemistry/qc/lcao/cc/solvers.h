@@ -945,15 +945,21 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         
         // truncate SVO2s
-        size_t nsvo2 = 0;
+        size_t nsvo2;
         if (tsvo2_ != 0.0) {
+          size_t svo2_keep = 0;
           for (size_t k = 0; k != sing_vals.rows(); ++k) {
             if (sing_vals(k) >= tsvo2_)
-              ++nsvo2;
+              ++svo2_keep;
             else
               break;
           } // for each k
+          nsvo2 = svo2_keep;
         } // if tsvo2 != 0
+
+        else {
+          nsvo2 = nvir;
+        }
 
         //const auto nsvo2 = nvir - svo2_drop;
 
@@ -976,20 +982,26 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         // Truncate and store SVO1s when i == j
 
-
         if (i == j) {
           // truncate SVO1s
-          size_t nsvo1 = 0;
+          size_t nsvo1;
+          //size_t svo1_keep = 0;
           if (tsvo1_ != 0.0) {
+            size_t svo1_keep = 0;
             for (size_t k = 0; k != sing_vals.rows(); ++k) {
               if (sing_vals(k) >= tsvo1_)
-                ++nsvo1;
+                ++svo1_keep;
               else
                 break;
             } // for each k
+            nsvo1 = svo1_keep;
           } // if tsvo1 != 0
 
-          //const auto nsvo1 = nvir - svo1_drop;
+          else {
+            nsvo1 = nvir;
+          }
+
+          //const auto nsvo1 = svo1_keep
 
           // store truncated SVO1s
           Eigen::MatrixXd svo1_trunc = svd.matrixV().block(0, 0, nvir, nsvo1);

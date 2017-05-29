@@ -25,21 +25,25 @@ namespace detail {
 inline void print_ccsd(int iter, double dE, double error, double E1,
                        double time) {
   if (iter == 0) {
-    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
-                "residual", "energy", "total time/s");
+    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \n",
+                                  "iter", "deltaE", "residual", "energy",
+                                  "total time/s");
   }
-  ExEnv::out0() << mpqc::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE,
-              error, E1, time);
+  ExEnv::out0() << mpqc::printf(
+      "%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error, E1,
+      time);
 }
 
 inline void print_ccsd_direct(int iter, double dE, double error, double E1,
                               double time1, double time2) {
   if (iter == 0) {
-    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
-                "deltaE", "residual", "energy", "u time/s", "total time/s");
+    ExEnv::out0() << mpqc::printf(
+        "%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter", "deltaE",
+        "residual", "energy", "u time/s", "total time/s");
   }
-  ExEnv::out0() << mpqc::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
-              dE, error, E1, time1, time2);
+  ExEnv::out0() << mpqc::printf(
+      "%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter, dE,
+      error, E1, time1, time2);
 }
 }
 
@@ -114,7 +118,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   TArray T1_;
   TArray T2_;
 
-  const KeyVal kv_;  // the input keyval is kept to avoid heavy initialization in ctor
+  const KeyVal
+      kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
   std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
@@ -172,9 +177,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
   bool print_detail() const { return verbose_; }
 
-  void set_target_precision(double precision) {
-      target_precision_ = precision;
-  }
+  void set_target_precision(double precision) { target_precision_ = precision; }
 
   const typename AOFactory::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
@@ -279,10 +282,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    if (verbose_) {
-      mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
-                               "\n");
-    }
+    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
@@ -635,14 +635,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // get all two electron integrals
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
-    typename LCAOFactory<Tile,Policy>::DirectTArray g_abcd_direct;
+    typename LCAOFactory<Tile, Policy>::DirectTArray g_abcd_direct;
     TArray g_abcd;
 
     auto abcd_time0 = mpqc::fenced_now(world);
-    if(!reduced_abcd_memory_){
+    if (!reduced_abcd_memory_) {
       g_abcd = this->lcao_factory().compute(L"<a b|G|c d>[df]");
-    }
-    else{
+    } else {
       g_abcd_direct = this->lcao_factory().compute_direct(L"<a b|G|c d>[df]");
       TArray tmp;
       tmp("a,b,c,d") = g_abcd_direct("a,b,c,d");
@@ -658,10 +657,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     TArray g_ijka = this->get_ijka();
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    if (verbose_) {
-      mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
-                               "\n");
-    }
+    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
@@ -900,10 +896,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         // avoid store b_abcd
         TArray b_abij;
         abcd_time0 = mpqc::fenced_now(world);
-        if(!reduced_abcd_memory_){
+        if (!reduced_abcd_memory_) {
           b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
-        }
-        else{
+        } else {
           b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_direct("a,b,c,d");
         }
         abcd_time1 = mpqc::fenced_now(world);
@@ -1046,10 +1041,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    if (verbose_) {
-      mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
-                               "\n");
-    }
+    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");

@@ -339,7 +339,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       C_[i].t2.fill(0.0);
     }
 
-    std::size_ max_iter = this->max_iter_;
+    auto max_iter = this->max_iter_;
     auto result = eom_ccsd_davidson_solver(max_iter, target_precision);
 
     this->computed_ = true;

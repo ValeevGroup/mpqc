@@ -207,7 +207,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto nocc = ofac.retrieve("m").rank();
     auto nocc_act = ofac.retrieve("i").rank();
     nocc_act_ = nocc_act;
-    auto nvir = ofac.retrieve("a").rank();
+    auto nuocc = ofac.retrieve("a").rank();
     auto nfzc = nocc - nocc_act;
 
     // Form Fock array
@@ -217,7 +217,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     // to Eigen vector; use for computing PNOs
     Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
     auto eps_o = eps_p.segment(nfzc, nocc_act);
-    auto eps_v = eps_p.tail(nvir);
+    auto eps_v = eps_p.tail(nuocc);
 
     // Transform entire Fock array to Eigen Matrix
     Eigen::MatrixXd F_all = TA::array_to_eigen(F);
@@ -226,7 +226,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
 
     // Select just the unoccupied portion of the Fock matrix
-    Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
+    Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
 
     // Compute all K_aibj
     // auto K = fac.compute(L"(a b|G|i j)");
@@ -281,13 +281,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         Eigen::MatrixXd K_ji_mat =
             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
-        Eigen::MatrixXd T_ij(nvir, nvir);
-        Eigen::MatrixXd T_ji(nvir, nvir);
-        Eigen::MatrixXd T_tilde_ij(nvir, nvir);
+        Eigen::MatrixXd T_ij(nuocc, nuocc);
+        Eigen::MatrixXd T_ji(nuocc, nuocc);
+        Eigen::MatrixXd T_tilde_ij(nuocc, nuocc);
 
-        for (int a = 0; a < nvir; ++a) {
+        for (int a = 0; a < nuocc; ++a) {
           double eps_a = eps_v[a];
-          for (int b = 0; b < nvir; ++b) {
+          for (int b = 0; b < nuocc; ++b) {
             double eps_b = eps_v[b];
 
             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
@@ -316,11 +316,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
               break;
           }
         }
-        const auto npno = nvir - pnodrop;
+        const auto npno = nuocc - pnodrop;
 
         // Store truncated PNOs
-        // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nvir,npno);
-        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nvir, npno);
+        // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
+        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
         // pnos_[ij] = pno_trunc;
         pnos_[i * nocc_act + j] = pno_trunc;
 
@@ -388,14 +388,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                 break;
             }
           }
-          const auto nosv = nvir - osvdrop;
+          const auto nosv = nuocc - osvdrop;
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
                                         __LINE__, 1, 0);
           }
 
           // Store truncated OSVs
-          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nvir, nosv);
+          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
           osvs_[i] = osv_trunc;
 
           // Transform F to OSV space
@@ -796,9 +796,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 };  // class: PNO solver
 
 
-////// PSVO solver ////////
+////// SVO2 solver ////////
 
-/// PSVOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PSVO
+/// SVOSolver updates the CC T amplitudes using standard Jacobi+DIIS in SVO2
 /// space
 /// @warning This class assumes that the 1- and 2-body amplitudes/residuals
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
@@ -817,16 +817,15 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
-   * | tsvo2 | double | 1e-7 | The SVO2 construction threshold. This non-negative integer specifies the screening threshold for the singular values of the pair amplitudes. Setting this to zero will cause the full (untruncated) set of SVO2s to be used. |
-   * | tsvo1 | double | 1e-9 | The SVO1 construction threshold. This non-negative integer specifies the screening threshold for the singular values of the pair amplitudes of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of SVO1s to be used. |
+   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
   SVOSolver(const KeyVal& kv, Factory<T>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv),
         madness::WorldObject<SVOSolver<T>>(factory.world()),
         factory_(factory),
-        tsvo2_(kv.value<double>("tsvo2", 1.e-7)),
-        tsvo1_(kv.value<double>("tsvo1", 1.e-9)) {
+        tsvo2_(kv.value<double>("tsvo2", 1.e-5)) {
     // part of WorldObject initialization
     this->process_pending();
 
@@ -862,17 +861,17 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto nocc = ofac.retrieve("m").rank();
     auto nocc_act = ofac.retrieve("i").rank();
     nocc_act_ = nocc_act;
-    auto nvir = ofac.retrieve("a").rank();
+    auto nuocc = ofac.retrieve("a").rank();
     auto nfzc = nocc - nocc_act;
 
     // Form Fock array
     auto F = fac.compute(L"<p|F|q>[df]");
 
     // Select just diagonal elements of Fock aray and transform
-    // to Eigen vector; use for computing PSVOs
+    // to Eigen vector; use for computing SVO2s
     Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
     auto eps_o = eps_p.segment(nfzc, nocc_act);
-    auto eps_v = eps_p.tail(nvir);
+    auto eps_v = eps_p.tail(nuocc);
 
     // Transform entire Fock array to Eigen Matrix
     Eigen::MatrixXd F_all = TA::array_to_eigen(F);
@@ -881,7 +880,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
 
     // Select just the unoccupied portion of the Fock matrix
-    Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nvir, nvir);
+    Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
 
     // Compute all K_aibj
     // auto K = fac.compute(L"(a b|G|i j)");
@@ -895,13 +894,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     }
 
 
-    // For storing SVO1s and and the Fock matrix in the SVO1 basis
-    // left sing vecs = right sing vecs, so only save one set
-    svo1s_.resize(nocc_act);
-    F_svo1_diag_.resize(nocc_act);
-
-
-    // For storing SVO2s and the Fock matrix in the SVO2 basis
+    // For storing SVO2s and and the Fock matrix in the SVO2 basis
     l_svo2s_.resize(nocc_act * nocc_act);
     r_svo2s_.resize(nocc_act * nocc_act);
     F_l_svo2_diag_.resize(nocc_act * nocc_act);
@@ -927,11 +920,11 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         Eigen::MatrixXd K_ji_mat =
             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
-        Eigen::MatrixXd T_ij(nvir, nvir);
+        Eigen::MatrixXd T_ij(nuocc, nuocc);
 
-        for (int a = 0; a < nvir; ++a) {
+        for (int a = 0; a < nuocc; ++a) {
           double eps_a = eps_v[a];
-          for (int b = 0; b < nvir; ++b) {
+          for (int b = 0; b < nuocc; ++b) {
             double eps_b = eps_v[b];
 
             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
@@ -943,91 +936,36 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(T_ij, Eigen::ComputeThinU | Eigen::ComputeThinV);
         auto sing_vals = svd.singularValues();
 
-        
         // truncate SVO2s
-        size_t nsvo2;
+        size_t svo2_drop = 0;
         if (tsvo2_ != 0.0) {
-          size_t svo2_keep = 0;
           for (size_t k = 0; k != sing_vals.rows(); ++k) {
-            if (sing_vals(k) >= tsvo2_)
-              ++svo2_keep;
+            if (!(sing_vals(k) >= tsvo2_))
+              ++svo2_drop;
             else
               break;
           } // for each k
-          nsvo2 = svo2_keep;
         } // if tsvo2 != 0
 
-        else {
-          nsvo2 = nvir;
-        }
-
-        //const auto nsvo2 = nvir - svo2_drop;
+        const auto nsvo2 = nuocc - svo2_drop;
 
         // store truncated SVO2s
-        Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, 0, nvir, nsvo2);
-        Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, 0, nvir, nsvo2);
+        Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, svo2_drop, nuocc, nsvo2);
+        Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, svo2_drop, nuocc, nsvo2);
         r_svo2s_[i*nocc_act + j] = r_svo2_trunc;
         l_svo2s_[i*nocc_act + j] = l_svo2_trunc;
 
         // transform F to right SVO2 space and store just diagonal elements
-        //Eigen::MatrixXd F_r_svo2 = svd.matrixV().transpose() * F_uocc * svd.matrixV();
-        Eigen::MatrixXd F_r_svo2 = r_svo2_trunc.transpose() * F_uocc * r_svo2_trunc;
+        Eigen::MatrixXd F_r_svo2 = svd.matrixV().transpose() * F_uocc * svd.matrixV();
         F_r_svo2_diag_[i*nocc_act + j] = F_r_svo2.diagonal();
 
         // transform F to left SVO2 space and store just diagonal elements
-        //Eigen::MatrixXd F_l_psvo = svd.matrixU().transpose() * F_uocc.transpose() * svd.matrixU();
-        Eigen::MatrixXd F_l_svo2 = l_svo2_trunc.transpose() * F_uocc.transpose() * l_svo2_trunc;
+        Eigen::MatrixXd F_l_svo2 = svd.matrixU().transpose() * F_uocc.transpose() * svd.matrixU();
         F_l_svo2_diag_[i*nocc_act + j] = F_l_svo2.diagonal();
-
-
-        // Truncate and store SVO1s when i == j
-
-        if (i == j) {
-          // truncate SVO1s
-          size_t nsvo1;
-          //size_t svo1_keep = 0;
-          if (tsvo1_ != 0.0) {
-            size_t svo1_keep = 0;
-            for (size_t k = 0; k != sing_vals.rows(); ++k) {
-              if (sing_vals(k) >= tsvo1_)
-                ++svo1_keep;
-              else
-                break;
-            } // for each k
-            nsvo1 = svo1_keep;
-          } // if tsvo1 != 0
-
-          else {
-            nsvo1 = nvir;
-          }
-
-          //const auto nsvo1 = svo1_keep
-
-          // store truncated SVO1s
-          Eigen::MatrixXd svo1_trunc = svd.matrixV().block(0, 0, nvir, nsvo1);
-          svo1s_[i] = svo1_trunc;
-          
-
-          // transform F toSVO1 space and store just diagonal elements
-          Eigen::MatrixXd F_svo1 = svo1_trunc.transpose() * F_uocc;
-          F_svo1_diag_[i] = F_svo1.diagonal();
-
-        } // if (i == j)
-        
 
 
       } // for each j
     } // for each i
-
-    // Compute average number of SVO1s per pair and print out
-
-    auto sum_svo1 = 0;
-    for (int i=0; i<nocc_act; ++i) {
-      sum_svo1 += svo1s_[i].cols();
-    } 
-    auto ave_nsvo1 = sum_svo1 / nocc_act;
-    ExEnv::out0() << "The average number of SVO1s is " << ave_nsvo1 << std::endl;
-
 
     // Compute average number of SVO2s per pair and print out
 
@@ -1039,28 +977,22 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     } 
     auto ave_nsvo2 = sum_svo2 / (nocc_act * nocc_act);
     ExEnv::out0() << "The average number of SVO2s is " << ave_nsvo2 << std::endl;
-
-
   } // SVOSolver
 
   virtual ~SVOSolver() = default;
 
   /// @return SVO2 truncation threshold
   double tsvo2() const { return tsvo2_; }
-  /// @return SVO1 truncation threshold
-  double tsvo1() const { return tsvo1_; }
 
   const auto& l_svo2(int i, int j) const { return l_svo2s_[i*nocc_act_ + j]; }
   const auto& r_svo2(int i, int j) const { return r_svo2s_[i*nocc_act_ + j]; }
-
-  const auto& svo1(int i) const { return svo1s_[i]; } // prob unnecessary but keep for consistency
 
 private:
   /// Overrides DIISSolver::update_only() .
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_svo1_diag_, svo1s_);
+    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_r_svo2_diag_, r_svo2s_);
 
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_l_svo2_diag_,
                                           F_r_svo2_diag_, l_svo2s_, r_svo2s_);
@@ -1072,9 +1004,9 @@ private:
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     update_only(t1, t2, r1, r2);
-    T r1_svo1 = svo1_transform_ai(r1, svo1s_);
+    T r1_svo2 = svo2_transform_ai(r1, r_svo2s_);
     T r2_svo2 = svo2_transform_abij(r2, l_svo2s_, r_svo2s_);
-    mpqc::cc::T1T2<T, T> r(r1_svo1, r2_svo2);
+    mpqc::cc::T1T2<T, T> r(r1_svo2, r2_svo2);
     mpqc::cc::T1T2<T, T> t(t1, t2);
     this->diis().extrapolate(t, r);
     t1 = t.t1;
@@ -1099,7 +1031,7 @@ private:
       const auto i = arg_tile.range().lobound()[2];
       const auto j = arg_tile.range().lobound()[3];
 
-      // Select appropriate matrix of SVO2s
+      // Select appropriate matrix of PNOs
       auto ij = i * nocc_act_ + j;
       Eigen::MatrixXd l_svo2_ij = l_svo2s[ij];
       Eigen::MatrixXd r_svo2_ij = r_svo2s[ij];
@@ -1112,18 +1044,18 @@ private:
           l_svo2_ij.transpose() *
           TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * r_svo2_ij;
 
-      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in SV2
+      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
       // basis this matrix will then be back transformed to full basis before
       // being converted to a tile
       Eigen::MatrixXd delta_t2_svo2 = r2_svo2;
 
       // Select correct vector containing diagonal elements of Fock matrix in
-      // SVO2 basis
+      // PNO basis
       const Eigen::VectorXd& l_uocc = F_l_svo2_diag[ij];
       const Eigen::VectorXd& r_uocc = F_r_svo2_diag[ij];
 
-      // Determine number of SVO2s
-      const auto nsvo2 = l_uocc.rows();
+      // Determine number of PNOs
+      const auto npno = l_uocc.rows();
 
       // Determine number of uocc
       const auto nuocc = l_svo2_ij.rows();
@@ -1132,9 +1064,9 @@ private:
       const auto e_i = F_occ_act(i, i);
       const auto e_j = F_occ_act(j, j);
 
-      for (auto a = 0; a < nsvo2; ++a) {
+      for (auto a = 0; a < npno; ++a) {
         const auto e_a = l_uocc[a];
-        for (auto b = 0; b < nsvo2; ++b) {
+        for (auto b = 0; b < npno; ++b) {
           const auto e_b = r_uocc[b];
           const auto e_abij = e_i + e_j - e_a - e_b;
           const auto r_abij = r2_svo2(a, b);
@@ -1143,7 +1075,9 @@ private:
       }
 
       // Back transform delta_t2_svo2 to full space
-      
+      // Eigen::MatrixXd delta_t2_full =
+      //     r_svo2_ij * delta_t2_svo2 * l_svo2_ij.transpose();
+
       Eigen::MatrixXd delta_t2_full =
           l_svo2_ij * delta_t2_svo2 * r_svo2_ij.transpose();
 
@@ -1171,9 +1105,9 @@ private:
   TA::DistArray<Tile, Policy> jacobi_update_t1(
       const TA::DistArray<Tile, Policy>& r1_ai,
       const Eigen::MatrixXd& F_occ_act,
-      const std::vector<Eigen::VectorXd>& F_svo1_diag,
-      const std::vector<Eigen::MatrixXd>& svo1s) {
-    auto update1 = [F_occ_act, F_svo1_diag, svo1s, this](
+      const std::vector<Eigen::VectorXd>& F_r_svo2_diag,
+      const std::vector<Eigen::MatrixXd>& r_svo2s) {
+    auto update1 = [F_occ_act, F_r_svo2_diag, r_svo2s, this](
                       Tile& result_tile, const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
@@ -1181,43 +1115,46 @@ private:
       // determine i index
       const auto i = arg_tile.range().lobound()[1];
 
-      // Select appropriate matrix of SVO1s
-      Eigen::MatrixXd svo1_i = svo1s[i];
+      // Select appropriate matrix of SVO2s
+      Eigen::MatrixXd r_svo2_i = r_svo2s[i*nocc_act_ + i];
 
       // Extent data of tile
       const auto ext = arg_tile.range().extent_data();
 
-      // Convert data in tile to Eigen::Map and transform to SVO1 basis
-      const Eigen::VectorXd r1_svo1 =
-          svo1_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
+      // Convert data in tile to Eigen::Map and transform to SVO2 basis
+      const Eigen::VectorXd r1_svo2 =
+          r_svo2_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
 
-      // Create a matrix delta_t1_osv to hold updated values of delta t1 in SVO1
+      // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
       // basis this matrix will then be back transformed to full basis before
       // being converted to a tile
-      Eigen::VectorXd delta_t1_svo1 = r1_svo1;
+      Eigen::VectorXd delta_t1_svo2 = r1_svo2;
 
       // Select correct vector containing diagonal elements of Fock matrix in
-      // SVO1 basis
-      const Eigen::VectorXd& uocc = F_svo1_diag[i];
+      // SVO2 basis
+      const Eigen::VectorXd& r_uocc = F_r_svo2_diag[i*nocc_act_ + i];
 
-      // Determine number of SVO1s
-      const auto nsvo1 = uocc.rows();
+      // Determine number of OSVs
+      const auto nosv = r_uocc.rows();
 
       // Determine number of uocc
-      const auto nuocc = svo1_i.rows();
+      const auto nuocc = r_svo2_i.rows();
 
       // Select e_i
       const auto e_i = F_occ_act(i, i);
 
-      for (auto a = 0; a < nsvo1; ++a) {
-        const auto e_a = uocc[a];
+      for (auto a = 0; a < nosv; ++a) {
+        const auto e_a = r_uocc[a];
         const auto e_ai = e_i - e_a;
-        const auto r_ai = r1_svo1(a);
-        delta_t1_svo1(a) = r_ai / e_ai;
+        const auto r_ai = r1_svo2(a);
+        delta_t1_svo2(a) = r_ai / e_ai;
       }
 
-      // Back transform delta_t1_svo1 to full space
-      Eigen::VectorXd delta_t1_full = svo1_i * delta_t1_svo1;
+      // Back transform delta_t1_osv to full space
+      // Eigen::MatrixXd delta_t1_full = osv_i * delta_t1_osv *
+      // osv_i.transpose();
+      Eigen::VectorXd delta_t1_full = r_svo2_i * delta_t1_svo2;
+      //Eigen::VectorXd delta_t1_full = delta_t1_svo2 * r_svo2_i;
 
       // Convert delta_t1_full to tile and compute norm
       typename Tile::scalar_type norm = 0.0;
@@ -1282,29 +1219,29 @@ private:
   } // svo2_transform_abij
 
   template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> svo1_transform_ai(
+  TA::DistArray<Tile, Policy> svo2_transform_ai(
       const TA::DistArray<Tile, Policy>& ai,
-      const std::vector<Eigen::MatrixXd>& svo1s) {
+      const std::vector<Eigen::MatrixXd>& r_svo2s) {
 
-    auto tform = [svo1s, this](
+    auto tform = [r_svo2s, this](
         Tile& result_tile, const Tile& arg_tile) {
 
       // determine i index
       const auto i = arg_tile.range().lobound()[1];
 
-      // Select appropriate matrix of SVO1s
-      Eigen::MatrixXd svo1_i = svo1s[i];
-      const auto nuocc = svo1_i.rows();
-      const auto nsvo1 = svo1_i.cols();
+      // Select appropriate matrix of OSVs
+      Eigen::MatrixXd r_svo2_i = r_svo2s[i];
+      const auto nuocc = r_svo2_i.rows();
+      const auto nsvo2 = r_svo2_i.cols();
 
-      // Convert data in tile to Eigen::Map and transform to SVO1 basis
+      // Convert data in tile to Eigen::Map and transform to SVO2 basis
       const Eigen::MatrixXd result_eig =
-          svo1_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
+          r_svo2_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
 
       // Convert result_eig to tile and compute norm
-      result_tile = Tile(TA::Range{nsvo1,1l});
+      result_tile = Tile(TA::Range{nsvo2,1l});
       typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < nsvo1; ++r) {
+      for (auto r = 0; r < nsvo2; ++r) {
         const auto elem = result_eig(r, 0);
         const auto abs_elem = std::abs(elem);
         norm += abs_elem * abs_elem;
@@ -1317,9 +1254,9 @@ private:
     auto result = TA::foreach(ai, tform);
     result.world().gop.fence();
     return result;
-  } // svo1_transform_ai
+  } // svo2_transform_ai
 
-  // squared norm of 1-body residual in SVO1 subspace
+  // squared norm of 1-body residual in SVO2 subspace
   struct R1SquaredNormReductionOp {
     // typedefs
     typedef typename TA::detail::scalar_type<T>::type result_type;
@@ -1341,9 +1278,9 @@ private:
     void operator()(result_type& result, const argument_type& arg) const {
       const auto i = arg.range().lobound()[1];
       const auto nuocc = arg.range().extent_data()[0];
-      const Eigen::MatrixXd arg_svo1 =
-          TA::eigen_map(arg, 1, nuocc) * solver_->svo1(i);
-      result += arg_svo1.squaredNorm();
+      const Eigen::MatrixXd arg_svo2 =
+          TA::eigen_map(arg, 1, nuocc) * solver_->r_svo2(i, i);
+      result += arg_svo2.squaredNorm();
     }
 
     SVOSolver<T>* solver_;
@@ -1392,28 +1329,22 @@ private:
 
   private:
   Factory<T>& factory_;
-  //double tpsvo_;        // !< the truncation threshold for PSVOs
-  double tsvo1_;          //!< the truncation threshold for SVO1s
-  double tsvo2_;          //!< the truncation threshold for SVO2s
-  int nocc_act_;          //!< the number of active occupied orbitals
+  double tsvo2_;        //!< the truncation threshold for SVO2s
+  int nocc_act_;        //!< the number of active occupied orbitals
   Array T_;
 
   Eigen::MatrixXd F_occ_act_;
 
-  // For storing SVO2s and the Fock matrix in the SVO2 space
+  // For storing SVO2s and and the Fock matrix in the SVO2 basis
   std::vector<Eigen::MatrixXd> l_svo2s_;
   std::vector<Eigen::MatrixXd> r_svo2s_;
   std::vector<Eigen::VectorXd> F_l_svo2_diag_;
   std::vector<Eigen::VectorXd> F_r_svo2_diag_;
 
-  // For storing SVO1s and the Fock matrix in the SVO1 space
-  std::vector<Eigen::MatrixXd> svo1s_;
-  std::vector<Eigen::VectorXd> F_svo1_diag_;
 
 
 
-
-}; // class: PSVOSolver
+}; // class: SVOSolver
 
 
 

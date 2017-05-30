@@ -88,8 +88,9 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   } else if (density_builder_str_ == "eigen_solve") {
     std::string decompo_type =
         kv.value<std::string>("decompo_type", "conditioned");
+    double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
-        S_, r_xyz, nocc, n_cluster, t_cut_c_, decompo_type, localize_);
+        S_, r_xyz, nocc, n_cluster, t_cut_c_, decompo_type, s_tolerance, localize_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {

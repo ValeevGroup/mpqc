@@ -20,6 +20,7 @@ class PeriodicCADFKBuilder {
   using DirectTArray = typename Factory::DirectTArray;
   using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
   using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
+  using Basis = ::mpqc::lcao::gaussian::Basis;
 
   template <int rank>
   using norm_type = std::vector<std::pair<std::array<int, rank>, float>>;
@@ -76,6 +77,28 @@ class PeriodicCADFKBuilder {
     t1 = mpqc::fenced_now(world);
     double t_C_bra = mpqc::duration_in_s(t0, t1);
 
+    // test new C_bra
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new C_bra ...\n";
+      auto X_dfbs = shift_basis_origin(*dfbs, zero_shift_base, RJ_max, dcell);
+      auto bs1 = shift_basis_origin(*obs, zero_shift_base, RJ_max, dcell);
+
+      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
+      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
+
+      array_type C = lcao::cadf_fitting_coefficients<Tile, Policy>(
+          M, *obs, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range, RJ_max,
+          RJ_max);
+
+      detail::print_size_info(C, "C bra");
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
+
+      dump_shape_0_12(C, "C_bra_");
+    }
+
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
       auto x = std::max(l(0), r(0));
       auto y = std::max(l(1), r(1));
@@ -104,10 +127,38 @@ class PeriodicCADFKBuilder {
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
             M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max, Y_latt_range,
             ref_latt_center, RJ_3D, ref_latt_center);
+
+//        ExEnv::out0() << "\nRJ = " << RJ << ":\n" << std::endl;
+//        detail::print_size_info(C, "C ket");
       }
     }
     t1 = mpqc::fenced_now(world);
     double t_C_ket = mpqc::duration_in_s(t0, t1);
+
+    // test new C_ket
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new C_ket ...\n";
+      auto max_range = R_max + RJ_max + RD_max;
+      auto bs1 = shift_basis_origin(*obs, zero_shift_base, max_range, dcell);
+
+      auto Y_dfbs =
+          shift_basis_origin(*dfbs, zero_shift_base, max_range, dcell);
+      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
+      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
+
+      array_type C = lcao::cadf_fitting_coefficients<Tile, Policy>(
+          M, *obs, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range, max_range,
+          max_range);
+
+      detail::print_size_info(C, "C ket");
+      auto t1 = mpqc::fenced_now(world);
+
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
+
+      dump_shape_0_12(C, "C_ket_");
+    }
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
@@ -233,100 +284,6 @@ class PeriodicCADFKBuilder {
 
     mpqc::time_point t0, t1;
     auto t0_k_builder = mpqc::fenced_now(world);
-
-    auto dump_shape_02_1 = [](auto const &Q, std::string const &name, int rj) {
-      std::cout << "Hi\n";
-      auto norms = Q.shape().data();
-      auto range = norms.range();
-      auto ext = range.extent_data();
-
-      Eigen::MatrixXd M(ext[0] * ext[2], ext[1]);
-      M.setZero();
-
-      for (auto X = 0; X < ext[0]; ++X) {
-        for (auto mu = 0; mu < ext[1]; ++mu) {
-          for (auto sig = 0; sig < ext[2]; ++sig) {
-            M(X * ext[2] + sig, mu) = norms(X, mu, sig);
-          }
-        }
-      }
-
-      std::ofstream outfile(name + std::to_string(rj) + ".csv");
-      auto ncols = M.cols();
-      auto nrows = M.rows();
-      for (auto i = 0; i < nrows; ++i) {
-        for (auto j = 0; j < ncols; ++j) {
-          outfile << M(i, j);
-          if (j != ncols - 1) {
-            outfile << ", ";
-          } else {
-            outfile << "\n";
-          }
-        }
-      }
-    };
-
-    auto dump_shape_01_2 = [](auto const &C, std::string const &name, int rj) {
-      std::cout << "Dumping 3-D tensor ...\n";
-      auto norms = C.shape().data();
-      auto range = norms.range();
-      auto ext = range.extent_data();
-
-      Eigen::MatrixXd M(ext[0] * ext[1], ext[2]);
-      M.setZero();
-
-      for (auto X = 0; X < ext[0]; ++X) {
-        for (auto mu = 0; mu < ext[1]; ++mu) {
-          for (auto rho = 0; rho < ext[2]; ++rho) {
-            M(X * ext[1] + mu, rho) = norms(X, mu, rho);
-          }
-        }
-      }
-
-      std::ofstream outfile(name + std::to_string(rj) + ".csv");
-      auto ncols = M.cols();
-      auto nrows = M.rows();
-      for (auto i = 0; i < nrows; ++i) {
-        for (auto j = 0; j < ncols; ++j) {
-          outfile << M(i, j);
-          if (j != ncols - 1) {
-            outfile << ", ";
-          } else {
-            outfile << "\n";
-          }
-        }
-      }
-    };
-
-    auto dump_shape_d2 = [](auto const &M, std::string const &name, int rj) {
-      std::cout << "Dumping matrix ...\n";
-      auto norms = M.shape().data();
-      auto range = norms.range();
-      auto ext = range.extent_data();
-
-      Eigen::MatrixXd M_eig(ext[0], ext[1]);
-      M_eig.setZero();
-
-      for (auto r = 0; r < ext[0]; ++r) {
-        for (auto c = 0; c < ext[1]; ++c) {
-          M_eig(r, c) = norms(r, c);
-        }
-      }
-
-      std::ofstream outfile(name + std::to_string(rj) + ".csv");
-      auto ncols = M_eig.cols();
-      auto nrows = M_eig.rows();
-      for (auto i = 0; i < nrows; ++i) {
-        for (auto j = 0; j < ncols; ++j) {
-          outfile << M_eig(i, j);
-          if (j != ncols - 1) {
-            outfile << ", ";
-          } else {
-            outfile << "\n";
-          }
-        }
-      }
-    };
 
     // compute Q(X, μ_0, σ_(Rj+Rd)) = C(X, μ_0, ρ_Rj) D(ρ_0, σ_Rd)
     t0 = mpqc::fenced_now(world);
@@ -606,6 +563,133 @@ class PeriodicCADFKBuilder {
 
     return norms;
   }
+
+  void dump_shape_02_1(array_type const &Q, std::string const &name, int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (02-1) to file " << name << "_" << rj << ".csv ...\n";
+    auto norms = Q.shape().data();
+    auto range = norms.range();
+    auto ext = range.extent_data();
+
+    Eigen::MatrixXd M(ext[0] * ext[2], ext[1]);
+    M.setZero();
+
+    for (auto X = 0; X < ext[0]; ++X) {
+      for (auto mu = 0; mu < ext[1]; ++mu) {
+        for (auto sig = 0; sig < ext[2]; ++sig) {
+          M(X * ext[2] + sig, mu) = norms(X, mu, sig);
+        }
+      }
+    }
+
+    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    auto ncols = M.cols();
+    auto nrows = M.rows();
+    for (auto i = 0; i < nrows; ++i) {
+      for (auto j = 0; j < ncols; ++j) {
+        outfile << M(i, j);
+        if (j != ncols - 1) {
+          outfile << ", ";
+        } else {
+          outfile << "\n";
+        }
+      }
+    }
+  }
+
+  void dump_shape_01_2(array_type const &C, std::string const &name, int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (01-2) to file " << name << "_" << rj << ".csv ...\n";
+    auto norms = C.shape().data();
+    auto range = norms.range();
+    auto ext = range.extent_data();
+
+    Eigen::MatrixXd M(ext[0] * ext[1], ext[2]);
+    M.setZero();
+
+    for (auto X = 0; X < ext[0]; ++X) {
+      for (auto mu = 0; mu < ext[1]; ++mu) {
+        for (auto rho = 0; rho < ext[2]; ++rho) {
+          M(X * ext[1] + mu, rho) = norms(X, mu, rho);
+        }
+      }
+    }
+
+    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    auto ncols = M.cols();
+    auto nrows = M.rows();
+    for (auto i = 0; i < nrows; ++i) {
+      for (auto j = 0; j < ncols; ++j) {
+        outfile << M(i, j);
+        if (j != ncols - 1) {
+          outfile << ", ";
+        } else {
+          outfile << "\n";
+        }
+      }
+    }
+  }
+
+  void dump_shape_0_12(array_type const &C, std::string const &name, int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (0-12) to file " << name << "_" << rj << ".csv ...\n";
+    auto norms = C.shape().data();
+    auto range = norms.range();
+    auto ext = range.extent_data();
+
+    Eigen::MatrixXd M(ext[0], ext[1] * ext[2]);
+    M.setZero();
+
+    for (auto X = 0; X < ext[0]; ++X) {
+      for (auto mu = 0; mu < ext[1]; ++mu) {
+        for (auto rho = 0; rho < ext[2]; ++rho) {
+          M(X, mu * ext[2] + rho) = norms(X, mu, rho);
+        }
+      }
+    }
+
+    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    auto ncols = M.cols();
+    auto nrows = M.rows();
+    for (auto i = 0; i < nrows; ++i) {
+      for (auto j = 0; j < ncols; ++j) {
+        outfile << M(i, j);
+        if (j != ncols - 1) {
+          outfile << ", ";
+        } else {
+          outfile << "\n";
+        }
+      }
+    }
+  }
+
+  void dump_shape_d2(array_type const &M, std::string const &name, int rj = 0) {
+    std::cout << "Dumping matrix to file " << name << "_" << rj << ".csv ...\n";
+    auto norms = M.shape().data();
+    auto range = norms.range();
+    auto ext = range.extent_data();
+
+    Eigen::MatrixXd M_eig(ext[0], ext[1]);
+    M_eig.setZero();
+
+    for (auto r = 0; r < ext[0]; ++r) {
+      for (auto c = 0; c < ext[1]; ++c) {
+        M_eig(r, c) = norms(r, c);
+      }
+    }
+
+    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    auto ncols = M_eig.cols();
+    auto nrows = M_eig.rows();
+    for (auto i = 0; i < nrows; ++i) {
+      for (auto j = 0; j < ncols; ++j) {
+        outfile << M_eig(i, j);
+        if (j != ncols - 1) {
+          outfile << ", ";
+        } else {
+          outfile << "\n";
+        }
+      }
+    }
+  }
+
 };
 
 }  // namespace scf

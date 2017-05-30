@@ -937,21 +937,29 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         auto sing_vals = svd.singularValues();
 
         // truncate SVO2s
-        size_t svo2_drop = 0;
+        size_t svo2_keep = 0;
         if (tsvo2_ != 0.0) {
           for (size_t k = 0; k != sing_vals.rows(); ++k) {
-            if (!(sing_vals(k) >= tsvo2_))
-              ++svo2_drop;
+            if (sing_vals(k) >= tsvo2_)
+              ++svo2_keep;
             else
               break;
           } // for each k
+          if (svo2_keep == 0) {  // all SVO2 truncated indicates total nonsense
+            throw LimitExceeded<size_t>("all SVO2s truncated", __FILE__,
+                                        __LINE__, 1, 0);
+          }
         } // if tsvo2 != 0
 
-        const auto nsvo2 = nuocc - svo2_drop;
+        else {  // handles case where tsvo2_ == 0
+          svo2_keep = nuocc;
+        }
+
+        const auto nsvo2 = svo2_keep;
 
         // store truncated SVO2s
-        Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, svo2_drop, nuocc, nsvo2);
-        Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, svo2_drop, nuocc, nsvo2);
+        Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, 0, nuocc, nsvo2);
+        Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, 0, nuocc, nsvo2);
         r_svo2s_[i*nocc_act + j] = r_svo2_trunc;
         l_svo2s_[i*nocc_act + j] = l_svo2_trunc;
 

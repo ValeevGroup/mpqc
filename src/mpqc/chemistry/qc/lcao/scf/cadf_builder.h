@@ -1,4 +1,3 @@
-
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_
 
@@ -30,11 +29,9 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   ArrayType M_;    // <Κ |G| Λ > two center two electron coulomb integrals
   ArrayType Mchol_inv_;  // Chol(<Κ |G| Λ >)^-1
   ArrayType C_;          // CADF fitting coeffs
-  ArrayType Iac_;        // Transforms cluster blocks into atom blocks
 
   // SeCadf builder
   std::unique_ptr<ExactKDiagonalBuilder<Tile, Policy>> exactK_;
-  std::unique_ptr<FourCenterFockBuilder<Tile, Policy>> exactK4_;
 
   float force_threshold_ = 0.0;
   double LMO_chop_threshold_ = 0.0;
@@ -106,36 +103,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     E_ = ao_factory.compute_direct(L"( Κ | G|κ λ)");
     M_ = ao_factory.compute(L"( Κ | G| Λ )");
 
-    if (secadf_) {  // compute seCadf Correction
-      /* lcao::gaussian::Basis obs =
-       * *ao_factory.basis_registry()->retrieve(L"κ"); */
-      /* lcao::gaussian::Basis dfbs =
-       * *ao_factory.basis_registry()->retrieve(L"Κ"); */
-
-      /* auto t0 = mpqc::fenced_now(world); */
-      /* seC_ = */
-      /*     lcao::secadf_by_atom_correction<Tile, Policy>(world, obs, dfbs,
-       * aaab); */
-
-      /* // Precompute the transpose so we don't do it every iteration. */
-      /* seC_("p,r,q,s") = seC_("p,q,r,s"); */
-      /* auto t1 = mpqc::fenced_now(world); */
-      /* auto time = mpqc::duration_in_s(t0, t1); */
-
-      /* auto size = mpqc::detail::array_size(seC_); */
-      /* ExEnv::out0() << "SeCadf Correction Time: " << time */
-      /*               << ", with stored size: " << size << std::endl; */
-
-      /* auto trange_atom = seC_.trange().data()[0]; */
-      /* auto trange_cluster = C_.trange().data()[2]; */
-      /* const auto nelements = seC_.trange().elements_range().extent_data()[0];
-       */
-      /* RowMatrixXd Iac(nelements, nelements); */
-      /* Iac.setIdentity(); */
-      /* Iac_ = array_ops::eigen_to_array<Tile, Policy>(world, Iac, trange_atom,
-       */
-      /*                                                trange_cluster); */
-
+    if (secadf_) {  // init four center builder
       auto &world = C_.world();
       auto &ao_factory_ref = ::mpqc::lcao::gaussian::to_ao_factory(ao_factory);
       auto screen = ao_factory_ref.screen();
@@ -144,8 +112,6 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
       exactK_ = std::make_unique<ExactKDiagonalBuilder<Tile, Policy>>(
           world, obs, obs, obs, screen, screen_threshold);
-      exactK4_ = std::make_unique<FourCenterFockBuilder<Tile, Policy>>(
-          world, obs, obs, obs, false, true, screen, screen_threshold);
     }
 
     // Form L^{-1} for M

@@ -129,9 +129,9 @@ class ExactKDiagonalBuilder
           // if tile0==tile2 there will be shell blocks such that shell0 >
           // shell2, hence need shell3<=shell2 -> tile3<=tile2
           for (auto tile3 = 0ul; tile3 <= tile2; ++tile3, ++tile0123) {
-
-            bool contains_K_diag = tile0 == tile2 || tile0 == tile3 || tile1 == tile2 || tile1 == tile3;
-            if(false == contains_K_diag){
+            bool contains_K_diag = tile0 == tile2 || tile0 == tile3 ||
+                                   tile1 == tile2 || tile1 == tile3;
+            if (false == contains_K_diag) {
               continue;
             }
 
@@ -185,10 +185,10 @@ class ExactKDiagonalBuilder
 
             if (tile0123 % nproc == me)
               WorldObject_::task(
-                  me, &ExactKDiagonalBuilder::compute_task, D02, D03,
-                  D12, D13, std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
-                  std::array<Tile, 4>{{norm_D02, norm_D03,
-                                       norm_D12, norm_D13}});
+                  me, &ExactKDiagonalBuilder::compute_task, D02, D03, D12, D13,
+                  std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
+                  std::array<Tile, 4>{
+                      {norm_D02, norm_D03, norm_D12, norm_D13}});
           }
         }
       }
@@ -482,9 +482,9 @@ class ExactKDiagonalBuilder
             const auto sh12 =
                 sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
             const auto Dnorm12 =
-                (norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
+                (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
             const auto Dnorm02 =
-                (norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
+                (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
             const auto Dnorm012 = std::max({Dnorm02, Dnorm12});
 
             for (const auto& sh3 : ket_shellpair_list[sh2]) {
@@ -502,11 +502,10 @@ class ExactKDiagonalBuilder
               const auto sh13 =
                   sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
               const auto Dnorm03 =
-                  (norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
+                  (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
               const auto Dnorm13 =
-                  (norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
-              const auto Dnorm0123 =
-                  std::max({Dnorm03, Dnorm13, Dnorm012});
+                  (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
+              const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm012});
 
               if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
                               Dnorm0123))

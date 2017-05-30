@@ -7,8 +7,8 @@
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 
-#include <unordered_set>
 #include <boost/functional/hash.hpp>
+#include <unordered_set>
 
 namespace mpqc {
 namespace scf {
@@ -19,6 +19,7 @@ class PeriodicCADFKBuilder {
   using array_type = TA::DistArray<Tile, Policy>;
   using DirectTArray = typename Factory::DirectTArray;
   using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
+  using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
 
   template <int rank>
   using norm_type = std::vector<std::pair<std::array<int, rank>, float>>;
@@ -49,6 +50,7 @@ class PeriodicCADFKBuilder {
     using ::mpqc::lcao::detail::direct_ord_idx;
     using ::mpqc::lcao::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
 
     // compute C(X, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
@@ -62,7 +64,6 @@ class PeriodicCADFKBuilder {
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-//        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_bra_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
@@ -91,20 +92,18 @@ class PeriodicCADFKBuilder {
       C_ket_ = std::vector<array_type>(RJ_size, array_type());
 
       ExEnv::out0() << "\nComputing C_ket ...\n";
-
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
 
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
       auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-//        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_ket_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
         auto bs1 = shift_basis_origin(*obs, vec_RJ, RD_max, dcell);
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max,
-            Y_latt_range, ref_latt_center, RJ_3D, ref_latt_center);
+            M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max, Y_latt_range,
+            ref_latt_center, RJ_3D, ref_latt_center);
       }
     }
     t1 = mpqc::fenced_now(world);
@@ -112,13 +111,17 @@ class PeriodicCADFKBuilder {
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
-    {
-      M_ = compute_eri2(world, *X_dfbs, *Y_dfbs);
-    }
+    M_ = compute_eri2(world, *X_dfbs, *Y_dfbs);
     t1 = mpqc::fenced_now(world);
     double t_M = mpqc::duration_in_s(t0, t1);
 
+    auto oper_type = libint2::Operator::coulomb;
     const auto screen_thresh = ao_factory_.screen_threshold();
+    auto screen_norm_op = ::mpqc::lcao::gaussian::detail::l2Norm;
+    auto screen_engine = make_engine_pool(
+        oper_type, utility::make_array_of_refs(*dfbs, *obs, *obs),
+        libint2::BraKet::xx_xx);
+
     // compute E(X, ν_R, σ_(Rj+Rd))
     t0 = mpqc::fenced_now(world);
     {
@@ -126,6 +129,10 @@ class PeriodicCADFKBuilder {
         E_bra_ = std::vector<DirectTArray>(RJ_size, DirectTArray());
 
       auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
+
+      std::shared_ptr<Qmatrix> Qbra, Qket;
+      Qbra = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *X_dfbs, screen_norm_op));
 
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
         DirectTArray &E = E_bra_[RJ];
@@ -136,14 +143,13 @@ class PeriodicCADFKBuilder {
           auto bs_array = utility::make_array_of_refs(*X_dfbs, *bs0, *bs1);
           auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *bs0, *bs1}};
 
-          auto screen_eng = lcao::gaussian::make_engine_pool(
-              libint2::Operator::coulomb, bs_array, libint2::BraKet::xx_xx);
+          Qket = std::make_shared<Qmatrix>(
+              Qmatrix(world, screen_engine, *bs0, *bs1, screen_norm_op));
           auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-              lcao::gaussian::create_schwarz_screener(
-                  world, screen_eng, bs_vector, screen_thresh));
+              lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-          auto engine = lcao::gaussian::make_engine_pool(
-              libint2::Operator::coulomb, bs_array, libint2::BraKet::xs_xx);
+          auto engine =
+              make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
 
           E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
                                                       std::move(screener));
@@ -159,6 +165,10 @@ class PeriodicCADFKBuilder {
       if (E_ket_.empty())
         E_ket_ = std::vector<DirectTArray>(RJ_size, DirectTArray());
 
+      std::shared_ptr<Qmatrix> Qbra, Qket;
+      Qbra = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *Y_dfbs, screen_norm_op));
+
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
         DirectTArray &E = E_ket_[RJ];
         if (!E.array().is_initialized()) {
@@ -168,14 +178,13 @@ class PeriodicCADFKBuilder {
           auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs, *bs1);
           auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs, *bs1}};
 
-          auto screen_eng = lcao::gaussian::make_engine_pool(
-              libint2::Operator::coulomb, bs_array, libint2::BraKet::xx_xx);
+          Qket = std::make_shared<Qmatrix>(
+              Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
           auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-              lcao::gaussian::create_schwarz_screener(
-                  world, screen_eng, bs_vector, screen_thresh));
+              lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-          auto engine = lcao::gaussian::make_engine_pool(
-              libint2::Operator::coulomb, bs_array, libint2::BraKet::xs_xx);
+          auto engine =
+              make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
 
           E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
                                                       std::move(screener));
@@ -225,13 +234,13 @@ class PeriodicCADFKBuilder {
     mpqc::time_point t0, t1;
     auto t0_k_builder = mpqc::fenced_now(world);
 
-    auto dump_shape_02_1 = [](auto const &Q, std::string const& name, int rj) {
+    auto dump_shape_02_1 = [](auto const &Q, std::string const &name, int rj) {
       std::cout << "Hi\n";
       auto norms = Q.shape().data();
       auto range = norms.range();
       auto ext = range.extent_data();
 
-      Eigen::MatrixXd M(ext[0]* ext[2], ext[1]);
+      Eigen::MatrixXd M(ext[0] * ext[2], ext[1]);
       M.setZero();
 
       for (auto X = 0; X < ext[0]; ++X) {
@@ -257,7 +266,7 @@ class PeriodicCADFKBuilder {
       }
     };
 
-    auto dump_shape_01_2 = [](auto const &C, std::string const& name, int rj) {
+    auto dump_shape_01_2 = [](auto const &C, std::string const &name, int rj) {
       std::cout << "Dumping 3-D tensor ...\n";
       auto norms = C.shape().data();
       auto range = norms.range();
@@ -289,7 +298,7 @@ class PeriodicCADFKBuilder {
       }
     };
 
-    auto dump_shape_d2 = [](auto const &M, std::string const& name, int rj) {
+    auto dump_shape_d2 = [](auto const &M, std::string const &name, int rj) {
       std::cout << "Dumping matrix ...\n";
       auto norms = M.shape().data();
       auto range = norms.range();
@@ -325,7 +334,7 @@ class PeriodicCADFKBuilder {
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_bra_[RJ];
       const double norm = C("i,j").norm();
-      if(norm == 0.0){
+      if (norm == 0.0) {
         continue;
       }
       array_type &Q = Q_bra[RJ];
@@ -342,7 +351,7 @@ class PeriodicCADFKBuilder {
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_ket_[RJ];
       array_type &Q = Q_bra[RJ];
-      if(!Q.is_initialized()){
+      if (!Q.is_initialized()) {
         continue;
       }
       DirectTArray &E = E_bra_[RJ];
@@ -351,8 +360,7 @@ class PeriodicCADFKBuilder {
       // force shape of F
       // auto norms = force_norms(Q_bra[RJ].shape().data(), 1, R_size);
       t0 = mpqc::fenced_now(world);
-      auto normsp = force_normsp(Q.shape().data(),
-                                 E.array().shape().data());
+      auto normsp = force_normsp(Q.shape().data(), E.array().shape().data());
       auto trange = E.array().trange();
       TA::SparseShape<float> forced_shape(world, normsp, trange);
       t1 = mpqc::fenced_now(world);
@@ -366,7 +374,7 @@ class PeriodicCADFKBuilder {
       F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
       F.truncate();
       world.gop.fence();
-//      detail::print_size_info(F, "F");
+      //      detail::print_size_info(F, "F");
       t1 = mpqc::fenced_now(world);
       t_build_f += mpqc::duration_in_s(t0, t1);
 
@@ -388,7 +396,7 @@ class PeriodicCADFKBuilder {
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_ket_[RJ];
       const double norm = C("i,j").norm();
-      if(norm == 0.0){
+      if (norm == 0.0) {
         continue;
       }
       array_type &Q = Q_ket[RJ];
@@ -401,19 +409,18 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     array_type K_part2;
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      auto const& Q = Q_ket[RJ];
-      auto const& E = E_ket_[RJ];
+      auto const &Q = Q_ket[RJ];
+      auto const &E = E_ket_[RJ];
       if (Q_ket[RJ].is_initialized()) {
-        auto normsp = force_normsp(Q.shape().data(),
-        E.array().shape().data());
+        auto normsp = force_normsp(Q.shape().data(), E.array().shape().data());
 
         auto trange = E.array().trange();
         TA::SparseShape<float> forced_shape(world, normsp, trange);
 
         array_type F2;
         F2("Y, mu, rho") = (E("Y, mu, rho")).set_shape(forced_shape);
-        if(!K_part2.is_initialized()){
-          K_part2("mu, nu") =  F2("Y, mu, rho") * Q("Y, nu, rho");
+        if (!K_part2.is_initialized()) {
+          K_part2("mu, nu") = F2("Y, mu, rho") * Q("Y, nu, rho");
         } else {
           K_part2("mu, nu") += F2("Y, mu, rho") * Q("Y, nu, rho");
         }
@@ -448,11 +455,12 @@ class PeriodicCADFKBuilder {
     return K;
   }
 
-  auto force_normsp(TA::Tensor<float> const &in, TA::Tensor<float> const &F_norms){
-    auto const& irange = in.range();
+  auto force_normsp(TA::Tensor<float> const &in,
+                    TA::Tensor<float> const &F_norms) {
+    auto const &irange = in.range();
     auto iext = irange.extent_data();
 
-    // Q("X, mu, sigma") 
+    // Q("X, mu, sigma")
     const auto X_size = iext[0];
     const auto mu_size = iext[1];
     const auto sig_size = iext[2];
@@ -461,11 +469,11 @@ class PeriodicCADFKBuilder {
     std::unordered_set<SigPair, boost::hash<SigPair>> Xsig;
     Xsig.reserve(X_size * sig_size);
 
-    for(auto X = 0ul; X < X_size; ++X){
-      for(auto sig = 0ul; sig < sig_size; ++sig){
+    for (auto X = 0ul; X < X_size; ++X) {
+      for (auto sig = 0ul; sig < sig_size; ++sig) {
         for (auto mu = 0ul; mu < mu_size; ++mu) {
           const auto val = in(X, mu, sig);
-          if(val > force_shape_threshold_){
+          if (val > force_shape_threshold_) {
             SigPair Xs_pair(X, sig);
             Xsig.insert(Xs_pair);
             break;
@@ -474,7 +482,7 @@ class PeriodicCADFKBuilder {
       }
     }
 
-    auto const& orange = F_norms.range();
+    auto const &orange = F_norms.range();
     TA::Tensor<float> out(orange, 0.0);
 
     // F("X, nu, sigma")
@@ -483,10 +491,10 @@ class PeriodicCADFKBuilder {
     assert(sig_size == oext[2]);
     const auto nu_size = oext[1];
 
-    for(auto nu = 0ul; nu < nu_size; ++nu){
-      for(auto const& Xspair : Xsig){
-        const auto X = Xspair.first; 
-        const auto sig = Xspair.second; 
+    for (auto nu = 0ul; nu < nu_size; ++nu) {
+      for (auto const &Xspair : Xsig) {
+        const auto X = Xspair.first;
+        const auto sig = Xspair.second;
         out(X, nu, sig) = std::numeric_limits<float>::max();
       }
     }
@@ -499,9 +507,8 @@ class PeriodicCADFKBuilder {
                           const lcao::gaussian::Basis &bs1) {
     const auto bs_ref_array = utility::make_array_of_refs(bs0, bs1);
     const auto bs_vector = lcao::gaussian::BasisVector{{bs0, bs1}};
-    auto engine = lcao::gaussian::make_engine_pool(libint2::Operator::coulomb,
-                                                   bs_ref_array,
-                                                   libint2::BraKet::xs_xs);
+    auto engine = lcao::gaussian::make_engine_pool(
+        libint2::Operator::coulomb, bs_ref_array, libint2::BraKet::xs_xs);
     return lcao::gaussian::sparse_integrals(world, engine, bs_vector);
   }
 

@@ -8,7 +8,6 @@ diagonalize_for_coeffs.h
 eigen_solve_density_builder.h
 eigen_solve_density_builder_impl.h
 four_center_exact_k_diagonal_builder.h
-linear_cadf_builder.h
 linkage.h
 mo_build.h
 orbital_localization.cpp

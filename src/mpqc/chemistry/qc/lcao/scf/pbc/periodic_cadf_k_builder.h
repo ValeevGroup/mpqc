@@ -62,7 +62,7 @@ class PeriodicCADFKBuilder {
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-        ExEnv::out0() << "RJ = " << RJ << std::endl;
+//        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_bra_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
@@ -97,7 +97,7 @@ class PeriodicCADFKBuilder {
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
       auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
       for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-        ExEnv::out0() << "RJ = " << RJ << std::endl;
+//        ExEnv::out0() << "RJ = " << RJ << std::endl;
         array_type &C = C_ket_[RJ];
         auto RJ_3D = direct_3D_idx(RJ, RJ_max);
         auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
@@ -366,7 +366,7 @@ class PeriodicCADFKBuilder {
       F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
       F.truncate();
       world.gop.fence();
-      detail::print_size_info(F, "F");
+//      detail::print_size_info(F, "F");
       t1 = mpqc::fenced_now(world);
       t_build_f += mpqc::duration_in_s(t0, t1);
 

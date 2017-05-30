@@ -241,21 +241,21 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     Vector3i const &lattice_center1,
     Vector3i const &lattice_center_df) {
   auto &world = M.world();
-  mpqc::time_point t0, t1;
+//  mpqc::time_point t0, t1;
 
-  t0 = mpqc::fenced_now(world);
+//  t0 = mpqc::fenced_now(world);
   auto bs0 = detail::by_center_basis(by_cluster_bs0);
   auto bs1 = detail::by_center_basis(by_cluster_bs1);
   auto dfbs = detail::by_center_basis(by_cluster_dfbs);
-  t1 = mpqc::fenced_now(world);
-  double t_by_center_basis = mpqc::duration_in_s(t0, t1);
+//  t1 = mpqc::fenced_now(world);
+//  double t_by_center_basis = mpqc::duration_in_s(t0, t1);
 
-  t0 = mpqc::fenced_now(world);
+//  t0 = mpqc::fenced_now(world);
   auto screener = detail::cadf_by_atom_screener(world, bs0, bs1, dfbs, 1e-12);
-  t1 = mpqc::fenced_now(world);
-  double t_cadf_by_atom_screener = mpqc::duration_in_s(t0, t1);
+//  t1 = mpqc::fenced_now(world);
+//  double t_cadf_by_atom_screener = mpqc::duration_in_s(t0, t1);
 
-  t0 = mpqc::fenced_now(world);
+//  t0 = mpqc::fenced_now(world);
   auto eng3 = make_engine_pool(libint2::Operator::coulomb,
                                utility::make_array_of_refs(dfbs, bs0, bs1),
                                libint2::BraKet::xs_xx);
@@ -309,19 +309,19 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
   bool replicate = true;
   auto norms =
       eri3_norms(screener->norm_estimate(world, three_array, *pmap, replicate));
-  t1 = mpqc::fenced_now(world);
-  double t_norms = mpqc::duration_in_s(t0, t1);
+//  t1 = mpqc::fenced_now(world);
+//  double t_norms = mpqc::duration_in_s(t0, t1);
 
-  t0 = mpqc::fenced_now(world);
+//  t0 = mpqc::fenced_now(world);
   auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
                                       std::move(screener));
-  t1 = mpqc::fenced_now(world);
-  double t_direct_eri3 = mpqc::duration_in_s(t0, t1);
+//  t1 = mpqc::fenced_now(world);
+//  double t_direct_eri3 = mpqc::duration_in_s(t0, t1);
 
-  ExEnv::out0() << "  by_center_basis time: " << t_by_center_basis << " s\n"
-                << "  by_center screener:   " << t_cadf_by_atom_screener << " s\n"
-                << "  eri3 norms:           " << t_norms << " s\n"
-                << "  eri3 direct array:    " << t_direct_eri3 << "s\n";
+//  ExEnv::out0() << "  by_center_basis time: " << t_by_center_basis << " s\n"
+//                << "  by_center screener:   " << t_cadf_by_atom_screener << " s\n"
+//                << "  eri3 norms:           " << t_norms << " s\n"
+//                << "  eri3 direct array:    " << t_direct_eri3 << "s\n";
 
 
   return cadf_by_atom_array(M, eri3, detail::cadf_trange(bs0, bs1, dfbs), natoms_per_uc,

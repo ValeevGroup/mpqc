@@ -307,7 +307,11 @@ class FourCenterFockBuilder
           global_tile_norms.push_back(
               std::make_pair(std::array<size_t, 2>{{i, j}}, ij_norm));
         }
+        #if TA_DEFAULT_POLICY == 0
+        shape = decltype(shape)();
+        #elif TA_DEFAULT_POLICY == 1
         shape = decltype(shape)(compute_world, global_tile_norms, trange_D_);
+        #endif
       }
 
       array_type G_dist(compute_world, trange_D_, shape, dist_pmap_D_);
@@ -336,7 +340,11 @@ class FourCenterFockBuilder
           local_tile_norms.push_back(
               std::make_pair(std::array<size_t, 2>{{i, j}}, ij_norm));
         }
+        #if TA_DEFAULT_POLICY == 0
+        shape = decltype(shape)();
+        #elif TA_DEFAULT_POLICY == 1
         shape = decltype(shape)(compute_world, local_tile_norms, trange_D_);
+        #endif 
       }
 
       array_type G(compute_world, trange_D_, shape, pmap_D_);

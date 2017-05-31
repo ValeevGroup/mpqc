@@ -261,7 +261,7 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
   auto task_f = [builder_ptr, &trange](int64_t ord) {
     auto idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
-    return DirectDFTile<Tile, TA::SparsePolicy>(std::move(idx),
+    return DirectDFTile<Tile, TA::DensePolicy>(std::move(idx),
                                                 std::move(range), builder_ptr);
   };
 

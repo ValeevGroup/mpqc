@@ -96,7 +96,7 @@ class PeriodicCADFKBuilder {
       auto dur = mpqc::duration_in_s(t0, t1);
       ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
 
-      dump_shape_0_12(C, "C_bra_");
+      dump_shape_0_12(C, "C_bra");
     }
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
@@ -157,7 +157,7 @@ class PeriodicCADFKBuilder {
       auto dur = mpqc::duration_in_s(t0, t1);
       ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
 
-      dump_shape_0_12(C, "C_ket_");
+      dump_shape_0_12(C, "C_ket");
     }
 
     // compute M(X, Y)
@@ -210,6 +210,33 @@ class PeriodicCADFKBuilder {
     t1 = mpqc::fenced_now(world);
     double t_E_bra = mpqc::duration_in_s(t0, t1);
 
+    // test new E_bra
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new E_bra ...\n";
+      std::shared_ptr<Qmatrix> Qbra, Qket;
+      Qbra = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *X_dfbs, screen_norm_op));
+
+      auto max_range = R_max + RJ_max + RD_max;
+      auto bs1 = shift_basis_origin(*obs, zero_shift_base, max_range, dcell);
+
+      Qket = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
+      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
+
+      auto bs_array = utility::make_array_of_refs(*X_dfbs, *obs, *bs1);
+      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *obs, *bs1}};
+      auto engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+      auto E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
+                                                  std::move(screener));
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "\tnew E_bra:            " << dur << " s\n" << std::endl;
+    }
+
     // compute E(Y, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
     {
@@ -244,6 +271,32 @@ class PeriodicCADFKBuilder {
     }
     t1 = mpqc::fenced_now(world);
     double t_E_ket = mpqc::duration_in_s(t0, t1);
+
+    // test new ket
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new E_ket ...\n";
+      std::shared_ptr<Qmatrix> Qbra, Qket;
+      Qbra = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *Y_dfbs, screen_norm_op));
+
+      auto bs1 = shift_basis_origin(*obs, zero_shift_base, RJ_max, dcell);
+      Qket = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
+      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
+
+      auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs, *bs1);
+      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs, *bs1}};
+      auto engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+      auto E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
+                                                  std::move(screener));
+
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "\tnew E_ket:            " << dur << " s\n" << std::endl;
+    }
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"

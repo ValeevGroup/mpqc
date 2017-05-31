@@ -2,13 +2,14 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_CONCEPT_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_CONCEPT_H_
 
-#include "mpqc/chemistry/molecule/cluster_collapse.h"
-#include "mpqc/chemistry/molecule/cluster_concept.h"
-#include "mpqc/chemistry/molecule/molecule_fwd.h"
-
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#include "mpqc/chemistry/molecule/cluster_collapse.h"
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
+#include "mpqc/util/meta/sfinae.h"
 
 namespace mpqc {
 
@@ -44,13 +45,9 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
  public:
   AtomBasedClusterModel(T t) : element_(std::move(t)) {}
   AtomBasedClusterModel(const AtomBasedClusterModel &c) = default;
-  AtomBasedClusterModel &operator=(AtomBasedClusterModel c) {
-    element_ = std::move(c.element_);
-    return *this;
-  }
-
   AtomBasedClusterModel(AtomBasedClusterModel &&c) = default;
-  AtomBasedClusterModel &operator=(AtomBasedClusterModel &&c) = default;
+  AtomBasedClusterModel &operator=(const AtomBasedClusterModel& c) = default;
+  AtomBasedClusterModel &operator=(AtomBasedClusterModel&& c) = default;
 
   AtomBasedClusterConcept *clone_() const override final {
     return new AtomBasedClusterModel(*this);
@@ -95,10 +92,11 @@ class AtomBasedClusterable {
   std::shared_ptr<AtomBasedClusterConcept> element_impl_;
 
  public:
-  template <typename C>
-  explicit AtomBasedClusterable(C c)
+  template <typename C, typename X = meta::disable_if_same_or_derived<AtomBasedClusterable,C> >
+  explicit AtomBasedClusterable(
+      C && c)
       : element_impl_(
-            std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
+            std::make_shared<AtomBasedClusterModel<std::decay_t<C>>>(std::forward<C>(c))) {}
   AtomBasedClusterable(AtomBasedClusterable const &c) = default;
   AtomBasedClusterable &operator=(AtomBasedClusterable const &c) = default;
   AtomBasedClusterable(AtomBasedClusterable &&c) = default;

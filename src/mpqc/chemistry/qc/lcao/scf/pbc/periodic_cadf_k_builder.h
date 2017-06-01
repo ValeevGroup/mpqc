@@ -100,7 +100,7 @@ class PeriodicCADFKBuilder {
       detail::print_size_info(C_bra_new_, "C bra");
       ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
 
-      dump_shape_01_2(C_bra_new_, "C_bra_new");
+//      dump_shape_01_2(C_bra_new_, "C_bra_new");
     }
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
@@ -160,7 +160,7 @@ class PeriodicCADFKBuilder {
       detail::print_size_info(C_ket_new_, "C ket");
       ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
 
-      dump_shape_0_12(C_ket_new_, "C_ket");
+//      dump_shape_0_12(C_ket_new_, "C_ket");
     }
 
     // compute M(X, Y)
@@ -443,9 +443,24 @@ class PeriodicCADFKBuilder {
       }
       array_type &Q = Q_ket[RJ];
       Q("Y, nu, rho") = C("Y, nu, sig") * D("rho, sig");
+
     }
     t1 = mpqc::fenced_now(world);
     double t_Q_ket = mpqc::duration_in_s(t0, t1);
+
+    // test new Q_ket
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new Q_ket ...\n";
+
+      array_type Q_ket_new;
+      Q_ket_new = compute_Q_ket(C_ket_new_, D);
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+
+      detail::print_size_info(Q_ket_new, "new Q_ket");
+      ExEnv::out0() << "\tnew Q_ket:            " << dur << " s\n";
+    }
 
     // compute K_part2
     t0 = mpqc::fenced_now(world);
@@ -704,6 +719,195 @@ class PeriodicCADFKBuilder {
     return Q;
   }
 
+  array_type compute_Q_ket(const array_type &C, const array_type &D) {
+    auto &world = C.world();
+
+    array_type C_repl, D_repl;
+    C_repl("Y, nu, sig") = C("Y, nu, sig");
+    D_repl("rho, sig") = D("rho, sig");
+    C_repl.make_replicated();
+    D_repl.make_replicated();
+
+    const auto &C_norms = C_repl.shape().data();
+
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::detail::direct_3D_idx;
+    using ::mpqc::lcao::detail::direct_ord_idx;
+
+    Vector3d zero_shift_base(0.0, 0.0, 0.0);
+    auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
+      auto x = std::max(l(0), r(0));
+      auto y = std::max(l(1), r(1));
+      auto z = std::max(l(2), r(2));
+      return Vector3i({x, y, z});
+    };
+
+    auto unshifted_sig_latt_range = RJ_max_ + RD_max_;
+    auto unshifted_Y_latt_range = max_latt_range(R_max_, unshifted_sig_latt_range);
+    auto unshifted_Y_dfbs = shift_basis_origin(*dfbs_, zero_shift_base, unshifted_Y_latt_range, dcell_);
+
+    auto shifted_sig_latt_range = RJ_max_ + RD_max_ + R_max_;
+    auto shifted_Y_latt_range = shifted_sig_latt_range;
+
+    auto bs0 = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+    auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+
+    auto trange = lcao::gaussian::detail::create_trange(
+        lcao::gaussian::BasisVector{{*unshifted_Y_dfbs, *bs0, *bs1}});
+    auto tvolume = trange.tiles_range().volume();
+    auto pmap = Policy::default_pmap(world, tvolume);
+
+    // force Q norms
+    auto ntiles_df = dfbs_->nclusters();
+    auto ntiles_obs = obs_->nclusters();
+
+    auto ntiles_Y_df = unshifted_Y_dfbs->nclusters();
+    auto ntiles0 = bs0->nclusters();
+    auto ntiles1 = bs1->nclusters();
+    auto ntiles_per_RJ = ntiles_obs * RD_size_;
+
+    TA::Range range;
+    range = TA::Range(std::array<int64_t, 3>{{ntiles_Y_df, ntiles0, ntiles1}});
+    TA::Tensor<float> norms(range, 0.0);
+
+    using SigPair = std::pair<int64_t, int64_t>;
+    using TilePairList = std::unordered_map<int64_t, std::vector<SigPair>>;
+    TilePairList significant_Y_rho;
+
+    for (auto nu = 0; nu != ntiles0; ++nu) {
+      auto R_ord = nu / ntiles_obs;
+      auto R_3D = direct_3D_idx(R_ord, R_max_);
+      auto nu_in_C = nu % ntiles_obs;
+      significant_Y_rho.insert(std::make_pair(nu, std::vector<SigPair>()));
+
+      for (auto Y = 0; Y != ntiles_Y_df; ++Y) {
+        auto RY_ord = Y / ntiles_df;
+        auto RY_3D = direct_3D_idx(RY_ord, unshifted_Y_latt_range);
+
+        auto RYmR_ord = direct_ord_idx(RY_3D - R_3D, shifted_Y_latt_range);
+        auto Y_in_C = Y % ntiles_df + RYmR_ord * ntiles_df;
+
+        for (auto rho = 0; rho != ntiles1; ++rho) {
+          auto RJ_ord = rho / ntiles_obs;
+          auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
+
+          for (auto sig = 0; sig != ntiles_per_RJ; ++sig) {
+            auto RD_ord = sig / ntiles_obs;
+            auto RJpRD_3D = RJ_3D + direct_3D_idx(RD_ord, RD_max_);
+
+            if (!(RY_3D == R_3D) && !(RY_3D == RJpRD_3D))
+              continue;
+
+            auto RJpRDmR_ord = direct_ord_idx(RJpRD_3D - R_3D, shifted_sig_latt_range);
+            auto sig_in_C = sig % ntiles_obs + RJpRDmR_ord * ntiles_obs;
+            auto val = C_norms(Y_in_C, nu_in_C, sig_in_C);
+            if (val >= force_shape_threshold_) {
+              significant_Y_rho[nu].emplace_back(std::make_pair(Y, rho));
+              norms(Y, nu, rho) = std::numeric_limits<float>::max();
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    TA::SparseShape<float> shape(world, norms, trange);
+
+    array_type Q(world, trange, shape, pmap);
+
+    auto create_task_Q_ket_tile = [&](array_type *Q, array_type *C_array,
+                           array_type *D_array, int64_t ord, Vector3i RJmR,
+                           std::array<int64_t, 3> external_tile_idx,
+                           std::array<size_t, 3> external_extent) {
+      const auto tile_C_df = external_tile_idx[0];
+      const auto tile_C_0 = external_tile_idx[1];
+      const auto tile_D_0 = external_tile_idx[2];
+
+      const auto D_0_stride = ntiles_obs * RD_size_;
+
+      const auto shifted_sig_latt_size = 1 + direct_ord_idx(shifted_sig_latt_range, shifted_sig_latt_range);
+      const auto C_0_stride = ntiles_obs * shifted_sig_latt_size;
+      const auto C_df_stride = ntiles_obs * C_0_stride;
+      const auto C_1_offset = tile_C_df * C_df_stride + tile_C_0 * C_0_stride;
+
+      RowMatrixXd out_eig(external_extent[0] * external_extent[1], external_extent[2]);
+      out_eig.setZero();
+
+      for (auto tile_sum = 0; tile_sum != D_0_stride; ++tile_sum) {
+        const auto ord_D = tile_D_0 * D_0_stride + tile_sum;
+        auto RD_ord = tile_sum / ntiles_obs;
+        auto RD_3D = direct_3D_idx(RD_ord, RD_max_);
+        auto RJmRpRD_ord = direct_ord_idx(RJmR + RD_3D, shifted_sig_latt_range);
+
+        const auto ord_C = C_1_offset + RJmRpRD_ord;
+        if (D_array->is_zero(ord_D) || C_array->is_zero(ord_C)) continue;
+
+        Tile D = D_array->find(ord_D);
+        Tile C = C_array->find(ord_C);
+
+        const auto C_ext = C.range().extent();
+        const auto D_ext = D.range().extent();
+
+        assert(C_ext[2] == D_ext[1]);
+
+        RowMatrixXd C_eig = TA::eigen_map(C, C_ext[0] * C_ext[1], C_ext[2]);
+        RowMatrixXd D_eig = TA::eigen_map(D, D_ext[0], D_ext[1]);
+
+        out_eig += C_eig * D_eig.inverse();
+      }
+
+      TA::Range out_range;
+      out_range =
+          TA::Range(std::array<size_t, 3>{{external_extent[0], external_extent[1], external_extent[2]}});
+      TA::TensorD out_tile(out_range, 0.0);
+
+      TA::eigen_map(out_tile, external_extent[0] * external_extent[1], external_extent[2]) = out_eig;
+
+      Q->set(ord, out_tile);
+    };
+
+    const auto Y_stride = ntiles0 * ntiles1;
+    for (auto nu = 0; nu != ntiles0; ++nu) {
+      auto R_ord = nu / ntiles_obs;
+      auto R_3D = direct_3D_idx(R_ord, R_max_);
+      auto nu_in_C = nu % ntiles_obs;
+
+      const auto &rng_nu = trange.dim(1).tile(nu);
+      const size_t ext_nu = rng_nu.second - rng_nu.first;
+
+      const auto nu_times_stride = nu * ntiles1;
+      for (auto &significant_pair : significant_Y_rho[nu]) {
+        auto Y = significant_pair.first;
+        auto rho = significant_pair.second;
+
+        const auto tile_idx = Y * Y_stride + nu_times_stride + rho;
+
+        if (Q.is_local(tile_idx) && !Q.is_zero(tile_idx)) {
+          auto RY_ord = Y / ntiles_df;
+          auto RY_3D = direct_3D_idx(RY_ord, unshifted_Y_latt_range);
+          auto Y_in_C = Y % ntiles_df + direct_ord_idx(RY_3D - R_3D, shifted_Y_latt_range) * ntiles_df;
+
+          auto RJ_ord = rho / ntiles_obs;
+          auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
+          auto rho_in_D = rho % ntiles_obs;
+
+          const auto &rng_Y = trange.dim(0).tile(Y);
+          const size_t ext_Y = rng_Y.second - rng_Y.first;
+
+          const auto &rng_rho = trange.dim(2).tile(rho);
+          const size_t ext_rho = rng_rho.second - rng_rho.first;
+
+          world.taskq.add(create_task_Q_ket_tile, &Q, &C_repl, &D_repl, tile_idx, RJ_3D - R_3D, std::array<int64_t, 3>{{Y_in_C, nu_in_C, rho_in_D}}, std::array<size_t, 3>{{ext_Y, ext_nu, ext_rho}});
+        }
+      }
+    }
+
+    world.gop.fence();
+    Q.truncate();
+
+    return Q;
+  }
 
   TA::Tensor<float> force_norms(TA::Tensor<float> const &in_norms,
                                 int64_t const in_latt_range_size,
@@ -819,7 +1023,7 @@ class PeriodicCADFKBuilder {
       }
     }
 
-    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M.cols();
     auto nrows = M.rows();
     for (auto i = 0; i < nrows; ++i) {
@@ -853,7 +1057,7 @@ class PeriodicCADFKBuilder {
       }
     }
 
-    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M.cols();
     auto nrows = M.rows();
     for (auto i = 0; i < nrows; ++i) {
@@ -887,7 +1091,7 @@ class PeriodicCADFKBuilder {
       }
     }
 
-    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M.cols();
     auto nrows = M.rows();
     for (auto i = 0; i < nrows; ++i) {
@@ -917,7 +1121,7 @@ class PeriodicCADFKBuilder {
       }
     }
 
-    std::ofstream outfile(name + std::to_string(rj) + ".csv");
+    std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M_eig.cols();
     auto nrows = M_eig.rows();
     for (auto i = 0; i < nrows; ++i) {

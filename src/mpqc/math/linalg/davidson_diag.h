@@ -69,17 +69,25 @@ class DavidsonDiag {
   /**
    *
    * @param n_roots number of lowest roots to solve
+
+   * @param symmetric if matrix is symmetric
+
    * @param n_guess number of eigen vector per root at subspace collapse,
    * default is 2
+
    * @param max_n_guess max number of guess vector per root, default is 4
-   * @param symmetric if matrix is symmetric
+   *
+   * @param vector_threshold threshold for the norm of new guess vector in gram
+   schmidt orthonormalization
    */
   DavidsonDiag(unsigned int n_roots, bool symmetric = true,
-               unsigned int n_guess = 2, unsigned int max_n_guess = 4)
+               unsigned int n_guess = 2, unsigned int max_n_guess = 4,
+               double vector_threshold = 1.0e-5)
       : n_roots_(n_roots),
         symmetric_(symmetric),
         n_guess_(n_guess),
         max_n_guess_(max_n_guess),
+        vector_threshold_(vector_threshold),
         eigen_vector_(),
         HB_(),
         B_(),
@@ -289,15 +297,15 @@ class DavidsonDiag {
         B.insert(B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
-      gram_schmidt(B);
+      gram_schmidt(B, vector_threshold_);
       // call it second times
-      gram_schmidt(B);
+      gram_schmidt(B, vector_threshold_);
     } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
-      gram_schmidt(B_, residual);
+      gram_schmidt(B_, residual, vector_threshold_);
       // call it twice
-      gram_schmidt(B_, residual);
+      gram_schmidt(B_, residual, vector_threshold_);
       B = residual;
 
       //      for (std::size_t i = 0; i < n_roots_; i++) {
@@ -335,6 +343,7 @@ class DavidsonDiag {
   bool symmetric_;
   unsigned int n_guess_;
   unsigned int max_n_guess_;
+  double vector_threshold_;
   std::deque<value_type> eigen_vector_;
   value_type HB_;
   value_type B_;

@@ -20,7 +20,56 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
   using numeric_type = typename Tile::numeric_type;
 
- private:
+public:
+  // clang-format off
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | max_vector | int | 8 | max number of guess vector per root |
+   *
+   */
+
+  // clang-format on
+  EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
+    max_vector_ = kv.value<int>("max_vector", 8);
+  }
+
+  void obsolete() override {
+    CCSD<Tile, Policy>::obsolete();
+    TArray g_ijab_ = TArray();
+
+    TArray FAB_ = TArray();
+    TArray FIJ_ = TArray();
+    TArray FIA_ = TArray();
+
+    TArray WIbAj_ = TArray();
+    TArray WIbaJ_ = TArray();
+
+    TArray WAbCd_ = TArray();
+    TArray WAbCi_ = TArray();
+
+    TArray WKlIj_ = TArray();
+    TArray WKaIj_ = TArray();
+
+    TArray WAkCd_ = TArray();
+    TArray WKlIc_ = TArray();
+  }
+
+protected:
+
+  using CCSD<Tile,Policy>::can_evaluate;
+  using CCSD<Tile,Policy>::evaluate;
+
+  bool can_evaluate(ExcitationEnergy *ex_energy) override {
+    return ex_energy->order() == 0;
+  }
+
+  void evaluate(ExcitationEnergy *ex_energy) override;
+
+private:
 
   // preconditioner in DavidsonDiag, approximate the diagonal H_bar matrix
   struct Preconditioner {
@@ -70,27 +119,27 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     }
   };
 
+  std::size_t max_vector_; // max number of guess vector
+
   TArray g_ijab_;
 
+  // F intermediates
   TArray FAB_;
   TArray FIJ_;
   TArray FIA_;
 
+  // W intermediates
   TArray WIbAj_;
   TArray WIbaJ_;
-
-  //TODO avoid store WAbCd term
-  TArray WAbCd_;
+  TArray WAbCd_; // this may not be initialized
   TArray WAbCi_;
-
   TArray WKlIj_;
   TArray WKaIj_;
-
   TArray WAkCd_;
   TArray WKlIc_;
   // TArray WKliC_;
 
-  std::vector<GuessVector> C_;
+  std::vector<GuessVector> C_; // initial guess vector
 
   // compute F and W intermediates
   void compute_FWintermediates();
@@ -113,42 +162,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     this->lcao_factory().registry().purge_if(remove_integral);
   }
 
- public:
-  EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {}
-
-  void obsolete() override {
-    CCSD<Tile, Policy>::obsolete();
-    TArray g_ijab_ = TArray();
-
-    TArray FAB_ = TArray();
-    TArray FIJ_ = TArray();
-    TArray FIA_ = TArray();
-
-    TArray WIbAj_ = TArray();
-    TArray WIbaJ_ = TArray();
-
-    TArray WAbCd_ = TArray();
-    TArray WAbCi_ = TArray();
-
-    TArray WKlIj_ = TArray();
-    TArray WKaIj_ = TArray();
-
-    TArray WAkCd_ = TArray();
-    TArray WKlIc_ = TArray();
-  }
-
- protected:
-
-  using CCSD<Tile,Policy>::can_evaluate;
-  using CCSD<Tile,Policy>::evaluate;
-
-  bool can_evaluate(ExcitationEnergy *ex_energy) override {
-    return ex_energy->order() == 0;
-  }
-
-  void evaluate(ExcitationEnergy *ex_energy) override;
-
- private:
   EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter, double convergence);
 
 };

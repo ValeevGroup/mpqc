@@ -242,7 +242,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   }
 
   /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false);
+  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
 

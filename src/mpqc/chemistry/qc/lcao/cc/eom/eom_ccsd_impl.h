@@ -242,7 +242,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   }
 
   /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_);
+  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_, vector_threshold_);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
 
@@ -313,6 +313,9 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     ExEnv::out0() << indent << "\nEOM-CCSD Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
+    ExEnv::out0() << indent << "Number of roots: " << n_roots << "\n";
+    ExEnv::out0() << indent << "Max number of vector per root: " << max_vector_ << "\n";
+    ExEnv::out0() << indent << "Threshold for norm of new vector: " << vector_threshold_ << "\n";
 
     // initialize guest
     ExEnv::out0() << indent << "\nInitialize Guess Vector From CIS \n";

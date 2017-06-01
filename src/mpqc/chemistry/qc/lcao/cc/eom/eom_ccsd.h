@@ -29,12 +29,14 @@ public:
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | max_vector | int | 8 | max number of guess vector per root |
+   * | vector_threshold | double | 1.0e-5 | threshold for the norm of new guess vector |
    *
    */
 
   // clang-format on
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
+    vector_threshold_ = kv.value<double>("vector_threshold",1.0e-5);
   }
 
   void obsolete() override {
@@ -120,6 +122,7 @@ private:
   };
 
   std::size_t max_vector_; // max number of guess vector
+  double vector_threshold_; // threshold for norm of new guess vector
 
   TArray g_ijab_;
 

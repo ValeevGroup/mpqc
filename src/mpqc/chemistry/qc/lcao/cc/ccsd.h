@@ -73,7 +73,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
-   * | max_iter | int | 20 | maxmium iteration in CCSD |
+   * | max_iter | int | 30 | maxmium iteration in CCSD |
    * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |
    * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
    */
@@ -107,7 +107,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
 
-    max_iter_ = kv.value<int>("max_iter", 20);
+    max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());
   }
 

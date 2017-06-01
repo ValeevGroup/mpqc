@@ -22,6 +22,8 @@ class PeriodicCADFKBuilder {
   using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
   using Basis = ::mpqc::lcao::gaussian::Basis;
 
+  using PeriodicCADFKBuilder_ = PeriodicCADFKBuilder<Tile, Policy, Factory>;
+
   template <int rank>
   using norm_type = std::vector<std::pair<std::array<int, rank>, float>>;
 
@@ -32,15 +34,16 @@ class PeriodicCADFKBuilder {
     mpqc::time_point t0, t1;
 
     // by-cluster orbital basis and df basis
-    auto obs = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-    auto dfbs = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
+    obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+    dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
 
-    auto dcell = ao_factory_.unitcell().dcell();
-    auto R_max = ao_factory_.R_max();
-    auto RJ_max = R_max;  // replace RJ range with R range
-    auto RD_max = ao_factory_.RD_max();
-    auto R_size = ao_factory_.R_size();
-    auto RJ_size = R_size;  // replace RJ range with R range
+    dcell_ = ao_factory_.unitcell().dcell();
+    R_max_ = ao_factory_.R_max();
+    RJ_max_ = R_max_;  // replace RJ range with R range
+    RD_max_ = ao_factory_.RD_max();
+    R_size_ = ao_factory_.R_size();
+    RJ_size_ = R_size_;  // replace RJ range with R range
+    RD_size_ = ao_factory_.RD_size();
 
     const Vector3i ref_latt_range = {0, 0, 0};
     const Vector3i ref_latt_center = {0, 0, 0};
@@ -55,23 +58,23 @@ class PeriodicCADFKBuilder {
 
     // compute C(X, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
-    auto X_dfbs = shift_basis_origin(*dfbs, zero_shift_base, RJ_max, dcell);
+    auto X_dfbs = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
     {
-      C_bra_ = std::vector<array_type>(RJ_size, array_type());
+      C_bra_ = std::vector<array_type>(RJ_size_, array_type());
 
       ExEnv::out0() << "\nComputing C_bra ...\n";
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
 
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
-      for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
         array_type &C = C_bra_[RJ];
-        auto RJ_3D = direct_3D_idx(RJ, RJ_max);
-        auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-        auto bs1 = shift_basis_origin(*obs, vec_RJ);
+        auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+        auto bs1 = shift_basis_origin(*obs_, vec_RJ);
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            M, *obs, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range,
-            ref_latt_range, RJ_max, ref_latt_center, RJ_3D, ref_latt_center);
+            M, *obs_, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range,
+            ref_latt_range, RJ_max_, ref_latt_center, RJ_3D, ref_latt_center);
       }
     }
     t1 = mpqc::fenced_now(world);
@@ -81,22 +84,23 @@ class PeriodicCADFKBuilder {
     {
       auto t0 = mpqc::fenced_now(world);
       ExEnv::out0() << "\nComputing new C_bra ...\n";
-      auto X_dfbs = shift_basis_origin(*dfbs, zero_shift_base, RJ_max, dcell);
-      auto bs1 = shift_basis_origin(*obs, zero_shift_base, RJ_max, dcell);
+      auto X_dfbs =
+          shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
+      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
 
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
-      array_type C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range, RJ_max,
-          RJ_max);
+      C_bra_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
+          M, *obs_, *bs1, *X_dfbs, natoms_per_uc, ref_latt_range, RJ_max_,
+          RJ_max_);
 
-      detail::print_size_info(C, "C bra");
       auto t1 = mpqc::fenced_now(world);
       auto dur = mpqc::duration_in_s(t0, t1);
+      detail::print_size_info(C_bra_new_, "C bra");
       ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
 
-      dump_shape_0_12(C, "C_bra");
+      dump_shape_01_2(C_bra_new_, "C_bra_new");
     }
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
@@ -108,28 +112,28 @@ class PeriodicCADFKBuilder {
 
     // compute C(Y, ν_R, σ_(Rj+Rd))
     t0 = mpqc::fenced_now(world);
-    auto Y_latt_range = max_latt_range(R_max, RJ_max + RD_max);
+    auto Y_latt_range = max_latt_range(R_max_, RJ_max_ + RD_max_);
     auto Y_dfbs =
-        shift_basis_origin(*dfbs, zero_shift_base, Y_latt_range, dcell);
+        shift_basis_origin(*dfbs_, zero_shift_base, Y_latt_range, dcell_);
     {
-      C_ket_ = std::vector<array_type>(RJ_size, array_type());
+      C_ket_ = std::vector<array_type>(RJ_size_, array_type());
 
       ExEnv::out0() << "\nComputing C_ket ...\n";
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
 
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
-      auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
-      for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+      auto bs0 = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
         array_type &C = C_ket_[RJ];
-        auto RJ_3D = direct_3D_idx(RJ, RJ_max);
-        auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-        auto bs1 = shift_basis_origin(*obs, vec_RJ, RD_max, dcell);
+        auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+        auto bs1 = shift_basis_origin(*obs_, vec_RJ, RD_max_, dcell_);
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max, RD_max, Y_latt_range,
-            ref_latt_center, RJ_3D, ref_latt_center);
+            M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max_, RD_max_,
+            Y_latt_range, ref_latt_center, RJ_3D, ref_latt_center);
 
-//        ExEnv::out0() << "\nRJ = " << RJ << ":\n" << std::endl;
-//        detail::print_size_info(C, "C ket");
+        //        ExEnv::out0() << "\nRJ = " << RJ << ":\n" << std::endl;
+        //        detail::print_size_info(C, "C ket");
       }
     }
     t1 = mpqc::fenced_now(world);
@@ -139,25 +143,24 @@ class PeriodicCADFKBuilder {
     {
       auto t0 = mpqc::fenced_now(world);
       ExEnv::out0() << "\nComputing new C_ket ...\n";
-      auto max_range = R_max + RJ_max + RD_max;
-      auto bs1 = shift_basis_origin(*obs, zero_shift_base, max_range, dcell);
+      auto max_range = R_max_ + RJ_max_ + RD_max_;
+      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range, dcell_);
 
       auto Y_dfbs =
-          shift_basis_origin(*dfbs, zero_shift_base, max_range, dcell);
+          shift_basis_origin(*dfbs_, zero_shift_base, max_range, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
-      array_type C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range, max_range,
+      C_ket_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
+          M, *obs_, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range, max_range,
           max_range);
 
-      detail::print_size_info(C, "C ket");
       auto t1 = mpqc::fenced_now(world);
-
       auto dur = mpqc::duration_in_s(t0, t1);
+      detail::print_size_info(C_ket_new_, "C ket");
       ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
 
-      dump_shape_0_12(C, "C_ket");
+      dump_shape_0_12(C_ket_new_, "C_ket");
     }
 
     // compute M(X, Y)
@@ -170,26 +173,26 @@ class PeriodicCADFKBuilder {
     const auto screen_thresh = ao_factory_.screen_threshold();
     auto screen_norm_op = ::mpqc::lcao::gaussian::detail::l2Norm;
     auto screen_engine = make_engine_pool(
-        oper_type, utility::make_array_of_refs(*dfbs, *obs, *obs),
+        oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
         libint2::BraKet::xx_xx);
 
     // compute E(X, ν_R, σ_(Rj+Rd))
     t0 = mpqc::fenced_now(world);
     {
       if (E_bra_.empty())
-        E_bra_ = std::vector<DirectTArray>(RJ_size, DirectTArray());
+        E_bra_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
 
-      auto bs0 = shift_basis_origin(*obs, zero_shift_base, R_max, dcell);
+      auto bs0 = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
 
       std::shared_ptr<Qmatrix> Qbra, Qket;
       Qbra = std::make_shared<Qmatrix>(
           Qmatrix(world, screen_engine, *X_dfbs, screen_norm_op));
 
-      for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
         DirectTArray &E = E_bra_[RJ];
         if (!E.array().is_initialized()) {
-          auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-          auto bs1 = shift_basis_origin(*obs, vec_RJ, RD_max, dcell);
+          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+          auto bs1 = shift_basis_origin(*obs_, vec_RJ, RD_max_, dcell_);
 
           auto bs_array = utility::make_array_of_refs(*X_dfbs, *bs0, *bs1);
           auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *bs0, *bs1}};
@@ -218,20 +221,20 @@ class PeriodicCADFKBuilder {
       Qbra = std::make_shared<Qmatrix>(
           Qmatrix(world, screen_engine, *X_dfbs, screen_norm_op));
 
-      auto max_range = R_max + RJ_max + RD_max;
-      auto bs1 = shift_basis_origin(*obs, zero_shift_base, max_range, dcell);
+      auto max_range = R_max_ + RJ_max_ + RD_max_;
+      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range, dcell_);
 
       Qket = std::make_shared<Qmatrix>(
-          Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
+          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
       auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
           lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-      auto bs_array = utility::make_array_of_refs(*X_dfbs, *obs, *bs1);
-      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *obs, *bs1}};
+      auto bs_array = utility::make_array_of_refs(*X_dfbs, *obs_, *bs1);
+      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs, *obs_, *bs1}};
       auto engine =
           make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-      auto E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                  std::move(screener));
+      E_bra_new_ = lcao::gaussian::direct_sparse_integrals(
+          world, engine, bs_vector, std::move(screener));
       auto t1 = mpqc::fenced_now(world);
       auto dur = mpqc::duration_in_s(t0, t1);
       ExEnv::out0() << "\tnew E_bra:            " << dur << " s\n" << std::endl;
@@ -241,23 +244,23 @@ class PeriodicCADFKBuilder {
     t0 = mpqc::fenced_now(world);
     {
       if (E_ket_.empty())
-        E_ket_ = std::vector<DirectTArray>(RJ_size, DirectTArray());
+        E_ket_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
 
       std::shared_ptr<Qmatrix> Qbra, Qket;
       Qbra = std::make_shared<Qmatrix>(
           Qmatrix(world, screen_engine, *Y_dfbs, screen_norm_op));
 
-      for (auto RJ = 0; RJ != RJ_size; ++RJ) {
+      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
         DirectTArray &E = E_ket_[RJ];
         if (!E.array().is_initialized()) {
-          auto vec_RJ = direct_vector(RJ, RJ_max, dcell);
-          auto bs1 = shift_basis_origin(*obs, vec_RJ);
+          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+          auto bs1 = shift_basis_origin(*obs_, vec_RJ);
 
-          auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs, *bs1);
-          auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs, *bs1}};
+          auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs_, *bs1);
+          auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs_, *bs1}};
 
           Qket = std::make_shared<Qmatrix>(
-              Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
+              Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
           auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
               lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
@@ -280,18 +283,18 @@ class PeriodicCADFKBuilder {
       Qbra = std::make_shared<Qmatrix>(
           Qmatrix(world, screen_engine, *Y_dfbs, screen_norm_op));
 
-      auto bs1 = shift_basis_origin(*obs, zero_shift_base, RJ_max, dcell);
+      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
       Qket = std::make_shared<Qmatrix>(
-          Qmatrix(world, screen_engine, *obs, *bs1, screen_norm_op));
+          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
       auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
           lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-      auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs, *bs1);
-      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs, *bs1}};
+      auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs_, *bs1);
+      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs_, *bs1}};
       auto engine =
           make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-      auto E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                  std::move(screener));
+      E_ket_new_ = lcao::gaussian::direct_sparse_integrals(
+          world, engine, bs_vector, std::move(screener));
 
       auto t1 = mpqc::fenced_now(world);
       auto dur = mpqc::duration_in_s(t0, t1);
@@ -321,12 +324,27 @@ class PeriodicCADFKBuilder {
   double force_shape_threshold_;
   std::unique_ptr<PTC_Builder> three_center_builder_;
 
+  std::shared_ptr<Basis> obs_;
+  std::shared_ptr<Basis> dfbs_;
+  Vector3d dcell_;
+  Vector3i R_max_;
+  Vector3i RJ_max_;
+  Vector3i RD_max_;
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+
   std::vector<array_type> C_bra_;
   std::vector<array_type> C_ket_;
   std::vector<array_type> F_;
   array_type M_;
   std::vector<DirectTArray> E_bra_;
   std::vector<DirectTArray> E_ket_;
+
+  array_type C_bra_new_;
+  array_type C_ket_new_;
+  DirectTArray E_bra_new_;
+  DirectTArray E_ket_new_;
 
  private:
   array_type compute_K(const array_type &D, double target_precision) {
@@ -343,7 +361,7 @@ class PeriodicCADFKBuilder {
     std::vector<array_type> Q_bra(RJ_size, array_type());
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_bra_[RJ];
-      const double norm = C("i,j").norm();
+      const double norm = C("X, mu, rho").norm();
       if (norm == 0.0) {
         continue;
       }
@@ -352,6 +370,20 @@ class PeriodicCADFKBuilder {
     }
     t1 = mpqc::fenced_now(world);
     double t_Q_bra = mpqc::duration_in_s(t0, t1);
+
+    // test new Q_bra
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new Q_bra ...\n";
+
+      array_type Q_bra_new;
+      Q_bra_new = compute_Q_bra(C_bra_new_, D);
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+
+      detail::print_size_info(Q_bra_new, "new Q_bra");
+      ExEnv::out0() << "\tnew Q_bra:            " << dur << " s\n";
+    }
 
     t0 = mpqc::fenced_now(world);
     array_type F, K_part1;
@@ -405,7 +437,7 @@ class PeriodicCADFKBuilder {
     std::vector<array_type> Q_ket(RJ_size, array_type());
     for (auto RJ = 0; RJ != RJ_size; ++RJ) {
       array_type &C = C_ket_[RJ];
-      const double norm = C("i,j").norm();
+      const double norm = C("Y, nu, sig").norm();
       if (norm == 0.0) {
         continue;
       }
@@ -522,6 +554,157 @@ class PeriodicCADFKBuilder {
     return lcao::gaussian::sparse_integrals(world, engine, bs_vector);
   }
 
+  array_type compute_Q_bra(const array_type &C, const array_type &D) {
+    auto &world = C.world();
+
+    array_type C_repl, D_repl;
+    C_repl("X, mu, rho") = C("X, mu, rho");
+    D_repl("rho, sig") = D("rho, sig");
+    C_repl.make_replicated();
+    D_repl.make_replicated();
+
+    const auto &C_norms = C_repl.shape().data();
+
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::detail::direct_3D_idx;
+
+    Vector3d zero_shift_base(0.0, 0.0, 0.0);
+    auto X_dfbs = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
+
+    Basis bs1((Basis()));
+    for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
+      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+      auto tmp_bs = shift_basis_origin(*obs_, vec_RJ, RD_max_, dcell_);
+      bs1 = lcao::gaussian::merge(bs1, *tmp_bs);
+    }
+
+    auto trange = lcao::gaussian::detail::create_trange(
+        lcao::gaussian::BasisVector{{*X_dfbs, *obs_, bs1}});
+    auto tvolume = trange.tiles_range().volume();
+    auto pmap = Policy::default_pmap(world, tvolume);
+
+    // force Q norms
+    auto ntiles_df = dfbs_->nclusters();
+    auto ntiles_X_df = X_dfbs->nclusters();
+    auto ntiles0 = obs_->nclusters();
+    auto ntiles1 = bs1.nclusters();
+    auto nsig_per_RJ = ntiles0 * RD_size_;
+
+    TA::Range range;
+    range = TA::Range(std::array<int64_t, 3>{{ntiles_X_df, ntiles0, ntiles1}});
+    TA::Tensor<float> norms(range, 0.0);
+    for (auto X = 0ul; X != ntiles_X_df; ++X) {
+      auto RX_ord = X / ntiles_df;
+      auto RX_3D = direct_3D_idx(RX_ord, RJ_max_);
+
+      for (auto sig = 0ul; sig != ntiles1; ++sig) {
+        auto RJ_ord = sig / nsig_per_RJ;
+        auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
+        if (!(RX_3D == RJ_3D) && !(RX_3D == Vector3i{0, 0, 0})) continue;
+
+        for (auto mu = 0ul; mu != ntiles0; ++mu) {
+          auto significant = false;
+          for (auto rho = 0ul; rho != ntiles0; ++rho) {
+            auto val = C_norms(X, mu, RJ_ord * ntiles0 + rho);
+            if (val >= force_shape_threshold_) {
+              significant = true;
+              break;
+            }
+          }
+          if (significant)
+            norms(X, mu, sig) = std::numeric_limits<float>::max();
+        }
+      }
+    }
+
+    TA::SparseShape<float> shape(world, norms, trange);
+
+    array_type Q(world, trange, shape, pmap);
+
+    auto create_task_Q_bra_tile = [&](array_type *Q, array_type *C_array,
+                           array_type *D_array, int64_t ord, int64_t RJ,
+                           std::array<int64_t, 3> tile_idx,
+                           std::array<size_t, 3> out_ext) {
+      const auto tile_C_df = tile_idx[0];
+      const auto tile_C_0 = tile_idx[1];
+      const auto tile_D_1 = tile_idx[2];
+
+      const auto ntiles_obs = obs_->nclusters();
+
+      const auto D_0_stride = ntiles_obs * RD_size_;
+      const auto C_0_stride = ntiles_obs * RJ_size_;
+      const auto C_1_offset = (tile_C_df * ntiles_obs + tile_C_0) * C_0_stride;
+
+      RowMatrixXd out_eig(out_ext[0] * out_ext[1], out_ext[2]);
+      out_eig.setZero();
+
+      for (auto tile_sum = 0; tile_sum != ntiles_obs; ++tile_sum) {
+        const auto ord_D = tile_sum * D_0_stride + tile_D_1;
+        const auto ord_C = C_1_offset + ntiles_obs * RJ + tile_sum;
+        if (D_array->is_zero(ord_D) || C_array->is_zero(ord_C)) continue;
+
+        Tile D = D_array->find(ord_D);
+        Tile C = C_array->find(ord_C);
+
+        const auto C_ext = C.range().extent();
+        const auto D_ext = D.range().extent();
+
+        assert(C_ext[2] == D_ext[0]);
+
+        RowMatrixXd C_eig = TA::eigen_map(C, C_ext[0] * C_ext[1], C_ext[2]);
+        RowMatrixXd D_eig = TA::eigen_map(D, D_ext[0], D_ext[1]);
+
+        out_eig += C_eig * D_eig;
+      }
+
+      TA::Range out_range;
+      out_range =
+          TA::Range(std::array<size_t, 3>{{out_ext[0], out_ext[1], out_ext[2]}});
+      TA::TensorD out_tile(out_range, 0.0);
+
+      TA::eigen_map(out_tile, out_ext[0] * out_ext[1], out_ext[2]) = out_eig;
+
+      Q->set(ord, out_tile);
+    };
+
+    for (auto X = 0; X != ntiles_X_df; ++X) {
+      auto RX_ord = X / ntiles_df;
+      auto RX_3D = direct_3D_idx(RX_ord, RJ_max_);
+      const auto X_times_stride = X * ntiles0 * ntiles1;
+
+      const auto &rng_X = trange.dim(0).tile(X);
+      const size_t ext_X = rng_X.second - rng_X.first;
+
+      for (auto sig = 0; sig != ntiles1; ++sig) {
+        auto RJ_ord = sig / nsig_per_RJ;
+        auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
+
+        if (!(RX_3D == RJ_3D) && !(RX_3D == Vector3i{0, 0, 0})) continue;
+
+        const auto &rng_sig = trange.dim(2).tile(sig);
+        const size_t ext_sig = rng_sig.second - rng_sig.first;
+
+        for (auto mu = 0; mu != ntiles0; ++mu) {
+          const auto tile_idx = X_times_stride + mu * ntiles1 + sig;
+          if (Q.is_local(tile_idx) && !Q.is_zero(tile_idx)) {
+            const auto &rng_mu = trange.dim(1).tile(mu);
+            const size_t ext_mu = rng_mu.second - rng_mu.first;
+            world.taskq.add(create_task_Q_bra_tile, &Q,
+                            &C_repl, &D_repl, tile_idx, RJ_ord,
+                            std::array<int64_t, 3>{{X, mu, sig % nsig_per_RJ}},
+                            std::array<size_t, 3>{{ext_X, ext_mu, ext_sig}});
+          }
+        }
+      }
+    }
+    world.gop.fence();
+    Q.truncate();
+
+    return Q;
+  }
+
+
   TA::Tensor<float> force_norms(TA::Tensor<float> const &in_norms,
                                 int64_t const in_latt_range_size,
                                 int64_t const out_latt_range_size) {
@@ -617,8 +800,10 @@ class PeriodicCADFKBuilder {
     return norms;
   }
 
-  void dump_shape_02_1(array_type const &Q, std::string const &name, int rj = 0) {
-    std::cout << "Dumping shape for 3-d tensor (02-1) to file " << name << "_" << rj << ".csv ...\n";
+  void dump_shape_02_1(array_type const &Q, std::string const &name,
+                       int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (02-1) to file " << name << "_"
+              << rj << ".csv ...\n";
     auto norms = Q.shape().data();
     auto range = norms.range();
     auto ext = range.extent_data();
@@ -649,8 +834,10 @@ class PeriodicCADFKBuilder {
     }
   }
 
-  void dump_shape_01_2(array_type const &C, std::string const &name, int rj = 0) {
-    std::cout << "Dumping shape for 3-d tensor (01-2) to file " << name << "_" << rj << ".csv ...\n";
+  void dump_shape_01_2(array_type const &C, std::string const &name,
+                       int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (01-2) to file " << name << "_"
+              << rj << ".csv ...\n";
     auto norms = C.shape().data();
     auto range = norms.range();
     auto ext = range.extent_data();
@@ -681,8 +868,10 @@ class PeriodicCADFKBuilder {
     }
   }
 
-  void dump_shape_0_12(array_type const &C, std::string const &name, int rj = 0) {
-    std::cout << "Dumping shape for 3-d tensor (0-12) to file " << name << "_" << rj << ".csv ...\n";
+  void dump_shape_0_12(array_type const &C, std::string const &name,
+                       int rj = 0) {
+    std::cout << "Dumping shape for 3-d tensor (0-12) to file " << name << "_"
+              << rj << ".csv ...\n";
     auto norms = C.shape().data();
     auto range = norms.range();
     auto ext = range.extent_data();
@@ -742,7 +931,6 @@ class PeriodicCADFKBuilder {
       }
     }
   }
-
 };
 
 }  // namespace scf

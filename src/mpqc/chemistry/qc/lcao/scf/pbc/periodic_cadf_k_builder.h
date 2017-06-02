@@ -99,8 +99,6 @@ class PeriodicCADFKBuilder {
       auto dur = mpqc::duration_in_s(t0, t1);
       detail::print_size_info(C_bra_new_, "C bra");
       ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
-
-//      dump_shape_01_2(C_bra_new_, "C_bra_new");
     }
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
@@ -131,9 +129,6 @@ class PeriodicCADFKBuilder {
         C = lcao::cadf_fitting_coefficients<Tile, Policy>(
             M, *bs0, *bs1, *Y_dfbs, natoms_per_uc, R_max_, RD_max_,
             Y_latt_range, ref_latt_center, RJ_3D, ref_latt_center);
-
-        //        ExEnv::out0() << "\nRJ = " << RJ << ":\n" << std::endl;
-        //        detail::print_size_info(C, "C ket");
       }
     }
     t1 = mpqc::fenced_now(world);
@@ -159,8 +154,6 @@ class PeriodicCADFKBuilder {
       auto dur = mpqc::duration_in_s(t0, t1);
       detail::print_size_info(C_ket_new_, "C ket");
       ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
-
-//      dump_shape_0_12(C_ket_new_, "C_ket");
     }
 
     // compute M(X, Y)
@@ -275,7 +268,7 @@ class PeriodicCADFKBuilder {
     t1 = mpqc::fenced_now(world);
     double t_E_ket = mpqc::duration_in_s(t0, t1);
 
-    // test new ket
+    // test new E_ket
     {
       auto t0 = mpqc::fenced_now(world);
       ExEnv::out0() << "\nComputing new E_ket ...\n";
@@ -416,7 +409,7 @@ class PeriodicCADFKBuilder {
       F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
       F.truncate();
       world.gop.fence();
-      //      detail::print_size_info(F, "F");
+
       t1 = mpqc::fenced_now(world);
       t_build_f += mpqc::duration_in_s(t0, t1);
 
@@ -443,23 +436,61 @@ class PeriodicCADFKBuilder {
       }
       array_type &Q = Q_ket[RJ];
       Q("Y, nu, rho") = C("Y, nu, sig") * D("rho, sig");
-
     }
     t1 = mpqc::fenced_now(world);
     double t_Q_ket = mpqc::duration_in_s(t0, t1);
 
     // test new Q_ket
+    array_type Q_ket_new;
     {
       auto t0 = mpqc::fenced_now(world);
       ExEnv::out0() << "\nComputing new Q_ket ...\n";
 
-      array_type Q_ket_new;
       Q_ket_new = compute_Q_ket(C_ket_new_, D);
       auto t1 = mpqc::fenced_now(world);
       auto dur = mpqc::duration_in_s(t0, t1);
 
+      dump_shape_02_1(Q_ket_new, "Q_ket_new");
       detail::print_size_info(Q_ket_new, "new Q_ket");
       ExEnv::out0() << "\tnew Q_ket:            " << dur << " s\n";
+    }
+
+    // test new F
+    array_type F_new;
+    {
+      auto t0 = mpqc::fenced_now(world);
+      ExEnv::out0() << "\nComputing new F ...\n";
+
+      auto normsp = force_normsp(Q_ket_new.shape().data(),
+                                 E_ket_new_.array().shape().data());
+      auto trange = E_ket_new_.array().trange();
+      TA::SparseShape<float> forced_shape(world, normsp, trange);
+
+      F_new("Y, mu, rho") = (E_ket_new_("Y, mu, rho")).set_shape(forced_shape);
+      F_new.truncate();
+      F_new("Y, mu, rho") -=
+          (M_("X, Y") * C_bra_new_("X, mu, rho")).set_shape(forced_shape);
+      F_new.truncate();
+      world.gop.fence();
+
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+
+      dump_shape_02_1(F_new, "new_F");
+      detail::print_size_info(F_new, "new F");
+      ExEnv::out0() << "\tnew F:            " << dur << " s\n";
+    }
+
+    // test new K_part1
+    {
+      auto t0 = mpqc::fenced_now(world);
+      array_type K_part1_new;
+      ExEnv::out0() << "\nComputing new K part1 = F Q_ket ...\n";
+      K_part1_new("mu, nu") = F_new("Y, mu, rho") * Q_ket_new("Y, nu, rho");
+      auto t1 = mpqc::fenced_now(world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      detail::print_size_info(F_new, "new K part1");
+      ExEnv::out0() << "\tnew K part1:            " << dur << " s\n";
     }
 
     // compute K_part2
@@ -637,10 +668,10 @@ class PeriodicCADFKBuilder {
 
     array_type Q(world, trange, shape, pmap);
 
-    auto create_task_Q_bra_tile = [&](array_type *Q, array_type *C_array,
-                           array_type *D_array, int64_t ord, int64_t RJ,
-                           std::array<int64_t, 3> tile_idx,
-                           std::array<size_t, 3> out_ext) {
+    auto create_task_Q_bra_tile = [&](
+        array_type *Q, array_type *C_array, array_type *D_array, int64_t ord,
+        int64_t RJ, std::array<int64_t, 3> tile_idx,
+        std::array<size_t, 3> out_ext) {
       const auto tile_C_df = tile_idx[0];
       const auto tile_C_0 = tile_idx[1];
       const auto tile_D_1 = tile_idx[2];
@@ -674,8 +705,8 @@ class PeriodicCADFKBuilder {
       }
 
       TA::Range out_range;
-      out_range =
-          TA::Range(std::array<size_t, 3>{{out_ext[0], out_ext[1], out_ext[2]}});
+      out_range = TA::Range(
+          std::array<size_t, 3>{{out_ext[0], out_ext[1], out_ext[2]}});
       TA::TensorD out_tile(out_range, 0.0);
 
       TA::eigen_map(out_tile, out_ext[0] * out_ext[1], out_ext[2]) = out_eig;
@@ -705,8 +736,8 @@ class PeriodicCADFKBuilder {
           if (Q.is_local(tile_idx) && !Q.is_zero(tile_idx)) {
             const auto &rng_mu = trange.dim(1).tile(mu);
             const size_t ext_mu = rng_mu.second - rng_mu.first;
-            world.taskq.add(create_task_Q_bra_tile, &Q,
-                            &C_repl, &D_repl, tile_idx, RJ_ord,
+            world.taskq.add(create_task_Q_bra_tile, &Q, &C_repl, &D_repl,
+                            tile_idx, RJ_ord,
                             std::array<int64_t, 3>{{X, mu, sig % nsig_per_RJ}},
                             std::array<size_t, 3>{{ext_X, ext_mu, ext_sig}});
           }
@@ -744,8 +775,10 @@ class PeriodicCADFKBuilder {
     };
 
     auto unshifted_sig_latt_range = RJ_max_ + RD_max_;
-    auto unshifted_Y_latt_range = max_latt_range(R_max_, unshifted_sig_latt_range);
-    auto unshifted_Y_dfbs = shift_basis_origin(*dfbs_, zero_shift_base, unshifted_Y_latt_range, dcell_);
+    auto unshifted_Y_latt_range =
+        max_latt_range(R_max_, unshifted_sig_latt_range);
+    auto unshifted_Y_dfbs = shift_basis_origin(*dfbs_, zero_shift_base,
+                                               unshifted_Y_latt_range, dcell_);
 
     auto shifted_sig_latt_range = RJ_max_ + RD_max_ + R_max_;
     auto shifted_Y_latt_range = shifted_sig_latt_range;
@@ -796,10 +829,10 @@ class PeriodicCADFKBuilder {
             auto RD_ord = sig / ntiles_obs;
             auto RJpRD_3D = RJ_3D + direct_3D_idx(RD_ord, RD_max_);
 
-            if (!(RY_3D == R_3D) && !(RY_3D == RJpRD_3D))
-              continue;
+            if (!(RY_3D == R_3D) && !(RY_3D == RJpRD_3D)) continue;
 
-            auto RJpRDmR_ord = direct_ord_idx(RJpRD_3D - R_3D, shifted_sig_latt_range);
+            auto RJpRDmR_ord =
+                direct_ord_idx(RJpRD_3D - R_3D, shifted_sig_latt_range);
             auto sig_in_C = sig % ntiles_obs + RJpRDmR_ord * ntiles_obs;
             auto val = C_norms(Y_in_C, nu_in_C, sig_in_C);
             if (val >= force_shape_threshold_) {
@@ -815,27 +848,36 @@ class PeriodicCADFKBuilder {
     TA::SparseShape<float> shape(world, norms, trange);
 
     array_type Q(world, trange, shape, pmap);
-    dump_shape_01_2(Q, "Q_ket_new_shape");
 
-    auto create_task_Q_ket_tile = [&](array_type *Q, array_type *C_array,
-                           array_type *D_array, int64_t ord, Vector3i RJmR,
-                           std::array<int64_t, 3> external_tile_idx,
-                           std::array<size_t, 3> external_extent) {
+    auto create_task_Q_ket_tile = [&](
+        array_type *Q, array_type *C_array, array_type *D_array, int64_t ord,
+        Vector3i RJmR, std::array<int64_t, 3> external_tile_idx,
+        std::array<size_t, 3> external_offset,
+        std::array<size_t, 3> external_extent) {
       const auto tile_C_df = external_tile_idx[0];
       const auto tile_C_0 = external_tile_idx[1];
       const auto tile_D_0 = external_tile_idx[2];
+
+      const auto offset_df = external_offset[0];
+      const auto offset_0 = external_offset[1];
+      const auto offset_1 = external_offset[2];
+
+      const auto ext_df = external_extent[0];
+      const auto ext_0 = external_extent[1];
+      const auto ext_1 = external_extent[2];
 
       const auto ntiles_obs = obs_->nclusters();
       const auto D_0_stride = ntiles_obs * RD_size_;
 
       const auto shifted_sig_latt_range = RJ_max_ + RD_max_ + R_max_;
 
-      const auto shifted_sig_latt_size = 1 + direct_ord_idx(shifted_sig_latt_range, shifted_sig_latt_range);
+      const auto shifted_sig_latt_size =
+          1 + direct_ord_idx(shifted_sig_latt_range, shifted_sig_latt_range);
       const auto C_0_stride = ntiles_obs * shifted_sig_latt_size;
       const auto C_df_stride = ntiles_obs * C_0_stride;
       const auto C_1_offset = tile_C_df * C_df_stride + tile_C_0 * C_0_stride;
 
-      RowMatrixXd out_eig(external_extent[0] * external_extent[1], external_extent[2]);
+      RowMatrixXd out_eig(ext_df * ext_0, ext_1);
       out_eig.setZero();
 
       for (auto tile_sum = 0; tile_sum != D_0_stride; ++tile_sum) {
@@ -844,7 +886,8 @@ class PeriodicCADFKBuilder {
         auto RD_3D = direct_3D_idx(RD_ord, RD_max_);
         auto RJmRpRD_ord = direct_ord_idx(RJmR + RD_3D, shifted_sig_latt_range);
 
-        const auto ord_C = C_1_offset + RJmRpRD_ord;
+        const auto ord_C =
+            C_1_offset + RJmRpRD_ord * ntiles_obs + tile_sum % ntiles_obs;
         if (D_array->is_zero(ord_D) || C_array->is_zero(ord_C)) continue;
 
         Tile D = D_array->find(ord_D);
@@ -862,11 +905,15 @@ class PeriodicCADFKBuilder {
       }
 
       TA::Range out_range;
-      out_range =
-          TA::Range(std::array<size_t, 3>{{external_extent[0], external_extent[1], external_extent[2]}});
+      std::array<size_t, 3> lb{{offset_df, offset_0, offset_1}};
+      std::array<size_t, 3> ub{
+          {offset_df + ext_df, offset_0 + ext_0, offset_1 + ext_1}};
+      out_range = TA::Range(lb, ub);
+
       TA::TensorD out_tile(out_range, 0.0);
 
-      TA::eigen_map(out_tile, external_extent[0] * external_extent[1], external_extent[2]) = out_eig;
+      TA::eigen_map(out_tile, external_extent[0] * external_extent[1],
+                    external_extent[2]) = out_eig;
 
       Q->set(ord, out_tile);
     };
@@ -878,7 +925,8 @@ class PeriodicCADFKBuilder {
       auto nu_in_C = nu % ntiles_obs;
 
       const auto &rng_nu = trange.dim(1).tile(nu);
-      const size_t ext_nu = rng_nu.second - rng_nu.first;
+      const auto offset_nu = rng_nu.first;
+      const auto ext_nu = rng_nu.second - rng_nu.first;
 
       const auto nu_times_stride = nu * ntiles1;
       for (auto &significant_pair : significant_Y_rho[nu]) {
@@ -890,19 +938,27 @@ class PeriodicCADFKBuilder {
         if (Q.is_local(tile_idx) && !Q.is_zero(tile_idx)) {
           auto RY_ord = Y / ntiles_df;
           auto RY_3D = direct_3D_idx(RY_ord, unshifted_Y_latt_range);
-          auto Y_in_C = Y % ntiles_df + direct_ord_idx(RY_3D - R_3D, shifted_Y_latt_range) * ntiles_df;
+          auto Y_in_C =
+              Y % ntiles_df +
+              direct_ord_idx(RY_3D - R_3D, shifted_Y_latt_range) * ntiles_df;
 
           auto RJ_ord = rho / ntiles_obs;
           auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
           auto rho_in_D = rho % ntiles_obs;
 
           const auto &rng_Y = trange.dim(0).tile(Y);
-          const size_t ext_Y = rng_Y.second - rng_Y.first;
+          const auto offset_Y = rng_Y.first;
+          const auto ext_Y = rng_Y.second - rng_Y.first;
 
           const auto &rng_rho = trange.dim(2).tile(rho);
-          const size_t ext_rho = rng_rho.second - rng_rho.first;
+          const auto offset_rho = rng_rho.first;
+          const auto ext_rho = rng_rho.second - rng_rho.first;
 
-          world.taskq.add(create_task_Q_ket_tile, &Q, &C_repl, &D_repl, tile_idx, RJ_3D - R_3D, std::array<int64_t, 3>{{Y_in_C, nu_in_C, rho_in_D}}, std::array<size_t, 3>{{ext_Y, ext_nu, ext_rho}});
+          world.taskq.add(
+              create_task_Q_ket_tile, &Q, &C_repl, &D_repl, tile_idx,
+              RJ_3D - R_3D, std::array<int64_t, 3>{{Y_in_C, nu_in_C, rho_in_D}},
+              std::array<size_t, 3>{{offset_Y, offset_nu, offset_rho}},
+              std::array<size_t, 3>{{ext_Y, ext_nu, ext_rho}});
         }
       }
     }
@@ -910,7 +966,6 @@ class PeriodicCADFKBuilder {
     world.gop.fence();
     Q.truncate();
 
-    dump_shape_01_2(Q, "Q_ket_new");
     return Q;
   }
 

@@ -815,6 +815,7 @@ class PeriodicCADFKBuilder {
     TA::SparseShape<float> shape(world, norms, trange);
 
     array_type Q(world, trange, shape, pmap);
+    dump_shape_01_2(Q, "Q_ket_new_shape");
 
     auto create_task_Q_ket_tile = [&](array_type *Q, array_type *C_array,
                            array_type *D_array, int64_t ord, Vector3i RJmR,
@@ -824,7 +825,10 @@ class PeriodicCADFKBuilder {
       const auto tile_C_0 = external_tile_idx[1];
       const auto tile_D_0 = external_tile_idx[2];
 
+      const auto ntiles_obs = obs_->nclusters();
       const auto D_0_stride = ntiles_obs * RD_size_;
+
+      const auto shifted_sig_latt_range = RJ_max_ + RD_max_ + R_max_;
 
       const auto shifted_sig_latt_size = 1 + direct_ord_idx(shifted_sig_latt_range, shifted_sig_latt_range);
       const auto C_0_stride = ntiles_obs * shifted_sig_latt_size;
@@ -854,7 +858,7 @@ class PeriodicCADFKBuilder {
         RowMatrixXd C_eig = TA::eigen_map(C, C_ext[0] * C_ext[1], C_ext[2]);
         RowMatrixXd D_eig = TA::eigen_map(D, D_ext[0], D_ext[1]);
 
-        out_eig += C_eig * D_eig.inverse();
+        out_eig += C_eig * (D_eig.transpose());
       }
 
       TA::Range out_range;
@@ -906,6 +910,7 @@ class PeriodicCADFKBuilder {
     world.gop.fence();
     Q.truncate();
 
+    dump_shape_01_2(Q, "Q_ket_new");
     return Q;
   }
 

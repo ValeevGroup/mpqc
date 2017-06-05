@@ -26,7 +26,7 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct periodic CADF-K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ = std::make_unique<K_Builder>(ao_factory_);
+    k_builder_ = std::make_unique<K_Builder>(world, ao_factory_);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

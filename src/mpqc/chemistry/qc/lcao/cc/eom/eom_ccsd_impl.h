@@ -123,79 +123,55 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
             t2("a,b,i,l");
 
-    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i");
+    //    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i");
   }
 
   // HDD * C part
   {
-    TArray GC_ab, GC_ij;
-    GC_ab("a,b") =
-        g_ijab_("k,l,a,c") * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
-    GC_ij("i,j") =
-        g_ijab_("i,k,c,d") * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
+    TArray C, GC_ab, GC_ij;
+    C("a,c,i,k") = 2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k");
+    GC_ab("a,b") = g_ijab_("k,l,a,c") * C("b,c,k,l");
+    GC_ij("i,j") = g_ijab_("i,k,c,d") * C("c,d,j,k");
 
-    HDS_HDD_C("a,b,i,j") +=  //   P(ab) Fbc C^ac_ij
+    TArray tmp;
+    HDS_HDD_C("a,b,i,j") +=
+
+        //   P(ab) Fbc C^ac_ij
         //   Fbc C^ac_ij + Fac C^cb_ij
-        FAB_("b,c") * Cabij("a,c,i,j") + FAB_("a,c") * Cabij("c,b,i,j")
+        FAB_("a,c") * Cabij("c,b,i,j")
+
         // - P(ij) Fkj C^ab_ik
         // - Fkj C^ab_ik - Fki C^ab_kj
-        - FIJ_("k,j") * Cabij("a,b,i,k") - FIJ_("k,i") * Cabij("a,b,k,j")
-        // + 1/2 Wabcd C^cd_ij
-        //        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
-        // + 1/2 Wklij C^ab_kl
-        + WKlIj_("k,l,i,j") * Cabij("a,b,k,l")
+        - FIJ_("k,j") * Cabij("a,b,i,k")
+
         // + P(ab) P(ij) Wbkjc C^ac_ik
         // + Wbkjc C^ac_ik - Wbkic C^ac_jk
         // - Wakjc C^bc_ik + Wakic C^bc_jk
-        + WIbAj_("k,b,c,j") * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k")) +
-        WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
-        //
+        + WIbAj_("k,b,c,j") * C("a,c,i,k")
+        + WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
         + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
-        //
-        + WIbaJ_("k,a,c,j") * Cabij("b,c,k,i")
-        //
-        + WIbAj_("k,a,c,i") * (2.0 * Cabij("b,c,j,k") - Cabij("c,b,j,k")) +
-        WIbaJ_("k,a,c,i") * Cabij("b,c,j,k")
+
         // - 1/2 P(ab) g^lk_dc C^ca_kl t^db_ij
         // - 1/2 g^kl_dc C^ac_kl t^db_ij
         // - 1/2 g^kl_cd C^cb_kl t^ad_ij
-
-        // Gabij_("d,c,k,l")*(2.0*Cabij_("a,c,k,l")-Cabij_("c,a,k,l"))
-        // Gabij_("c,d,k,l")*(2.0*Cabij_("c,b,k,l")-Cabij_("b,c,k,l"))
-        - GC_ab("d,a") * t2("d,b,i,j") - GC_ab("d,b") * t2("a,d,i,j")
+        - GC_ab("d,a") * t2("d,b,i,j")
 
         // + 1/2 P(ij) Wlkdc C^dc_ik t^ab_jl
         // - 1/2 Wlkcd C^cd_ik t^ab_lj
         // - 1/2 Wlkcd C^cd_jk t^ab_il
-        // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,i,k")-Cabij_("d,c,i,k"))
-        // Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,j,k")-Cabij_("d,c,j,k"))
-        - GC_ij("l,i") * t2("a,b,l,j") - GC_ij("l,j") * t2("a,b,i,l");
+        - GC_ij("l,j") * t2("a,b,i,l");
+
+    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i")
+                            // + 1/2 Wabcd C^cd_ij
+                            //        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
+                            // + 1/2 Wklij C^ab_kl
+                            + WKlIj_("k,l,i,j") * Cabij("a,b,k,l");
 
     if (WAbCd_.is_initialized()) {
+      // + 1/2 Wabcd C^cd_ij
+      //        + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
       HDS_HDD_C("a,b,i,j") += WAbCd_("a,b,c,d") * Cabij("c,d,i,j");
     } else {
-      //      auto direct_integral = this->ao_factory().compute_direct(L"(μ ν|
-      //      G|κ λ)");
-      //      auto Ca =
-      //          this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"a"));
-      //      auto Ci =
-      //          this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"i"));
-      //
-      //      TArray tau;
-      //      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-      //
-      //      TArray U;
-      //      U("p,q,i,j") = Cabij("r,s,i,j") * direct_integral("p,r,q,s");
-      //
-      //      TArray tmp;
-      //      tmp("a,b,i,j") = -U("p,q,i,j") * Ci("p,k") * Ca("q,a") * t1("b,k")
-      //      -
-      //          U("p,q,i,j") * Ci("p,k") * Ca("q,b") * t1("a,k") +
-      //          U("p,q,i,j") * Ci("p,k") * Ci("q,l") * tau("a,b,k,l") +
-      //          U("p,q,i,j") * Ca("p,a") * Ca("q,b");
-      //
-      //      HDS_HDD_C("a,b,i,j") += tmp("a,b,i,j");
-
       TArray tau;
       tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 

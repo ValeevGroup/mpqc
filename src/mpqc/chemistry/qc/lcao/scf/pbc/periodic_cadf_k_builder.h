@@ -14,16 +14,21 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Factory>
-class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Tile, Policy, Factory>> {
+class PeriodicCADFKBuilder
+    : public madness::WorldObject<PeriodicCADFKBuilder<Tile, Policy, Factory>> {
  public:
   using array_type = TA::DistArray<Tile, Policy>;
   using DirectTArray = typename Factory::DirectTArray;
   using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
   using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
   using Basis = ::mpqc::lcao::gaussian::Basis;
+  using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
   using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
+  using func_offset_list =
+      std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
-  using WorldObject_ = madness::WorldObject<PeriodicCADFKBuilder<Tile, Policy, Factory>>;
+  using WorldObject_ =
+      madness::WorldObject<PeriodicCADFKBuilder<Tile, Policy, Factory>>;
   using PeriodicCADFKBuilder_ = PeriodicCADFKBuilder<Tile, Policy, Factory>;
 
   using Engine = ::mpqc::lcao::gaussian::ShrPool<libint2::Engine>;
@@ -31,8 +36,8 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
   template <int rank>
   using norm_type = std::vector<std::pair<std::array<int, rank>, float>>;
 
-  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory) : WorldObject_(world), ao_factory_(ao_factory) {
-
+  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory)
+      : WorldObject_(world), ao_factory_(ao_factory) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
@@ -116,7 +121,7 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
 
         auto is_significant = false;
         for (auto shell0 = 0; shell0 != nshells; ++shell0) {
-          for (const auto &shell1: sig_shellpair_list_[shell0]) {
+          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
             if (shell1 >= shell1_min && shell1 < shell1_max) {
               is_significant = true;
               RJ_list_.emplace_back(RJ);
@@ -126,7 +131,6 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
           if (is_significant) break;
         }
       }
-
     }
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
@@ -139,8 +143,7 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     // compute C(Y, ν_R, σ_(Rj+Rd))
     t0 = mpqc::fenced_now(world);
     auto Y_latt_range = max_latt_range(R_max_, RJ_max_ + RD_max_);
-    Y_dfbs_ =
-        shift_basis_origin(*dfbs_, zero_shift_base, Y_latt_range, dcell_);
+    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, Y_latt_range, dcell_);
     {
       C_ket_ = std::vector<array_type>(RJ_size_, array_type());
 
@@ -163,26 +166,29 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_C_ket = mpqc::duration_in_s(t0, t1);
 
     // test new C_ket
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new C_ket ...\n";
-//      auto max_range = R_max_ + RJ_max_ + RD_max_;
-//      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range, dcell_);
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new C_ket ...\n";
+    //      auto max_range = R_max_ + RJ_max_ + RD_max_;
+    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range,
+    //      dcell_);
 
-//      auto Y_dfbs =
-//          shift_basis_origin(*dfbs_, zero_shift_base, max_range, dcell_);
-//      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
-//      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
+    //      auto Y_dfbs =
+    //          shift_basis_origin(*dfbs_, zero_shift_base, max_range, dcell_);
+    //      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
+    //      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
-//      C_ket_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-//          M, *obs_, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range, max_range,
-//          max_range);
+    //      C_ket_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
+    //          M, *obs_, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range,
+    //          max_range,
+    //          max_range);
 
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
-//      detail::print_size_info(C_ket_new_, "C ket");
-//      ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" << std::endl;
-//    }
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
+    //      detail::print_size_info(C_ket_new_, "C ket");
+    //      ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" <<
+    //      std::endl;
+    //    }
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
@@ -191,11 +197,34 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_M = mpqc::duration_in_s(t0, t1);
 
     auto oper_type = libint2::Operator::coulomb;
+    const auto screen = ao_factory_.screen();
     const auto screen_thresh = ao_factory_.screen_threshold();
     auto screen_norm_op = ::mpqc::lcao::gaussian::detail::l2Norm;
     auto screen_engine = make_engine_pool(
         oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
         libint2::BraKet::xx_xx);
+
+    // make screener and engines for eri3
+    {
+      engines_ = make_engine_pool(
+          oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
+          libint2::BraKet::xs_xx);
+
+      eri3_X_dfbs_ =
+          shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_ + R_max_, dcell_);
+      eri3_bs0_ = obs_;
+      eri3_bs1_ = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+      auto basis_vector =
+          lcao::gaussian::BasisVector{{*eri3_X_dfbs_, *eri3_bs0_, *eri3_bs1_}};
+      p_screener_ = lcao::gaussian::detail::make_screener(
+          world, screen_engine, basis_vector, screen, screen_thresh);
+
+      eri3_bs0_shell_offset_map_ = compute_shell_offset(*eri3_bs0_);
+      eri3_bs1_shell_offset_map_ = compute_shell_offset(*eri3_bs1_);
+
+      basisR_ = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+      basisRD_ = shift_basis_origin(*obs_, zero_shift_base, RD_max_, dcell_);
+    }
 
     // compute E(X, ν_R, σ_(Rj+Rd))
     t0 = mpqc::fenced_now(world);
@@ -235,31 +264,34 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_E_bra = mpqc::duration_in_s(t0, t1);
 
     // test new E_bra
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new E_bra ...\n";
-//      std::shared_ptr<Qmatrix> Qbra, Qket;
-//      Qbra = std::make_shared<Qmatrix>(
-//          Qmatrix(world, screen_engine, *X_dfbs_, screen_norm_op));
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new E_bra ...\n";
+    //      std::shared_ptr<Qmatrix> Qbra, Qket;
+    //      Qbra = std::make_shared<Qmatrix>(
+    //          Qmatrix(world, screen_engine, *X_dfbs_, screen_norm_op));
 
-//      auto max_range = R_max_ + RJ_max_ + RD_max_;
-//      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range, dcell_);
+    //      auto max_range = R_max_ + RJ_max_ + RD_max_;
+    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range,
+    //      dcell_);
 
-//      Qket = std::make_shared<Qmatrix>(
-//          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
-//      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-//          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
+    //      Qket = std::make_shared<Qmatrix>(
+    //          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
+    //      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+    //          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-//      auto bs_array = utility::make_array_of_refs(*X_dfbs_, *obs_, *bs1);
-//      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs_, *obs_, *bs1}};
-//      auto engine =
-//          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-//      E_bra_new_ = lcao::gaussian::direct_sparse_integrals(
-//          world, engine, bs_vector, std::move(screener));
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
-//      ExEnv::out0() << "\tnew E_bra:            " << dur << " s\n" << std::endl;
-//    }
+    //      auto bs_array = utility::make_array_of_refs(*X_dfbs_, *obs_, *bs1);
+    //      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs_, *obs_,
+    //      *bs1}};
+    //      auto engine =
+    //          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+    //      E_bra_new_ = lcao::gaussian::direct_sparse_integrals(
+    //          world, engine, bs_vector, std::move(screener));
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
+    //      ExEnv::out0() << "\tnew E_bra:            " << dur << " s\n" <<
+    //      std::endl;
+    //    }
 
     // compute E(Y, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
@@ -297,30 +329,33 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_E_ket = mpqc::duration_in_s(t0, t1);
 
     // test new E_ket
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new E_ket ...\n";
-//      std::shared_ptr<Qmatrix> Qbra, Qket;
-//      Qbra = std::make_shared<Qmatrix>(
-//          Qmatrix(world, screen_engine, *Y_dfbs_, screen_norm_op));
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new E_ket ...\n";
+    //      std::shared_ptr<Qmatrix> Qbra, Qket;
+    //      Qbra = std::make_shared<Qmatrix>(
+    //          Qmatrix(world, screen_engine, *Y_dfbs_, screen_norm_op));
 
-//      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
-//      Qket = std::make_shared<Qmatrix>(
-//          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
-//      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-//          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
+    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_,
+    //      dcell_);
+    //      Qket = std::make_shared<Qmatrix>(
+    //          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
+    //      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+    //          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
 
-//      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *bs1);
-//      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *bs1}};
-//      auto engine =
-//          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-//      E_ket_new_ = lcao::gaussian::direct_sparse_integrals(
-//          world, engine, bs_vector, std::move(screener));
+    //      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *bs1);
+    //      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_,
+    //      *bs1}};
+    //      auto engine =
+    //          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+    //      E_ket_new_ = lcao::gaussian::direct_sparse_integrals(
+    //          world, engine, bs_vector, std::move(screener));
 
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
-//      ExEnv::out0() << "\tnew E_ket:            " << dur << " s\n" << std::endl;
-//    }
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
+    //      ExEnv::out0() << "\tnew E_ket:            " << dur << " s\n" <<
+    //      std::endl;
+    //    }
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
@@ -343,7 +378,7 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
   Factory &ao_factory_;
   bool print_detail_;
   double force_shape_threshold_;
-  double target_precision_ = 0.0;
+  double target_precision_ = std::numeric_limits<double>::epsilon();
   std::unique_ptr<PTC_Builder> three_center_builder_;
   shellpair_list_t sig_shellpair_list_;
   std::vector<int64_t> RJ_list_;
@@ -352,6 +387,18 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
   std::shared_ptr<Basis> dfbs_;
   std::shared_ptr<Basis> X_dfbs_;
   std::shared_ptr<Basis> Y_dfbs_;
+  std::shared_ptr<Basis> basisR_;
+  std::shared_ptr<Basis> basisRD_;
+  std::shared_ptr<Basis> eri3_X_dfbs_;
+  std::shared_ptr<Basis> eri3_bs0_;
+  std::shared_ptr<Basis> eri3_bs1_;
+
+  TA::TiledRange result_trange_;
+  std::shared_ptr<TA::Pmap> result_pmap_;
+  std::unordered_map<size_t, size_t> eri3_bs0_shell_offset_map_;
+  std::unordered_map<size_t, size_t> eri3_bs1_shell_offset_map_;
+  madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
+  madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
 
   Vector3d dcell_;
   Vector3i R_max_;
@@ -374,7 +421,7 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
   DirectTArray E_ket_new_;
 
   std::shared_ptr<lcao::Screener> p_screener_;
-
+  Engine engines_;
 
  private:
   array_type compute_K(const array_type &D, double target_precision) {
@@ -403,18 +450,18 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_Q_bra = mpqc::duration_in_s(t0, t1);
 
     // test new Q_bra
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new Q_bra ...\n";
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new Q_bra ...\n";
 
-//      array_type Q_bra_new;
-//      Q_bra_new = compute_Q_bra(C_bra_new_, D);
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
+    //      array_type Q_bra_new;
+    //      Q_bra_new = compute_Q_bra(C_bra_new_, D);
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
 
-//      detail::print_size_info(Q_bra_new, "new Q_bra");
-//      ExEnv::out0() << "\tnew Q_bra:            " << dur << " s\n";
-//    }
+    //      detail::print_size_info(Q_bra_new, "new Q_bra");
+    //      ExEnv::out0() << "\tnew Q_bra:            " << dur << " s\n";
+    //    }
 
     t0 = mpqc::fenced_now(world);
     array_type F, K_part1;
@@ -479,55 +526,57 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_Q_ket = mpqc::duration_in_s(t0, t1);
 
     // test new Q_ket
-//    array_type Q_ket_new;
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new Q_ket ...\n";
+    //    array_type Q_ket_new;
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new Q_ket ...\n";
 
-//      Q_ket_new = compute_Q_ket(C_ket_new_, D);
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
+    //      Q_ket_new = compute_Q_ket(C_ket_new_, D);
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
 
-//      detail::print_size_info(Q_ket_new, "new Q_ket");
-//      ExEnv::out0() << "\tnew Q_ket:            " << dur << " s\n";
-//    }
+    //      detail::print_size_info(Q_ket_new, "new Q_ket");
+    //      ExEnv::out0() << "\tnew Q_ket:            " << dur << " s\n";
+    //    }
 
     // test new F
-//    array_type F_new;
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      ExEnv::out0() << "\nComputing new F ...\n";
+    //    array_type F_new;
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      ExEnv::out0() << "\nComputing new F ...\n";
 
-//      auto normsp = force_normsp(Q_ket_new.shape().data(),
-//                                 E_ket_new_.array().shape().data());
-//      auto trange = E_ket_new_.array().trange();
-//      TA::SparseShape<float> forced_shape(world, normsp, trange);
+    //      auto normsp = force_normsp(Q_ket_new.shape().data(),
+    //                                 E_ket_new_.array().shape().data());
+    //      auto trange = E_ket_new_.array().trange();
+    //      TA::SparseShape<float> forced_shape(world, normsp, trange);
 
-//      F_new("Y, mu, rho") = (E_ket_new_("Y, mu, rho")).set_shape(forced_shape);
-//      F_new.truncate();
-//      F_new("Y, mu, rho") -=
-//          (M_("X, Y") * C_bra_new_("X, mu, rho")).set_shape(forced_shape);
-//      F_new.truncate();
-//      world.gop.fence();
+    //      F_new("Y, mu, rho") = (E_ket_new_("Y, mu,
+    //      rho")).set_shape(forced_shape);
+    //      F_new.truncate();
+    //      F_new("Y, mu, rho") -=
+    //          (M_("X, Y") * C_bra_new_("X, mu, rho")).set_shape(forced_shape);
+    //      F_new.truncate();
+    //      world.gop.fence();
 
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
 
-//      detail::print_size_info(F_new, "new F");
-//      ExEnv::out0() << "\tnew F:            " << dur << " s\n";
-//    }
+    //      detail::print_size_info(F_new, "new F");
+    //      ExEnv::out0() << "\tnew F:            " << dur << " s\n";
+    //    }
 
     // test new K_part1
-//    {
-//      auto t0 = mpqc::fenced_now(world);
-//      array_type K_part1_new;
-//      ExEnv::out0() << "\nComputing new K part1 = F Q_ket ...\n";
-//      K_part1_new("mu, nu") = F_new("Y, mu, rho") * Q_ket_new("Y, nu, rho");
-//      auto t1 = mpqc::fenced_now(world);
-//      auto dur = mpqc::duration_in_s(t0, t1);
-//      detail::print_size_info(F_new, "new K part1");
-//      ExEnv::out0() << "\tnew K part1:            " << dur << " s\n";
-//    }
+    //    {
+    //      auto t0 = mpqc::fenced_now(world);
+    //      array_type K_part1_new;
+    //      ExEnv::out0() << "\nComputing new K part1 = F Q_ket ...\n";
+    //      K_part1_new("mu, nu") = F_new("Y, mu, rho") * Q_ket_new("Y, nu,
+    //      rho");
+    //      auto t1 = mpqc::fenced_now(world);
+    //      auto dur = mpqc::duration_in_s(t0, t1);
+    //      detail::print_size_info(F_new, "new K part1");
+    //      ExEnv::out0() << "\tnew K part1:            " << dur << " s\n";
+    //    }
 
     // compute K_part2
     t0 = mpqc::fenced_now(world);
@@ -607,11 +656,14 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     double t_Eket_new = 0.0;
     double t_F_new = 0.0;
     double t_Kpart1_new = 0.0;
+    double t_Kpart2_new = 0.0;
 
     for (const auto RJ : RJ_list_) {
       t00 = mpqc::fenced_now(world);
-      std::vector<size_t> C_low{X_range.first, mu_range.first, RJ * ntiles_per_uc};
-      std::vector<size_t> C_up{X_range.second, mu_range.second, (RJ + 1) * ntiles_per_uc};
+      std::vector<size_t> C_low{X_range.first, mu_range.first,
+                                RJ * ntiles_per_uc};
+      std::vector<size_t> C_up{X_range.second, mu_range.second,
+                               (RJ + 1) * ntiles_per_uc};
       array_type C;
       C("X, mu, rho") = C_bra_new_("X, mu, rho").block(C_low, C_up);
       t11 = mpqc::fenced_now(world);
@@ -649,12 +701,13 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
         screen_Qket = std::make_shared<Qmatrix>(
             Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
         auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-            lcao::gaussian::SchwarzScreen(screen_Qbra, screen_Qket, screen_thresh));
+            lcao::gaussian::SchwarzScreen(screen_Qbra, screen_Qket,
+                                          screen_thresh));
         auto engine =
             make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
 
-        E_ket = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                    std::move(screener));
+        E_ket = lcao::gaussian::direct_sparse_integrals(
+            world, engine, bs_vector, std::move(screener));
       }
       t11 = mpqc::fenced_now(world);
       t_Eket_new += mpqc::duration_in_s(t00, t11);
@@ -662,13 +715,15 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
       t00 = mpqc::fenced_now(world);
       array_type F;
       {
-        auto normsp = force_normsp(Q_ket.shape().data(), E_ket.array().shape().data());
+        auto normsp =
+            force_normsp(Q_ket.shape().data(), E_ket.array().shape().data());
         auto trange = E_ket.array().trange();
         TA::SparseShape<float> forced_shape(world, normsp, trange);
 
         F("Y, mu, rho") = (E_ket("Y, mu, rho")).set_shape(forced_shape);
         F.truncate();
-        F("Y, mu, rho") -= (C("X, mu, rho") * M_("X, Y")).set_shape(forced_shape);
+        F("Y, mu, rho") -=
+            (C("X, mu, rho") * M_("X, Y")).set_shape(forced_shape);
         F.truncate();
       }
       t11 = mpqc::fenced_now(world);
@@ -683,9 +738,13 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
       t11 = mpqc::fenced_now(world);
       t_Kpart1_new += mpqc::duration_in_s(t00, t11);
 
-
-
-
+      result_trange_ = K_new.trange();
+      result_pmap_ = K_new.pmap();
+      t00 = mpqc::fenced_now(world);
+      K_new("mu, nu") +=
+          compute_contr_EQ(Q_bra, RJ, target_precision)("mu, nu");
+      t11 = mpqc::fenced_now(world);
+      t_Kpart2_new += mpqc::duration_in_s(t00, t11);
     }
     auto t1_new_k = mpqc::fenced_now(world);
     auto t_tot_new = mpqc::duration_in_s(t0_new_k, t1_new_k);
@@ -697,7 +756,9 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
                     << "\tE_ket:                    " << t_Eket_new << " s\n"
                     << "\tF = E - C M:              " << t_F_new << " s\n"
                     << "\tK_part1 = F Qket:         " << t_Kpart1_new << " s\n"
-                    << "\nTotal K builder new time: " << t_tot_new << " s" << std::endl;
+                    << "\tK_part2 = E Qbra:         " << t_Kpart2_new << " s\n"
+                    << "\nTotal K builder new time: " << t_tot_new << " s"
+                    << std::endl;
     }
 
     return K;
@@ -907,7 +968,8 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     return Q;
   }
 
-  array_type compute_Q_ket(const array_type &C, const array_type &D, const int64_t RJ_ord) {
+  array_type compute_Q_ket(const array_type &C, const array_type &D,
+                           const int64_t RJ_ord) {
     auto &world = C.world();
 
     array_type C_repl, D_repl;
@@ -930,17 +992,20 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
       auto z = std::max(l(2), r(2));
       return Vector3i({x, y, z});
     };
-    auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range, Vector3i const &center = {0, 0, 0}) {
-      if (in_idx(0) <= center(0) + range(0) && in_idx(0) >= center(0) - range(0) &&
-          in_idx(1) <= center(1) + range(1) && in_idx(1) >= center(1) - range(1) &&
-          in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
+    auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
+                                  Vector3i const &center = {0, 0, 0}) {
+      if (in_idx(0) <= center(0) + range(0) &&
+          in_idx(0) >= center(0) - range(0) &&
+          in_idx(1) <= center(1) + range(1) &&
+          in_idx(1) >= center(1) - range(1) &&
+          in_idx(2) <= center(2) + range(2) &&
+          in_idx(2) >= center(2) - range(2))
         return true;
       else
         return false;
     };
 
-    auto unshifted_Y_latt_range =
-        max_latt_range(R_max_, RJ_max_ + RD_max_);
+    auto unshifted_Y_latt_range = max_latt_range(R_max_, RJ_max_ + RD_max_);
 
     auto shifted_Y_latt_range = RJ_max_;
 
@@ -988,7 +1053,6 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
         auto Y_in_C = Y % ntiles_df + RYmR_ord * ntiles_df;
 
         for (auto rho = 0; rho != ntiles1; ++rho) {
-
           for (auto sig = 0; sig != ntiles_sum; ++sig) {
             auto RD_ord = sig / ntiles_obs;
             auto RJpRD_3D = RJ_3D + direct_3D_idx(RD_ord, RD_max_);
@@ -999,7 +1063,9 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
             if (!is_in_lattice_range(RJpRDmR_3D, RJ_max_)) continue;
 
             auto RJpRDmR_ord = direct_ord_idx(RJpRDmR_3D, RJ_max_);
-            if (std::find(RJ_list_.begin(), RJ_list_.end(), RJpRDmR_ord) == RJ_list_.end()) continue;
+            if (std::find(RJ_list_.begin(), RJ_list_.end(), RJpRDmR_ord) ==
+                RJ_list_.end())
+              continue;
 
             auto sig_in_C = sig % ntiles_obs + RJpRDmR_ord * ntiles_obs;
             auto val = C_norms(Y_in_C, nu_in_C, sig_in_C);
@@ -1127,6 +1193,346 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     Q.truncate();
 
     return Q;
+  }
+
+  array_type compute_contr_EQ(array_type const &Q, int64_t const RJ,
+                              double target_precision) {
+    auto &world = this->get_world();
+    const auto me = world.rank();
+    const auto nproc = world.nproc();
+    target_precision_ = target_precision;
+
+    // # of tiles per basis
+    const auto ntiles_per_uc = obs_->nclusters();
+    const auto ntiles_mu = obs_->nclusters();
+    const auto ntiles_nu = ntiles_mu * R_size_;
+    const auto ntiles_X = X_dfbs_->nclusters();
+    const auto ntiles_sig = ntiles_mu * RD_size_;
+
+    using ::mpqc::lcao::detail::direct_3D_idx;
+    using ::mpqc::lcao::detail::direct_ord_idx;
+    const auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
+
+    auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
+                                  Vector3i const &center = {0, 0, 0}) {
+      if (in_idx(0) <= center(0) + range(0) &&
+          in_idx(0) >= center(0) - range(0) &&
+          in_idx(1) <= center(1) + range(1) &&
+          in_idx(1) >= center(1) - range(1) &&
+          in_idx(2) <= center(2) + range(2) &&
+          in_idx(2) >= center(2) - range(2))
+        return true;
+      else
+        return false;
+    };
+
+    for (auto tile_X = 0ul, task = 0ul; tile_X != ntiles_X; ++tile_X) {
+      for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
+        for (auto tile_sig = 0ul; tile_sig != ntiles_sig; ++tile_sig) {
+          if (Q.is_zero({tile_X, tile_mu, tile_sig})) continue;
+
+          auto Qtile = Q.find({tile_X, tile_mu, tile_sig});
+
+          const auto RD_ord = tile_sig / ntiles_per_uc;
+          const auto RD_3D = direct_3D_idx(RD_ord, RD_max_);
+
+          for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu, ++task) {
+            const auto R_ord = tile_nu / ntiles_per_uc;
+            const auto trans_3D = -1.0 * direct_3D_idx(R_ord, R_max_);
+
+            const auto RJpRDmR_3D = RJ_3D + RD_3D + trans_3D;
+            if (!is_in_lattice_range(RJpRDmR_3D, RJ_max_)) continue;
+
+            auto RJpRDmR_ord = direct_ord_idx(RJpRDmR_3D, RJ_max_);
+            if (std::find(RJ_list_.begin(), RJ_list_.end(), RJpRDmR_ord) ==
+                RJ_list_.end())
+              continue;
+
+            const auto eri3_tile_X =
+                translate_tile(tile_X, trans_3D, RJ_max_, RJ_max_ + R_max_);
+            const auto eri3_tile_nu = tile_nu % ntiles_per_uc;
+            const auto eri3_tile_sig =
+                tile_sig % ntiles_per_uc + RJpRDmR_ord * ntiles_per_uc;
+
+            if (task % nproc == me) {
+              WorldObject_::task(
+                  me, &PeriodicCADFKBuilder_::compute_contr_EQ_task, Qtile, RJ,
+                  std::array<size_t, 4>{{tile_mu, tile_nu, tile_X, tile_sig}},
+                  std::array<size_t, 3>{{static_cast<size_t>(eri3_tile_X),
+                                         eri3_tile_nu, eri3_tile_sig}});
+            }
+          }
+        }
+      }
+    }
+
+    world.gop.fence();
+
+    // collect local tiles
+    for (const auto &local_tile : local_contr_tiles_) {
+      const auto tile_ord = local_tile.first;
+      const auto proc = result_pmap_->owner(tile_ord);
+      WorldObject_::task(proc, &PeriodicCADFKBuilder_::accumulate_global_task,
+                         local_tile.second, tile_ord);
+    }
+    local_contr_tiles_.clear();
+    world.gop.fence();
+
+    typename Policy::shape_type shape;
+    // compute the shape, if sparse
+    if (!decltype(shape)::is_dense()) {
+      // extract local contribution to the shape of G, construct global shape
+      std::vector<std::pair<std::array<size_t, 1>, double>> global_tile_norms;
+      for (const auto &global_tile : global_contr_tiles_) {
+        const auto tile_ord = global_tile.first;
+        const auto norm = global_tile.second.norm();
+        global_tile_norms.push_back(
+            std::make_pair(std::array<size_t, 1>{{tile_ord}}, norm));
+      }
+      shape = decltype(shape)(world, global_tile_norms, result_trange_);
+    }
+
+    array_type result(world, result_trange_, shape, result_pmap_);
+    for (const auto &global_tile : global_contr_tiles_) {
+      if (!result.shape().is_zero(global_tile.first))
+        result.set(global_tile.first, global_tile.second);
+    }
+    result.fill_local(0.0, true);
+    global_contr_tiles_.clear();
+
+    return result;
+  }
+
+  void compute_contr_EQ_task(Tile Q, int64_t RJ, std::array<size_t, 4> tile_idx,
+                             std::array<size_t, 3> eri3_idx) {
+    const auto tile_mu = tile_idx[0];
+    const auto tile_nu = tile_idx[1];
+    const auto tile_X = tile_idx[2];
+    const auto tile_sig = tile_idx[3];
+
+    // get tile indices of eri3
+    const auto eri3_tile_X = eri3_idx[0];
+    const auto eri3_tile_nu = eri3_idx[1];
+    const auto eri3_tile_sig = eri3_idx[2];
+
+    // get reference to basis sets
+    const auto &basis_X = X_dfbs_;
+    const auto &basis_sig = basisRD_;
+    const auto &eri3_basis_X = eri3_X_dfbs_;
+    const auto &eri3_basis_nu = eri3_bs0_;
+    const auto &eri3_basis_sig = eri3_bs1_;
+
+    // shell clusters for this tile
+    const auto &eri3_cluster_X = eri3_basis_X->cluster_shells()[eri3_tile_X];
+    const auto &eri3_cluster_nu = eri3_basis_nu->cluster_shells()[eri3_tile_nu];
+    const auto &eri3_cluster_sig =
+        eri3_basis_sig->cluster_shells()[eri3_tile_sig];
+
+    // # of shells in each cluster
+    const auto eri3_nshells_X = eri3_cluster_X.size();
+    const auto eri3_nshells_nu = eri3_cluster_nu.size();
+    const auto eri3_nshells_sig = eri3_cluster_sig.size();
+
+    // 1-d tile ranges
+    const auto &tr0 = result_trange_.dim(0);
+    const auto &tr1 = result_trange_.dim(1);
+    const auto ntiles_nu = tr1.tile_extent();
+    const auto &rng_mu = tr0.tile(tile_mu);
+    const auto &rng_nu = tr1.tile(tile_nu);
+    const auto &rng_X = basis_X->create_trange1().tile(tile_X);
+    const auto &rng_sig = basis_sig->create_trange1().tile(tile_sig);
+
+    // TODO make eri3-specific trange1 outside of task
+    const auto &eri3_rng_X = eri3_basis_X->create_trange1().tile(eri3_tile_X);
+    const auto &eri3_rng_nu =
+        eri3_basis_nu->create_trange1().tile(eri3_tile_nu);
+    const auto &eri3_rng_sig =
+        eri3_basis_sig->create_trange1().tile(eri3_tile_sig);
+
+    // range sizes
+    const auto rng_size_mu = rng_mu.second - rng_mu.first;
+    const auto rng_size_nu = rng_nu.second - rng_nu.first;
+    const auto rng_size_X = rng_X.second - rng_X.first;
+    const auto rng_size_sig = rng_sig.second - rng_sig.first;
+
+    // 2-d tile ranges describing the contribution blocks produced by this
+    auto result_rng = TA::Range({rng_mu, rng_nu});
+    // initialize contribution to the result matrices
+    auto result_tile = Tile(std::move(result_rng), 0.0);
+
+    // grab ptrs to tile data to make addressing more efficient
+    auto *result_ptr = result_tile.data();
+    const auto *Q_ptr = Q.data();
+    assert(Q_ptr != nullptr);
+
+    // compute eri3 * Q contribution to all Fock matrices
+    {
+      // index of first shell in this cluster
+      const auto eri3_sh_offset_nu = eri3_bs0_shell_offset_map_[eri3_tile_nu];
+      const auto eri3_sh_offset_sig = eri3_bs1_shell_offset_map_[eri3_tile_sig];
+
+      // index of last shell in this cluster
+      const auto eri3_sh_max_nu = eri3_sh_offset_nu + eri3_nshells_nu;
+      const auto eri3_sh_max_sig = eri3_sh_offset_sig + eri3_nshells_sig;
+
+      auto is_significant = false;
+      {
+        for (auto eri3_sh_nu = eri3_sh_offset_nu; eri3_sh_nu != eri3_sh_max_nu;
+             ++eri3_sh_nu) {
+          for (const auto eri3_sh_sig : sig_shellpair_list_[eri3_sh_nu]) {
+            if (eri3_sh_sig >= eri3_sh_offset_sig &&
+                eri3_sh_sig < eri3_sh_max_sig) {
+              is_significant = true;
+              break;
+            }
+          }
+          if (is_significant) break;
+        }
+      }
+
+      if (is_significant) {
+        auto &screen = *(p_screener_);
+        auto engine = engines_->local();
+        const auto engine_precision = target_precision_;
+        engine.set_precision(engine_precision);
+        const auto &computed_shell_sets = engine.results();
+
+        // compute offset list of cluster_sig
+        auto eri3_offset_list_sig =
+            compute_func_offset_list(eri3_cluster_sig, eri3_rng_sig.first);
+
+        // this is the index of the first basis functions for each shell *in
+        // this shell cluster*
+        auto eri3_cf_offset_nu = 0;
+        auto cf_offset_nu = 0;
+        // this is the index of the first basis functions for each shell *in the
+        // basis set*
+        auto eri3_bf_offset_nu = eri3_rng_nu.first;
+        auto bf_offset_nu = rng_nu.first;
+
+        size_t eri3_cf_offset_sig, eri3_bf_offset_sig;
+
+        // loop over all shell sets
+        for (auto eri3_sh_nu = 0; eri3_sh_nu != eri3_nshells_nu; ++eri3_sh_nu) {
+          const auto &eri3_shell_nu = eri3_cluster_nu[eri3_sh_nu];
+          const auto eri3_nf_nu = eri3_shell_nu.size();
+
+          const auto sh_nu_in_basis = eri3_sh_nu + eri3_sh_offset_nu;
+          auto cf_offset_sig = 0;
+          auto bf_offset_sig = rng_sig.first;
+          for (auto const &sh_sig_in_basis :
+               sig_shellpair_list_[sh_nu_in_basis]) {
+            if (sh_sig_in_basis < eri3_sh_offset_sig ||
+                sh_sig_in_basis >= eri3_sh_offset_sig)
+              continue;
+
+            const auto eri3_sh_sig = sh_sig_in_basis - eri3_sh_offset_sig;
+            std::tie(eri3_cf_offset_sig, eri3_bf_offset_sig) =
+                eri3_offset_list_sig[eri3_sh_sig];
+
+            const auto &eri3_shell_sig = eri3_cluster_sig[eri3_sh_sig];
+            const auto eri3_nf_sig = eri3_shell_sig.size();
+
+            auto eri3_cf_offset_X = 0;
+            auto eri3_bf_offset_X = eri3_rng_X.first;
+            auto cf_offset_X = 0;
+            auto bf_offset_X = rng_X.first;
+            for (auto eri3_sh_X = 0; eri3_sh_X != eri3_nshells_X; ++eri3_sh_X) {
+              const auto &eri3_shell_X = eri3_cluster_X[eri3_sh_X];
+              const auto eri3_nf_X = eri3_shell_X.size();
+
+              if (screen.skip(eri3_bf_offset_X, eri3_bf_offset_nu,
+                              eri3_bf_offset_sig))
+                continue;
+
+              // compute shell set
+              engine.compute(eri3_shell_X, eri3_shell_nu, eri3_shell_sig);
+              const auto &eri3 = computed_shell_sets[0];
+
+              if (eri3 != nullptr) {
+                for (auto eri3_f_X = 0, eri3_ord = 0; eri3_f_X != eri3_nf_X;
+                     ++eri3_f_X) {
+                  const auto cf_X = eri3_f_X + cf_offset_X;
+                  for (auto eri3_f_nu = 0; eri3_f_nu != eri3_nf_nu;
+                       ++eri3_f_nu) {
+                    const auto cf_nu = eri3_f_nu + cf_offset_nu;
+                    for (auto eri3_f_sig = 0; eri3_f_sig != eri3_nf_sig;
+                         ++eri3_f_sig, ++eri3_ord) {
+                      const auto cf_sig = eri3_f_sig + cf_offset_sig;
+
+                      const auto eri3_value = eri3[eri3_ord];
+
+                      for (auto cf_mu = 0; cf_mu != rng_size_mu; ++cf_mu) {
+                        const auto cf_mu_nu = cf_mu * rng_size_nu + cf_nu;
+                        const auto cf_X_mu_sig =
+                            cf_X * rng_size_mu * rng_size_sig +
+                            cf_mu * rng_size_sig + cf_sig;
+                        result_ptr[cf_mu_nu] += eri3_value * Q_ptr[cf_X_mu_sig];
+                      }
+                    }
+                  }
+                }
+              }
+
+              eri3_cf_offset_X += eri3_nf_X;
+              eri3_bf_offset_X += eri3_nf_X;
+              cf_offset_X += eri3_nf_X;
+              bf_offset_X += eri3_nf_X;
+            }
+
+            cf_offset_sig += eri3_nf_sig;
+            bf_offset_sig += eri3_nf_sig;
+          }
+
+          eri3_cf_offset_nu += eri3_nf_nu;
+          eri3_bf_offset_nu += eri3_nf_nu;
+          cf_offset_nu += eri3_nf_nu;
+          bf_offset_nu += eri3_nf_nu;
+        }
+      }
+    }
+
+    // accumulate the local contributions
+    {
+      auto tile_ord = tile_mu * ntiles_nu + tile_nu;
+      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, tile_ord);
+    }
+  }
+
+  void accumulate_global_task(Tile arg_tile, long tile_ord) {
+    // if reducer does not exist, create entry and store F, else accumulate F to
+    // the existing contents
+    typename decltype(global_contr_tiles_)::accessor acc;
+    // try inserting, otherwise, accumulate
+    if (!global_contr_tiles_.insert(
+            acc, std::make_pair(tile_ord, arg_tile))) {  // CRITICAL SECTION
+      // NB can't do acc->second += fock_matrix_tile to avoid spawning TBB
+      // tasks from critical section
+      const auto size = arg_tile.range().volume();
+      TA::math::inplace_vector_op_serial(
+          [](TA::detail::numeric_t<Tile> &l,
+             const TA::detail::numeric_t<Tile> r) { l += r; },
+          size, acc->second.data(), arg_tile.data());
+    }
+    acc.release();  // END OF CRITICAL SECTION
+  }
+
+  void accumulate_local_task(Tile arg_tile, long tile_ord) {
+    // if reducer does not exist, create entry and store F, else accumulate F to
+    // the existing contents
+    typename decltype(local_contr_tiles_)::accessor acc;
+    // try inserting, otherwise, accumulate
+    if (!local_contr_tiles_.insert(
+            acc, std::make_pair(tile_ord, arg_tile))) {  // CRITICAL SECTION
+      // NB can't do acc->second += target_tile to avoid spawning TBB
+      // tasks from critical section
+      const auto size = arg_tile.range().volume();
+      TA::math::inplace_vector_op_serial(
+          [](TA::detail::numeric_t<Tile> &l,
+             const TA::detail::numeric_t<Tile> r) { l += r; },
+          size, acc->second.data(), arg_tile.data());
+    }
+    acc.release();  // END OF CRITICAL SECTION
   }
 
   array_type compute_Q_ket(const array_type &C, const array_type &D) {
@@ -1346,10 +1752,6 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     Q.truncate();
 
     return Q;
-  }
-
-  array_type compute_contr_EQ(array_type const &Q, double target_precision) {
-
   }
 
   TA::Tensor<float> force_norms(TA::Tensor<float> const &in_norms,
@@ -1674,6 +2076,91 @@ class PeriodicCADFKBuilder : public madness::WorldObject<PeriodicCADFKBuilder<Ti
     return result;
   }
 
+  /*!
+   * \brief This computes tile ordinal index after translation
+   * from \c arg_latt_range to \c result_latt_range.
+   *
+   * \param arg_tile
+   * \param trans_3D
+   * \param arg_latt_range
+   * \param result_latt_range
+   * \param arg_latt_center
+   * \param result_latt_center
+   * \return result_tile
+   */
+  int64_t translate_tile(int64_t const arg_tile, Vector3i const &trans_3D,
+                         Vector3i const &arg_latt_range,
+                         Vector3i const &result_latt_range,
+                         Vector3i const &arg_latt_center = Vector3i({0, 0, 0}),
+                         Vector3i const &result_latt_center = Vector3i({0, 0,
+                                                                        0})) {
+    using ::mpqc::lcao::detail::direct_3D_idx;
+    using ::mpqc::lcao::detail::direct_ord_idx;
+
+    const auto ntiles_per_uc = obs_->nclusters();
+    auto arg_latt_ord = arg_tile / ntiles_per_uc;
+    auto arg_latt_3D = direct_3D_idx(arg_latt_ord, arg_latt_range);
+
+    auto result_latt_3D = arg_latt_3D + arg_latt_center + trans_3D;
+    auto result_latt_ord =
+        direct_ord_idx(result_latt_3D - result_latt_center, result_latt_range);
+    auto result_tile =
+        result_latt_ord * ntiles_per_uc + arg_tile % ntiles_per_uc;
+
+    return result_tile;
+  }
+
+  /*!
+   * \brief This computes basis function offsets for every shell in a cluster
+   * \param cluster a cluster (a.k.a. std::vector<Shell>)
+   * \param bf_first basis function index of the first function in this \c
+   * cluster
+   *
+   * \return a list of <key, mapped value> pairs with
+   * key: shell index
+   * mapped value: {cluster function offset, basis function offset} tuple
+   */
+  func_offset_list compute_func_offset_list(const ShellVec &cluster,
+                                            const size_t bf_first) const {
+    func_offset_list result;
+
+    auto cf_offset = 0;
+    auto bf_offset = bf_first;
+
+    const auto nshell = cluster.size();
+    for (auto s = 0; s != nshell; ++s) {
+      const auto &shell = cluster[s];
+      const auto nf = shell.size();
+      result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
+      bf_offset += nf;
+      cf_offset += nf;
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes shell offsets for every cluster in a basis
+   * \param basis
+   * \return a list of <key, mapped value> pairs with
+   * key: cluster index
+   * mapped value: index of first shell in a cluster
+   */
+  std::unordered_map<size_t, size_t> compute_shell_offset(
+      const Basis &basis) const {
+    std::unordered_map<size_t, size_t> result;
+
+    auto shell_offset = 0;
+    const auto &cluster_shells = basis.cluster_shells();
+    const auto nclusters = cluster_shells.size();
+    for (auto c = 0; c != nclusters; ++c) {
+      const auto nshells = cluster_shells[c].size();
+      result.insert(std::make_pair(c, shell_offset));
+      shell_offset += nshells;
+    }
+
+    return result;
+  }
 };
 
 }  // namespace scf

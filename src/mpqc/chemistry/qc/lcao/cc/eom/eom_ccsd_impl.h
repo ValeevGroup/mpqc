@@ -10,7 +10,6 @@ namespace lcao {
 
 template <typename Tile, typename Policy>
 void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
-
   ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";
 
   auto& world = this->wfn_world()->world();
@@ -56,8 +55,9 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   auto time1 = mpqc::now(world, accurate_time);
   auto time = mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << indent << "\nTime to Initialize Intermediates in EOM-CCSD: " << time << " S\n";
-
+  ExEnv::out0() << indent
+                << "\nTime to Initialize Intermediates in EOM-CCSD: " << time
+                << " S\n";
 }
 
 // compute [HSS_HSD C]^A_I
@@ -66,13 +66,15 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSS_HSD_C(
     const TArray& Cai, const TArray& Cabij) {
   TArray HSS_HSD_C;
 
-  // HSS * C part
-  HSS_HSD_C("a,i") =  //   Fac C^c_i
-      FAB_("a,c") * Cai("c,i")
-      // - Fki C^a_k
-      - FIJ_("k,i") * Cai("a,k")
-      // + Wakic C^c_k
-      + (2.0 * WIbAj_("k,a,c,i") + WIbaJ_("k,a,c,i")) * Cai("c,k");
+  {
+    // HSS * C part
+    HSS_HSD_C("a,i") =  //   Fac C^c_i
+        FAB_("a,c") * Cai("c,i")
+        // - Fki C^a_k
+        - FIJ_("k,i") * Cai("a,k")
+        // + Wakic C^c_k
+        + (2.0 * WIbAj_("k,a,c,i") + WIbaJ_("k,a,c,i")) * Cai("c,k");
+  }
 
   // HSD * C part
   {
@@ -100,28 +102,28 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
 
   // HDS * C part
   {
-    HDS_HDD_C("a,b,i,j") =  //   P(ab) Wkaij C^b_k
+    HDS_HDD_C("a,b,i,j") =
+        // P(ij) Wabcj C^c_i
+        // WAbCj C^C_I + WbAcI
+        WAbCi_("a,b,c,j") * Cai("c,i")
+        // P(ab) Wkaij C^b_k C^c_j
         // - WkAjI C^b_k - WKbIj C^A_K
-        -WKaIj_("k,a,j,i") * Cai("b,k") - WKaIj_("k,b,i,j") * Cai("a,k")
-        // + P(ij) Wabcj C^c_i
-        // + WAbCj C^C_I + WbAcI C^c_j
-        + WAbCi_("a,b,c,j") * Cai("c,i") + WAbCi_("b,a,c,i") * Cai("c,j")
+        - WKaIj_("k,b,i,j") * Cai("a,k")
+
         // + P(ab) Wbkdc C^c_k T^ad_ij
         // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
         // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
         +
         (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
-            t2("a,d,i,j") +
-        (2.0 * WAkCd_("a,k,d,c") - WAkCd_("a,k,c,d")) * Cai("c,k") *
-            t2("d,b,i,j")
+            t2("a,d,i,j")
         // - P(ij) Wlkjc C^c_k t^ab_il
         // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
         // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
         -
         (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
-            t2("a,b,i,l") -
-        (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c")) * Cai("c,k") *
-            t2("a,b,l,j");
+            t2("a,b,i,l");
+
+    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i");
   }
 
   // HDD * C part
@@ -206,14 +208,14 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
           this->lcao_factory().orbital_registry().retrieve(OrbitalIndex(L"i"));
 
       TArray U;
-      U("p,r,i,j") = Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") *
-          direct_integral("p,q,r,s");
-      U("p,r,i,j") =  0.5*( U("p,r,i,j") + U("r,p,j,i") );
-      HDS_HDD_C("a,b,i,j") += U("p,r,i,j") * Ca("p,a") * Ca("r,b")
-          - U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k")
-          - U("p,r,i,j") * Ci("p,k") * Ca("r,b") * t1("a,k")
-          + U("p,r,i,j") * Ci("p,k") * Ci("r,l") * tau("a,b,k,l");
-
+      U("p,r,i,j") =
+          Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") * direct_integral("p,q,r,s");
+      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
+      HDS_HDD_C("a,b,i,j") +=
+          U("p,r,i,j") * Ca("p,a") * Ca("r,b") -
+          U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k") -
+          U("p,r,i,j") * Ci("p,k") * Ca("r,b") * t1("a,k") +
+          U("p,r,i,j") * Ci("p,k") * Ci("r,l") * tau("a,b,k,l");
     }
   }
 
@@ -242,7 +244,8 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   }
 
   /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_, vector_threshold_);
+  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
+                                vector_threshold_);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
 
@@ -314,8 +317,11 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     ExEnv::out0() << indent << "\nEOM-CCSD Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
     ExEnv::out0() << indent << "Number of roots: " << n_roots << "\n";
-    ExEnv::out0() << indent << "Max number of vector per root: " << max_vector_ << "\n";
-    ExEnv::out0() << indent << "Threshold for norm of new vector: " << vector_threshold_ << "\n";
+    ExEnv::out0() << indent << "Max number of vector per root: " << max_vector_
+                  << "\n";
+    ExEnv::out0() << indent
+                  << "Threshold for norm of new vector: " << vector_threshold_
+                  << "\n";
 
     // initialize guest
     ExEnv::out0() << indent << "\nInitialize Guess Vector From CIS \n";

@@ -59,7 +59,6 @@ class PeriodicCADFKBuilder
     RD_size_ = ao_factory_.RD_size();
 
     const Vector3i ref_latt_range = {0, 0, 0};
-    const Vector3i ref_latt_center = {0, 0, 0};
     const auto natoms_per_uc = ao_factory_.unitcell().natoms();
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
@@ -69,69 +68,22 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
+    X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
+
     // compute C(X, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
-    X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
     {
-      C_bra_ = std::vector<array_type>(RJ_size_, array_type());
+      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
 
-      ExEnv::out0() << "\nComputing C_bra ...\n";
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
-
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        array_type &C = C_bra_[RJ];
-        auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
-        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        auto bs1 = shift_basis_origin(*obs_, vec_RJ);
-        C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            M, *obs_, *bs1, *X_dfbs_, natoms_per_uc, ref_latt_range,
-            ref_latt_range, RJ_max_, ref_latt_center, RJ_3D, ref_latt_center);
-      }
+      C_bra_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
+          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc, ref_latt_range, RJ_max_,
+          RJ_max_);
     }
     t1 = mpqc::fenced_now(world);
-    double t_C_bra = mpqc::duration_in_s(t0, t1);
-
-    // test new C_bra
-    {
-      auto t0 = mpqc::fenced_now(world);
-      ExEnv::out0() << "\nComputing new C_bra ...\n";
-      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
-
-      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
-      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
-
-      C_bra_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs_, *bs1, *X_dfbs_, natoms_per_uc, ref_latt_range, RJ_max_,
-          RJ_max_);
-
-      auto t1 = mpqc::fenced_now(world);
-      auto dur = mpqc::duration_in_s(t0, t1);
-      detail::print_size_info(C_bra_new_, "C bra");
-      ExEnv::out0() << "\tnew C_bra:            " << dur << " s\n" << std::endl;
-
-      // compute significant shell pair list
-      sig_shellpair_list_ = parallel_compute_shellpair_list(*obs_, *bs1);
-      // make a list of significant Rj's as in overlap between μ and ρ_Rj
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        const auto nshells = obs_->flattened_shells().size();
-        const auto shell1_min = nshells * RJ;
-        const auto shell1_max = shell1_min + nshells;
-
-        auto is_significant = false;
-        for (auto shell0 = 0; shell0 != nshells; ++shell0) {
-          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
-            if (shell1 >= shell1_min && shell1 < shell1_max) {
-              is_significant = true;
-              RJ_list_.emplace_back(RJ);
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-    }
+    auto t_C_bra = mpqc::duration_in_s(t0, t1);
 
     auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
       auto x = std::max(l(0), r(0));
@@ -140,55 +92,8 @@ class PeriodicCADFKBuilder
       return Vector3i({x, y, z});
     };
 
-    // compute C(Y, ν_R, σ_(Rj+Rd))
-    t0 = mpqc::fenced_now(world);
     auto Y_latt_range = max_latt_range(R_max_, RJ_max_ + RD_max_);
     Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, Y_latt_range, dcell_);
-    {
-      C_ket_ = std::vector<array_type>(RJ_size_, array_type());
-
-      ExEnv::out0() << "\nComputing C_ket ...\n";
-      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs_);
-
-      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
-      auto bs0 = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        array_type &C = C_ket_[RJ];
-        auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
-        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        auto bs1 = shift_basis_origin(*obs_, vec_RJ, RD_max_, dcell_);
-        C = lcao::cadf_fitting_coefficients<Tile, Policy>(
-            M, *bs0, *bs1, *Y_dfbs_, natoms_per_uc, R_max_, RD_max_,
-            Y_latt_range, ref_latt_center, RJ_3D, ref_latt_center);
-      }
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_C_ket = mpqc::duration_in_s(t0, t1);
-
-    // test new C_ket
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new C_ket ...\n";
-    //      auto max_range = R_max_ + RJ_max_ + RD_max_;
-    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range,
-    //      dcell_);
-
-    //      auto Y_dfbs =
-    //          shift_basis_origin(*dfbs_, zero_shift_base, max_range, dcell_);
-    //      const auto by_atom_dfbs = lcao::detail::by_center_basis(*Y_dfbs);
-    //      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
-
-    //      C_ket_new_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-    //          M, *obs_, *bs1, *Y_dfbs, natoms_per_uc, ref_latt_range,
-    //          max_range,
-    //          max_range);
-
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-    //      detail::print_size_info(C_ket_new_, "C ket");
-    //      ExEnv::out0() << "\tnew C_ket:            " << dur << " s\n" <<
-    //      std::endl;
-    //    }
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
@@ -199,12 +104,12 @@ class PeriodicCADFKBuilder
     auto oper_type = libint2::Operator::coulomb;
     const auto screen = ao_factory_.screen();
     const auto screen_thresh = ao_factory_.screen_threshold();
-    auto screen_norm_op = ::mpqc::lcao::gaussian::detail::l2Norm;
     auto screen_engine = make_engine_pool(
         oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
         libint2::BraKet::xx_xx);
 
     // make screener and engines for eri3
+    t0 = mpqc::fenced_now(world);
     {
       engines_ = make_engine_pool(
           oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
@@ -230,151 +135,40 @@ class PeriodicCADFKBuilder
       eri3_bs1_trange1_ = eri3_bs1_->create_trange1();
       basisRD_trange1_ = basisRD_->create_trange1();
       X_dfbs_trange1_ = X_dfbs_->create_trange1();
-    }
 
-    // compute E(X, ν_R, σ_(Rj+Rd))
-    t0 = mpqc::fenced_now(world);
-    {
-      if (E_bra_.empty())
-        E_bra_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
-
-      auto bs0 = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
-
-      std::shared_ptr<Qmatrix> Qbra, Qket;
-      Qbra = std::make_shared<Qmatrix>(
-          Qmatrix(world, screen_engine, *X_dfbs_, screen_norm_op));
-
+      // compute significant shell pair list
+      sig_shellpair_list_ = parallel_compute_shellpair_list(*obs_, *basisRJ_);
+      // make a list of significant Rj's as in overlap between μ and ρ_Rj
       for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        DirectTArray &E = E_bra_[RJ];
-        if (!E.array().is_initialized()) {
-          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-          auto bs1 = shift_basis_origin(*obs_, vec_RJ, RD_max_, dcell_);
+        const auto nshells = obs_->flattened_shells().size();
+        const auto shell1_min = nshells * RJ;
+        const auto shell1_max = shell1_min + nshells;
 
-          auto bs_array = utility::make_array_of_refs(*X_dfbs_, *bs0, *bs1);
-          auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs_, *bs0, *bs1}};
-
-          Qket = std::make_shared<Qmatrix>(
-              Qmatrix(world, screen_engine, *bs0, *bs1, screen_norm_op));
-          auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-              lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
-
-          auto engine =
-              make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-
-          E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                      std::move(screener));
+        auto is_significant = false;
+        for (auto shell0 = 0; shell0 != nshells; ++shell0) {
+          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
+            if (shell1 >= shell1_min && shell1 < shell1_max) {
+              is_significant = true;
+              RJ_list_.emplace_back(RJ);
+              break;
+            }
+          }
+          if (is_significant) break;
         }
       }
     }
     t1 = mpqc::fenced_now(world);
-    double t_E_bra = mpqc::duration_in_s(t0, t1);
-
-    // test new E_bra
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new E_bra ...\n";
-    //      std::shared_ptr<Qmatrix> Qbra, Qket;
-    //      Qbra = std::make_shared<Qmatrix>(
-    //          Qmatrix(world, screen_engine, *X_dfbs_, screen_norm_op));
-
-    //      auto max_range = R_max_ + RJ_max_ + RD_max_;
-    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, max_range,
-    //      dcell_);
-
-    //      Qket = std::make_shared<Qmatrix>(
-    //          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
-    //      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-    //          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
-
-    //      auto bs_array = utility::make_array_of_refs(*X_dfbs_, *obs_, *bs1);
-    //      auto bs_vector = lcao::gaussian::BasisVector{{*X_dfbs_, *obs_,
-    //      *bs1}};
-    //      auto engine =
-    //          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-    //      E_bra_new_ = lcao::gaussian::direct_sparse_integrals(
-    //          world, engine, bs_vector, std::move(screener));
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-    //      ExEnv::out0() << "\tnew E_bra:            " << dur << " s\n" <<
-    //      std::endl;
-    //    }
-
-    // compute E(Y, μ_0, ρ_Rj)
-    t0 = mpqc::fenced_now(world);
-    {
-      if (E_ket_.empty())
-        E_ket_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
-
-      std::shared_ptr<Qmatrix> Qbra, Qket;
-      Qbra = std::make_shared<Qmatrix>(
-          Qmatrix(world, screen_engine, *Y_dfbs_, screen_norm_op));
-
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        DirectTArray &E = E_ket_[RJ];
-        if (!E.array().is_initialized()) {
-          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-          auto bs1 = shift_basis_origin(*obs_, vec_RJ);
-
-          auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *bs1);
-          auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *bs1}};
-
-          Qket = std::make_shared<Qmatrix>(
-              Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
-          auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-              lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
-
-          auto engine =
-              make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-
-          E = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                      std::move(screener));
-        }
-      }
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_E_ket = mpqc::duration_in_s(t0, t1);
-
-    // test new E_ket
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new E_ket ...\n";
-    //      std::shared_ptr<Qmatrix> Qbra, Qket;
-    //      Qbra = std::make_shared<Qmatrix>(
-    //          Qmatrix(world, screen_engine, *Y_dfbs_, screen_norm_op));
-
-    //      auto bs1 = shift_basis_origin(*obs_, zero_shift_base, RJ_max_,
-    //      dcell_);
-    //      Qket = std::make_shared<Qmatrix>(
-    //          Qmatrix(world, screen_engine, *obs_, *bs1, screen_norm_op));
-    //      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-    //          lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_thresh));
-
-    //      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *bs1);
-    //      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_,
-    //      *bs1}};
-    //      auto engine =
-    //          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-    //      E_ket_new_ = lcao::gaussian::direct_sparse_integrals(
-    //          world, engine, bs_vector, std::move(screener));
-
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-    //      ExEnv::out0() << "\tnew E_ket:            " << dur << " s\n" <<
-    //      std::endl;
-    //    }
+    auto t_misc = mpqc::duration_in_s(t0, t1);
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
                     << "\tC_bra:               " << t_C_bra << " s\n"
-                    << "\tC_ket:               " << t_C_ket << " s\n"
                     << "\tM:                   " << t_M << " s\n"
-                    << "\tE_bra:               " << t_E_bra << " s\n"
-                    << "\tE_ket:               " << t_E_ket << " s"
-                    << std::endl;
+                    << "\tengine, screen ... : " << t_misc << " s" << std::endl;
     }
   }
 
-  ~PeriodicCADFKBuilder() {}
+  ~PeriodicCADFKBuilder() { engines_.reset(); }
 
   array_type operator()(array_type const &D, double target_precision) {
     return compute_K(D, target_precision);
@@ -385,14 +179,28 @@ class PeriodicCADFKBuilder
   bool print_detail_;
   double force_shape_threshold_;
   double target_precision_ = std::numeric_limits<double>::epsilon();
+  Vector3d dcell_;
+  Vector3i R_max_;
+  Vector3i RJ_max_;
+  Vector3i RD_max_;
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+
+  array_type C_bra_;
+  array_type M_;
+
   std::unique_ptr<PTC_Builder> three_center_builder_;
   shellpair_list_t sig_shellpair_list_;
   std::vector<int64_t> RJ_list_;
+  std::shared_ptr<lcao::Screener> p_screener_;
+  Engine engines_;
 
   std::shared_ptr<Basis> obs_;
   std::shared_ptr<Basis> dfbs_;
   std::shared_ptr<Basis> X_dfbs_;
   std::shared_ptr<Basis> Y_dfbs_;
+  std::shared_ptr<Basis> basisRJ_;
   std::shared_ptr<Basis> basisR_;
   std::shared_ptr<Basis> basisRD_;
   std::shared_ptr<Basis> eri3_X_dfbs_;
@@ -404,7 +212,6 @@ class PeriodicCADFKBuilder
   TA::TiledRange1 eri3_X_trange1_;
   TA::TiledRange1 eri3_bs0_trange1_;
   TA::TiledRange1 eri3_bs1_trange1_;
-
   TA::TiledRange result_trange_;
   std::shared_ptr<TA::Pmap> result_pmap_;
   std::unordered_map<size_t, size_t> eri3_bs0_shell_offset_map_;
@@ -412,238 +219,16 @@ class PeriodicCADFKBuilder
   madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
   madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
 
-  Vector3d dcell_;
-  Vector3i R_max_;
-  Vector3i RJ_max_;
-  Vector3i RD_max_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
-
-  std::vector<array_type> C_bra_;
-  std::vector<array_type> C_ket_;
-  std::vector<array_type> F_;
-  array_type M_;
-  std::vector<DirectTArray> E_bra_;
-  std::vector<DirectTArray> E_ket_;
-
-  array_type C_bra_new_;
-  array_type C_ket_new_;
-  DirectTArray E_bra_new_;
-  DirectTArray E_ket_new_;
-
-  std::shared_ptr<lcao::Screener> p_screener_;
-  Engine engines_;
-
  private:
   array_type compute_K(const array_type &D, double target_precision) {
     auto &world = ao_factory_.world();
-    //    auto RJ_size = ao_factory_.RJ_size();
-    auto R_size = ao_factory_.R_size();
-    auto RJ_size = R_size;
 
-    mpqc::time_point t0, t1;
-    auto t0_k_builder = mpqc::fenced_now(world);
-
-    // compute Q(X, μ_0, σ_(Rj+Rd)) = C(X, μ_0, ρ_Rj) D(ρ_0, σ_Rd)
-    t0 = mpqc::fenced_now(world);
-    std::vector<array_type> Q_bra(RJ_size, array_type());
-    for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      array_type &C = C_bra_[RJ];
-      const double norm = C("X, mu, rho").norm();
-
-      if (norm == 0.0) {
-        continue;
-      }
-      array_type &Q = Q_bra[RJ];
-      Q("X, mu, sig") = C("X, mu, rho") * D("rho, sig");
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_Q_bra = mpqc::duration_in_s(t0, t1);
-
-    // test new Q_bra
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new Q_bra ...\n";
-
-    //      array_type Q_bra_new;
-    //      Q_bra_new = compute_Q_bra(C_bra_new_, D);
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-
-    //      detail::print_size_info(Q_bra_new, "new Q_bra");
-    //      ExEnv::out0() << "\tnew Q_bra:            " << dur << " s\n";
-    //    }
-
-    t0 = mpqc::fenced_now(world);
-    array_type F, K_part1;
-    double t_force_shape = 0.0;
-    double t_build_f = 0.0;
-    double t_contr = 0.0;
-    for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      array_type &C = C_ket_[RJ];
-      array_type &Q = Q_bra[RJ];
-      if (!Q.is_initialized()) {
-        continue;
-      }
-      DirectTArray &E = E_bra_[RJ];
-
-      mpqc::time_point t0, t1;
-      // force shape of F
-      // auto norms = force_norms(Q_bra[RJ].shape().data(), 1, R_size);
-      t0 = mpqc::fenced_now(world);
-      auto normsp = force_normsp(Q.shape().data(), E.array().shape().data());
-      auto trange = E.array().trange();
-      TA::SparseShape<float> forced_shape(world, normsp, trange);
-      t1 = mpqc::fenced_now(world);
-      t_force_shape += mpqc::duration_in_s(t0, t1);
-
-      // compute F(X, ν_R, σ_(Rj+Rd)) =
-      //           E(X, ν_R, σ_(Rj+Rd)) - M(X, Y) C(Y, ν_R, σ_(Rj+Rd))
-      t0 = mpqc::fenced_now(world);
-      F("X, nu, sig") = (E("X, nu, sig")).set_shape(forced_shape);
-      F.truncate();
-      F("X, nu, sig") -= (M_("X, Y") * C("Y, nu, sig")).set_shape(forced_shape);
-      F.truncate();
-      world.gop.fence();
-
-      t1 = mpqc::fenced_now(world);
-      t_build_f += mpqc::duration_in_s(t0, t1);
-
-      t0 = mpqc::fenced_now(world);
-      if (!K_part1.is_initialized()) {
-        K_part1("mu, nu") = Q("X, mu, sig") * F("X, nu, sig");
-      } else {
-        K_part1("mu, nu") += Q("X, mu, sig") * F("X, nu, sig");
-      }
-      t1 = mpqc::fenced_now(world);
-      t_contr += mpqc::duration_in_s(t0, t1);
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_F_and_K1 = mpqc::duration_in_s(t0, t1);
-
-    // compute Q(Y, ν_R, ρ_Rj) = C(Y, ν_R, σ_(Rj+Rd)) D(ρ_0, σ_Rd)
-    t0 = mpqc::fenced_now(world);
-    std::vector<array_type> Q_ket(RJ_size, array_type());
-    for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      array_type &C = C_ket_[RJ];
-      const double norm = C("Y, nu, sig").norm();
-      if (norm == 0.0) {
-        continue;
-      }
-      array_type &Q = Q_ket[RJ];
-      Q("Y, nu, rho") = C("Y, nu, sig") * D("rho, sig");
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_Q_ket = mpqc::duration_in_s(t0, t1);
-
-    // test new Q_ket
-    //    array_type Q_ket_new;
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new Q_ket ...\n";
-
-    //      Q_ket_new = compute_Q_ket(C_ket_new_, D);
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-
-    //      detail::print_size_info(Q_ket_new, "new Q_ket");
-    //      ExEnv::out0() << "\tnew Q_ket:            " << dur << " s\n";
-    //    }
-
-    // test new F
-    //    array_type F_new;
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      ExEnv::out0() << "\nComputing new F ...\n";
-
-    //      auto normsp = force_normsp(Q_ket_new.shape().data(),
-    //                                 E_ket_new_.array().shape().data());
-    //      auto trange = E_ket_new_.array().trange();
-    //      TA::SparseShape<float> forced_shape(world, normsp, trange);
-
-    //      F_new("Y, mu, rho") = (E_ket_new_("Y, mu,
-    //      rho")).set_shape(forced_shape);
-    //      F_new.truncate();
-    //      F_new("Y, mu, rho") -=
-    //          (M_("X, Y") * C_bra_new_("X, mu, rho")).set_shape(forced_shape);
-    //      F_new.truncate();
-    //      world.gop.fence();
-
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-
-    //      detail::print_size_info(F_new, "new F");
-    //      ExEnv::out0() << "\tnew F:            " << dur << " s\n";
-    //    }
-
-    // test new K_part1
-    //    {
-    //      auto t0 = mpqc::fenced_now(world);
-    //      array_type K_part1_new;
-    //      ExEnv::out0() << "\nComputing new K part1 = F Q_ket ...\n";
-    //      K_part1_new("mu, nu") = F_new("Y, mu, rho") * Q_ket_new("Y, nu,
-    //      rho");
-    //      auto t1 = mpqc::fenced_now(world);
-    //      auto dur = mpqc::duration_in_s(t0, t1);
-    //      detail::print_size_info(F_new, "new K part1");
-    //      ExEnv::out0() << "\tnew K part1:            " << dur << " s\n";
-    //    }
-
-    // compute K_part2
-    t0 = mpqc::fenced_now(world);
-    array_type K_part2;
-    for (auto RJ = 0; RJ != RJ_size; ++RJ) {
-      auto const &Q = Q_ket[RJ];
-      auto const &E = E_ket_[RJ];
-      if (Q_ket[RJ].is_initialized()) {
-        auto normsp = force_normsp(Q.shape().data(), E.array().shape().data());
-
-        auto trange = E.array().trange();
-        TA::SparseShape<float> forced_shape(world, normsp, trange);
-
-        array_type F2;
-        F2("Y, mu, rho") = (E("Y, mu, rho")).set_shape(forced_shape);
-        if (!K_part2.is_initialized()) {
-          K_part2("mu, nu") = F2("Y, mu, rho") * Q("Y, nu, rho");
-        } else {
-          K_part2("mu, nu") += F2("Y, mu, rho") * Q("Y, nu, rho");
-        }
-      }
-    }
-    t1 = mpqc::fenced_now(world);
-    double t_K_part2 = mpqc::duration_in_s(t0, t1);
-
-    // compute exchange
-    t0 = mpqc::fenced_now(world);
-    array_type K;
-    K("mu, nu") = K_part1("mu, nu") + K_part2("mu, nu");
-    t1 = mpqc::fenced_now(world);
-    double t_K = mpqc::duration_in_s(t0, t1);
-
-    auto t1_k_builder = mpqc::fenced_now(world);
-    double t_tot = mpqc::duration_in_s(t0_k_builder, t1_k_builder);
-
-    if (print_detail_) {
-      ExEnv::out0() << "\nCADF-K time decomposition:\n"
-                    << "\tQ_bra:                " << t_Q_bra << " s\n"
-                    << "\tF and Q F:            " << t_F_and_K1 << " s\n"
-                    << "\t\tforce shape:        " << t_force_shape << " s\n"
-                    << "\t\tbuild f:            " << t_build_f << " s\n"
-                    << "\t\tcontraction:        " << t_contr << " s\n"
-                    << "\tQ_ket:                " << t_Q_ket << " s\n"
-                    << "\tK_part2 = E Q:        " << t_K_part2 << " s\n"
-                    << "\tK = K1 + K2:          " << t_K << " s\n"
-                    << "\nTotal K builder time: " << t_tot << " s" << std::endl;
-    }
-
-    // ***************** try something different *****************
-    auto t0_new_k = mpqc::fenced_now(world);
+    auto t0_k = mpqc::fenced_now(world);
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::detail::direct_vector;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
-    array_type K_new;
+    array_type K;
 
     auto oper_type = libint2::Operator::coulomb;
     const auto screen_thresh = ao_factory_.screen_threshold();
@@ -652,7 +237,7 @@ class PeriodicCADFKBuilder
         oper_type, utility::make_array_of_refs(*dfbs_, *obs_, *obs_),
         libint2::BraKet::xx_xx);
 
-    const auto &trange_C = C_bra_new_.trange();
+    const auto &trange_C = C_bra_.trange();
     const auto &X_range = trange_C.dim(0).tiles_range();
     const auto &mu_range = trange_C.dim(1).tiles_range();
     const size_t ntiles_per_uc = obs_->nclusters();
@@ -661,47 +246,50 @@ class PeriodicCADFKBuilder
     screen_Qbra = std::make_shared<Qmatrix>(
         Qmatrix(world, screen_engine, *Y_dfbs_, screen_norm_op));
 
-    time_point t00, t11;
+    time_point t0, t1;
     double t_Cblock = 0.0;
-    double t_Qbra_new = 0.0;
-    double t_Qket_new = 0.0;
-    double t_Eket_new = 0.0;
-    double t_F_new = 0.0;
-    double t_Kpart1_new = 0.0;
-    double t_Kpart2_new = 0.0;
+    double t_Qbra = 0.0;
+    double t_Qket = 0.0;
+    double t_Eket = 0.0;
+    double t_F = 0.0;
+    double t_Kpart1 = 0.0;
+    double t_Kpart2 = 0.0;
 
     for (const auto RJ : RJ_list_) {
-      t00 = mpqc::fenced_now(world);
+      t0 = mpqc::fenced_now(world);
+      // grab C(X, μ_0, ρ): the Rj block of C(X, μ_0, ρ_Rj)
       std::vector<size_t> C_low{X_range.first, mu_range.first,
                                 RJ * ntiles_per_uc};
       std::vector<size_t> C_up{X_range.second, mu_range.second,
                                (RJ + 1) * ntiles_per_uc};
       array_type C;
-      C("X, mu, rho") = C_bra_new_("X, mu, rho").block(C_low, C_up);
-      t11 = mpqc::fenced_now(world);
-      t_Cblock += mpqc::duration_in_s(t00, t11);
+      C("X, mu, rho") = C_bra_("X, mu, rho").block(C_low, C_up);
+      t1 = mpqc::fenced_now(world);
+      t_Cblock += mpqc::duration_in_s(t0, t1);
 
+      // if C(X, μ_0, ρ) is zero, skip the rest of this loop
       const double norm_C = C("X, mu, rho").norm();
       if (norm_C == 0.0) continue;
 
-      t00 = mpqc::fenced_now(world);
+      // compute Q(X, μ_0, σ_Rd) = C(X, μ_0, ρ) * D(ρ, σ_Rd)
+      t0 = mpqc::fenced_now(world);
       array_type Q_bra;
       Q_bra("X, mu, sig") = C("X, mu, rho") * D("rho, sig");
-      t11 = mpqc::fenced_now(world);
-      t_Qbra_new += mpqc::duration_in_s(t00, t11);
+      t1 = mpqc::fenced_now(world);
+      t_Qbra += mpqc::duration_in_s(t0, t1);
 
-      detail::print_size_info(Q_bra, "Q_bra_new");
-
-      t00 = mpqc::fenced_now(world);
+      // compute Q(Y, ν_R, ρ) = C(X, ν_R, σ(Rj+Rd)) * D(ρ, σ_Rd)
+      //
+      // note: no need to compute C(X, ν_R, σ(Rj+Rd)). Just find the right
+      // tiles from C(X, μ_0, ρ_Rj) due to translational symmetry
+      t0 = mpqc::fenced_now(world);
       array_type Q_ket;
-      Q_ket = compute_Q_ket(C_bra_new_, D, RJ);
-      t11 = mpqc::fenced_now(world);
-      t_Qket_new += mpqc::duration_in_s(t00, t11);
-      detail::print_size_info(Q_ket, "Q_ket_new");
+      Q_ket = compute_Q_ket(C_bra_, D, RJ);
+      t1 = mpqc::fenced_now(world);
+      t_Qket += mpqc::duration_in_s(t0, t1);
 
-      detail::print_size_info(D, "D");
-
-      t00 = mpqc::fenced_now(world);
+      // compute E(Y, μ_0, ρ)
+      t0 = mpqc::fenced_now(world);
       DirectTArray E_ket;
       {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -721,10 +309,11 @@ class PeriodicCADFKBuilder
         E_ket = lcao::gaussian::direct_sparse_integrals(
             world, engine, bs_vector, std::move(screener));
       }
-      t11 = mpqc::fenced_now(world);
-      t_Eket_new += mpqc::duration_in_s(t00, t11);
+      t1 = mpqc::fenced_now(world);
+      t_Eket += mpqc::duration_in_s(t0, t1);
 
-      t00 = mpqc::fenced_now(world);
+      // compute F(Y, μ_0, ρ) = E(Y, μ_0, ρ) + C(X, μ_0, ρ) M(X, Y)
+      t0 = mpqc::fenced_now(world);
       array_type F;
       {
         auto normsp =
@@ -738,38 +327,40 @@ class PeriodicCADFKBuilder
             (C("X, mu, rho") * M_("X, Y")).set_shape(forced_shape);
         F.truncate();
       }
-      t11 = mpqc::fenced_now(world);
-      t_F_new += mpqc::duration_in_s(t00, t11);
+      t1 = mpqc::fenced_now(world);
+      t_F += mpqc::duration_in_s(t0, t1);
 
-      t00 = mpqc::fenced_now(world);
-      if (!K_new.is_initialized()) {
-        K_new("mu, nu") = F("Y, mu, rho") * Q_ket("Y, nu, rho");
+      // compute K(μ_0, ν_R) += F(Y, μ_0, ρ) Q(Y, ν_R, ρ)
+      t0 = mpqc::fenced_now(world);
+      if (!K.is_initialized()) {
+        K("mu, nu") = F("Y, mu, rho") * Q_ket("Y, nu, rho");
       } else {
-        K_new("mu, nu") += F("Y, mu, rho") * Q_ket("Y, nu, rho");
+        K("mu, nu") += F("Y, mu, rho") * Q_ket("Y, nu, rho");
       }
-      t11 = mpqc::fenced_now(world);
-      t_Kpart1_new += mpqc::duration_in_s(t00, t11);
+      t1 = mpqc::fenced_now(world);
+      t_Kpart1 += mpqc::duration_in_s(t0, t1);
 
-      result_trange_ = K_new.trange();
-      result_pmap_ = K_new.pmap();
-      t00 = mpqc::fenced_now(world);
-      K_new("mu, nu") +=
-          compute_contr_EQ(Q_bra, RJ, target_precision)("mu, nu");
-      t11 = mpqc::fenced_now(world);
-      t_Kpart2_new += mpqc::duration_in_s(t00, t11);
+      // compute K(μ_0, ν_R) += E(X, ν_R, σ_Rd) Q(X, μ_0, σ_Rd)
+      result_trange_ = K.trange();
+      result_pmap_ = K.pmap();
+      t0 = mpqc::fenced_now(world);
+      auto EQ = compute_contr_EQ(Q_bra, RJ, target_precision);
+      K("mu, nu") += EQ("mu, nu");
+      t1 = mpqc::fenced_now(world);
+      t_Kpart2 += mpqc::duration_in_s(t0, t1);
     }
-    auto t1_new_k = mpqc::fenced_now(world);
-    auto t_tot_new = mpqc::duration_in_s(t0_new_k, t1_new_k);
+    auto t1_k = mpqc::fenced_now(world);
+    auto t_tot = mpqc::duration_in_s(t0_k, t1_k);
     if (print_detail_) {
-      ExEnv::out0() << "\nCADF-K new time decomposition:\n"
+      ExEnv::out0() << "\nCADF-K time decomposition:\n"
                     << "\tC block:                  " << t_Cblock << " s\n"
-                    << "\tQ_bra:                    " << t_Qbra_new << " s\n"
-                    << "\tQ_ket:                    " << t_Qket_new << " s\n"
-                    << "\tE_ket:                    " << t_Eket_new << " s\n"
-                    << "\tF = E - C M:              " << t_F_new << " s\n"
-                    << "\tK_part1 = F Qket:         " << t_Kpart1_new << " s\n"
-                    << "\tK_part2 = E Qbra:         " << t_Kpart2_new << " s\n"
-                    << "\nTotal K builder new time: " << t_tot_new << " s"
+                    << "\tQ_bra:                    " << t_Qbra << " s\n"
+                    << "\tQ_ket:                    " << t_Qket << " s\n"
+                    << "\tE_ket:                    " << t_Eket << " s\n"
+                    << "\tF = E - C M:              " << t_F << " s\n"
+                    << "\tK_part1 = F Qket:         " << t_Kpart1 << " s\n"
+                    << "\tK_part2 = E Qbra:         " << t_Kpart2 << " s\n"
+                    << "\nTotal K builder time:     " << t_tot << " s"
                     << std::endl;
     }
 

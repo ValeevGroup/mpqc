@@ -215,7 +215,7 @@ class PeriodicRIJBuilder {
     auto t_tot = mpqc::duration_in_s(t0_j_builder, t1_j_builder);
 
     if (this->print_detail_) {
-      ExEnv::out0() << "\nRI-J timing decomposition:\n"
+      ExEnv::out0() << "\nRI-J time decomposition:\n"
                     << "\tSum_RJ (X|μν) D_μν:   " << t_3c_d_contr << " s\n"
                     << "\tC_para_Xμν D_μν:      " << t_w_para << " s\n"
                     << "\tC_Xμν D_μν:           " << t_w << " s\n"

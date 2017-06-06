@@ -224,6 +224,12 @@ class PeriodicCADFKBuilder
 
       basisR_ = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
       basisRD_ = shift_basis_origin(*obs_, zero_shift_base, RD_max_, dcell_);
+
+      eri3_X_trange1_ = eri3_X_dfbs_->create_trange1();
+      eri3_bs0_trange1_ = eri3_bs0_->create_trange1();
+      eri3_bs1_trange1_ = eri3_bs1_->create_trange1();
+      basisRD_trange1_ = basisRD_->create_trange1();
+      X_dfbs_trange1_ = X_dfbs_->create_trange1();
     }
 
     // compute E(X, ν_R, σ_(Rj+Rd))
@@ -392,6 +398,12 @@ class PeriodicCADFKBuilder
   std::shared_ptr<Basis> eri3_X_dfbs_;
   std::shared_ptr<Basis> eri3_bs0_;
   std::shared_ptr<Basis> eri3_bs1_;
+
+  TA::TiledRange1 basisRD_trange1_;
+  TA::TiledRange1 X_dfbs_trange1_;
+  TA::TiledRange1 eri3_X_trange1_;
+  TA::TiledRange1 eri3_bs0_trange1_;
+  TA::TiledRange1 eri3_bs1_trange1_;
 
   TA::TiledRange result_trange_;
   std::shared_ptr<TA::Pmap> result_pmap_;
@@ -1203,6 +1215,7 @@ class PeriodicCADFKBuilder
     target_precision_ = target_precision;
 
     // # of tiles per basis
+    assert(obs_->nclusters() == dfbs_->nclusters());
     const auto ntiles_per_uc = obs_->nclusters();
     const auto ntiles_mu = obs_->nclusters();
     const auto ntiles_nu = ntiles_mu * R_size_;
@@ -1282,12 +1295,14 @@ class PeriodicCADFKBuilder
     // compute the shape, if sparse
     if (!decltype(shape)::is_dense()) {
       // extract local contribution to the shape of G, construct global shape
-      std::vector<std::pair<std::array<size_t, 1>, double>> global_tile_norms;
+      std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
       for (const auto &global_tile : global_contr_tiles_) {
         const auto tile_ord = global_tile.first;
+        const auto i = tile_ord / ntiles_nu;
+        const auto j = tile_ord % ntiles_nu;
         const auto norm = global_tile.second.norm();
         global_tile_norms.push_back(
-            std::make_pair(std::array<size_t, 1>{{tile_ord}}, norm));
+            std::make_pair(std::array<size_t, 2>{{i, j}}, norm));
       }
       shape = decltype(shape)(world, global_tile_norms, result_trange_);
     }
@@ -1339,15 +1354,13 @@ class PeriodicCADFKBuilder
     const auto ntiles_nu = tr1.tile_extent();
     const auto &rng_mu = tr0.tile(tile_mu);
     const auto &rng_nu = tr1.tile(tile_nu);
-    const auto &rng_X = basis_X->create_trange1().tile(tile_X);
-    const auto &rng_sig = basis_sig->create_trange1().tile(tile_sig);
+    const auto &rng_X = X_dfbs_trange1_.tile(tile_X);
+    const auto &rng_sig = basisRD_trange1_.tile(tile_sig);
 
     // TODO make eri3-specific trange1 outside of task
-    const auto &eri3_rng_X = eri3_basis_X->create_trange1().tile(eri3_tile_X);
-    const auto &eri3_rng_nu =
-        eri3_basis_nu->create_trange1().tile(eri3_tile_nu);
-    const auto &eri3_rng_sig =
-        eri3_basis_sig->create_trange1().tile(eri3_tile_sig);
+    const auto &eri3_rng_X = eri3_X_trange1_.tile(eri3_tile_X);
+    const auto &eri3_rng_nu = eri3_bs0_trange1_.tile(eri3_tile_nu);
+    const auto &eri3_rng_sig = eri3_bs1_trange1_.tile(eri3_tile_sig);
 
     // range sizes
     const auto rng_size_mu = rng_mu.second - rng_mu.first;
@@ -1423,7 +1436,7 @@ class PeriodicCADFKBuilder
           for (auto const &sh_sig_in_basis :
                sig_shellpair_list_[sh_nu_in_basis]) {
             if (sh_sig_in_basis < eri3_sh_offset_sig ||
-                sh_sig_in_basis >= eri3_sh_offset_sig)
+                sh_sig_in_basis >= eri3_sh_max_sig)
               continue;
 
             const auto eri3_sh_sig = sh_sig_in_basis - eri3_sh_offset_sig;
@@ -1494,7 +1507,7 @@ class PeriodicCADFKBuilder
 
     // accumulate the local contributions
     {
-      auto tile_ord = tile_mu * ntiles_nu + tile_nu;
+      const auto tile_ord = tile_mu * ntiles_nu + tile_nu;
       PeriodicCADFKBuilder_::accumulate_local_task(result_tile, tile_ord);
     }
   }

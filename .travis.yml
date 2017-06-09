@@ -31,6 +31,7 @@ addons:
     - boost-latest
     - kubuntu-backports
     - llvm-toolchain-precise-3.8
+    - sourceline: 'ppa:kalakris/eigen'
     packages:
     - g++-5
     - g++-6

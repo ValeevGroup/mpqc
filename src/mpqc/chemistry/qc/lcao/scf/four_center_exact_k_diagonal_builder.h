@@ -1,6 +1,9 @@
+//
+// Created by Drew Lewis on 05/24/2017
+//
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_FOUR_CENTER_EXACT_K_DIAGONAL_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_FOUR_CENTER_EXACT_K_DIAGONAL_BUILDER_H_
 
 #include <cassert>
 
@@ -14,81 +17,21 @@
 namespace mpqc {
 namespace scf {
 
-/// ReferenceFourCenterFockBuilder is a reference implementation
-/// that uses 4-center (stored or direct) integrals.
-
-/// @warning This is a very inefficient builder when used with direct integrals:
-/// the number of integrals it evaluates is roughly 6 to 16 times greater than
-/// optimal (this depends on whether the integral arrays account for any
-/// permutational symmetry). It is only useful for reference computation
-template <typename Tile, typename Policy, typename Integral>
-class ReferenceFourCenterFockBuilder : public FockBuilder<Tile, Policy> {
- public:
-  using array_type = typename FockBuilder<Tile, Policy>::array_type;
-
-  ReferenceFourCenterFockBuilder(Integral const& eri4_J, Integral const& eri4_K)
-      : eri4_J_(eri4_J), eri4_K_(eri4_K) {}
-
-  array_type operator()(array_type const& D, array_type const&,
-                        double) override {
-    const auto make_J = eri4_J_.is_initialized();
-    const auto make_K = eri4_K_.is_initialized();
-    assert(make_J || make_K);
-
-    // Make J
-    array_type J;
-    if (make_J) {
-      J("mu, nu") = eri4_J_("mu, nu, rho, sig") * D("rho, sig");
-      // symmetrize to account for petite list
-      J("mu, nu") = 0.5 * (J("mu, nu") + J("nu, mu"));
-    }
-
-    // Make K
-    array_type K;
-    if (make_K) {
-      K("mu, nu") = eri4_K_("mu, rho, nu, sig") * D("rho, sig");
-      // symmetrize to account for petite list
-      K("mu, nu") = 0.5 * (K("mu, nu") + K("nu, mu"));
-    }
-
-    // Make and return G
-    array_type G;
-    if (make_J && make_K)
-      G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");
-    else if (make_J)
-      G("mu, nu") = 2 * J("mu, nu");
-    else if (make_K)
-      G("mu, nu") = -K("mu, nu");
-
-    return G;
-  }
-
-  void register_fock(const array_type& fock,
-                     FormulaRegistry<array_type>& registry) override {
-    registry.insert(Formula(L"(κ|F|λ)"), fock);
-  }
-
-  inline void print_iter(std::string const& leader) override {}
-
- private:
-  Integral eri4_J_;
-  Integral eri4_K_;
-};
-
-/// FourCenterFockBuilder is an integral-direct implementation of FockBuilder
-/// in a Gaussian AO basis that uses 4-center integrals and optimally takes
-/// advantage of the permutational symmetry and shell-level screening.
+/// ExactKDiagonalBuilder is an integral-direct implementation of FockBuilder
+/// in a Gaussian AO basis that uses 4-center integrals to compute the exact K
+/// diagonal and optimally takes / advantage of the permutational symmetry and
+/// shell-level screening.
 template <typename Tile, typename Policy>
-class FourCenterFockBuilder
+class ExactKDiagonalBuilder
     : public FockBuilder<Tile, Policy>,
-      public madness::WorldObject<FourCenterFockBuilder<Tile, Policy>> {
+      public madness::WorldObject<ExactKDiagonalBuilder<Tile, Policy>> {
  public:
   using array_type = typename FockBuilder<Tile, Policy>::array_type;
   using const_data_ptr = typename Tile::allocator_type::const_pointer;
 
   using WorldObject_ =
-      madness::WorldObject<FourCenterFockBuilder<Tile, Policy>>;
-  using FourCenterFockBuilder_ = FourCenterFockBuilder<Tile, Policy>;
+      madness::WorldObject<ExactKDiagonalBuilder<Tile, Policy>>;
+  using ExactKDiagonalBuilder_ = ExactKDiagonalBuilder<Tile, Policy>;
 
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using Shell = typename ::mpqc::lcao::gaussian::Shell;
@@ -97,16 +40,13 @@ class FourCenterFockBuilder
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
-  FourCenterFockBuilder(madness::World& world,
+  ExactKDiagonalBuilder(madness::World& world,
                         std::shared_ptr<const Basis> bra_basis,
                         std::shared_ptr<const Basis> ket_basis,
                         std::shared_ptr<const Basis> density_basis,
-                        bool compute_J, bool compute_K,
                         std::string screen = "schwarz",
-                        double screen_threshold = 1.0e-10)
+                        double screen_threshold = 1.0e-12)
       : WorldObject_(world),
-        compute_J_(compute_J),
-        compute_K_(compute_K),
         bra_basis_(std::move(bra_basis)),
         ket_basis_(std::move(ket_basis)),
         density_basis_(std::move(density_basis)),
@@ -119,7 +59,7 @@ class FourCenterFockBuilder
     WorldObject_::process_pending();
   }
 
-  virtual ~FourCenterFockBuilder() {}
+  virtual ~ExactKDiagonalBuilder() {}
 
   array_type operator()(array_type const& D, array_type const&,
                         double target_precision) override {
@@ -137,11 +77,11 @@ class FourCenterFockBuilder
     }
 
     if (bra_basis_ == density_basis_ && ket_basis_ == density_basis_)
-      return compute_JK_aaaa(D, target_precision);
+      return compute_K_aaaa(D, target_precision);
     assert(false && "feature not implemented");
   }
 
-  array_type compute_JK_aaaa(array_type const& D, double target_precision) {
+  array_type compute_K_aaaa(array_type const& D, double target_precision) {
     dist_pmap_D_ = D.pmap();
 
     // Copy D and make it replicated.
@@ -178,6 +118,9 @@ class FourCenterFockBuilder
     auto shblk_norm_D = compute_shellblock_norm(basis, D);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
+    // Define this so I don't have to keep removing them.
+    bool compute_K_ = true;
+
     auto empty = TA::Future<Tile>(Tile());
     // todo screen loop with schwarz
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles; ++tile0) {
@@ -186,14 +129,14 @@ class FourCenterFockBuilder
           // if tile0==tile2 there will be shell blocks such that shell0 >
           // shell2, hence need shell3<=shell2 -> tile3<=tile2
           for (auto tile3 = 0ul; tile3 <= tile2; ++tile3, ++tile0123) {
+            bool contains_K_diag = tile0 == tile2 || tile0 == tile3 ||
+                                   tile1 == tile2 || tile1 == tile3;
+            if (false == contains_K_diag) {
+              continue;
+            }
+
             // TODO screen D blocks using schwarz estimate for this Coulomb
             // operator tile
-            auto D01 = (!compute_J_ || D_repl.is_zero({tile0, tile1}))
-                           ? empty
-                           : D_repl.find({tile0, tile1});
-            auto D23 = (!compute_J_ || D_repl.is_zero({tile2, tile3}))
-                           ? empty
-                           : D_repl.find({tile2, tile3});
             auto D02 = (!compute_K_ || D_repl.is_zero({tile0, tile2}))
                            ? empty
                            : D_repl.find({tile0, tile2});
@@ -208,14 +151,6 @@ class FourCenterFockBuilder
                            : D_repl.find({tile1, tile3});
 
             // shell block norms of D
-            auto norm_D01 =
-                (!compute_J_ || shblk_norm_D.is_zero({tile0, tile1}))
-                    ? empty
-                    : shblk_norm_D.find({tile0, tile1});
-            auto norm_D23 =
-                (!compute_J_ || shblk_norm_D.is_zero({tile2, tile3}))
-                    ? empty
-                    : shblk_norm_D.find({tile2, tile3});
             auto norm_D02 =
                 (!compute_K_ || shblk_norm_D.is_zero({tile0, tile2}))
                     ? empty
@@ -250,10 +185,10 @@ class FourCenterFockBuilder
 
             if (tile0123 % nproc == me)
               WorldObject_::task(
-                  me, &FourCenterFockBuilder_::compute_task, D01, D23, D02, D03,
-                  D12, D13, std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
-                  std::array<Tile, 6>{{norm_D01, norm_D23, norm_D02, norm_D03,
-                                       norm_D12, norm_D13}});
+                  me, &ExactKDiagonalBuilder::compute_task, D02, D03, D12, D13,
+                  std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
+                  std::array<Tile, 4>{
+                      {norm_D02, norm_D03, norm_D12, norm_D13}});
           }
         }
       }
@@ -281,7 +216,7 @@ class FourCenterFockBuilder
       for (const auto& local_tile : local_fock_tiles_) {
         const auto ij = local_tile.first;
         const auto proc01 = dist_pmap_D_->owner(ij);
-        WorldObject_::task(proc01, &FourCenterFockBuilder_::accumulate_array,
+        WorldObject_::task(proc01, &ExactKDiagonalBuilder_::accumulate_array,
                            local_tile.second, ij);
       }
       local_fock_tiles_.clear();
@@ -363,8 +298,6 @@ class FourCenterFockBuilder
 
  private:
   // set by ctor
-  const bool compute_J_;
-  const bool compute_K_;
   std::shared_ptr<const Basis> bra_basis_;
   std::shared_ptr<const Basis> ket_basis_;
   std::shared_ptr<const Basis> density_basis_;
@@ -417,9 +350,9 @@ class FourCenterFockBuilder
     acc.release();  // END OF CRITICAL SECTION
   }
 
-  void compute_task(Tile D01, Tile D23, Tile D02, Tile D03, Tile D12, Tile D13,
+  void compute_task(Tile D02, Tile D03, Tile D12, Tile D13,
                     std::array<size_t, 4> tile_idx,
-                    std::array<Tile, 6> norm_D) {
+                    std::array<Tile, 4> norm_D) {
     const auto tile0 = tile_idx[0];
     const auto tile1 = tile_idx[1];
     const auto tile2 = tile_idx[2];
@@ -431,45 +364,34 @@ class FourCenterFockBuilder
     const auto& rng1 = trange1.tile(tile1);
     const auto& rng2 = trange1.tile(tile2);
     const auto& rng3 = trange1.tile(tile3);
-    const auto rng1_size = rng1.second - rng1.first;
     const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this
-    auto rng01 = compute_J_ ? TA::Range({rng0, rng1}) : TA::Range();
-    auto rng23 = compute_J_ ? TA::Range({rng2, rng3}) : TA::Range();
-    auto rng02 = compute_K_ ? TA::Range({rng0, rng2}) : TA::Range();
-    auto rng03 = compute_K_ ? TA::Range({rng0, rng3}) : TA::Range();
-    auto rng12 = compute_K_ ? TA::Range({rng1, rng2}) : TA::Range();
-    auto rng13 = compute_K_ ? TA::Range({rng1, rng3}) : TA::Range();
+    auto rng02 = TA::Range({rng0, rng2});
+    auto rng03 = TA::Range({rng0, rng3});
+    auto rng12 = TA::Range({rng1, rng2});
+    auto rng13 = TA::Range({rng1, rng3});
 
     // initialize contribution to the Fock matrices
-    auto F01 = compute_J_ ? Tile(std::move(rng01), 0.0) : Tile();
-    auto F23 = compute_J_ ? Tile(std::move(rng23), 0.0) : Tile();
-    auto F02 = compute_K_ ? Tile(std::move(rng02), 0.0) : Tile();
-    auto F03 = compute_K_ ? Tile(std::move(rng03), 0.0) : Tile();
-    auto F12 = compute_K_ ? Tile(std::move(rng12), 0.0) : Tile();
-    auto F13 = compute_K_ ? Tile(std::move(rng13), 0.0) : Tile();
+    auto F02 = Tile(std::move(rng02), 0.0);
+    auto F03 = Tile(std::move(rng03), 0.0);
+    auto F12 = Tile(std::move(rng12), 0.0);
+    auto F13 = Tile(std::move(rng13), 0.0);
 
     // grab ptrs to tile data to make addressing more efficient
-    auto* F01_ptr = compute_J_ ? F01.data() : nullptr;
-    auto* F23_ptr = compute_J_ ? F23.data() : nullptr;
-    auto* F02_ptr = compute_K_ ? F02.data() : nullptr;
-    auto* F03_ptr = compute_K_ ? F03.data() : nullptr;
-    auto* F12_ptr = compute_K_ ? F12.data() : nullptr;
-    auto* F13_ptr = compute_K_ ? F13.data() : nullptr;
-    const auto* D01_ptr = compute_J_ ? D01.data() : nullptr;
-    const auto* D23_ptr = compute_J_ ? D23.data() : nullptr;
-    const auto* D02_ptr = compute_K_ ? D02.data() : nullptr;
-    const auto* D03_ptr = compute_K_ ? D03.data() : nullptr;
-    const auto* D12_ptr = compute_K_ ? D12.data() : nullptr;
-    const auto* D13_ptr = compute_K_ ? D13.data() : nullptr;
-    const auto* norm_D01_ptr = compute_J_ ? norm_D[0].data() : nullptr;
-    const auto* norm_D23_ptr = compute_J_ ? norm_D[1].data() : nullptr;
-    const auto* norm_D02_ptr = compute_K_ ? norm_D[2].data() : nullptr;
-    const auto* norm_D03_ptr = compute_K_ ? norm_D[3].data() : nullptr;
-    const auto* norm_D12_ptr = compute_K_ ? norm_D[4].data() : nullptr;
-    const auto* norm_D13_ptr = compute_K_ ? norm_D[5].data() : nullptr;
+    auto* F02_ptr = F02.data();
+    auto* F03_ptr = F03.data();
+    auto* F12_ptr = F12.data();
+    auto* F13_ptr = F13.data();
+    const auto* D02_ptr = D02.data();
+    const auto* D03_ptr = D03.data();
+    const auto* D12_ptr = D12.data();
+    const auto* D13_ptr = D13.data();
+    const auto* norm_D02_ptr = norm_D[0].data();
+    const auto* norm_D03_ptr = norm_D[1].data();
+    const auto* norm_D12_ptr = norm_D[2].data();
+    const auto* norm_D13_ptr = norm_D[3].data();
 
     // compute contributions to all Fock matrices
     {
@@ -510,7 +432,6 @@ class FourCenterFockBuilder
 
       // number of shells in each cluster
       const auto nshells0 = cluster0.size();
-      const auto nshells1 = cluster1.size();
       const auto nshells2 = cluster2.size();
       const auto nshells3 = cluster3.size();
 
@@ -546,11 +467,6 @@ class FourCenterFockBuilder
 
           const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
 
-          const auto sh01 =
-              sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
-          const auto Dnorm01 =
-              (norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
-
           auto cf2_offset = 0;
           auto bf2_offset = rng2.first;
 
@@ -565,11 +481,11 @@ class FourCenterFockBuilder
                 sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
             const auto sh12 =
                 sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-            const auto Dnorm02 =
-                (norm_D02_ptr != nullptr) ? norm_D02_ptr[sh02] : 0.0;
             const auto Dnorm12 =
-                (norm_D12_ptr != nullptr) ? norm_D12_ptr[sh12] : 0.0;
-            const auto Dnorm012 = std::max({Dnorm12, Dnorm02, Dnorm01});
+                (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
+            const auto Dnorm02 =
+                (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
+            const auto Dnorm012 = std::max({Dnorm02, Dnorm12});
 
             for (const auto& sh3 : ket_shellpair_list[sh2]) {
               std::tie(cf3_offset, bf3_offset) = offset_list_c3[sh3];
@@ -585,16 +501,11 @@ class FourCenterFockBuilder
                   sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
               const auto sh13 =
                   sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
-              const auto sh23 =
-                  sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
               const auto Dnorm03 =
-                  (norm_D03_ptr != nullptr) ? norm_D03_ptr[sh03] : 0.0;
+                  (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
               const auto Dnorm13 =
-                  (norm_D13_ptr != nullptr) ? norm_D13_ptr[sh13] : 0.0;
-              const auto Dnorm23 =
-                  (norm_D23_ptr != nullptr) ? norm_D23_ptr[sh23] : 0.0;
-              const auto Dnorm0123 =
-                  std::max({Dnorm03, Dnorm13, Dnorm23, Dnorm012});
+                  (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
+              const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm012});
 
               if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
                               Dnorm0123))
@@ -624,8 +535,6 @@ class FourCenterFockBuilder
                                                      // cluster)
                   for (auto f1 = 0; f1 != nf1; ++f1) {
                     const auto cf1 = f1 + cf1_offset;
-                    const auto cf01 = cf0 * rng1_size +
-                                      cf1;  // index of {cf0,cf1} in D01 or F01
                     for (auto f2 = 0; f2 != nf2; ++f2) {
                       const auto cf2 = f2 + cf2_offset;
                       const auto cf02 =
@@ -642,47 +551,28 @@ class FourCenterFockBuilder
                         const auto cf13 =
                             cf1 * rng3_size +
                             cf3;  // index of {cf1,cf3} in D13 or F13
-                        const auto cf23 =
-                            cf2 * rng3_size +
-                            cf3;  // index of {cf2,cf3} in D23 or F23
 
                         const auto value = eri_0123[f0123];
 
                         const auto value_scaled_by_multiplicity =
                             value * multiplicity;
 
-                        if (compute_J_) {
-                          F01_ptr[cf01] +=
-                              (D23_ptr != nullptr)
-                                  ? D23_ptr[cf23] * value_scaled_by_multiplicity
-                                  : 0.0;
-                          F23_ptr[cf23] +=
-                              (D01_ptr != nullptr)
-                                  ? D01_ptr[cf01] * value_scaled_by_multiplicity
-                                  : 0.0;
-                        }
-                        if (compute_K_) {
-                          F02_ptr[cf02] -=
-                              (D13_ptr != nullptr)
-                                  ? 0.25 * D13_ptr[cf13] *
-                                        value_scaled_by_multiplicity
-                                  : 0.0;
-                          F13_ptr[cf13] -=
-                              (D02_ptr != nullptr)
-                                  ? 0.25 * D02_ptr[cf02] *
-                                        value_scaled_by_multiplicity
-                                  : 0.0;
-                          F03_ptr[cf03] -=
-                              (D12_ptr != nullptr)
-                                  ? 0.25 * D12_ptr[cf12] *
-                                        value_scaled_by_multiplicity
-                                  : 0.0;
-                          F12_ptr[cf12] -=
-                              (D03_ptr != nullptr)
-                                  ? 0.25 * D03_ptr[cf03] *
-                                        value_scaled_by_multiplicity
-                                  : 0.0;
-                        }
+                        F02_ptr[cf02] -= (D13_ptr != nullptr)
+                                             ? 0.25 * D13_ptr[cf13] *
+                                                   value_scaled_by_multiplicity
+                                             : 0.0;
+                        F13_ptr[cf13] -= (D02_ptr != nullptr)
+                                             ? 0.25 * D02_ptr[cf02] *
+                                                   value_scaled_by_multiplicity
+                                             : 0.0;
+                        F03_ptr[cf03] -= (D12_ptr != nullptr)
+                                             ? 0.25 * D12_ptr[cf12] *
+                                                   value_scaled_by_multiplicity
+                                             : 0.0;
+                        F12_ptr[cf12] -= (D03_ptr != nullptr)
+                                             ? 0.25 * D03_ptr[cf03] *
+                                                   value_scaled_by_multiplicity
+                                             : 0.0;
                       }
                     }
                   }
@@ -702,16 +592,10 @@ class FourCenterFockBuilder
 
     // accumulate the contributions by submitting tasks to the owners of their
     // tiles
-    if (compute_J_) {
-      FourCenterFockBuilder_::accumulate_task(F01, tile_idx[0], tile_idx[1]);
-      FourCenterFockBuilder_::accumulate_task(F23, tile_idx[2], tile_idx[3]);
-    }
-    if (compute_K_) {
-      FourCenterFockBuilder_::accumulate_task(F02, tile_idx[0], tile_idx[2]);
-      FourCenterFockBuilder_::accumulate_task(F03, tile_idx[0], tile_idx[3]);
-      FourCenterFockBuilder_::accumulate_task(F12, tile_idx[1], tile_idx[2]);
-      FourCenterFockBuilder_::accumulate_task(F13, tile_idx[1], tile_idx[3]);
-    }
+    ExactKDiagonalBuilder_::accumulate_task(F02, tile_idx[0], tile_idx[2]);
+    ExactKDiagonalBuilder_::accumulate_task(F03, tile_idx[0], tile_idx[3]);
+    ExactKDiagonalBuilder_::accumulate_task(F12, tile_idx[1], tile_idx[2]);
+    ExactKDiagonalBuilder_::accumulate_task(F13, tile_idx[1], tile_idx[3]);
   }
 
   // TODO compute norms in a parallel fashion
@@ -904,4 +788,5 @@ class FourCenterFockBuilder
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_
+
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_FOUR_CENTER_EXACT_K_DIAGONAL_BUILDER_H_

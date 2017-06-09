@@ -5,6 +5,8 @@
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
+#include <mutex>
+
 namespace mpqc {
 namespace scf {
 
@@ -39,7 +41,7 @@ class PeriodicThreeCenterContractionBuilder
       std::shared_ptr<const Basis> aux_basis, Vector3d &dcell, Vector3i &R_max,
       Vector3i &RJ_max, Vector3i &RD_max, int64_t R_size, int64_t RJ_size,
       int64_t RD_size, std::string screen = "schwarz",
-      double screen_threshold = 1.0e-10)
+      double screen_threshold = 1.0e-20, double shell_pair_threshold = 1.0e-12)
       : WorldObject_(world),
         dcell_(dcell),
         R_max_(R_max),
@@ -51,7 +53,8 @@ class PeriodicThreeCenterContractionBuilder
         basis0_(basis),
         aux_basis_(aux_basis),
         screen_(screen),
-        screen_threshold_(screen_threshold) {
+        screen_threshold_(screen_threshold),
+        shell_pair_threshold_(shell_pair_threshold) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
     // WorldObject mandates this is called from the ctor
@@ -84,9 +87,9 @@ class PeriodicThreeCenterContractionBuilder
       // validate preconditions
       assert(arg_rank == 2);
       assert(arg_elements_range.extent(0) == nbf_obs &&
-             arg_elements_range.extent(1) == (nbf_obs * R_size_));
+             arg_elements_range.extent(1) == (nbf_obs * RD_size_));
       assert(arg_tiles_range.extent(0) == ntiles_obs &&
-             arg_tiles_range.extent(1) == (ntiles_obs * R_size_));
+             arg_tiles_range.extent(1) == (ntiles_obs * RD_size_));
       // compute contraction
       return compute_contr_Xmn_mn(M, target_precision);
     } else if (target_rank == 2) {
@@ -127,11 +130,11 @@ class PeriodicThreeCenterContractionBuilder
 
     // # of tiles per basis
     auto ntiles0 = basis0_->nclusters();
-    auto ntilesR = basisR_->nclusters();
+    auto ntilesRD = basisRD_->nclusters();
     auto ntiles_aux = aux_basis_->nclusters();
 
     // make shell block norm of D
-    auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basisR_, D_repl);
+    auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basisRD_, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
     // initialize engines
@@ -142,9 +145,9 @@ class PeriodicThreeCenterContractionBuilder
       auto ref_uc = (RJ_size_ - 1) / 2;
       const auto aux_basis_RJ = *(aux_basis_RJ_[ref_uc]);
       const auto basis0 = *basis0_;
-      const auto basisR = *basisR_;
+      const auto basisRD = *basisRD_;
       engines_ = make_engine_pool(
-          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisR),
+          oper_type, utility::make_array_of_refs(aux_basis_RJ, basis0, basisRD),
           libint2::BraKet::xs_xx);
     }
 
@@ -152,22 +155,22 @@ class PeriodicThreeCenterContractionBuilder
     for (auto tile_aux = 0ul, tile012 = 0ul; tile_aux != ntiles_aux;
          ++tile_aux) {
       for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
-        for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {
-          auto D_0R = (D_repl.is_zero({tile0, tileR}))
+        for (auto tileRD = 0ul; tileRD != ntilesRD; ++tileRD) {
+          auto D_0RD = (D_repl.is_zero({tile0, tileRD}))
                           ? empty
-                          : D_repl.find({tile0, tileR});
-          auto norm_D_0R = (shblk_norm_D.is_zero({tile0, tileR}))
+                          : D_repl.find({tile0, tileRD});
+          auto norm_D_0RD = (shblk_norm_D.is_zero({tile0, tileRD}))
                                ? empty
-                               : shblk_norm_D.find({tile0, tileR});
-          if (D_0R.get().data() == nullptr || norm_D_0R.get().data() == nullptr)
+                               : shblk_norm_D.find({tile0, tileRD});
+          if (D_0RD.get().data() == nullptr || norm_D_0RD.get().data() == nullptr)
             continue;
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
             if (tile012 % nproc == me)
               WorldObject_::task(
                   me,
                   &PeriodicThreeCenterContractionBuilder_::compute_task_Xmn_mn,
-                  D_0R, norm_D_0R, RJ,
-                  std::array<size_t, 3>{{tile_aux, tile0, tileR}});
+                  D_0RD, norm_D_0RD, RJ,
+                  std::array<size_t, 3>{{tile_aux, tile0, tileRD}});
           }
         }
       }
@@ -389,6 +392,7 @@ class PeriodicThreeCenterContractionBuilder
   std::shared_ptr<const Basis> aux_basis_;
   const std::string screen_;
   const double screen_threshold_;
+  const double shell_pair_threshold_;
   const Vector3d dcell_;
   const Vector3i R_max_;
   const Vector3i RJ_max_;
@@ -398,8 +402,10 @@ class PeriodicThreeCenterContractionBuilder
   const int64_t RD_size_;
 
   // mutated by compute_ functions
-  mutable std::shared_ptr<lcao::Screener> p_screener_;
+  mutable std::shared_ptr<lcao::Screener> p_screener_R_;
+  mutable std::shared_ptr<lcao::Screener> p_screener_RD_;
   mutable std::shared_ptr<Basis> basisR_;
+  mutable std::shared_ptr<Basis> basisRD_;
   mutable std::vector<std::shared_ptr<Basis>> aux_basis_RJ_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
@@ -412,6 +418,11 @@ class PeriodicThreeCenterContractionBuilder
   mutable double target_precision_ = 0.0;
   mutable Engine engines_;
   mutable array_type shblk_norm_D_;
+  mutable shellpair_list_t sig_shellpair_list_R_;
+  mutable shellpair_list_t sig_shellpair_list_RD_;
+  mutable std::unordered_map<size_t, size_t> basis0_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisR_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> basisRD_shell_offset_map_;
 
   void init() {
     trange1_aux_ = aux_basis_->create_trange1();
@@ -424,9 +435,7 @@ class PeriodicThreeCenterContractionBuilder
     // make compound basis set for ket1 in (bra | ket0 ket1)
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
     basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
-    const auto basis0 = *basis0_;
-    const auto basisR = *basisR_;
-    auto oper_type = libint2::Operator::coulomb;
+    basisRD_ = shift_basis_origin(*basis0_, zero_shift_base, RD_max_, dcell_);
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -434,20 +443,57 @@ class PeriodicThreeCenterContractionBuilder
       aux_basis_RJ_.emplace_back(shift_basis_origin(*aux_basis_, vec_RJ));
     }
 
+    const auto basis0 = *basis0_;
+    const auto basisR = *basisR_;
+    const auto basisRD = *basisRD_;
+    auto oper_type = libint2::Operator::coulomb;
     auto &world = this->get_world();
     // initialize screener
     if (screen_ == "schwarz") {
       const auto tmp_basis =
           *(shift_basis_origin(*aux_basis_, zero_shift_base, RJ_max_, dcell_));
-      auto tmp_eng = make_engine_pool(
-          oper_type, utility::make_array_of_refs(tmp_basis, basis0, basisR),
-          libint2::BraKet::xx_xx);
-      auto bases =
-          ::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisR}};
-      p_screener_ =
-          make_screener(world, tmp_eng, bases, screen_, screen_threshold_);
+      // screener involving (X | μ0 νR)
+      {
+        auto tmp_eng = make_engine_pool(
+            oper_type, utility::make_array_of_refs(tmp_basis, basis0, basisR),
+            libint2::BraKet::xx_xx);
+        auto bases =
+            ::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisR}};
+        p_screener_R_ =
+            make_screener(world, tmp_eng, bases, screen_, screen_threshold_);
+      }
+
+      // screener involving (X | μ0 ν_Rd)
+      if (R_max_ == RD_max_) {
+        p_screener_RD_ = p_screener_R_;
+      } else {
+        auto tmp_eng = make_engine_pool(
+            oper_type, utility::make_array_of_refs(tmp_basis, basis0, basisRD),
+            libint2::BraKet::xx_xx);
+        auto bases =
+            ::mpqc::lcao::gaussian::BasisVector{{tmp_basis, basis0, basisRD}};
+        p_screener_RD_ =
+            make_screener(world, tmp_eng, bases, screen_, screen_threshold_);
+      }
     } else {
       throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+    }
+
+    // compute significant shell pair list
+    {
+      sig_shellpair_list_R_ = parallel_compute_shellpair_list(
+          basis0, basisR, shell_pair_threshold_);
+      basis0_shell_offset_map_ = compute_shell_offset(basis0);
+      basisR_shell_offset_map_ = compute_shell_offset(basisR);
+
+      if (R_max_ == RD_max_) {
+        sig_shellpair_list_RD_ = sig_shellpair_list_R_;
+        basisRD_shell_offset_map_ = basisR_shell_offset_map_;
+      } else {
+        sig_shellpair_list_RD_ = parallel_compute_shellpair_list(
+              basis0, basisRD, shell_pair_threshold_);
+        basisRD_shell_offset_map_ = compute_shell_offset(basisRD);
+      }
     }
   }
 
@@ -487,19 +533,34 @@ class PeriodicThreeCenterContractionBuilder
     acc.release();  // END OF CRITICAL SECTION
   }
 
-  void compute_task_Xmn_mn(Tile D_0R, Tile norm_D_0R, size_t RJ,
+  void compute_task_Xmn_mn(Tile D_0RD, Tile norm_D_0RD, size_t RJ,
                            std::array<size_t, 3> tile_idx) {
     const auto tile_aux = tile_idx[0];
     const auto tile0 = tile_idx[1];
-    const auto tileR = tile_idx[2];
+    const auto tileRD = tile_idx[2];
+
+    // get reference to basis sets
+    const auto &basisRJ_aux = aux_basis_RJ_[RJ];
+    const auto &basis0 = basis0_;
+    const auto &basisRD = basisRD_;
+
+    // shell clusters for this tile
+    const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
+    const auto &cluster0 = basis0->cluster_shells()[tile0];
+    const auto &clusterRD = basisRD->cluster_shells()[tileRD];
+
+    // number of shells in each cluster
+    const auto nshellsRJ_aux = clusterRJ_aux.size();
+    const auto nshells0 = cluster0.size();
+    const auto nshellsRD = clusterRD.size();
 
     // 1-d tile ranges
     const auto &tr0 = arg_trange_.dim(0);
     const auto &tr1 = arg_trange_.dim(1);
     const auto &rng_aux = trange1_aux_.tile(tile_aux);
     const auto &rng0 = tr0.tile(tile0);
-    const auto &rngR = tr1.tile(tileR);
-    const auto rngR_size = rngR.second - rngR.first;
+    const auto &rngRD = tr1.tile(tileRD);
+    const auto rngRD_size = rngRD.second - rngRD.first;
 
     // 2-d tile ranges describing the contribution blocks produced by this
     auto result_rng = TA::Range({rng_aux});
@@ -508,106 +569,119 @@ class PeriodicThreeCenterContractionBuilder
 
     // grab ptrs to tile data to make addressing more efficient
     auto *result_ptr = result_tile.data();
-    const auto *D_0R_ptr = D_0R.data();
-    const auto *norm_D_0R_ptr = norm_D_0R.data();
-    assert(D_0R_ptr != nullptr);
-    assert(norm_D_0R_ptr != nullptr);
+    const auto *D_0RD_ptr = D_0RD.data();
+    const auto *norm_D_0RD_ptr = norm_D_0RD.data();
+    assert(D_0RD_ptr != nullptr);
+    assert(norm_D_0RD_ptr != nullptr);
+
+    const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
 
     // compute contributions to all result matrices
     {
-      auto &screen = *(p_screener_);
-      auto engine = engines_->local();
-      const auto engine_precision = target_precision_;
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
+      // index of first shell in this cluster
+      const auto sh0_offset = basis0_shell_offset_map_[tile0];
+      const auto shRD_offset = basisRD_shell_offset_map_[tileRD];
 
-      const auto &basisRJ_aux = aux_basis_RJ_[RJ];
-      const auto &basis0 = basis0_;
-      const auto &basisR = basisR_;
+      // index of last shell in this cluster
+      const auto sh0_max = sh0_offset + nshells0;
+      const auto shRD_max = shRD_offset + nshellsRD;
 
-      const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
+      // determine if this task contains significant shell-pairs
+      auto is_significant = false;
+      {
+        auto sh0_in_basis = sh0_offset;
+        for (; sh0_in_basis != sh0_max; ++sh0_in_basis) {
+          for (const auto shRD_in_basis : sig_shellpair_list_RD_[sh0_in_basis]) {
+            if (shRD_in_basis >= shRD_offset && shRD_in_basis < shRD_max) {
+              is_significant = true;
+              break;
+            }
+          }
+          if (is_significant) break;
+        }
+      }
 
-      // shell clusters for this tile
-      const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
-      const auto &cluster0 = basis0->cluster_shells()[tile0];
-      const auto &clusterR = basisR->cluster_shells()[tileR];
+      if (is_significant) {
+        auto &screen = *(p_screener_RD_);
+        auto engine = engines_->local();
+        const auto engine_precision = target_precision_;
+        engine.set_precision(engine_precision);
+        const auto &computed_shell_sets = engine.results();
 
-      // number of shells in each cluster
-      const auto nshellsRJ_aux = clusterRJ_aux.size();
-      const auto nshells0 = cluster0.size();
-      const auto nshellsR = clusterR.size();
+        // compute offset list of clusterRD (ket1)
+        auto offset_list_ket1 = compute_func_offset_list(clusterRD, rngRD.first);
 
-      // make non-negligible shell pair list
-      auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);
+        // this is the index of the first basis functions for each shell *in
+        // this shell cluster*
+        auto cf_aux_offset = 0;
+        // this is the index of the first basis functions for each shell *in the
+        // basis set*
+        auto bf_aux_offset = rng_aux.first;
 
-      // compute offset list of clusterR (ket1)
-      auto offset_list_ket1 = compute_func_offset_list(clusterR, rngR.first);
+        size_t cf_RD_offset, bf_RD_offset;
 
-      // this is the index of the first basis functions for each shell *in
-      // this shell cluster*
-      auto cf_aux_offset = 0;
-      // this is the index of the first basis functions for each shell *in the
-      // basis set*
-      auto bf_aux_offset = rng_aux.first;
+        // loop over all shell sets
+        for (auto sh_aux = 0; sh_aux != nshellsRJ_aux; ++sh_aux) {
+          const auto &shell_aux = clusterRJ_aux[sh_aux];
+          const auto nf_aux = shell_aux.size();
 
-      size_t cf_R_offset, bf_R_offset;
+          const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
 
-      // loop over all shell sets
-      for (auto sh_aux = 0; sh_aux != nshellsRJ_aux; ++sh_aux) {
-        const auto &shell_aux = clusterRJ_aux[sh_aux];
-        const auto nf_aux = shell_aux.size();
+          auto cf0_offset = 0;
+          auto bf0_offset = rng0.first;
+          for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+            const auto &shell0 = cluster0[sh0];
+            const auto nf0 = shell0.size();
 
-        const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
+            const auto sh0_in_basis = sh0 + sh0_offset;
+            for (const auto &shRD_in_basis : sig_shellpair_list_RD_[sh0_in_basis]) {
+              if (shRD_in_basis < shRD_offset || shRD_in_basis >= shRD_max)
+                continue;
 
-        auto cf0_offset = 0;
-        auto bf0_offset = rng0.first;
-        for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
-          const auto &shell0 = cluster0[sh0];
-          const auto nf0 = shell0.size();
+              const auto shRD = shRD_in_basis - shRD_offset;
+              std::tie(cf_RD_offset, bf_RD_offset) = offset_list_ket1[shRD];
 
-          for (const auto &shR : ket_shellpair_list[sh0]) {
-            std::tie(cf_R_offset, bf_R_offset) = offset_list_ket1[shR];
+              const auto &shellRD = clusterRD[shRD];
+              const auto nfRD = shellRD.size();
 
-            const auto &shellR = clusterR[shR];
-            const auto nfR = shellR.size();
+              const auto sh0RD =
+                  sh0 * nshellsRD + shRD;  // index of {sh0, shRD} in norm_D0RD
+              const double Dnorm0RD = norm_D_0RD_ptr[sh0RD];
 
-            const auto sh0R =
-                sh0 * nshellsR + shR;  // index of {sh0, shR} in norm_D0R
-            const double Dnorm0R = norm_D_0R_ptr[sh0R];
+              if (screen.skip(bf_aux_in_screener, bf0_offset, bf_RD_offset,
+                              Dnorm0RD))
+                continue;
 
-            if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset,
-                            Dnorm0R))
-              continue;
+              // compute shell set
+              // TODO call 3-body version of compute2 to avoid extra copies
+              engine.compute(shell_aux, shell0, shellRD);
+              const auto *eri_aux_0RD = computed_shell_sets[0];
 
-            // compute shell set
-            // TODO call 3-body version of compute2 to avoid extra copies
-            engine.compute(shell_aux, shell0, shellR);
-            const auto *eri_aux_0R = computed_shell_sets[0];
+              if (eri_aux_0RD != nullptr) {
+                for (auto f_aux = 0, f_aux_0RD = 0; f_aux != nf_aux; ++f_aux) {
+                  const auto cf_aux = f_aux + cf_aux_offset;
+                  for (auto f0 = 0; f0 != nf0; ++f0) {
+                    const auto cf0 = f0 + cf0_offset;
+                    for (auto fRD = 0; fRD != nfRD; ++fRD, ++f_aux_0RD) {
+                      const auto cfRD = fRD + cf_RD_offset;
+                      const auto cf0RD = cf0 * rngRD_size + cfRD;
 
-            if (eri_aux_0R != nullptr) {
-              for (auto f_aux = 0, f_aux_0R = 0; f_aux != nf_aux; ++f_aux) {
-                const auto cf_aux = f_aux + cf_aux_offset;
-                for (auto f0 = 0; f0 != nf0; ++f0) {
-                  const auto cf0 = f0 + cf0_offset;
-                  for (auto fR = 0; fR != nfR; ++fR, ++f_aux_0R) {
-                    const auto cfR = fR + cf_R_offset;
-                    const auto cf0R = cf0 * rngR_size + cfR;
+                      const auto value = eri_aux_0RD[f_aux_0RD];
 
-                    const auto value = eri_aux_0R[f_aux_0R];
-
-                    result_ptr[cf_aux] += D_0R_ptr[cf0R] * value;
+                      result_ptr[cf_aux] += D_0RD_ptr[cf0RD] * value;
+                    }
                   }
                 }
               }
             }
+
+            cf0_offset += nf0;
+            bf0_offset += nf0;
           }
 
-          cf0_offset += nf0;
-          bf0_offset += nf0;
+          cf_aux_offset += nf_aux;
+          bf_aux_offset += nf_aux;
         }
-
-        cf_aux_offset += nf_aux;
-        bf_aux_offset += nf_aux;
       }
     }
 
@@ -623,6 +697,21 @@ class PeriodicThreeCenterContractionBuilder
     const auto tile_aux = tile_idx[0];
     const auto tile0 = tile_idx[1];
     const auto tileR = tile_idx[2];
+
+    // get reference to basis sets
+    const auto &basisRJ_aux = aux_basis_RJ_[RJ];
+    const auto &basis0 = basis0_;
+    const auto &basisR = basisR_;
+
+    // shell clusters for this tile
+    const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
+    const auto &cluster0 = basis0->cluster_shells()[tile0];
+    const auto &clusterR = basisR->cluster_shells()[tileR];
+
+    // number of shells in each cluster
+    const auto nshellsRJ_aux = clusterRJ_aux.size();
+    const auto nshells0 = cluster0.size();
+    const auto nshellsR = clusterR.size();
 
     // 1-d tile ranges
     const auto &tr0 = result_trange_.dim(0);
@@ -643,96 +732,110 @@ class PeriodicThreeCenterContractionBuilder
     const auto *X_aux_ptr = X_aux.data();
     assert(X_aux_ptr != nullptr);
 
+    const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
+
     // TODO: check the sparsity of X. Will screening (X|mu) M_X be useful?
     {
-      auto &screen = *(p_screener_);
-      auto engine = engines_->local();
-      const auto engine_precision = target_precision_;
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
+      // index of first shell in this cluster
+      const auto sh0_offset = basis0_shell_offset_map_[tile0];
+      const auto shR_offset = basisR_shell_offset_map_[tileR];
 
-      const auto &basisRJ_aux = aux_basis_RJ_[RJ];
-      const auto &basis0 = basis0_;
-      const auto &basisR = basisR_;
+      // index of last shell in this cluster
+      const auto sh0_max = sh0_offset + nshells0;
+      const auto shR_max = shR_offset + nshellsR;
 
-      const auto nbf_aux_per_uc = basisRJ_aux->nfunctions();
+      // determine if this task contains significant shell-pairs
+      auto is_significant = false;
+      {
+        auto sh0_in_basis = sh0_offset;
+        for (; sh0_in_basis != sh0_max; ++sh0_in_basis) {
+          for (const auto shR_in_basis : sig_shellpair_list_R_[sh0_in_basis]) {
+            if (shR_in_basis >= shR_offset && shR_in_basis < shR_max) {
+              is_significant = true;
+              break;
+            }
+          }
+          if (is_significant) break;
+        }
+      }
 
-      // shell clusters for this tile
-      const auto &clusterRJ_aux = basisRJ_aux->cluster_shells()[tile_aux];
-      const auto &cluster0 = basis0->cluster_shells()[tile0];
-      const auto &clusterR = basisR->cluster_shells()[tileR];
+      if (is_significant) {
+        auto &screen = *(p_screener_R_);
+        auto engine = engines_->local();
+        const auto engine_precision = target_precision_;
+        engine.set_precision(engine_precision);
+        const auto &computed_shell_sets = engine.results();
 
-      // number of shells in each cluster
-      const auto nshellsRJ_aux = clusterRJ_aux.size();
-      const auto nshells0 = cluster0.size();
+        // compute offset list of clusterR (ket1)
+        auto offset_list_ket1 = compute_func_offset_list(clusterR, rngR.first);
 
-      // make non-negligible shell pair list
-      auto ket_shellpair_list = compute_shellpair_list(cluster0, clusterR);
+        // this is the index of the first basis functions for each shell *in
+        // this shell cluster*
+        auto cf_aux_offset = 0;
+        // this is the index of the first basis functions for each shell *in the
+        // basis set*
+        auto bf_aux_offset = rng_aux.first;
 
-      // compute offset list of clusterR (ket1)
-      auto offset_list_ket1 = compute_func_offset_list(clusterR, rngR.first);
+        size_t cf_R_offset, bf_R_offset;
 
-      // this is the index of the first basis functions for each shell *in
-      // this shell cluster*
-      auto cf_aux_offset = 0;
-      // this is the index of the first basis functions for each shell *in the
-      // basis set*
-      auto bf_aux_offset = rng_aux.first;
+        // loop over all shell sets
+        for (auto sh_aux = 0; sh_aux != nshellsRJ_aux; ++sh_aux) {
+          const auto &shell_aux = clusterRJ_aux[sh_aux];
+          const auto nf_aux = shell_aux.size();
 
-      size_t cf_R_offset, bf_R_offset;
+          const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
 
-      // loop over all shell sets
-      for (auto sh_aux = 0; sh_aux != nshellsRJ_aux; ++sh_aux) {
-        const auto &shell_aux = clusterRJ_aux[sh_aux];
-        const auto nf_aux = shell_aux.size();
+          auto cf0_offset = 0;
+          auto bf0_offset = rng0.first;
+          for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+            const auto &shell0 = cluster0[sh0];
+            const auto nf0 = shell0.size();
 
-        const auto bf_aux_in_screener = bf_aux_offset + nbf_aux_per_uc * RJ;
+            const auto sh0_in_basis = sh0 + sh0_offset;
+            for (const auto &shR_in_basis : sig_shellpair_list_R_[sh0_in_basis]) {
+              if (shR_in_basis < shR_offset || shR_in_basis >= shR_max)
+                continue;
 
-        auto cf0_offset = 0;
-        auto bf0_offset = rng0.first;
-        for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
-          const auto &shell0 = cluster0[sh0];
-          const auto nf0 = shell0.size();
+              const auto shR = shR_in_basis - shR_offset;
+              std::tie(cf_R_offset, bf_R_offset) = offset_list_ket1[shR];
 
-          for (const auto &shR : ket_shellpair_list[sh0]) {
-            std::tie(cf_R_offset, bf_R_offset) = offset_list_ket1[shR];
+              const auto &shellR = clusterR[shR];
+              const auto nfR = shellR.size();
 
-            const auto &shellR = clusterR[shR];
-            const auto nfR = shellR.size();
+              if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset))
+                continue;
 
-            if (screen.skip(bf_aux_in_screener, bf0_offset, bf_R_offset))
-              continue;
+              // compute shell set
+              // TODO call 3-body version of compute2 to avoid extra copies
+              engine.compute(shell_aux, shell0, shellR);
 
-            // compute shell set
-            // TODO call 3-body version of compute2 to avoid extra copies
-            engine.compute(shell_aux, shell0, shellR);
+              const auto *eri_aux_0R = computed_shell_sets[0];
 
-            const auto *eri_aux_0R = computed_shell_sets[0];
+              if (eri_aux_0R != nullptr) {
+                for (auto f_aux = 0, f_aux_0R = 0; f_aux != nf_aux; ++f_aux) {
+                  const auto cf_aux = f_aux + cf_aux_offset;
+                  for (auto f0 = 0; f0 != nf0; ++f0) {
+                    const auto cf0 = f0 + cf0_offset;
+                    for (auto fR = 0; fR != nfR; ++fR, ++f_aux_0R) {
+                      const auto cfR = fR + cf_R_offset;
+                      const auto cf0R = cf0 * rngR_size + cfR;
 
-            if (eri_aux_0R != nullptr) {
-              for (auto f_aux = 0, f_aux_0R = 0; f_aux != nf_aux; ++f_aux) {
-                const auto cf_aux = f_aux + cf_aux_offset;
-                for (auto f0 = 0; f0 != nf0; ++f0) {
-                  const auto cf0 = f0 + cf0_offset;
-                  for (auto fR = 0; fR != nfR; ++fR, ++f_aux_0R) {
-                    const auto cfR = fR + cf_R_offset;
-                    const auto cf0R = cf0 * rngR_size + cfR;
+                      const auto value = eri_aux_0R[f_aux_0R];
 
-                    const auto value = eri_aux_0R[f_aux_0R];
-
-                    result_ptr[cf0R] += X_aux_ptr[cf_aux] * value;
+                      result_ptr[cf0R] += X_aux_ptr[cf_aux] * value;
+                    }
                   }
                 }
               }
             }
+
+            cf0_offset += nf0;
+            bf0_offset += nf0;
           }
 
-          cf0_offset += nf0;
-          bf0_offset += nf0;
+          cf_aux_offset += nf_aux;
+          bf_aux_offset += nf_aux;
         }
-
-        cf_aux_offset += nf_aux;
-        bf_aux_offset += nf_aux;
       }
     }
 
@@ -790,6 +893,81 @@ class PeriodicThreeCenterContractionBuilder
     }
 
     return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
+  }
+
+  /*!
+   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+   * form a non-negligible pair if they share a center or the Frobenius norm of
+   * their overlap is greater than threshold
+   * \param basis1 a basis
+   * \param basis2 a basis
+   * \param threshold
+   *
+   * \return a list of pairs with
+   * key: shell index
+   * mapped value: a vector of shell indices
+   */
+  shellpair_list_t parallel_compute_shellpair_list(
+      const Basis &basis1, const Basis &basis2,
+      double threshold = 1e-12) const {
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    // initialize engine
+    auto engine_pool = make_engine_pool(
+        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+        libint2::BraKet::x_x);
+
+    auto &world = this->get_world();
+    std::mutex mx;
+    shellpair_list_t result;
+
+    const auto &shv1 = basis1.flattened_shells();
+    const auto &shv2 = basis2.flattened_shells();
+    const auto nsh1 = shv1.size();
+    const auto nsh2 = shv2.size();
+
+    auto compute = [&](int64_t input_s1) {
+
+      auto n1 = shv1[input_s1].size();
+      const auto engine_precision = target_precision_;
+      auto engine = engine_pool->local();
+      engine.set_precision(engine_precision);
+      const auto &buf = engine.results();
+
+      for (auto s2 = 0l; s2 != nsh2; ++s2) {
+        auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
+        bool significant = on_same_center;
+        if (!on_same_center) {
+          auto n2 = shv2[s2].size();
+          engine.compute1(shv1[input_s1], shv2[s2]);
+          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+          auto norm = buf_mat.norm();
+          significant = (norm >= threshold);
+        }
+
+        if (significant) {
+          mx.lock();
+          result[input_s1].emplace_back(s2);
+          mx.unlock();
+        }
+      }
+    };
+
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      world.taskq.add(compute, s1);
+    }
+    world.gop.fence();
+
+    engine_pool.reset();
+
+    // resort shell list in increasing order
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      auto &list = result[s1];
+      std::sort(list.begin(), list.end());
+    }
+
+    return result;
   }
 
   /*!
@@ -894,6 +1072,29 @@ class PeriodicThreeCenterContractionBuilder
       result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
       bf_offset += nf;
       cf_offset += nf;
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes shell offsets for every cluster in a basis
+   * \param basis
+   * \return a list of <key, mapped value> pairs with
+   * key: cluster index
+   * mapped value: index of first shell in a cluster
+   */
+  std::unordered_map<size_t, size_t> compute_shell_offset(
+      const Basis &basis) const {
+    std::unordered_map<size_t, size_t> result;
+
+    auto shell_offset = 0;
+    const auto &cluster_shells = basis.cluster_shells();
+    const auto nclusters = cluster_shells.size();
+    for (auto c = 0; c != nclusters; ++c) {
+      const auto nshells = cluster_shells[c].size();
+      result.insert(std::make_pair(c, shell_offset));
+      shell_offset += nshells;
     }
 
     return result;

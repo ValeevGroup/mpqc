@@ -90,7 +90,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   if (localize_) {
     auto l0 = mpqc::fenced_now(world);
-    auto U = mpqc::scf::BoysLocalization{}(C_occ_ao, r_xyz_ints_);
+    auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_);
     C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 

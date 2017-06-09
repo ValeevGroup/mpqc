@@ -203,7 +203,7 @@ class Tile {
     return tile_->product_();
   }
 
-  auto squared_norm() {
+  auto squared_norm() const {
     return tile_->squared_norm_();
   }
 

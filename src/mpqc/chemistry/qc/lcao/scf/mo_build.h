@@ -192,7 +192,7 @@ void make_closed_shell_sdref_subspaces(
         utility::compute_trange1(C_i_eig.cols(), occ_blksize));
     std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
     auto i_space =
-        POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_m, occ_i);
+        POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i, occ_i);
     orbital_registry.add(i_space);
 
     //////////////////////////////////////////////////////////////////////////////////

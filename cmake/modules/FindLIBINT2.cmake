@@ -73,7 +73,7 @@ else (LIBINT2_INCLUDE_DIRS)
           #include <libint2.hpp>
           #include <libint2/engine.h>
           #include <libint2/util/any.h>
-          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==3 && LIBINT_MICRO_VERSION>=1)
+          #if !((LIBINT_MAJOR_VERSION>2) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION>4) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==4 && LIBINT_MICRO_VERSION>=0))
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) {
@@ -89,7 +89,7 @@ else (LIBINT2_INCLUDE_DIRS)
           }
       "  LIBINT2_IS_UP_TO_DATE)    
     if (NOT LIBINT2_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint2 library is too old: 2.3.1 is required")
+      message(FATAL_ERROR "Libint2 library is too old: 2.4.0 is required")
     endif()
 
     # make sure libint2 is properly configured

@@ -373,7 +373,6 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   }
 
   secadf_ = kv.value<bool>("secadf", false);
-  aaab_ = kv.value<bool>("secadf_aaab", false);
 }
 
 template <typename Tile, typename Policy>
@@ -381,7 +380,7 @@ void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
   this->f_builder_ = std::make_unique<Builder>(
-      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
+      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_);
 }
 
 /**

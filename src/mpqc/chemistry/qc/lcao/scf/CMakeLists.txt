@@ -7,7 +7,7 @@ density_builder.h
 diagonalize_for_coeffs.h
 eigen_solve_density_builder.h
 eigen_solve_density_builder_impl.h
-linear_cadf_builder.h
+four_center_exact_k_diagonal_builder.h
 linkage.h
 mo_build.h
 orbital_localization.cpp
@@ -38,6 +38,7 @@ list(APPEND sources
         pbc/periodic_three_center_contraction_builder.h
         pbc/periodic_four_center_fock_builder.h
         pbc/periodic_df_fock_builder.h
+        pbc/util.h
         )
 endif()
 

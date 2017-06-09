@@ -5,6 +5,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace scf {
@@ -96,12 +97,13 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     auto RD_size = ao_factory_.RD_size();
     auto screen = ao_factory_.screen();
     auto screen_threshold = ao_factory_.screen_threshold();
+    auto shell_pair_threshold = ao_factory_.shell_pair_threshold();
 
     // construct PerioidcThreeCenterContractionBuilder for contractions
     // involving 3-center ints
     three_center_builder_ = std::make_unique<PTC_Builder>(
         world, basis, aux_basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-        RD_size, screen, screen_threshold);
+        RD_size, screen, screen_threshold, shell_pair_threshold);
 
     auto t1_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_init, t1_init);
@@ -110,7 +112,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     // construct PerioidcFourCenterFockBuilder for exchange term
     k_builder_ = std::make_unique<PFC_Builder>(
         world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-        RD_size, false, true, screen, screen_threshold);
+        RD_size, false, true, screen, screen_threshold, shell_pair_threshold);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 
@@ -186,7 +188,10 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
       // intermediate for C_para_Xμν D_μν
       t0 = mpqc::fenced_now(world);
       array_type interm;
-      double prefactor = M_("mu, nu") * D("mu, nu");
+      auto R_max = ao_factory_.R_max();
+      auto RD_max = ao_factory_.RD_max();
+      double prefactor = ::mpqc::pbc::detail::dot_product(M_, D, R_max, RD_max);
+
       interm("X") = (prefactor / q_)  * n_("X");
       t1 = mpqc::fenced_now(world);
       t_w_para = mpqc::duration_in_s(t0, t1);

@@ -213,6 +213,7 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
+  double force_shape_threshold_;
 };
 
 #if TA_DEFAULT_POLICY == 0

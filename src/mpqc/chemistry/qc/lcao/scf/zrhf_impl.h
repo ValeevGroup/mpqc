@@ -477,13 +477,16 @@ void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 RIJCADFKzRHF<Tile, Policy>::RIJCADFKzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {}
+    : zRHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+}
 
 template <typename Tile, typename Policy>
 void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicRIJCADFKFockBuilder<
       Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->f_builder_ =
+      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
 }
 
 }  // namespace lcao

@@ -26,7 +26,8 @@ class PeriodicCADFKBuilder
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
   using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
-  using shellpair_val_list_t = std::unordered_map<size_t, std::vector<std::pair<size_t, double>>>;
+  using shellpair_val_list_t =
+      std::unordered_map<size_t, std::vector<std::pair<size_t, double>>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
@@ -39,7 +40,8 @@ class PeriodicCADFKBuilder
   template <int rank>
   using norm_type = std::vector<std::pair<std::array<int, rank>, float>>;
 
-  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory, const double force_shape_threshold = 0.0)
+  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory,
+                       const double force_shape_threshold = 0.0)
       : WorldObject_(world), ao_factory_(ao_factory) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
@@ -359,19 +361,20 @@ class PeriodicCADFKBuilder
       K("mu, nu") += EQ("mu, nu");
       t1 = mpqc::fenced_now(world);
       t_Kpart2 += mpqc::duration_in_s(t0, t1);
-
     }
     auto t1_k = mpqc::fenced_now(world);
     auto t_tot = mpqc::duration_in_s(t0_k, t1_k);
 
     // print out # of ints computed per MPI process
-    size_t tot_eri3_ints = X_dfbs_->nfunctions() * basisR_->nfunctions() * basisRD_->nfunctions();
+    size_t tot_eri3_ints =
+        X_dfbs_->nfunctions() * basisR_->nfunctions() * basisRD_->nfunctions();
     tot_eri3_ints *= RJ_list_.size();
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
     for (auto i = 0; i < world.nproc(); ++i) {
       if (me == i) {
         ExEnv::outn() << indent << "Ints on node(" << i
-                      << "): " << num_ints_computed_ << "/" << tot_eri3_ints << std::endl;
+                      << "): " << num_ints_computed_ << "/" << tot_eri3_ints
+                      << std::endl;
       }
       world.gop.fence();
     }
@@ -742,9 +745,8 @@ class PeriodicCADFKBuilder
               WorldObject_::task(
                   me, &PeriodicCADFKBuilder_::compute_contr_EQ_task, Qtile, RJ,
                   std::array<size_t, 4>{{tile_mu, tile_nu, tile_X, tile_sig}},
-                  std::array<size_t, 3>{{eri3_tile_X,
-                                         eri3_tile_nu, eri3_tile_sig}});
-
+                  std::array<size_t, 3>{
+                      {eri3_tile_X, eri3_tile_nu, eri3_tile_sig}});
             }
           }
         }
@@ -873,8 +875,7 @@ class PeriodicCADFKBuilder
       auto is_significant = false;
       {
         auto eri3_sh_nu = eri3_sh_offset_nu;
-        for (; eri3_sh_nu != eri3_sh_max_nu;
-             ++eri3_sh_nu) {
+        for (; eri3_sh_nu != eri3_sh_max_nu; ++eri3_sh_nu) {
           for (const auto &eri3_sh_sig : sig_shellpair_list_[eri3_sh_nu]) {
             if (eri3_sh_sig >= eri3_sh_offset_sig &&
                 eri3_sh_sig < eri3_sh_max_sig) {
@@ -894,15 +895,15 @@ class PeriodicCADFKBuilder
         const auto &computed_shell_sets = engine.results();
 
         // compute max value of mu for each (X, sigma) pair for Q
-        auto sig_X_shpair_val_list = compute_shell_pair_with_val(Q, cluster_X, cluster_sig, shell_pair_threshold_);
+        auto sig_X_shpair_val_list = compute_shell_pair_with_val(
+            Q, cluster_X, cluster_sig, shell_pair_threshold_);
 
         // compute offset list of cluster_sig
         auto eri3_offset_list_sig =
             compute_func_offset_list(eri3_cluster_sig, eri3_rng_sig.first);
         auto eri3_offset_list_X =
             compute_func_offset_list(eri3_cluster_X, eri3_rng_X.first);
-        auto offset_list_X =
-            compute_func_offset_list(cluster_X, rng_X.first);
+        auto offset_list_X = compute_func_offset_list(cluster_X, rng_X.first);
         auto offset_list_sig =
             compute_func_offset_list(cluster_sig, rng_sig.first);
 
@@ -941,13 +942,15 @@ class PeriodicCADFKBuilder
             const auto &eri3_shell_sig = eri3_cluster_sig[eri3_sh_sig];
             const auto eri3_nf_sig = eri3_shell_sig.size();
 
-            for (const auto &X_with_maxval : sig_X_shpair_val_list[eri3_sh_sig]) {
+            for (const auto &X_with_maxval :
+                 sig_X_shpair_val_list[eri3_sh_sig]) {
               const auto eri3_sh_X = X_with_maxval.first;
               const auto norm_Q = X_with_maxval.second;
 
               const auto &eri3_shell_X = eri3_cluster_X[eri3_sh_X];
               const auto eri3_nf_X = eri3_shell_X.size();
-              std::tie(eri3_cf_offset_X, eri3_bf_offset_X) = eri3_offset_list_X[eri3_sh_X];
+              std::tie(eri3_cf_offset_X, eri3_bf_offset_X) =
+                  eri3_offset_list_X[eri3_sh_X];
               if (screen.skip(eri3_bf_offset_X, eri3_bf_offset_nu,
                               eri3_bf_offset_sig, norm_Q))
                 continue;
@@ -1197,10 +1200,9 @@ class PeriodicCADFKBuilder
    * \param threshold
    * \return a list of (X, sigma) pairs with the norm
    */
-  shellpair_val_list_t compute_shell_pair_with_val(const Tile& arg_tile,
-                                       const ShellVec &cluster_X,
-                                       const ShellVec &cluster_sig,
-                                       const double threshold = 1e-12) {
+  shellpair_val_list_t compute_shell_pair_with_val(
+      const Tile &arg_tile, const ShellVec &cluster_X,
+      const ShellVec &cluster_sig, const double threshold = 1e-12) {
     // # of shells in this shell cluster
     const auto nsh_X = cluster_X.size();
     const auto nsh_sig = cluster_sig.size();
@@ -1211,13 +1213,16 @@ class PeriodicCADFKBuilder
     auto f_sig = 0;
     for (auto sh_sig = 0; sh_sig != nsh_sig; ++sh_sig) {
       const auto nf_sh_sig = cluster_sig[sh_sig].size();
-      shpair_maxval_list.insert(std::make_pair(sh_sig, std::vector<std::pair<size_t, double>>()));
+      shpair_maxval_list.insert(
+          std::make_pair(sh_sig, std::vector<std::pair<size_t, double>>()));
 
       auto f_X = 0;
       for (auto sh_X = 0; sh_X != nsh_X; ++sh_X) {
         const auto nf_sh_X = cluster_X[sh_X].size();
         // TODO try if maxCoeff is better in screening/accuracy
-        const auto val = arg_eig.block(f_X * ext[1], f_sig, nf_sh_X * ext[1], nf_sh_sig).template lpNorm<Eigen::Infinity>();
+        const auto val =
+            arg_eig.block(f_X * ext[1], f_sig, nf_sh_X * ext[1], nf_sh_sig)
+                .template lpNorm<Eigen::Infinity>();
 
         if (val >= threshold)
           shpair_maxval_list[sh_sig].emplace_back(std::make_pair(sh_X, val));
@@ -1233,10 +1238,8 @@ class PeriodicCADFKBuilder
     // because comparing the second element is meaningless
     for (auto sh_sig = 0; sh_sig != nsh_sig; ++sh_sig) {
       auto &list = shpair_maxval_list[sh_sig];
-      std::sort(list.begin(), list.end(), [](auto &l, auto &r) {
-          return l.first < r.first;
-      });
-
+      std::sort(list.begin(), list.end(),
+                [](auto &l, auto &r) { return l.first < r.first; });
     }
 
     return shpair_maxval_list;

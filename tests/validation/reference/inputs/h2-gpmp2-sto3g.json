@@ -24,7 +24,6 @@
     "type": "zRHF",
     "molecule" : "$:unitcell",
     "wfn_world": "$:wfn_world",
-    "converge": 1.0e-7,
     "max_iter": 100,
     "soad_guess": true,
     "print_detail": false,
@@ -43,7 +42,7 @@
   "property" : {
     "type" : "Energy",
     "wfn" : "$:wfn",
-    "precision" : 1.0e-7
+    "precision" : 1.0e-11
   }
 }
 

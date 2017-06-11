@@ -3,6 +3,7 @@ set(public_headers
     get_type.h
     make_array.h
     predicates.h
+    sfinae.h
     store_variadic_pack.h
    )
    

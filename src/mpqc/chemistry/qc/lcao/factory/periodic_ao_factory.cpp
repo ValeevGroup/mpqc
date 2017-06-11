@@ -16,7 +16,7 @@ TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size) {
   return tr1;
 }
 
-void sort_eigen(Vectorz &eigVal, Matrixz &eigVec) {
+void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec) {
   auto val = eigVal.real();
 
   // Sort by ascending eigenvalues
@@ -29,8 +29,8 @@ void sort_eigen(Vectorz &eigVal, Matrixz &eigVec) {
   std::sort(sortedVal.begin(), sortedVal.end());
 
   // Build sorted eigenvalues and eigenvectors
-  Vectorz sortedEigVal(eigVal);
-  Matrixz sortedEigVec(eigVec);
+  VectorZ sortedEigVal(eigVal);
+  MatrixZ sortedEigVec(eigVec);
   for (auto i = 0; i != val.size(); ++i) {
     sortedEigVal(i) = eigVal(sortedVal[i].second);
     sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);
@@ -79,6 +79,19 @@ int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max) {
   }
 }
 
+Vector3i direct_3D_idx(const int64_t ord_idx, const Vector3i &latt_max) {
+  if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0) {
+    auto z = ord_idx % (2 * latt_max(2) + 1);
+    auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
+    auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
+
+    Vector3i result(x - latt_max(0), y - latt_max(1), z - latt_max(2));
+    return result;
+  } else {
+    throw "invalid lattice boundaries";
+  }
+}
+
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {
@@ -113,14 +126,15 @@ std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
 namespace gaussian {
 namespace detail {
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift) {
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
     for (auto shell : shell_vec) {
-      std::array<double, 3> new_origin = {{
-          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)}};
+      std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                           shell.O[1] + shift(1),
+                                           shell.O[2] + shift(2)}};
       shell.move(new_origin);
       shells.push_back(shell);
     }
@@ -131,10 +145,10 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
   return result_ptr;
 }
 
-std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
-                                                    Vector3d shift_base,
-                                                    Vector3i nshift,
-                                                    Vector3d dcell) {
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift_base,
+                                          const Vector3i &nshift,
+                                          const Vector3d &dcell) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;
@@ -149,8 +163,8 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
       ShellVec shells;
       for (auto shell : shell_vec) {
         std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
-                                            shell.O[1] + shift(1),
-                                            shell.O[2] + shift(2)}};
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
         shell.move(new_origin);
         shells.push_back(shell);
       }

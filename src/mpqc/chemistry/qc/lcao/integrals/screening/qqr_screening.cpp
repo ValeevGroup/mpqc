@@ -4,7 +4,7 @@ namespace mpqc {
 namespace lcao {
 namespace gaussian {
 
-bool QQR::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
+bool QQR::skip(int64_t a, int64_t b, int64_t c, int64_t d) const {
 
 
     auto QabQcd = four_center_est(a,b,c,d);

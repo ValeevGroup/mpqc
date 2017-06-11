@@ -50,7 +50,7 @@ class QQR : public SchwarzScreen {
      * Only use QQR once all 4 shells are present. This means
      * for now only Schwarz is used for loop skipping.
      */
-    bool skip(int64_t, int64_t, int64_t, int64_t) override;
+    bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 };
 
 struct init_qqr_screen {

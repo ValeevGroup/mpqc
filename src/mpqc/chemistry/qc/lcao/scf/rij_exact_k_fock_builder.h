@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_RIJ_EXACT_K_FOCK_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
 #include "mpqc/math/linalg/cholesky_inverse.h"
 #include "mpqc/util/misc/time.h"
 

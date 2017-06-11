@@ -9,18 +9,18 @@
 
 #include <memory>
 
+#include <madness/world/worldmem.h>
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
+#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/purification_density_build.h"
+#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
 #include "mpqc/util/misc/time.h"
-#include <madness/world/worldmem.h>
 
 namespace mpqc {
 namespace lcao {
@@ -110,7 +110,8 @@ void RHF<Tile, Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder =
-      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4)>(eri4, eri4);
+      scf::ReferenceFourCenterFockBuilder<Tile, Policy, decltype(eri4)>(eri4,
+                                                                        eri4);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -372,7 +373,6 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   }
 
   secadf_ = kv.value<bool>("secadf", false);
-  aaab_ = kv.value<bool>("secadf_aaab", false);
 }
 
 template <typename Tile, typename Policy>
@@ -380,7 +380,7 @@ void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
   this->f_builder_ = std::make_unique<Builder>(
-      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
+      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_);
 }
 
 /**
@@ -391,11 +391,15 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto& world = this->ao_factory().world();
+  auto& factory = this->ao_factory();
+  auto& world = factory.world();
+  auto& ao_factory = ::mpqc::lcao::gaussian::to_ao_factory(factory);
+  auto screen = ao_factory.screen();
+  auto screen_threshold = ao_factory.screen_threshold();
   auto basis =
       this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   this->f_builder_ = std::make_unique<scf::FourCenterFockBuilder<Tile, Policy>>(
-      world, basis, basis, basis, true, true);
+      world, basis, basis, basis, true, true, screen, screen_threshold);
 }
 
 /**

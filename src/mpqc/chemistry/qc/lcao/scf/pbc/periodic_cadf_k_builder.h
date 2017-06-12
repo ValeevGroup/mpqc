@@ -49,6 +49,8 @@ class PeriodicCADFKBuilder
     print_detail_ = ao_factory_.print_detail();
     shell_pair_threshold_ = ao_factory_.shell_pair_threshold();
     force_shape_threshold_ = force_shape_threshold;
+    ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
+                  << std::endl;
     target_precision_ = std::numeric_limits<double>::epsilon();
     mpqc::time_point t0, t1;
 
@@ -99,8 +101,8 @@ class PeriodicCADFKBuilder
       return Vector3i({x, y, z});
     };
 
-    auto Y_latt_range = max_latt_range(R_max_, RJ_max_ + RD_max_);
-    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, Y_latt_range, dcell_);
+    RY_max_ = max_latt_range(R_max_, RJ_max_ + RD_max_);
+    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RY_max_, dcell_);
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
@@ -167,8 +169,8 @@ class PeriodicCADFKBuilder
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
-                    << "\tC_bra:               " << t_C_bra << " s\n"
-                    << "\tM:                   " << t_M << " s\n"
+                    << "\tC(X, μ_0, ρ_Rj):     " << t_C_bra << " s\n"
+                    << "\tM(X, Y):             " << t_M << " s\n"
                     << "\tengine, screen ... : " << t_misc << " s" << std::endl;
     }
   }
@@ -189,6 +191,7 @@ class PeriodicCADFKBuilder
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
+  Vector3i RY_max_;
   int64_t R_size_;
   int64_t RJ_size_;
   int64_t RD_size_;
@@ -382,11 +385,11 @@ class PeriodicCADFKBuilder
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K time decomposition:\n"
-                    << "\tC block:                  " << t_Cblock << " s\n"
-                    << "\tQ_bra:                    " << t_Qbra << " s\n"
-                    << "\tQ_ket:                    " << t_Qket << " s\n"
-                    << "\tE_ket:                    " << t_Eket << " s\n"
-                    << "\tF = E - C M:              " << t_F << " s\n"
+                    << "\tC(X, μ_0, ρ) block:       " << t_Cblock << " s\n"
+                    << "\tQ_bra(X, μ_0, σ_Rd) :     " << t_Qbra << " s\n"
+                    << "\tQ_ket(Y, ν_R, ρ):         " << t_Qket << " s\n"
+                    << "\tE_ket(Y, μ_0, ρ) direct:  " << t_Eket << " s\n"
+                    << "\tF = E_ket - C M:          " << t_F << " s\n"
                     << "\tK_part1 = F Qket:         " << t_Kpart1 << " s\n"
                     << "\tK_part2 = E Qbra:         " << t_Kpart2 << " s\n"
                     << "\nTotal K builder time:     " << t_tot << " s"
@@ -470,28 +473,6 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
 
-    auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
-      auto x = std::max(l(0), r(0));
-      auto y = std::max(l(1), r(1));
-      auto z = std::max(l(2), r(2));
-      return Vector3i({x, y, z});
-    };
-    auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
-                                  Vector3i const &center = {0, 0, 0}) {
-      if (in_idx(0) <= center(0) + range(0) &&
-          in_idx(0) >= center(0) - range(0) &&
-          in_idx(1) <= center(1) + range(1) &&
-          in_idx(1) >= center(1) - range(1) &&
-          in_idx(2) <= center(2) + range(2) &&
-          in_idx(2) >= center(2) - range(2))
-        return true;
-      else
-        return false;
-    };
-
-    const auto unshifted_Y_latt_range =
-        max_latt_range(R_max_, RJ_max_ + RD_max_);
-
     const auto shifted_Y_latt_range = RJ_max_;
 
     const auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
@@ -527,7 +508,7 @@ class PeriodicCADFKBuilder
 
       for (auto Y = 0ul; Y != ntiles_Y; ++Y) {
         auto RY_ord = Y / ntiles_per_uc;
-        auto RY_3D = direct_3D_idx(RY_ord, unshifted_Y_latt_range);
+        auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
 
         auto RYmR_3D = RY_3D - R_3D;
         if (!is_in_lattice_range(RYmR_3D, shifted_Y_latt_range)) continue;
@@ -646,7 +627,7 @@ class PeriodicCADFKBuilder
 
         if (Q.is_local(tile_idx) && !Q.is_zero(tile_idx)) {
           auto RY_ord = Y / ntiles_per_uc;
-          auto RY_3D = direct_3D_idx(RY_ord, unshifted_Y_latt_range);
+          auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
           auto Y_in_C = Y % ntiles_per_uc +
                         direct_ord_idx(RY_3D - R_3D, shifted_Y_latt_range) *
                             ntiles_per_uc;
@@ -694,24 +675,15 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::detail::direct_ord_idx;
     const auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
 
-    auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
-                                  Vector3i const &center = {0, 0, 0}) {
-      if (in_idx(0) <= center(0) + range(0) &&
-          in_idx(0) >= center(0) - range(0) &&
-          in_idx(1) <= center(1) + range(1) &&
-          in_idx(1) >= center(1) - range(1) &&
-          in_idx(2) <= center(2) + range(2) &&
-          in_idx(2) >= center(2) - range(2))
-        return true;
-      else
-        return false;
-    };
-
     for (auto tile_X = 0ul, task = 0ul; tile_X != ntiles_X; ++tile_X) {
       const auto RX_ord = tile_X / ntiles_per_uc;
       const auto RX_3D = direct_3D_idx(RX_ord, RJ_max_);
+      const auto tile_X_in_uc = tile_X % ntiles_per_uc;
+
       for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
         for (auto tile_sig = 0ul; tile_sig != ntiles_sig; ++tile_sig) {
+          const auto tile_sig_in_uc = tile_sig % ntiles_per_uc;
+
           std::array<size_t, 3> idx_Q = {{tile_X, tile_mu, tile_sig}};
           if (Q.is_zero(idx_Q)) continue;
 
@@ -735,11 +707,9 @@ class PeriodicCADFKBuilder
             const auto RXmR_3D = RX_3D - R_3D;
             const auto RXmR_ord = direct_ord_idx(RXmR_3D, RJ_max_ + R_max_);
 
-            const auto eri3_tile_X =
-                tile_X % ntiles_per_uc + RXmR_ord * ntiles_per_uc;
+            const auto eri3_tile_X = tile_X_in_uc + RXmR_ord * ntiles_per_uc;
             const auto eri3_tile_nu = tile_nu % ntiles_per_uc;
-            const auto eri3_tile_sig =
-                tile_sig % ntiles_per_uc + RJpRDmR_ord * ntiles_per_uc;
+            const auto eri3_tile_sig = tile_sig_in_uc + RJpRDmR_ord * ntiles_per_uc;
 
             if (task % nproc == me) {
               WorldObject_::task(
@@ -816,15 +786,10 @@ class PeriodicCADFKBuilder
     const auto &eri3_cluster_nu = eri3_basis_nu->cluster_shells()[eri3_tile_nu];
     const auto &eri3_cluster_sig =
         eri3_basis_sig->cluster_shells()[eri3_tile_sig];
-    const auto &cluster_X = basis_X->cluster_shells()[tile_X];
-    const auto &cluster_sig = basis_sig->cluster_shells()[tile_sig];
 
     // # of shells in each cluster
-    const auto eri3_nshells_X = eri3_cluster_X.size();
     const auto eri3_nshells_nu = eri3_cluster_nu.size();
     const auto eri3_nshells_sig = eri3_cluster_sig.size();
-    const auto nshells_X = cluster_X.size();
-    const auto nshells_sig = cluster_sig.size();
 
     // 1-d tile ranges
     const auto &tr0 = result_trange_.dim(0);
@@ -832,7 +797,6 @@ class PeriodicCADFKBuilder
     const auto ntiles_nu = tr1.tile_extent();
     const auto &rng_mu = tr0.tile(tile_mu);
     const auto &rng_nu = tr1.tile(tile_nu);
-    const auto &rng_X = X_dfbs_trange1_.tile(tile_X);
     const auto &rng_sig = basisRD_trange1_.tile(tile_sig);
     const auto &eri3_rng_X = eri3_X_trange1_.tile(eri3_tile_X);
     const auto &eri3_rng_nu = eri3_bs0_trange1_.tile(eri3_tile_nu);
@@ -841,14 +805,7 @@ class PeriodicCADFKBuilder
     // range sizes
     const auto rng_size_mu = rng_mu.second - rng_mu.first;
     const auto rng_size_nu = rng_nu.second - rng_nu.first;
-    const auto rng_size_X = rng_X.second - rng_X.first;
     const auto rng_size_sig = rng_sig.second - rng_sig.first;
-    const auto eri3_rng_size_X = eri3_rng_X.second - eri3_rng_X.first;
-    const auto eri3_rng_size_nu = eri3_rng_nu.second - eri3_rng_nu.first;
-    const auto eri3_rng_size_sig = eri3_rng_sig.second - eri3_rng_sig.first;
-    assert(rng_size_X == eri3_rng_size_X);
-    assert(rng_size_nu == eri3_rng_size_nu);
-    assert(rng_size_sig == eri3_rng_size_sig);
 
     // 2-d tile ranges describing the contribution blocks produced by this
     auto result_rng = TA::Range({rng_mu, rng_nu});
@@ -895,6 +852,8 @@ class PeriodicCADFKBuilder
         const auto &computed_shell_sets = engine.results();
 
         // compute max value of mu for each (X, sigma) pair for Q
+        const auto &cluster_X = basis_X->cluster_shells()[tile_X];
+        const auto &cluster_sig = basis_sig->cluster_shells()[tile_sig];
         auto sig_X_shpair_val_list = compute_shell_pair_with_val(
             Q, cluster_X, cluster_sig, shell_pair_threshold_);
 
@@ -903,23 +862,15 @@ class PeriodicCADFKBuilder
             compute_func_offset_list(eri3_cluster_sig, eri3_rng_sig.first);
         auto eri3_offset_list_X =
             compute_func_offset_list(eri3_cluster_X, eri3_rng_X.first);
-        auto offset_list_X = compute_func_offset_list(cluster_X, rng_X.first);
-        auto offset_list_sig =
-            compute_func_offset_list(cluster_sig, rng_sig.first);
 
         // this is the index of the first basis functions for each shell *in
         // this shell cluster*
-        auto eri3_cf_offset_nu = 0;
         auto cf_offset_nu = 0;
         // this is the index of the first basis functions for each shell *in the
         // basis set*
         auto eri3_bf_offset_nu = eri3_rng_nu.first;
-        auto bf_offset_nu = rng_nu.first;
 
-        size_t eri3_cf_offset_sig, eri3_bf_offset_sig;
-        size_t eri3_cf_offset_X, eri3_bf_offset_X;
-        size_t cf_offset_X, bf_offset_X;
-        size_t cf_offset_sig, bf_offset_sig;
+        size_t cf_offset_sig, eri3_bf_offset_sig, cf_offset_X, eri3_bf_offset_X;
 
         // loop over all shell sets
         for (auto eri3_sh_nu = 0; eri3_sh_nu != eri3_nshells_nu; ++eri3_sh_nu) {
@@ -934,10 +885,8 @@ class PeriodicCADFKBuilder
               continue;
 
             const auto eri3_sh_sig = sh_sig_in_basis - eri3_sh_offset_sig;
-            std::tie(eri3_cf_offset_sig, eri3_bf_offset_sig) =
+            std::tie(cf_offset_sig, eri3_bf_offset_sig) =
                 eri3_offset_list_sig[eri3_sh_sig];
-            std::tie(cf_offset_sig, bf_offset_sig) =
-                offset_list_sig[eri3_sh_sig];
 
             const auto &eri3_shell_sig = eri3_cluster_sig[eri3_sh_sig];
             const auto eri3_nf_sig = eri3_shell_sig.size();
@@ -949,7 +898,7 @@ class PeriodicCADFKBuilder
 
               const auto &eri3_shell_X = eri3_cluster_X[eri3_sh_X];
               const auto eri3_nf_X = eri3_shell_X.size();
-              std::tie(eri3_cf_offset_X, eri3_bf_offset_X) =
+              std::tie(cf_offset_X, eri3_bf_offset_X) =
                   eri3_offset_list_X[eri3_sh_X];
               if (screen.skip(eri3_bf_offset_X, eri3_bf_offset_nu,
                               eri3_bf_offset_sig, norm_Q))
@@ -957,7 +906,6 @@ class PeriodicCADFKBuilder
 
               num_ints_computed_ += eri3_nf_X * eri3_nf_nu * eri3_nf_sig;
 
-              std::tie(cf_offset_X, bf_offset_X) = offset_list_X[eri3_sh_X];
               // compute shell set
               engine.compute(eri3_shell_X, eri3_shell_nu, eri3_shell_sig);
               const auto &eri3 = computed_shell_sets[0];
@@ -986,10 +934,8 @@ class PeriodicCADFKBuilder
             }
           }
 
-          eri3_cf_offset_nu += eri3_nf_nu;
           eri3_bf_offset_nu += eri3_nf_nu;
           cf_offset_nu += eri3_nf_nu;
-          bf_offset_nu += eri3_nf_nu;
         }
       }
     }
@@ -1371,6 +1317,27 @@ class PeriodicCADFKBuilder
 
     return result;
   }
+
+  /*!
+   * \brief This determines if a unit cell is included by the give lattice range
+   * \param in_idx 3D index of a unit cell
+   * \param range lattice range
+   * \param center center of \range
+   * \return
+   */
+  bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
+                           Vector3i const &center = {0, 0, 0}) {
+    if (in_idx(0) <= center(0) + range(0) &&
+        in_idx(0) >= center(0) - range(0) &&
+        in_idx(1) <= center(1) + range(1) &&
+        in_idx(1) >= center(1) - range(1) &&
+        in_idx(2) <= center(2) + range(2) &&
+        in_idx(2) >= center(2) - range(2))
+      return true;
+    else
+      return false;
+  }
+
 };
 
 }  // namespace scf

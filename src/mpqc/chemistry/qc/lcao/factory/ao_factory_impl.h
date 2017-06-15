@@ -172,7 +172,13 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // get the inverse square root instead
   if (iterative_inv_sqrt_ &&
       formula.has_option(Formula::Option::Inverse)) {
-    auto inv_sqrt_formula = formula;
+
+    // TODO clean up this with changes in Formula from EOM_CCSD branch
+    Formula inv_sqrt_formula;
+    inv_sqrt_formula.set_notation(formula.notation());
+    inv_sqrt_formula.set_operator(formula.oper());
+    inv_sqrt_formula.set_bra_indices(formula.bra_indices());
+    inv_sqrt_formula.set_ket_indices(formula.ket_indices());
     inv_sqrt_formula.set_option(Formula::Option::InverseSquareRoot);
 
     result = this->compute(inv_sqrt_formula);

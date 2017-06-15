@@ -419,78 +419,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
 
-
-
-    // // Loop over each pair of occupied tile indices
-    // // ti = tile_i, etc.
-    // for (int ti = 0; ti != ntiles_i; ++ti) {
-    //   // double eps_ti = eps_o[ti]; // This isn't a double
-
-    //   // range info for ti
-    //   const auto& ti_range = trange_i.tile(ti);
-    //   auto ti_start = ti_range.first;
-    //   auto ti_end = ti_range.second;
-    //   auto ti_extent = ti_end - ti_start;
-
-    //   for (int tj = 0; tj != ntiles_j; ++tj) {
-    //     // double eps_tj = eps_o[tj];
-
-    //     // range info for tj
-    //     const auto& tj_range = trange_j.tile(tj);
-    //     auto tj_start = tj_range.first;
-    //     auto tj_end = tj_range.second;
-    //     auto tj_extent = tj_end - tj_start;
-
-    //     // For each pair of {ti, tj}, collect all ta, tb
-    //     // Store in K_abij, K_abji
-
-    //     // Have size nuocc x nuocc x extent of ti x extent of tj
-    //     // TA::TensorD K_abij = ;
-    //     // TA::TensorD K_abji = ;
-    //     TA::TensorD K_abij;
-    //     TA::TensorD K_abji;
-
-
-    //     for (int ta = 0, idx = 0; ta != ntiles_a; ++ta) {
-    //       // double eps_ta = eps_v[ta];
-
-    //       // range info for ta
-    //       const auto& ta_range = trange_a.tile(ta);
-    //       auto ta_start = ta_range.first;
-    //       auto ta_end = ta_range.second;
-    //       auto ta_extent = ta_end - ta_start;
-
-    //       for (int tb = 0; tb != ntiles_b; ++tb, ++idx) {
-    //         // double eps_tb = eps_v[tb];
-
-    //         // range info for tb
-    //         const auto& tb_range = trange_b.tile(tb);
-    //         auto tb_start = tb_range.first;
-    //         auto tb_end = tb_range.second;
-    //         auto tb_extent = tb_end - tb_start;
-
-    //         // Select {ta, tb, ti, tj} and {ta, tb, tj, ti} tiles
-    //         TA::TensorD K_abij_tile = K.find({ta,tb,ti,tj});
-    //         TA::TensorD K_abji_tile = K.find({ta,tb,tj,ti});
-
-
-    //         // Store K_abij_tiles in K_abij
-    //         // K_abij[idx] = K_abij_tile;
-
-    //         // Store K_abji_tiles in K_abji
-    //         // K_abij[idx] = K_abji_tile;
-
-    //       }
-    //     }
-    //   }
-    // }
-
-
-
-
-
-
-
+    // Original PNO formation code //
 
 
     // Loop over each pair of occupieds to form PNOs

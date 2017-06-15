@@ -112,7 +112,7 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
   const auto sparse = 0.1;
   const auto n_roots = 3;
   const auto converge = 1.0e-8;
-  const auto max_iter = 10;
+  const auto max_iter = 20;
 
   // initialize matrix
   RowMatrix<double> A = RowMatrix<double>::Zero(n, n);

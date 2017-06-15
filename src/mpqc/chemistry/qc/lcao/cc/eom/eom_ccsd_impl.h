@@ -25,29 +25,30 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
       this->lcao_factory(), this->ao_factory(), t1, Tau, df);
 
-  // \cal{W}mnij
-  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), t1, Tau, df);
 
   // \cal{W}abef
   if (this->method_ != "direct" && this->method_ != "direct_df") {
     WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), t1, Tau, df);
   }
 
+  // \cal{W}abei
+  WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), this->ao_factory(),
+                                      t1, t2, Tau, FIA_, WAbCd_, df);
+
+  // \cal{W}amef
+  WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), t1, df);
+
+  // \cal{W}mnij
+  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), t1, Tau, df);
+
   // \cal{W}mbej
   WIbAj_ = cc::compute_cs_ccsd_W_IbAj(this->lcao_factory(), t1, t2, df);
 
   WIbaJ_ = cc::compute_cs_ccsd_W_IbaJ(this->lcao_factory(), t1, t2, df);
 
-  // \cal{W}abei
-  WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), this->ao_factory(),
-                                      t1, t2, Tau, FIA_, WAbCd_, df);
-
   // \cal{W}mbij
   WKaIj_ = cc::compute_cs_ccsd_W_KaIj(this->lcao_factory(), t1, t2, Tau, FIA_,
                                       WKlIj_, df);
-
-  // \cal{W}amef
-  WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), t1, df);
 
   // \cal{W}mnie
   WKlIc_ = cc::compute_cs_ccsd_W_KlIc(this->lcao_factory(), t1, df);

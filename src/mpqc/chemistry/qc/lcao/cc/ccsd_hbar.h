@@ -57,9 +57,6 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIj(
   return W_KlIj;
 };
 
-/*
- * //TODO need to permute to IjAb
- */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,

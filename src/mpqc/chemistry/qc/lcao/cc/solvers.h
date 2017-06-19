@@ -233,17 +233,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
 
-    // Determine the trange for each of the four dims: a, b, i, and j
-    const auto trange_a = ktrange.dim(0);
-    const auto trange_b = ktrange.dim(1);
-    const auto trange_i = ktrange.dim(2);
-    const auto trange_j = ktrange.dim(3);
-
-    // Determine the number of tiles along each of the four dims
-    const auto ntiles_a = trange_a.tile_extent();
-    const auto ntiles_b = trange_b.tile_extent();
-    const auto ntiles_i = trange_i.tile_extent();
-    const auto ntiles_j = trange_j.tile_extent();
 
     // zero out amplitudes
     if (!T_.is_initialized()) {
@@ -273,150 +262,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     xport.write("occ.molden");
 #endif
 
-    // For each pair of tiles along the two occupied dimensions,
-    // collect all tiles along the two unoccupied dimensions and 
-    // form TA array object with shape (all a tiles x all b tiles x single i tile x single j tile)
-    // Each mini array will be handled by an individual node. 
-
-    // To form PNOs, will need to loop over individual i and j indices
-
-
-    // Loop over each pair of occupied tile indices
-    // ti = tile_i, etc.
-    for (int ti = 0; ti != ntiles_i; ++ti) {
-      for (int tj = 0; tj != ntiles_j; ++tj) {
-        
-        // For each pair of {ti, tj}, collect all ta, tb
-        // Store in K_abij, K_abji
-
-        // Have size nuocc x nuocc x extent of ti x extent of tj
-        TA::TensorD K_abij;
-        TA::TensorD K_abji;
-
-        for (int ta = 0, idx = 0; ta != ntiles_a; ++ta) {
-          for (int tb = 0; tb != ntiles_b; ++tb, ++idx) {
-            
-            // Select {ta, tb, ti, tj} and {ta, tb, tj, ti} tiles
-            TA::TensorD K_abij_tile = K.find({ta,tb,ti,tj});
-            TA::TensorD K_abji_tile = K.find({ta,tb,tj,ti});
-
-            // Store K_abij_tiles in K_abij
-            // K_abij[idx] = K_abij_tile;
-
-            // Store K_abji_tiles in K_abji
-            // K_abij[idx] = K_abji_tile;
-
-          }
-        }
-      }
-    }
-
-
-    // // For each K_abij tile, select 2-D slices corresponding to single
-    // // values of i and j
-
-    // // Get trange of K_abij
-    // const auto K_abij_trange = K_abij.trange();
-
-    // // Get range of K_abij
-    // const auto K_abij_range = K_abij.range();
-
-    // // Get tiling info for each dim
-    // const auto trange_a = K_abij_trange.dim(0);
-    // const auto trange_b = K_abij_trange.dim(1);
-    // const auto trange_i = K_abij_trange.dim(2);
-    // const auto trange_j = K_abij_trange.dim(3);
-
-    // // Get number of elements along each dim
-    // const auto a0 = K_abij_range.lobound()[0];
-    // const auto an = K_abij_range.upbound()[0];
-    // const auto a_ext = an - a0;
-
-    // const auto b0 = K_abij_range.lobound()[1];
-    // const auto bn = K_abij_range.upbound()[1];
-    // const auto b_ext = bn - b0;
-
-    // const auto i0 = K_abij_range.lobound()[2];
-    // const auto in = K_abij_range.upbound()[2];
-    // const auto i_ext = in - i0;
-
-    // const auto j0 = K_abij_range.lobound()[3];
-    // const auto jn = K_abij_range.upbound()[3];
-    // const auto j_ext = jn - j0;
-
-    // for (int i = i0; i != in; ++i) {
-    //   for (int j = j0; j != jn; ++j) {
-
-    //     Eigen::MatrixXd K_ij(a_ext, b_ext);
-
-    //     for (int a = a0; a != an; ++a) {
-    //       for (int b = b0; b != bn; ++b) {
-    //         auto da = b_ext * i_ext * j_ext;
-    //         auto db = i_ext * j_ext;
-    //         auto di = j_ext;
-    //         auto idx = a * da + b * db + i * di + j;
-
-    //         K_ij(a,b) = K_abij[idx];
-
-    //       }
-    //     }
-    //   }
-    // }
-
-
-    // // For each K_abji tile, select 2-D slices corresponding to single
-    // // values of i and j
-
-    // // Get trange of K_abji
-    // const auto K_abji_trange = K_abji.trange();
-
-    // // Get range of K_abji
-    // const auto K_abji_range = K_abji.range();
-
-    // // Get tiling info for each dim
-    // const auto trange_a = K_abji_trange.dim(0);
-    // const auto trange_b = K_abji_trange.dim(1);
-    // const auto trange_i = K_abji_trange.dim(2);
-    // const auto trange_j = K_abji_trange.dim(3);
-
-    // // Get number of elements along each dim
-    // const auto a0 = K_abji_range.lobound()[0];
-    // const auto an = K_abji_range.upbound()[0];
-    // const auto a_ext = an - a0;
-
-    // const auto b0 = K_abji_range.lobound()[1];
-    // const auto bn = K_abji_range.upbound()[1];
-    // const auto b_ext = bn - b0;
-
-    // const auto i0 = K_abji_range.lobound()[2];
-    // const auto in = K_abji_range.upbound()[2];
-    // const auto i_ext = in - i0;
-
-    // const auto j0 = K_abji_range.lobound()[3];
-    // const auto jn = K_abji_range.upbound()[3];
-    // const auto j_ext = jn - j0;
-
-    // for (int i = i0; i != in; ++i) {
-    //   for (int j = j0; j != jn; ++j) {
-
-    //     Eigen::MatrixXd K_ji(a_ext, b_ext);
-
-    //     for (int a = a0; a != an; ++a) {
-    //       for (int b = b0; b != bn; ++b) {
-    //         auto da = b_ext * i_ext * j_ext;
-    //         auto db = i_ext * j_ext;
-    //         auto di = j_ext;
-    //         auto idx = a * da + b * db + i * di + j;
-
-    //         K_ji(a,b) = K_abji[idx];
-
-    //       }
-    //     }
-    //   }
-    // }
-
-
-    
+  
 
     // Original PNO formation code //
 
@@ -631,131 +477,61 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
 
-  // Create lambda function to select 2-D slice of a tile and convert
-  // to a matrix
   template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> get_two_d_slice(
-      const TA::DistArray<Tile, Policy>& K_abij) {
+  TA::DistArray<Tile, Policy> form_T_array(
+      const TA::DistArray<Tile, Policy>& K,
+      const Eigen::VectorXd& eps_o,
+      const Eigen::VectorXd& eps_v) {
 
-    auto get_slice = [this](
-                       Eigen::MatrixXd slice_mat, const Tile& arg_tile) {
+    auto form_T = [eps_o, eps_v, this](
+                  Tile& result_tile, const Tile& arg_tile) {
 
-      //result_tile = Tile(arg_tile.range());
+      result_tile = Tile(arg_tile.range());
 
-      // Get trange of arg_tile
-      // const auto arg_tile_trange = arg_tile.trange();
+      // determine range of i and j indices
+      const auto i0 = arg_tile.range().lobound()[2];
+      const auto in = arg_tile.range().upbound()[2];
+      const auto j0 = arg_tile.range().lobound()[3];
+      const auto jn = arg_tile.range().upbound()[3];
 
-      // Get range of arg_tile
-      const auto arg_tile_range = arg_tile.range();
-      const auto start = arg_tile_range.lobound();
-      const auto finish = arg_tile_range.upbound();
+      // determine range of a and b indices
+      const auto a0 = arg_tile.range().lobound()[0];
+      const auto an = arg_tile.range().upbound()[0];
+      const auto b0 = arg_tile.range().lobound()[1];
+      const auto bn = arg_tile.range().upbound()[1];
 
-      // Get tiling info for each dim
-      // const auto trange_a = arg_tile_trange.dim(0);
-      // const auto trange_b = arg_tile_trange.dim(1);
-      // const auto trange_i = arg_tile_trange.dim(2);
-      // const auto trange_j = arg_tile_trange.dim(3);
+      // Loop over all four indices to form T
+      for (auto a = a0, tile_idx = 0; a != an; ++a) {
+        const auto e_a = eps_v[a];
 
-      // Get number of elements along each dim
-      const auto a0 = start[0];
-      const auto an = finish[0];
-      const auto a_ext = an - a0;
+        for (auto b = b0; b!= bn; ++b) {
+          const auto e_b = eps_v[b];
+          const auto e_ab = e_a + e_b;
 
-      const auto b0 = start[1];
-      const auto bn = finish[1];
-      const auto b_ext = bn - b0;
+          for (auto i = i0; i != in; ++i) {
+            const auto e_i = eps_o[i];
 
-      const auto i0 = start[2];
-      const auto in = finish[2];
-      const auto i_ext = in - i0;
+            for (auto j = j0; j != jn; ++j, ++tile_idx) {
+              const auto e_j = eps_o[j];
+              const auto e_ij = -e_i - e_j;
 
-      const auto j0 = start[3];
-      const auto jn = finish[3];
-      const auto j_ext = jn - j0;
-
-      for (int i = i0; i != in; ++i) {
-        for (int j = j0; j != jn; ++j) {
-
-          // For each i,j pair, form matrix
-          Eigen::MatrixXd slice_mat(a_ext, b_ext);
-
-          for (int a = a0; a != an; ++a) {
-            for (int b = b0; b != bn; ++b) {
-              auto da = b_ext * i_ext * j_ext;
-              auto db = i_ext * j_ext;
-              auto di = j_ext;
-              auto idx = a * da + b * db + i * di + j;
-
-              slice_mat(a,b) = arg_tile.data()[idx];
-
+              const auto e_abij = e_ab + e_ij;
+              //const auto e_abij = e_a + e_b - e_i - e_j;
+              const auto K_abij = arg_tile[tile_idx];
+              const auto T_abij = -K_abij / e_abij;
+              result_tile[tile_idx] = T_abij;
             }
           }
         }
       }
 
-      
     };
 
-    // !! Figure out what to put here !! //
-
-    // auto K_ij = ;
+    auto T_array = TA::foreach(K, form_T);
+    T_array.world().gop.fence();
+    return T_array;
   }
 
-
-  // Create lambda function to form D_ij from K_ij and K_ji
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> form_density_matrix(
-      const Eigen::MatrixXd& K_ij,
-      const Eigen::MatrixXd& K_ji,
-      const Eigen::VectorXd& eps_o,
-      const Eigen::VectorXd& eps_v) {
-
-    auto get_slice = [eps_o, eps_v, this](
-                       Eigen::MatrixXd& density_mat,
-                       const Eigen::MatrixXd& mat_ij,
-                       const Eigen::MatrixXd& mat_ji) {
-
-      // Somehow need i and j indices; probably pass to lambda
-
-      // Define dirac delta
-      int delta_ij = (i == j) ? 1 : 0;
-
-
-      // Get number of a indices
-      int na = mat_ij.rows();
-
-      // Get number of b indices
-      int nb = mat_ij.cols();
-
-      Eigen::MatrixXd T_ij(na, nb);
-      Eigen::MatrixXd T_ji(na, nb);
-      Eigen::MatrixXd T_tilde_ij(na, nb);
-
-      for (int a = 0; a != na; ++a) {
-        double eps_a = eps_v[a];
-        for (int b = 0; b != nb; ++b) {
-          double eps_b = eps_v[b];
-
-          T_ij(a, b) = -mat_ij(a, b) / (eps_a + eps_b - eps_i - eps_j);
-          T_ji(a, b) = -mat_ji(a, b) / (eps_a + eps_b - eps_i - eps_j);
-        }
-      }
-
-      // Eq. 23, JCP 128 034106 (2013)
-      T_tilde_ij = 4 * T_ij - 2 * T_ji;
-      Eigen::MatrixXd D_ij =
-          (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
-          (1.0 + delta_ij);
-
-    
-
-    
-  };
-
-    // !! Figure out what to put here !! //
-
-    // auto K_ij = ;
-  }
 
 
 
@@ -842,6 +618,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     delta_t2_abij.world().gop.fence();
     return delta_t2_abij;
   }
+
+
 
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> jacobi_update_t1(

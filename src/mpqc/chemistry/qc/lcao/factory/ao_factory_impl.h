@@ -9,6 +9,7 @@
 #include <string>
 
 #include "mpqc/math/groups/petite_list.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 
 namespace mpqc {
 namespace lcao {
@@ -387,7 +388,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   // check for other options
 
-  // compute inverse square root first in this case
+  // compute inverse
   if (!iterative_inv_sqrt_ && formula.has_option(Formula::Option::Inverse)) {
     time0 = mpqc::now(world, this->accurate_time_);
 
@@ -396,40 +397,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       result("i,j") = -result("i,j");
     }
 
-    RowMatrixXd result_eig = array_ops::array_to_eigen(result);
-
-    // compute cholesky decomposition
-    auto llt_solver = Eigen::LLT<RowMatrixXd>(result_eig);
-
-    // check success
-    Eigen::ComputationInfo info = llt_solver.info();
-    if (info == Eigen::ComputationInfo::Success) {
-      RowMatrixXd L = RowMatrixXd(llt_solver.matrixL());
-      RowMatrixXd L_inv_eig = L.inverse();
-      result_eig = L_inv_eig.transpose() * L_inv_eig;
-    } else if (info == Eigen::ComputationInfo::NumericalIssue) {
-      utility::print_par(world,
-                         "!!!\nWarning!! NumericalIssue in Cholesky "
-                         "Decomposition\n!!!\n");
-    } else if (info == Eigen::ComputationInfo::NoConvergence) {
-      utility::print_par(world,
-                         "!!!\nWarning!! NoConvergence in Cholesky "
-                         "Decomposition\n!!!\n");
-    }
-
-    if (info != Eigen::ComputationInfo::Success) {
-      utility::print_par(world, "Using Eigen LU Decomposition Inverse!\n");
-
-      Eigen::FullPivLU<RowMatrixXd> lu(result_eig);
-
-      TA_ASSERT(lu.isInvertible());
-
-      result_eig = lu.inverse();
-    }
-
-    auto tr_result = result.trange().data()[0];
-    result = array_ops::eigen_to_array<Tile, Policy>(result.world(), result_eig,
-                                                     tr_result, tr_result);
+    auto tmp = array_ops::eigen_inverse(result);
+    result("i,j") = tmp("i,j");
 
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -455,8 +424,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     } else {
       auto result_eig = array_ops::array_to_eigen(result);
 
-      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(result_eig);
-      RowMatrixXd inv_eig = es.operatorInverseSqrt();
+      Eigen::SelfAdjointEigenSolver<decltype(result_eig)> es(result_eig);
+      decltype(result_eig) inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
       result = array_ops::eigen_to_array<Tile, Policy>(result.world(), inv_eig,
@@ -509,6 +478,11 @@ AOFactory<Tile, Policy>::compute_cadf_coeffs(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
     const Formula& formula) {
+
+
+  // no option supported now
+  TA_ASSERT(formula.options().empty());
+
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -555,15 +529,20 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
 
     // compute integral
     auto left = compute(formula_strings[0]);
-    auto center = compute(formula_strings[1]);
-    auto right = compute(formula_strings[2]);
+    auto right = compute(formula_strings[1]);
 
     time0 = mpqc::now(world, this->accurate_time_);
 
-    if (formula.notation() == Formula::Notation::Chemical) {
-      result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
+    std::string result_str = formula.notation() == Formula::Notation::Chemical
+                                 ? "i,j,k,l"
+                                 : "i,k,j,l";
+
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb)
+    {
+      result(result_str) = left("q,i,j") * (-right("q,k,l"));
     } else {
-      result("i,j,k,l") = left("q,i,k") * center("q,p") * right("p,j,l");
+      result(result_str) = left("q,i,j") * right("q,k,l");
     }
 
     time1 = mpqc::now(world, this->accurate_time_);

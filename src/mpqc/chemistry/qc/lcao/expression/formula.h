@@ -157,6 +157,11 @@ class Formula {
   /// @name Formula options functions
   /// @{
 
+  /// option accessor
+  const std::vector<Option>& options() const {
+    return options_;
+  }
+
   /// @param op a Formula::Option object
   /// Calling this ensures that \c has_option(op) will return \c true
   void add_option(Option op);

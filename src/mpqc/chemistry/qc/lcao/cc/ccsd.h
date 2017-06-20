@@ -1410,29 +1410,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
   /// get three center integral (X|ab)
   const TArray get_Xab() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
-    result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|a b)[inv_sqr]");
   }
 
   /// get three center integral (X|ij)
   const TArray get_Xij() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|i j)");
-    result("K,i,j") = sqrt("K,Q") * three_center("Q,i,j");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|i j)[inv_sqr]");
   }
 
   /// get three center integral (X|ai)
   const TArray get_Xai() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
-    result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
   }
 
   // get two electron integrals

@@ -1103,14 +1103,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray Xai;
     if (this->is_df()) {
       /// get three center integral (X|ab)
-      // TArray Xab;
-      TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-      TArray Kab = this->lcao_factory().compute(L"(Κ|G|a b)");
-      Xab("K,a,b") = sqrt("K,Q") * Kab("Q,a,b");
+      Xab = this->lcao_factory().compute(L"(Κ|G|a b)[inv_sqr]");
 
       // TArray Xai;
-      TArray Kai = this->lcao_factory().compute(L"(Κ|G|a i)");
-      Xai("K,a,i") = sqrt("K,Q") * Kai("Q,a,i");
+      Xai = this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
     }
 
     // definition of orbital spaces
@@ -2111,28 +2107,28 @@ void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
   t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
 }
 
-const TArray get_Xab() {
-  TArray result;
-  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-  TArray three_center;
-  if (reblock_inner_) {
-    three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
-  } else {
-    three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
-  }
-  result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
-  return result;
-}
-
-/// get three center integral (X|ai)
-const TArray get_Xai() {
-  TArray result;
-  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-  TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
-  result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
-  return result;
-}
-
+//const TArray get_Xab() {
+//  TArray result;
+//  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+//  TArray three_center;
+//  if (reblock_inner_) {
+//    three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
+//  } else {
+//    three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
+//  }
+//  result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
+//  return result;
+//}
+//
+///// get three center integral (X|ai)
+//const TArray get_Xai() {
+//  TArray result;
+//  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+//  TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
+//  result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
+//  return result;
+//}
+//
 /// <ai|jk>
 const TArray get_aijk() {
   std::wstring post_fix = this->is_df() ? L"[df]" : L"";

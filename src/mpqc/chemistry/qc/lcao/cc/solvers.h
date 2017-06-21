@@ -527,11 +527,63 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     };
 
-    auto T_array = TA::foreach(K, form_T);
-    T_array.world().gop.fence();
-    return T_array;
+    auto T_ = TA::foreach(K, form_T);
+    T_.world().gop.fence();
+    return T_;
   }
 
+
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile, Policy> form_D_array(
+      TA::DistArray<Tile, Policy>& D_,
+      const TA::DistArray<Tile, Policy>& T_,
+      int& ti_idx,
+      int& tj_idx,
+      const int& nuocc) {
+
+    auto form_D = [nuocc, this](
+                  TA::DistArray<Tile, Policy>& D_,
+                  const TA::DistArray<Tile, Policy>& T_,
+                  auto& ti_idx,
+                  auto& tj_idx) {
+
+      typedef std::vector<std::size_t> block;
+
+      // Block indices
+      // a, b, c go from 0 to nuocc
+      // i, j only have single given index
+
+      const auto i_low = ti_idx;
+      const auto i_up = ti_idx + 1;
+      const auto j_low = tj_idx;
+      const auto j_up = tj_idx + 1;
+
+      block low_bound{0, 0, i_low, j_low};
+      block up_bound{nuocc, nuocc, i_up, j_up};
+
+      D_("a,b,i,j") =
+          (4 * T_("c,a,i,j").block(low_bound, up_bound) -
+           2 * T_("c,a,j,i").block(low_bound, up_bound)) *
+            T_("c,b,i,j").block(low_bound, up_bound) + 
+          (4 * T_("a,c,i,j").block(low_bound, up_bound) -
+           2 * T_("a,c,j,i").block(low_bound, up_bound)) *
+            T_("b,c,i,j").block(low_bound, up_bound);
+
+    };
+
+    // Get number of tiles along i and j dimensions
+    const auto Ttrange = T_.trange();
+    const auto ntiles_i = Ttrange.dim(2).tile_extent();
+    const auto ntiles_j = Ttrange.dim(3).tile_extent();
+
+    for (auto ti = 0; ti != ntiles_i; ++ti) {
+      for (auto tj = 0; tj != ntiles_j; ++tj) {
+        
+        // apply lambda expression
+
+      }
+    }
+  }
 
 
 
@@ -851,7 +903,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold
   int nocc_act_;               //!< the number of active occupied orbitals
-  Array T_;
+  Array T_;                    //!< the array of MP2 T amplitudes
+  Array D_;                    //!< the array of MP2 density values 
 
   Eigen::MatrixXd F_occ_act_;
 

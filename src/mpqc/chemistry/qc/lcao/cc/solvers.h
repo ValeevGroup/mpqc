@@ -234,6 +234,78 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     const auto ktrange = K.trange();
 
 
+
+
+    /// Step (3): D_array -> D_tensor
+
+
+    // Get number of tiles along each dim
+    const auto nt_a = ktrange.dim(0).tile_extent();
+    const auto nt_b = ktrange.dim(1).tile_extent();
+    const auto nt_i = ktrange.dim(2).tile_extent();
+    const auto nt_j = ktrange.dim(3).tile_extent();
+ 
+
+    for (auto ti = 0; ti != nt_i; ++ti) {
+      for (auto tj = 0; tj != nt_j; ++tj) {
+        TA::TensorD K_ij;
+
+        for (auto ta = 0; ta != nt_a; ++ta) {
+          for (auto tb = 0; tb != nt_b; ++tb) {
+            TA::TensorD K_ab = K.find({ta, tb, ti, tj});
+
+            auto a_off = 0;
+            auto b_off = 0;
+            auto i_off = 0;
+            auto j_off = 0;
+
+            auto a0 = K_ab.range().lobound()[0];
+            auto an = K_ab.range().upbound()[0];
+            auto a_ext = an - a0;
+
+            auto b0 = K_ab.range().lobound()[1];
+            auto bn = K_ab.range().upbound()[1];
+            auto b_ext = bn - b0;
+
+            auto i0 = K_ab.range().lobound()[2];
+            auto in = K_ab.range().upbound()[2];
+            auto i_ext = in - i0;
+
+            auto j0 = K_ab.range().lobound()[3];
+            auto jn = K_ab.range().upbound()[4];
+            auto j_ext = jn - j0;
+
+            auto da = b_ext * i_ext * j_ext;
+            auto db = i_ext * j_ext;
+            auto di = j_ext;
+
+            for (auto a = a0; a != an; ++a) {
+              auto a_shift = a + a_off;
+
+              for (auto b = b0; b != bn; ++b) {
+                auto b_shift = b + b_off;
+
+                for (auto i = i0; i != in; ++i) {
+                  auto i_shift = i + i_off;
+
+                  for (auto j = j0; j != jn; ++j) {
+                    auto j_shift = j + j_off;
+
+                    auto K_ab_idx = a * da + b * db + i * di + j;
+                    auto K_ij_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
+
+                    K_ij[K_ij_idx] = K_ab[K_ab_idx];
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+
     // zero out amplitudes
     if (!T_.is_initialized()) {
       T_ = Array(world, K.trange(), K.shape());
@@ -477,6 +549,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
 
+  /// Step (1): K -> T
+
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> form_T_array(
       const TA::DistArray<Tile, Policy>& K,
@@ -533,6 +607,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
 
+  /// Step (2): T -> D
+
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> form_D_array(
       TA::DistArray<Tile, Policy>& D_,
@@ -584,6 +660,54 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       }
     }
   }
+
+
+  /// Step (3): D_array -> D_tensor
+
+  // template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> form_D_tensor(
+  //     TA::TensorD& D_ij, 
+  //     TA::DistArray<Tile, Policy>& D_,
+  //     int& ti_idx,
+  //     int& tj_idx,
+  //     const int& nuocc) {
+
+  //   auto form_D = [nuocc, this](
+  //                 TA::TensorD& D_ij,
+  //                 TA::DistArray<Tile, Policy>& D_,
+  //                 auto& ti_idx,
+  //                 auto& tj_idx) {
+
+  //     // Get number of a and b tiles
+  //     const auto ntiles_a = D_.trange().dim(0).tile_extent();
+  //     const auto ntiles_b = D_.trange().dim(1).tile_extent();
+
+  //     for (int ta_idx = 0, idx = 0; ta_idx != ntiles_a; ++ta_idx) {
+  //       for (int tb_idx= 0; tb_idx != ntiles_b; ++tb_idx, ++idx) {
+         
+  //        // The following will not work:
+  //        // D_ij[idx] = D_[{ta_idx, tb_idx, ti_idx, tj_idx}];
+  //       }
+  //     }
+
+  //   };
+
+  //   // Get number of tiles along all four dimensions
+  //   const auto Dtrange = D_.trange();
+  //   // int ntiles_a = Dtrange.dim(0).tile_extent();
+  //   // int ntiles_b = Dtrange.dim(1).tile_extent();
+  //   const auto ntiles_i = Dtrange.dim(2).tile_extent();
+  //   const auto ntiles_j = Dtrange.dim(3).tile_extent();
+
+  //   for (auto ti = 0; ti != ntiles_i; ++ti) {
+  //     for (auto tj = 0; tj != ntiles_j; ++tj) {
+  //       TA::TensorD D_ij;
+        
+  //       // apply lambda expression
+
+  //     }
+  //   }
+  // }
 
 
 

@@ -9,8 +9,8 @@
 
 #include "mpqc/chemistry/qc/cc/diis.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
-#include "mpqc/chemistry/qc/lcao/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_r1_r2.h"
+#include "mpqc/chemistry/qc/lcao/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
@@ -42,7 +42,7 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
   std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
               dE, error, E1, time_u, time_total);
 }
-}
+}  // namespace detail
 
 /**
  * CCSD class that computed CCSD energy
@@ -87,7 +87,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     df_ = false;
     auto default_method =
-        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
+        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "direct";
     method_ = kv.value<std::string>("method", default_method);
     if (method_ != "df" && method_ != "direct" && method_ != "standard" &&
         method_ != "direct_df") {
@@ -98,8 +98,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     }
 
     solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
-    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "svo")
-      throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
+    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" &&
+        solver_str_ != "svo")
+      throw InputError("invalid value for solver keyword", __FILE__, __LINE__,
+                       "solver");
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
 
@@ -129,15 +131,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   bool verbose_;
   double ccsd_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
-  std::shared_ptr<const EigenVector<typename Tile::numeric_type>> f_pq_diagonal_;
+  std::shared_ptr<const EigenVector<typename Tile::numeric_type>>
+      f_pq_diagonal_;
 
  protected:
-  std::shared_ptr<const EigenVector<typename Tile::numeric_type>> orbital_energy() {
+  std::shared_ptr<const EigenVector<typename Tile::numeric_type>>
+  orbital_energy() {
     return f_pq_diagonal_;
   }
 
-  void set_orbital_energy(const EigenVector<typename Tile::numeric_type> &orbital_energy) {
-    f_pq_diagonal_ = std::make_shared<EigenVector<typename Tile::numeric_type>>(orbital_energy);
+  void set_orbital_energy(
+      const EigenVector<typename Tile::numeric_type> &orbital_energy) {
+    f_pq_diagonal_ = std::make_shared<EigenVector<typename Tile::numeric_type>>(
+        orbital_energy);
   }
 
  public:
@@ -214,11 +220,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         solver_ = std::make_shared<cc::JacobiDIISSolver<TArray>>(
             kv_, f_pq_diagonal_->segment(n_frozen, n_act_occ),
             f_pq_diagonal_->segment(n_occ, n_uocc));
-      }
-      else if (solver_str_ == "pno")
-        solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
+      } else if (solver_str_ == "pno")
+        solver_ = std::make_shared<cc::PNOSolver<
+            TArray, typename LCAOFactory<Tile, Policy>::DirectTArray>>(
+            kv_, this->lcao_factory());
       else if (solver_str_ == "svo")
-        solver_ = std::make_shared<cc::SVOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
+        solver_ = std::make_shared<cc::SVOSolver<
+            TArray, typename LCAOFactory<Tile, Policy>::DirectTArray>>(
+            kv_, this->lcao_factory());
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 
@@ -234,8 +243,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
-        direct_ao_array_ =
-            this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
+        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -278,15 +286,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
     this->lcao_factory().registry().purge_formula(L"(a ν| G |κ λ )");
 
-
-    cc::Integrals<TArray> ints;
-    ints.Gabcd = g_abcd;
-    ints.Gijab = g_ijab;
-    ints.Gijkl = g_ijkl;
-    ints.Giajb = g_iajb;
-    ints.Giabc = g_iabc;
-    ints.Gijka = g_ijka;
-
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
     mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
@@ -295,10 +294,16 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     TArray f_ij = this->get_fock_ij();
     TArray f_ab = this->get_fock_ab();
 
+    cc::Integrals<TArray> ints;
+    ints.Gabcd = g_abcd;
+    ints.Gijab = g_ijab;
+    ints.Gijkl = g_ijkl;
+    ints.Giajb = g_iajb;
+    ints.Giabc = g_iabc;
+    ints.Gijka = g_ijka;
     ints.Fia("i,a") = f_ai("a,i");
     ints.Fij = f_ij;
     ints.Fab = f_ab;
-
 
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
@@ -337,7 +342,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       TArray::wait_for_lazy_cleanup(world);
 
       // zero out singles if want CCD
-      //TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
+      // TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
+      // r1("a,i") = r1_new("a,i");
       error = solver_->error(r1, r2);
 
       // recompute energy
@@ -363,7 +369,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
         if (verbose_) {
-          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time,
+                                   "\n");
         }
 
         // log the iteration
@@ -391,9 +398,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
       r1 = cc::compute_cs_ccsd_r1(t1, t2, tau, ints);
 
-      auto h_ki = ints.FIJ;
-      auto h_ac = ints.FAB;
-
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
       if (verbose_) {
@@ -405,157 +409,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
       auto t2_time0 = mpqc::now(world, accurate_time);
 
-      // compute residual r2(n) (at convergence r2 = 0)
-
-      // permutation part
-      tmp_time0 = mpqc::now(world, accurate_time);
-
-      {
-        r2("a,b,i,j") =
-            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
-
-        r2("a,b,i,j") -=
-            (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        // compute g intermediate
-        TArray g_ki, g_ac;
-
-        g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") +
-                      (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
-
-        g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                      (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
-
-        r2("a,b,i,j") +=
-            g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        TArray j_akic;
-        TArray k_kaic;
-        // compute j and k intermediate
-        {
-          TArray T;
-
-          T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
-
-          j_akic("a,k,i,c") = g_ijab("i,k,a,c");
-
-          j_akic("a,k,i,c") -= g_ijka("l,k,i,c") * t1("a,l");
-
-          j_akic("a,k,i,c") += g_aibc("a,k,d,c") * t1("d,i");
-
-          j_akic("a,k,i,c") -= g_ijab("k,l,c,d") * T("d,a,i,l");
-
-          j_akic("a,k,i,c") += 0.5 *
-                               (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
-                               t2("a,d,i,l");
-
-          k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
-
-                              - g_ijka("k,l,i,c") * t1("a,l")
-
-                              + g_iabc("k,a,d,c") * t1("d,i")
-
-                              - g_ijab("k,l,d,c") * T("d,a,i,l");
-          if (verbose_) {
-            mpqc::detail::print_size_info(T, "T");
-            mpqc::detail::print_size_info(j_akic, "J_akic");
-            mpqc::detail::print_size_info(k_kaic, "K_kaic");
-          }
-        }
-
-        r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
-                         (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
-
-        r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                         k_kaic("k,b,i,c") * t2("a,c,k,j");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
-      }
-
-      // perform the permutation
-      r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
-
-      r2("a,b,i,j") += g_ijab("i,j,a,b");
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        TArray a_klij;
-        // compute a intermediate
-        a_klij("k,l,i,j") = g_ijkl("k,l,i,j");
-
-        a_klij("k,l,i,j") += g_ijka("k,l,i,c") * t1("c,j");
-
-        a_klij("k,l,i,j") += g_ijak("k,l,c,j") * t1("c,i");
-
-        a_klij("k,l,i,j") += g_ijab("k,l,c,d") * tau("c,d,i,j");
-
-        r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
-
-        if (verbose_) {
-          mpqc::detail::print_size_info(a_klij, "A_klij");
-        }
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        // compute b intermediate
-        if (reduced_abcd_memory_) {
-          // avoid store b_abcd
-          TArray b_abij;
-          b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
-
-          b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
-
-          b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
-
-          if (verbose_) {
-            mpqc::detail::print_size_info(b_abij, "B_abij");
-          }
-
-          r2("a,b,i,j") += b_abij("a,b,i,j");
-        } else {
-          TArray b_abcd;
-
-          b_abcd("a,b,c,d") = g_abcd("a,b,c,d") -
-                              g_aibc("a,k,c,d") * t1("b,k") -
-                              g_iabc("k,b,c,d") * t1("a,k");
-
-          if (verbose_) {
-            mpqc::detail::print_size_info(b_abcd, "B_abcd");
-          }
-
-          r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
-        }
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
-      }
+      r2 = cc::compute_cs_ccsd_r2(t1, t2, tau, ints);
 
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
@@ -588,20 +442,42 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // get all two electron integrals
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
-    TArray g_abcd = this->get_abcd();
-
-    TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
-    TArray g_iabc = this->get_iabc();
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
-    auto tmp_time1 = mpqc::now(world, accurate_time);
-    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
+
+    TArray g_abcd;
+    TArray g_iabc;
+    if (!reduced_abcd_memory_) {
+      g_abcd = this->get_abcd();
+      g_iabc = this->get_iabc();
+    }
+
+    TArray X_ai = this->get_Xai();
+    TArray X_ij = this->get_Xij();
+    TArray X_ab = this->get_Xab();
 
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
     TArray f_ab = this->get_fock_ab();
+
+    cc::Integrals<TArray> ints;
+    ints.Gabcd = g_abcd;
+    ints.Gijab = g_ijab;
+    ints.Gijkl = g_ijkl;
+    ints.Giajb = g_iajb;
+    ints.Giabc = g_iabc;
+    ints.Gijka = g_ijka;
+    ints.Fia("i,a") = f_ai("a,i");
+    ints.Fij = f_ij;
+    ints.Fab = f_ab;
+    ints.Xai = X_ai;
+    ints.Xab = X_ab;
+    ints.Xij = X_ij;
+
+    auto tmp_time1 = mpqc::now(world, accurate_time);
+    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
@@ -640,7 +516,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       TArray::wait_for_lazy_cleanup(world);
 
       // zero out singles if want CCD
-      //TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
+      // TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
+      // r1("a,i") = r1_new("a,i");
       error = solver_->error(r1, r2);
 
       // recompute energy
@@ -666,7 +543,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
         if (verbose_) {
-          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time,
+                                   "\n");
         }
 
         // log the iteration
@@ -691,62 +569,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       time0 = mpqc::fenced_now(world);
 
       auto t1_time0 = mpqc::now(world, accurate_time);
-      TArray h_ki, h_ac;
-      {
-        // intermediates for t1
-        // external index i and a
-        // vir index a b c d
-        // occ index i j k l
-        TArray h_kc;
 
-        // compute residual r1(n) (at convergence r1 = 0)
-        // external index i and a
-        tmp_time0 = mpqc::now(world, accurate_time);
-        r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
+      r1 = cc::compute_cs_ccsd_r1_df(t1, t2, tau, ints);
 
-        {
-          h_ac("a,c") =
-              f_ab("a,c") -
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("l,k,c,d")) * tau("a,d,k,l");
-          r1("a,i") += h_ac("a,c") * t1("c,i");
-        }
+      auto h_ki = ints.FIJ;
+      auto h_ac = ints.FAB;
 
-        {
-          h_ki("k,i") =
-              f_ij("k,i") +
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("c,d,i,l");
-          r1("a,i") -= t1("a,k") * h_ki("k,i");
-        }
-
-        {
-          h_kc("k,c") =
-              f_ai("c,k") +
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * t1("d,l");
-          r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
-                                      t1("c,i") * t1("a,k"));
-        }
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        r1("a,i") += (2.0 * g_ijab("k,i,c,a") - g_iajb("k,a,i,c")) * t1("c,k");
-
-        r1("a,i") +=
-            (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
-
-        r1("a,i") -=
-            (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
-        }
-      }
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
       if (verbose_) {
@@ -758,142 +586,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
       auto t2_time0 = mpqc::now(world, accurate_time);
 
-      // compute residual r2(n) (at convergence r2 = 0)
-
-      // permutation part
-      tmp_time0 = mpqc::now(world, accurate_time);
-
-      {
-        r2("a,b,i,j") =
-            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j") -
-            (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        // compute g intermediate
-        TArray g_ki, g_ac;
-
-        g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") +
-                      (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
-
-        g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                      (2.0 * g_iabc("k,a,d,c") - g_iabc("k,a,c,d")) * t1("d,k");
-
-        r2("a,b,i,j") +=
-            g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        TArray j_akic;
-        TArray k_kaic;
-        // compute j and k intermediate
-        {
-          TArray T;
-
-          T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
-
-          j_akic("a,k,i,c") =
-              g_ijab("i,k,a,c")
-
-              - g_ijka("l,k,i,c") * t1("a,l")
-
-              + g_iabc("k,a,c,d") * t1("d,i")
-
-              - X_ai("x,d,l") * T("d,a,i,l") * X_ai("x,c,k")
-
-              +
-              0.5 * (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
-                  t2("a,d,i,l");
-
-          k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
-
-                              - g_ijka("k,l,i,c") * t1("a,l")
-
-                              + g_iabc("k,a,d,c") * t1("d,i")
-
-                              - g_ijab("k,l,d,c") * T("d,a,i,l");
-          if (verbose_) {
-            mpqc::detail::print_size_info(T, "T");
-            mpqc::detail::print_size_info(j_akic, "J_akic");
-            mpqc::detail::print_size_info(k_kaic, "K_kaic");
-          }
-        }
-
-        r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
-                         (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
-
-        r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                         k_kaic("k,b,i,c") * t2("a,c,k,j");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
-      }
-
-      // perform the permutation
-      r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
-
-      r2("a,b,i,j") += g_ijab("i,j,a,b");
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        TArray a_klij;
-        // compute a intermediate
-        a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
-
-                            + g_ijka("k,l,i,c") * t1("c,j")
-
-                            + g_ijak("k,l,c,j") * t1("c,i")
-
-                            + g_ijab("k,l,c,d") * tau("c,d,i,j");
-
-        r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
-
-        if (verbose_) {
-          mpqc::detail::print_size_info(a_klij, "A_klij");
-        }
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
-      }
-
-      tmp_time0 = mpqc::now(world, accurate_time);
-      {
-        // compute b intermediate
-        // avoid store b_abcd
-        TArray b_abij;
-        b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
-
-        b_abij("a,b,i,j") -= g_iabc("k,a,d,c") * tau("c,d,i,j") * t1("b,k");
-
-        b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
-
-        if (verbose_) {
-          mpqc::detail::print_size_info(b_abij, "B_abij");
-        }
-
-        r2("a,b,i,j") += b_abij("a,b,i,j");
-      }
-      tmp_time1 = mpqc::now(world, accurate_time);
-      tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
-      }
+      r2 = cc::compute_cs_ccsd_r2_df(t1, t2, tau, ints);
 
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
@@ -956,6 +649,21 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
     mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
+    cc::Integrals<TArray> ints;
+    ints.Gijab = g_ijab;
+    ints.Gijkl = g_ijkl;
+    ints.Giajb = g_iajb;
+    ints.Giabc = g_iabc;
+    ints.Gijka = g_ijka;
+    ints.Fia("i,a") = f_ai("a,i");
+    ints.Fij = f_ij;
+    ints.Fab = f_ab;
+    ints.Xai = Xai;
+    ints.Xab = Xab;
+    ints.Xij = Xij;
+    ints.Ci = ci;
+    ints.Ca = ca;
+
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     t1.fill(0.0);
@@ -992,7 +700,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       TArray::wait_for_lazy_cleanup(world);
 
       // zero out singles if want CCD
-      //TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0); r1("a,i") = r1_new("a,i");
+      // TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
+      // r1("a,i") = r1_new("a,i");
       error = solver_->error(r1, r2);
 
       // recompute energy
@@ -1018,7 +727,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
         if (verbose_) {
-          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time,
+                                   "\n");
         }
 
         // log the iteration
@@ -1059,59 +769,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       }
 
       auto t1_time0 = mpqc::now(world, accurate_time);
-      TArray h_ac, h_ki;
-      {
-        // intermediates for t1
-        // external index i and a
+      r1 = cc::compute_cs_ccsd_r1(t1,t2,tau,ints,u2_u11);
 
-        tmp_time0 = mpqc::now(world, accurate_time);
-        h_ac("a,c") =
-            f_ab("a,c") -
-            (2.0 * g_ijab("k,l,c,d") - g_ijab("l,k,c,d")) * tau("a,d,k,l");
+      auto h_ac = ints.FAB;
+      auto h_ki = ints.FIJ;
 
-        h_ki("k,i") =
-            f_ij("k,i") +
-            (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("c,d,i,l");
-
-        // compute residual r1(n) (at convergence r1 = 0)
-        // external index i and a
-
-        r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
-
-        r1("a,i") += h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i");
-
-        {
-          TArray h_kc;
-          h_kc("k,c") =
-              f_ai("c,k") +
-              (-g_ijab("k,l,d,c") + 2.0 * g_ijab("k,l,c,d")) * t1("d,l");
-
-          r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
-                                      t1("a,k") * t1("c,i"));
-        }
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-
-        r1("a,i") += (2.0 * g_ijab("k,i,c,a") - g_iajb("k,a,i,c")) * t1("c,k");
-
-        r1("a,i") += (2.0 * u2_u11("p,r,k,i") - u2_u11("p,r,i,k")) * ci("p,k") *
-                     ca("r,a");
-
-        r1("a,i") -=
-            (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
-        }
-      }
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
       if (verbose_) {
@@ -1121,179 +783,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       // intermediates for t2
       // external index i j a b
       auto t2_time0 = mpqc::now(world, accurate_time);
-      {
-        tmp_time0 = mpqc::now(world, accurate_time);
 
-        // permutation term
-        {
-          r2("a,b,i,j") = -g_iajb("k,b,i,c") * t1("c,j") * t1("a,k");
 
-          if (this->df_) {
-            r2("a,b,i,j") += Xab("X,b,c") * t1("c,j") * Xai("X,a,i");
-          } else {
-            r2("a,b,i,j") += g_iabc("i,c,a,b") * t1("c,j");
-          }
-
-          r2("a,b,i,j") -=
-              (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
-        }
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        {
-          // intermediates g
-          TArray g_ki, g_ac;
-
-          g_ki("k,i") =
-              h_ki("k,i") + f_ai("c,k") * t1("c,i") +
-              (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
-
-          if (this->df_) {
-            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
-
-                          + 2.0 * Xai("X,d,k") * t1("d,k") * Xab("X,a,c")
-
-                          - Xab("X,a,d") * t1("d,k") * Xai("X,c,k");
-          } else {
-            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                          2.0 * g_iabc("k,a,d,c") * t1("d,k") -
-                          g_iabc("k,a,c,d") * t1("d,k");
-          }
-
-          r2("a,b,i,j") +=
-              (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
-        }
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        {
-          TArray j_akic;
-          TArray k_kaic;
-          // compute j and k intermediate
-          {
-            TArray T;
-
-            T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
-
-            if (this->df_) {
-              j_akic("a,k,i,c") =
-                  g_ijab("i,k,a,c")
-
-                  - g_ijka("l,k,i,c") * t1("a,l")
-
-                  + (Xab("X,a,d") * t1("d,i")) * Xai("X,c,k")
-
-                  - (Xai("X,d,l") * T("d,a,i,l")) * Xai("X,c,k")
-
-                  +
-                  (g_ijab("k,l,c,d") - 0.5 * g_ijab("k,l,d,c")) * t2("a,d,i,l");
-
-              k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
-
-                                  - g_ijka("k,l,i,c") * t1("a,l")
-
-                                  + (Xai("X,d,k") * t1("d,i")) * Xab("X,a,c")
-
-                                  - g_ijab("k,l,d,c") * T("d,a,i,l");
-            } else {
-              j_akic("a,k,i,c") =
-                  g_ijab("i,k,a,c") - g_ijka("l,k,i,c") * t1("a,l")
-
-                  + g_iabc("k,a,c,d") * t1("d,i")
-
-                  - g_ijab("k,l,c,d") * T("d,a,i,l")
-
-                  +
-                  0.5 * (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) *
-                      t2("a,d,i,l");
-
-              k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
-
-                                  - g_ijka("k,l,i,c") * t1("a,l")
-
-                                  + g_iabc("k,a,d,c") * t1("d,i")
-
-                                  - g_ijab("k,l,d,c") * T("d,a,i,l");
-            }
-
-            if (verbose_) {
-              mpqc::detail::print_size_info(T, "T");
-              mpqc::detail::print_size_info(j_akic, "J_akic");
-              mpqc::detail::print_size_info(k_kaic, "K_kaic");
-            }
-          }
-
-          r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
-                           (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
-
-          r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                           k_kaic("k,b,i,c") * t2("a,c,k,j");
-        }
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
-        }
-
-        // perform permutation
-        r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
-
-        r2("a,b,i,j") += g_ijab("i,j,a,b");
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        {
-          // intermediate a
-          TArray a_klij;
-          a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
-
-                              + g_ijka("k,l,i,c") * t1("c,j")
-
-                              + g_ijak("k,l,c,j") * t1("c,i")
-
-                              + g_ijab("k,l,c,d") * tau("c,d,i,j");
-
-          r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
-
-          if (verbose_) {
-            mpqc::detail::print_size_info(a_klij, "A_klij");
-          }
-        }
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        {
-          TArray b_abij;
-
-          b_abij("a,b,i,j") =
-              (u2_u11("p,r,i,j") * ca("r,b") -
-               ci("r,k") * t1("b,k") * u2_u11("p,r,i,j")) *
-                  ca("p,a")
-
-              - u2_u11("p,r,i,j") * ci("p,k") * ca("r,b") * t1("a,k");
-
-          r2("a,b,i,j") += b_abij("a,b,i,j");
-
-          if (verbose_) {
-            mpqc::detail::print_size_info(b_abij, "B_abij");
-          }
-        }
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
-        }
+      if(this->df_){
+        r2 = cc::compute_cs_ccsd_r2_df(t1,t2,tau,ints,u2_u11);
+      }
+      else{
+        r2 = cc::compute_cs_ccsd_r2(t1,t2,tau,ints,u2_u11);
       }
 
       auto t2_time1 = mpqc::now(world, accurate_time);
@@ -1440,8 +936,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
-//      u2_u11("p, r, i, j") =
-//          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
+      //      u2_u11("p, r, i, j") =
+      //          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
       throw ProgrammingError(

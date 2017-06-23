@@ -4,6 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
+#include <mutex>
+
 namespace mpqc {
 namespace scf {
 
@@ -79,7 +81,8 @@ class PeriodicFourCenterFockBuilder
       std::shared_ptr<const Basis> ket_basis, Vector3d &dcell, Vector3i &R_max,
       Vector3i &RJ_max, Vector3i &RD_max, int64_t R_size, int64_t RJ_size,
       int64_t RD_size, bool compute_J, bool compute_K,
-      std::string screen = "schwarz", double screen_threshold = 1.0e-10)
+      std::string screen = "schwarz", double screen_threshold = 1.0e-20,
+      double shell_pair_threshold = 1.0e-12)
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -93,6 +96,8 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         bra_basis_(bra_basis),
+        ket_basis_(ket_basis),
+        shell_pair_threshold_(shell_pair_threshold) {
         ket_basis_(ket_basis)
          {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
@@ -171,32 +176,43 @@ class PeriodicFourCenterFockBuilder
       const auto basisR = *basisR_;
       const auto basisRJ = *(basisRJ_[ref_uc]);
       const auto basisRD = *(basisRD_[ref_uc]);
-      engines_ = make_engine_pool(
-          oper_type,
-          utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
-          libint2::BraKet::xx_xx);
+      if (compute_J_) {
+        j_engines_ = make_engine_pool(
+            oper_type,
+            utility::make_array_of_refs(basis0, basisR, basisRJ, basisRD),
+            libint2::BraKet::xx_xx);
+      }
+      if (compute_K_) {
+        k_engines_ = make_engine_pool(
+            oper_type,
+            utility::make_array_of_refs(basis0, basisRJ, basisR, basisRD),
+            libint2::BraKet::xx_xx);
+      }
     }
 
     J_num_ints_computed_ = 0;
     K_num_ints_computed_ = 0;
 
     auto empty = TA::Future<Tile>(Tile());
-    for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles0; ++tile0) {
-      for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
-        const auto R = tile1 / ntiles0;
-        for (auto tile2 = 0ul; tile2 != ntiles2; ++tile2) {
-          for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
-            if (is_density_diagonal_ && tile3 != tile2) continue;
-            const auto RD = tile3 / ntiles2;
-            auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
-                              ? empty
-                              : D_repl.find({tile2, tile3});
-            auto norm_D_RJRD = (shblk_norm_D.is_zero({tile2, tile3}))
-                                   ? empty
-                                   : shblk_norm_D.find({tile2, tile3});
-            if (D_RJRD.get().data() == nullptr ||
-                norm_D_RJRD.get().data() == nullptr)
-              continue;
+
+    for (auto tile2 = 0ul, tile0123 = 0ul; tile2 != ntiles2; ++tile2) {
+      for (auto tile3 = 0ul; tile3 != ntiles3; ++tile3) {
+        if (is_density_diagonal_ && tile3 != tile2) continue;
+        const auto RD = tile3 / ntiles2;
+        auto D_RJRD = (D_repl.is_zero({tile2, tile3}))
+                          ? empty
+                          : D_repl.find({tile2, tile3});
+        auto norm_D_RJRD = (shblk_norm_D.is_zero({tile2, tile3}))
+                               ? empty
+                               : shblk_norm_D.find({tile2, tile3});
+        if (D_RJRD.get().data() == nullptr ||
+            norm_D_RJRD.get().data() == nullptr)
+          continue;
+
+        for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
+          for (auto tile1 = 0ul; tile1 != ntiles1; ++tile1) {
+            const auto R = tile1 / ntiles0;
+
             for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile0123) {
               if (tile0123 % nproc == me)
                 WorldObject_::task(
@@ -212,7 +228,8 @@ class PeriodicFourCenterFockBuilder
     compute_world.gop.fence();
 
     // cleanup
-    engines_.reset();
+    j_engines_.reset();
+    k_engines_.reset();
 
     // print out # of ints computed per MPI process
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
@@ -317,6 +334,7 @@ class PeriodicFourCenterFockBuilder
   const bool compute_K_;
   const std::string screen_;
   const double screen_threshold_;
+  const double shell_pair_threshold_;
   const Vector3d dcell_;
   const Vector3i R_max_;
   const Vector3i RJ_max_;
@@ -340,11 +358,24 @@ class PeriodicFourCenterFockBuilder
   mutable std::shared_ptr<TA::Pmap> repl_pmap_D_;
   mutable std::shared_ptr<TA::Pmap> dist_pmap_fock_;
   mutable double target_precision_ = 0.0;
-  mutable Engine engines_;
+  mutable Engine j_engines_;
+  mutable Engine k_engines_;
   mutable std::atomic<size_t> J_num_ints_computed_{0};
   mutable std::atomic<size_t> K_num_ints_computed_{0};
   mutable std::map<int64_t, int64_t> translation_map_;
   mutable bool is_density_diagonal_;
+
+  mutable shellpair_list_t sig_j_bra_shellpair_list_;
+  mutable shellpair_list_t sig_j_ket_shellpair_list_;
+  mutable shellpair_list_t sig_k_bra_shellpair_list_;
+  mutable shellpair_list_t sig_k_ket_shellpair_list_;
+  mutable std::unordered_map<size_t, size_t> basis0_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> j_basisR_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> j_basisRJ_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> j_basisRD_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> k_basisR_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> k_basisRJ_shell_offset_map_;
+  mutable std::unordered_map<size_t, size_t> k_basisRD_shell_offset_map_;
 
   void init() {
     using ::mpqc::lcao::detail::direct_vector;
@@ -372,15 +403,17 @@ class PeriodicFourCenterFockBuilder
     // initialize screener
     if (screen_ == "schwarz") {
       if (compute_J_) {
+        // make Qmatrix for bra
         auto screen_engine = make_engine_pool(
             oper_type, utility::make_array_of_refs(basis0, basisR),
             libint2::BraKet::xx_xx);
         auto Qbra = std::make_shared<Qmatrix>(
             Qmatrix(world, screen_engine, basis0, basisR,
                     lcao::gaussian::detail::l2Norm));
-        // (bra0 bra1 | bra0 bra1) = (ket0 ket1 | ket0 ket1)
+        // make Qmatrix for ket
+        // (ket0 ket1 | ket0 ket1) = (bra0 bra1 | bra0 bra1)
         // using translational symmetry
-        if (bra_basis_ == ket_basis_) {
+        if (bra_basis_ == ket_basis_ && R_max_ == RD_max_) {
           j_p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
               lcao::gaussian::SchwarzScreen(Qbra, Qbra, screen_threshold_));
         } else {
@@ -430,6 +463,46 @@ class PeriodicFourCenterFockBuilder
 
     } else {
       throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+    }
+
+    // compute significant shell pair list
+    {
+      basis0_shell_offset_map_ = compute_shell_offset(basis0);
+      if (compute_J_) {
+        sig_j_bra_shellpair_list_ = parallel_compute_shellpair_list(
+            basis0, basisR, shell_pair_threshold_);
+        j_basisR_shell_offset_map_ = compute_shell_offset(basisR);
+
+        if (bra_basis_ == ket_basis_ && R_max_ == RD_max_) {
+          sig_j_ket_shellpair_list_ = sig_j_bra_shellpair_list_;
+          j_basisRJ_shell_offset_map_ = basis0_shell_offset_map_;
+          j_basisRD_shell_offset_map_ = j_basisR_shell_offset_map_;
+        } else {
+          const auto ket_basis = *ket_basis_;
+          const auto tmp_basis = *(
+              shift_basis_origin(ket_basis, zero_shift_base, RD_max_, dcell_));
+          sig_j_ket_shellpair_list_ = parallel_compute_shellpair_list(
+              ket_basis, tmp_basis, shell_pair_threshold_);
+          j_basisRJ_shell_offset_map_ = compute_shell_offset(ket_basis);
+          j_basisRD_shell_offset_map_ = compute_shell_offset(tmp_basis);
+        }
+      }
+      if (compute_K_) {
+        const auto basisRJ = *(
+            shift_basis_origin(*ket_basis_, zero_shift_base, RJ_max_, dcell_));
+        sig_k_bra_shellpair_list_ = parallel_compute_shellpair_list(
+            basis0, basisRJ, shell_pair_threshold_);
+        k_basisRJ_shell_offset_map_ = compute_shell_offset(basisRJ);
+
+        auto max_uc = R_max_ + RJ_max_ + RD_max_;
+        translation_map_ = compute_translation_map(max_uc);
+        const auto tmp_basis =
+            *(shift_basis_origin(*ket_basis_, zero_shift_base, max_uc, dcell_));
+        sig_k_ket_shellpair_list_ = parallel_compute_shellpair_list(
+            basis0, tmp_basis, shell_pair_threshold_);
+        k_basisR_shell_offset_map_ = compute_shell_offset(basis0);
+        k_basisRD_shell_offset_map_ = compute_shell_offset(tmp_basis);
+      }
     }
 
     // get TiledRange of Fock
@@ -485,6 +558,24 @@ class PeriodicFourCenterFockBuilder
     const auto tileRJ = tile_idx[2];
     const auto tileRD = tile_idx[3];
 
+    // get reference to basis sets
+    const auto &basis0 = bra_basis_;
+    const auto &basisR = basisR_;
+    const auto &basisRJ = basisRJ_[RJ];
+    const auto &basisRD = basisRD_[RJ];
+
+    // shell clusters for this tile
+    const auto &cluster0 = basis0->cluster_shells()[tile0];
+    const auto &clusterR = basisR->cluster_shells()[tileR];
+    const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
+    const auto &clusterRD = basisRD->cluster_shells()[tileRD];
+
+    // number of shells in each cluster
+    const auto nshells0 = cluster0.size();
+    const auto nshellsR = clusterR.size();
+    const auto nshellsRJ = clusterRJ.size();
+    const auto nshellsRD = clusterRD.size();
+
     // 1-d tile ranges
     const auto &rng0 = trange_fock_.dim(0).tile(tile0);
     const auto &rngR = trange_fock_.dim(1).tile(tileR);
@@ -506,250 +597,353 @@ class PeriodicFourCenterFockBuilder
     assert(D_RJRD_ptr != nullptr);
     assert(norm_D_RJRD_ptr != nullptr);
 
+    const auto nbf_bra_per_uc = bra_basis_->nfunctions();
+    const auto nbf_ket_per_uc = ket_basis_->nfunctions();
+    const auto ncluster_bra_per_uc = bra_basis_->cluster_shells().size();
+    const auto ncluster_ket_per_uc = ket_basis_->cluster_shells().size();
+
+    const auto R_stride = R * RJ_size_ * RD_size_;
+    const auto RJ_stride = RJ * RD_size_;
+    const auto old_uc_ord = R_stride + RJ_stride + RD;
+    const auto new_uc_ord = translation_map_[old_uc_ord];
+
     // compute Coulomb and/or Exchange contributions to all Fock matrices
     {
-      auto engine = engines_->local();
-      const auto engine_precision = target_precision_;
-      engine.set_precision(engine_precision);
-      const auto &computed_shell_sets = engine.results();
-
-      const auto &basis0 = bra_basis_;
-      const auto &basisR = basisR_;
-      const auto &basisRJ = basisRJ_[RJ];
-      const auto &basisRD = basisRD_[RJ];
-
-      const auto nbf_bra_per_uc = bra_basis_->nfunctions();
-      const auto nbf_ket_per_uc = ket_basis_->nfunctions();
-
-      // shell clusters for this tile
-      const auto &cluster0 = basis0->cluster_shells()[tile0];
-      const auto &clusterR = basisR->cluster_shells()[tileR];
-      const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
-      const auto &clusterRD = basisRD->cluster_shells()[tileRD];
-
-      // number of shells in each cluster
-      const auto nshells0 = cluster0.size();
-      const auto nshellsR = clusterR.size();
-      const auto nshellsRJ = clusterRJ.size();
-      const auto nshellsRD = clusterRD.size();
-
       // compute Coulomb contributions to all Fock matrices
       if (compute_J_) {
-        auto &screen = *(j_p_screener_);
+        // index of first shell in this cluster
+        const auto sh0_offset = basis0_shell_offset_map_[tile0];
+        const auto shR_offset = j_basisR_shell_offset_map_[tileR];
+        const auto shRJ_offset = j_basisRJ_shell_offset_map_[tileRJ];
+        const auto shRD_offset = j_basisRD_shell_offset_map_[tileRD];
 
-        // make non-negligible shell pair list
-        shellpair_list_t bra_shellpair_list, ket_shellpair_list;
-        bra_shellpair_list = compute_shellpair_list(cluster0, clusterR);
-        ket_shellpair_list = compute_shellpair_list(clusterRJ, clusterRD);
+        // index of last shell in this cluster
+        const auto sh0_max = sh0_offset + nshells0;
+        const auto shR_max = shR_offset + nshellsR;
+        const auto shRD_max = shRD_offset + nshellsRD;
+        const auto shRJ_max = shRJ_offset + nshellsRJ;
 
-        // compute offset list of cluster1 and cluster3
-        auto offset_list_bra1 = compute_func_offset_list(clusterR, rngR.first);
-        auto offset_list_ket1 =
-            compute_func_offset_list(clusterRD, rngRD.first);
+        // determine if this task contains significant shell-pairs
+        auto is_j_bra_significant = false;
+        {
+          auto sh0_in_basis = sh0_offset;
+          for (; sh0_in_basis != sh0_max; ++sh0_in_basis) {
+            for (const auto &shR_in_basis :
+                 sig_j_bra_shellpair_list_[sh0_in_basis]) {
+              if (shR_in_basis >= shR_offset && shR_in_basis < shR_max) {
+                is_j_bra_significant = true;
+                break;
+              }
+            }
+            if (is_j_bra_significant) break;
+          }
+        }
 
-        // this is the index of the first basis functions for each shell *in
-        // this shell cluster*
-        auto cf0_offset = 0;
-        // this is the index of the first basis functions for each shell *in the
-        // basis set*
-        auto bf0_offset = rng0.first;
-        size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
+        auto is_j_ket_significant = false;
+        {
+          auto shRJ_in_basis = shRJ_offset;
+          for (; shRJ_in_basis != shRJ_max; ++shRJ_in_basis) {
+            for (const auto &shRD_in_basis :
+                 sig_j_ket_shellpair_list_[shRJ_in_basis]) {
+              if (shRD_in_basis >= shRD_offset && shRD_in_basis < shRD_max) {
+                is_j_ket_significant = true;
+                break;
+              }
+            }
+            if (is_j_ket_significant) break;
+          }
+        }
 
-        // loop over all shell sets
-        for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
-          const auto &shell0 = cluster0[sh0];
-          const auto nf0 = shell0.size();
+        if (is_j_bra_significant && is_j_ket_significant) {
+          auto engine = j_engines_->local();
+          const auto engine_precision = target_precision_;
+          engine.set_precision(engine_precision);
+          const auto &computed_shell_sets = engine.results();
 
-          for (const auto &sh1 : bra_shellpair_list[sh0]) {
-            std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
+          auto &screen = *(j_p_screener_);
 
-            const auto &shell1 = clusterR[sh1];
-            const auto nf1 = shell1.size();
+          // compute offset list of cluster1 and cluster3
+          auto offset_list_bra1 =
+              compute_func_offset_list(clusterR, rngR.first);
+          auto offset_list_ket1 =
+              compute_func_offset_list(clusterRD, rngRD.first);
 
-            auto cf2_offset = 0;
-            auto bf2_offset = rngRJ.first;
+          // this is the index of the first basis functions for each shell *in
+          // this shell cluster*
+          auto cf0_offset = 0;
+          // this is the index of the first basis functions for each shell *in
+          // the
+          // basis set*
+          auto bf0_offset = rng0.first;
+          size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
 
-            for (auto sh2 = 0; sh2 != nshellsRJ; ++sh2) {
-              const auto &shell2 = clusterRJ[sh2];
-              const auto nf2 = shell2.size();
+          // loop over all shell sets
+          for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+            const auto &shell0 = cluster0[sh0];
+            const auto nf0 = shell0.size();
 
-              for (const auto &sh3 : ket_shellpair_list[sh2]) {
-                if (is_density_diagonal_ && sh3 != sh2) continue;
+            const auto sh0_in_basis = sh0 + sh0_offset;
+            for (const auto &shR_in_basis :
+                 sig_j_bra_shellpair_list_[sh0_in_basis]) {
+              if (shR_in_basis < shR_offset || shR_in_basis >= shR_max)
+                continue;
 
-                std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
+              const auto sh1 = shR_in_basis - shR_offset;
+              std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
 
-                const auto &shell3 = clusterRD[sh3];
-                const auto nf3 = shell3.size();
+              const auto &shell1 = clusterR[sh1];
+              const auto nf1 = shell1.size();
 
-                const auto sh23 =
-                    sh2 * nshellsRD + sh3;  // index of {sh2, sh3} in norm_D23
-                const auto Dnorm23 = norm_D_RJRD_ptr[sh23];
+              auto cf2_offset = 0;
+              auto bf2_offset = rngRJ.first;
 
-                if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
-                                Dnorm23))
-                  continue;
+              for (auto sh2 = 0; sh2 != nshellsRJ; ++sh2) {
+                const auto &shell2 = clusterRJ[sh2];
+                const auto nf2 = shell2.size();
 
-                J_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+                const auto shRJ_in_basis = sh2 + shRJ_offset;
+                for (const auto &shRD_in_basis :
+                     sig_j_ket_shellpair_list_[shRJ_in_basis]) {
+                  if (shRD_in_basis < shRD_offset || shRD_in_basis >= shRD_max)
+                    continue;
 
-                // compute shell set
-                engine.template compute2<libint2::Operator::coulomb,
-                                         libint2::BraKet::xx_xx, 0>(
-                    shell0, shell1, shell2, shell3);
-                const auto *eri_0123 = computed_shell_sets[0];
+                  const auto sh3 = shRD_in_basis - shRD_offset;
+                  if (is_density_diagonal_ && sh3 != sh2) continue;
 
-                if (eri_0123 !=
-                    nullptr) {  // if the shell set is not screened out
+                  std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
-                  for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-                    const auto cf0 = f0 + cf0_offset;  // basis function index
-                                                       // in the tile (i.e.
-                                                       // shell cluster)
-                    for (auto f1 = 0; f1 != nf1; ++f1) {
-                      const auto cf1 = f1 + cf1_offset;
-                      const auto cf01 =
-                          cf0 * rngR_size + cf1;  // index of {cf0,cf1} in F0R
-                      for (auto f2 = 0; f2 != nf2; ++f2) {
-                        const auto cf2 = f2 + cf2_offset;
-                        for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-                          const auto cf3 = f3 + cf3_offset;
-                          const auto cf23 =
-                              cf2 * rngRD_size +
-                              cf3;  // index of {cf2,cf3} in D_RJRD
+                  const auto &shell3 = clusterRD[sh3];
+                  const auto nf3 = shell3.size();
 
-                          const auto value = eri_0123[f0123];
+                  const auto sh23 =
+                      sh2 * nshellsRD + sh3;  // index of {sh2, sh3} in norm_D23
+                  const auto Dnorm23 = norm_D_RJRD_ptr[sh23];
 
-                          F0R_ptr[cf01] += 2.0 * D_RJRD_ptr[cf23] * value;
+                  if (screen.skip(bf0_offset, bf1_offset, bf2_offset,
+                                  bf3_offset, Dnorm23))
+                    continue;
+
+                  J_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+
+                  // compute shell set
+                  engine.template compute2<libint2::Operator::coulomb,
+                                           libint2::BraKet::xx_xx, 0>(
+                      shell0, shell1, shell2, shell3);
+                  const auto *eri_0123 = computed_shell_sets[0];
+
+                  if (eri_0123 !=
+                      nullptr) {  // if the shell set is not screened out
+
+                    for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+                      const auto cf0 = f0 + cf0_offset;  // basis function index
+                                                         // in the tile (i.e.
+                                                         // shell cluster)
+                      for (auto f1 = 0; f1 != nf1; ++f1) {
+                        const auto cf1 = f1 + cf1_offset;
+                        const auto cf01 =
+                            cf0 * rngR_size + cf1;  // index of {cf0,cf1} in F0R
+                        for (auto f2 = 0; f2 != nf2; ++f2) {
+                          const auto cf2 = f2 + cf2_offset;
+                          for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+                            const auto cf3 = f3 + cf3_offset;
+                            const auto cf23 =
+                                cf2 * rngRD_size +
+                                cf3;  // index of {cf2,cf3} in D_RJRD
+
+                            const auto value = eri_0123[f0123];
+
+                            F0R_ptr[cf01] += 2.0 * D_RJRD_ptr[cf23] * value;
+                          }
                         }
                       }
                     }
                   }
                 }
+
+                cf2_offset += nf2;
+                bf2_offset += nf2;
               }
-
-              cf2_offset += nf2;
-              bf2_offset += nf2;
             }
-          }
 
-          cf0_offset += nf0;
-          bf0_offset += nf0;
+            cf0_offset += nf0;
+            bf0_offset += nf0;
+          }
         }
       }
 
       if (compute_K_) {
-        auto &screen = *(k_p_screener_);
+        // index of first shell in this cluster
+        const auto sh0_offset = basis0_shell_offset_map_[tile0];
+        const auto shRJ_offset =
+            k_basisRJ_shell_offset_map_[tileRJ +
+                                        RJ * basisRJ->cluster_shells().size()];
+        const auto shR_offset =
+            k_basisR_shell_offset_map_[tileR % ncluster_bra_per_uc];
+        const auto shRD_offset =
+            k_basisRD_shell_offset_map_[tileRD % ncluster_ket_per_uc +
+                                        new_uc_ord * ncluster_ket_per_uc];
 
-        // make non-negligible shell pair list
-        shellpair_list_t bra_shellpair_list, ket_shellpair_list;
-        bra_shellpair_list = compute_shellpair_list(cluster0, clusterRJ);
-        ket_shellpair_list = compute_shellpair_list(clusterR, clusterRD);
+        // index of last shell in this cluster
+        const auto sh0_max = sh0_offset + nshells0;
+        const auto shR_max = shR_offset + nshellsR;
+        const auto shRJ_max = shRJ_offset + nshellsRJ;
+        const auto shRD_max = shRD_offset + nshellsRD;
 
-        // compute offset list of cluster1 and cluster3
-        auto offset_list_bra1 =
-            compute_func_offset_list(clusterRJ, rngRJ.first);
-        auto offset_list_ket1 =
-            compute_func_offset_list(clusterRD, rngRD.first);
+        // determine if this task contains significant shell-pairs
+        auto is_k_bra_significant = false;
+        {
+          auto sh0_in_basis = sh0_offset;
+          for (; sh0_in_basis != sh0_max; ++sh0_in_basis) {
+            for (const auto &shRJ_in_basis :
+                 sig_k_bra_shellpair_list_[sh0_in_basis]) {
+              if (shRJ_in_basis >= shRJ_offset && shRJ_in_basis < shRJ_max) {
+                is_k_bra_significant = true;
+                break;
+              }
+            }
+            if (is_k_bra_significant) break;
+          }
+        }
 
-        // this is the index of the first basis functions for each shell *in
-        // this shell cluster*
-        auto cf0_offset = 0;
-        // this is the index of the first basis functions for each shell *in the
-        // basis set*
-        auto bf0_offset = rng0.first;
-        size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
+        auto is_k_ket_significant = false;
+        {
+          auto shR_in_basis = shR_offset;
+          for (; shR_in_basis != shR_max; ++shR_in_basis) {
+            for (const auto &shRD_in_basis :
+                 sig_k_ket_shellpair_list_[shR_in_basis]) {
+              if (shRD_in_basis >= shRD_offset && shRD_in_basis < shRD_max) {
+                is_k_ket_significant = true;
+                break;
+              }
+            }
+            if (is_k_ket_significant) break;
+          }
+        }
 
-        // pre-compute index of the first basis functions in screener bases
-        const auto screen_bf1_offset = nbf_ket_per_uc * RJ;
-        const auto R_stride = R * RJ_size_ * RD_size_;
-        const auto RJ_stride = RJ * RD_size_;
-        const auto old_uc_ord = R_stride + RJ_stride + RD;
-        const auto new_uc_ord = translation_map_[old_uc_ord];
-        const auto screen_bf3_offset = new_uc_ord * nbf_ket_per_uc;
+        if (is_k_bra_significant && is_k_ket_significant) {
+          auto engine = k_engines_->local();
+          const auto engine_precision = target_precision_;
+          engine.set_precision(engine_precision);
+          const auto &computed_shell_sets = engine.results();
 
-        // loop over all shell sets
-        for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
-          const auto &shell0 = cluster0[sh0];
-          const auto nf0 = shell0.size();
+          auto &screen = *(k_p_screener_);
 
-          for (const auto &sh1 : bra_shellpair_list[sh0]) {
-            std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
+          // compute offset list of cluster1 and cluster3
+          auto offset_list_bra1 =
+              compute_func_offset_list(clusterRJ, rngRJ.first);
+          auto offset_list_ket1 =
+              compute_func_offset_list(clusterRD, rngRD.first);
 
-            const auto &shell1 = clusterRJ[sh1];
-            const auto nf1 = shell1.size();
+          // this is the index of the first basis functions for each shell *in
+          // this shell cluster*
+          auto cf0_offset = 0;
+          // this is the index of the first basis functions for each shell *in
+          // the basis set*
+          auto bf0_offset = rng0.first;
+          size_t cf1_offset, bf1_offset, cf3_offset, bf3_offset;
 
-            const auto bf1_in_screener = bf1_offset + screen_bf1_offset;
+          // pre-compute index of the first basis functions in screener bases
+          const auto screen_bf1_offset = nbf_ket_per_uc * RJ;
+          const auto screen_bf3_offset = new_uc_ord * nbf_ket_per_uc;
 
-            auto cf2_offset = 0;
-            auto bf2_offset = rngR.first;
+          // loop over all shell sets
+          for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+            const auto &shell0 = cluster0[sh0];
+            const auto nf0 = shell0.size();
 
-            for (auto sh2 = 0; sh2 != nshellsR; ++sh2) {
-              const auto &shell2 = clusterR[sh2];
-              const auto nf2 = shell2.size();
+            const auto sh0_in_basis = sh0 + sh0_offset;
+            for (const auto &shRJ_in_basis :
+                 sig_k_bra_shellpair_list_[sh0_in_basis]) {
+              if (shRJ_in_basis < shRJ_offset || shRJ_in_basis >= shRJ_max)
+                continue;
 
-              const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
+              const auto sh1 = shRJ_in_basis - shRJ_offset;
 
-              for (const auto &sh3 : ket_shellpair_list[sh2]) {
-                if (is_density_diagonal_ && sh3 != sh1) continue;
+              std::tie(cf1_offset, bf1_offset) = offset_list_bra1[sh1];
 
-                std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
+              const auto &shell1 = clusterRJ[sh1];
+              const auto nf1 = shell1.size();
 
-                const auto &shell3 = clusterRD[sh3];
-                const auto nf3 = shell3.size();
+              const auto bf1_in_screener = bf1_offset + screen_bf1_offset;
 
-                const auto bf3_in_screener =
-                    bf3_offset % nbf_ket_per_uc + screen_bf3_offset;
+              auto cf2_offset = 0;
+              auto bf2_offset = rngR.first;
 
-                const auto sh13 = sh1 * nshellsRD + sh3;
-                const auto Dnorm13 = norm_D_RJRD_ptr[sh13];
+              for (auto sh2 = 0; sh2 != nshellsR; ++sh2) {
+                const auto &shell2 = clusterR[sh2];
+                const auto nf2 = shell2.size();
 
-                if (screen.skip(bf0_offset, bf1_in_screener, bf2_in_screener,
-                                bf3_in_screener, Dnorm13))
-                  continue;
+                const auto bf2_in_screener = bf2_offset % nbf_bra_per_uc;
+                const auto shR_in_basis = sh2 + shR_offset;
+                for (const auto &shRD_in_basis :
+                     sig_k_ket_shellpair_list_[shR_in_basis]) {
+                  if (shRD_in_basis < shRD_offset || shRD_in_basis >= shRD_max)
+                    continue;
 
-                K_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+                  const auto sh3 = shRD_in_basis - shRD_offset;
 
-                // compute shell set
-                engine.template compute2<libint2::Operator::coulomb,
-                                         libint2::BraKet::xx_xx, 0>(
-                    shell0, shell1, shell2, shell3);
-                const auto *eri_0123 = computed_shell_sets[0];
+                  if (is_density_diagonal_ && sh3 != sh1) continue;
 
-                if (eri_0123 !=
-                    nullptr) {  // if the shell set if not screened out
+                  std::tie(cf3_offset, bf3_offset) = offset_list_ket1[sh3];
 
-                  for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-                    const auto cf0 = f0 + cf0_offset;  // basis function index
-                                                       // in the tile (i.e.
-                                                       // shell cluster)
-                    for (auto f1 = 0; f1 != nf1; ++f1) {
-                      const auto cf1 = f1 + cf1_offset;
-                      for (auto f2 = 0; f2 != nf2; ++f2) {
-                        const auto cf2 = f2 + cf2_offset;
-                        const auto cf02 =
-                            cf0 * rngR_size + cf2;  // index of {cf0,cf2} in F0R
-                        for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-                          const auto cf3 = f3 + cf3_offset;
-                          const auto cf13 =
-                              cf1 * rngRD_size +
-                              cf3;  // index of {cf1, cf3} in D_RJRD
+                  const auto &shell3 = clusterRD[sh3];
+                  const auto nf3 = shell3.size();
 
-                          const auto value = eri_0123[f0123];
+                  const auto bf3_in_screener =
+                      bf3_offset % nbf_ket_per_uc + screen_bf3_offset;
 
-                          F0R_ptr[cf02] -= D_RJRD_ptr[cf13] * value;
+                  const auto sh13 = sh1 * nshellsRD + sh3;
+                  const auto Dnorm13 = norm_D_RJRD_ptr[sh13];
+
+                  if (screen.skip(bf0_offset, bf1_in_screener, bf2_in_screener,
+                                  bf3_in_screener, Dnorm13))
+                    continue;
+
+                  K_num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+
+                  // compute shell set
+                  engine.template compute2<libint2::Operator::coulomb,
+                                           libint2::BraKet::xx_xx, 0>(
+                      shell0, shell1, shell2, shell3);
+                  const auto *eri_0123 = computed_shell_sets[0];
+
+                  if (eri_0123 !=
+                      nullptr) {  // if the shell set if not screened out
+
+                    for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+                      const auto cf0 = f0 + cf0_offset;  // basis function index
+                                                         // in the tile (i.e.
+                                                         // shell cluster)
+                      for (auto f1 = 0; f1 != nf1; ++f1) {
+                        const auto cf1 = f1 + cf1_offset;
+                        for (auto f2 = 0; f2 != nf2; ++f2) {
+                          const auto cf2 = f2 + cf2_offset;
+                          const auto cf02 = cf0 * rngR_size +
+                                            cf2;  // index of {cf0,cf2} in F0R
+                          for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+                            const auto cf3 = f3 + cf3_offset;
+                            const auto cf13 =
+                                cf1 * rngRD_size +
+                                cf3;  // index of {cf1, cf3} in D_RJRD
+
+                            const auto value = eri_0123[f0123];
+
+                            F0R_ptr[cf02] -= D_RJRD_ptr[cf13] * value;
+                          }
                         }
                       }
                     }
                   }
                 }
+
+                cf2_offset += nf2;
+                bf2_offset += nf2;
               }
-
-              cf2_offset += nf2;
-              bf2_offset += nf2;
             }
-          }
 
-          cf0_offset += nf0;
-          bf0_offset += nf0;
+            cf0_offset += nf0;
+            bf0_offset += nf0;
+          }
         }
       }
     }
@@ -851,7 +1045,82 @@ class PeriodicFourCenterFockBuilder
   /*!
    * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
    * form a non-negligible pair if they share a center or the Frobenius norm of
-   * their overlap isgreater than threshold
+   * their overlap is greater than threshold
+   * \param basis1 a basis
+   * \param basis2 a basis
+   * \param threshold
+   *
+   * \return a list of pairs with
+   * key: shell index
+   * mapped value: a vector of shell indices
+   */
+  shellpair_list_t parallel_compute_shellpair_list(
+      const Basis &basis1, const Basis &basis2,
+      double threshold = 1e-12) const {
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    // initialize engine
+    auto engine_pool = make_engine_pool(
+        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+        libint2::BraKet::x_x);
+
+    auto &world = this->get_world();
+    std::mutex mx;
+    shellpair_list_t result;
+
+    const auto &shv1 = basis1.flattened_shells();
+    const auto &shv2 = basis2.flattened_shells();
+    const auto nsh1 = shv1.size();
+    const auto nsh2 = shv2.size();
+
+    auto compute = [&](int64_t input_s1) {
+
+      auto n1 = shv1[input_s1].size();
+      const auto engine_precision = target_precision_;
+      auto engine = engine_pool->local();
+      engine.set_precision(engine_precision);
+      const auto &buf = engine.results();
+
+      for (auto s2 = 0l; s2 != nsh2; ++s2) {
+        auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
+        bool significant = on_same_center;
+        if (!on_same_center) {
+          auto n2 = shv2[s2].size();
+          engine.compute1(shv1[input_s1], shv2[s2]);
+          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+          auto norm = buf_mat.norm();
+          significant = (norm >= threshold);
+        }
+
+        if (significant) {
+          mx.lock();
+          result[input_s1].emplace_back(s2);
+          mx.unlock();
+        }
+      }
+    };
+
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      world.taskq.add(compute, s1);
+    }
+    world.gop.fence();
+
+    engine_pool.reset();
+
+    // resort shell list in increasing order
+    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+      auto &list = result[s1];
+      std::sort(list.begin(), list.end());
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+   * form a non-negligible pair if they share a center or the Frobenius norm of
+   * their overlap is greater than threshold
    * \param shv1 a cluster (a.k.a. std::vector<Shell>)
    * \param shv2 a cluster (a.k.a. std::vector<Shell>)
    * \param threshold
@@ -983,6 +1252,29 @@ class PeriodicFourCenterFockBuilder
           result.insert(std::make_pair(key, translation_ord));
         }
       }
+    }
+
+    return result;
+  }
+
+  /*!
+   * \brief This computes shell offsets for every cluster in a basis
+   * \param basis
+   * \return a list of <key, mapped value> pairs with
+   * key: cluster index
+   * mapped value: index of first shell in a cluster
+   */
+  std::unordered_map<size_t, size_t> compute_shell_offset(
+      const Basis &basis) const {
+    std::unordered_map<size_t, size_t> result;
+
+    auto shell_offset = 0;
+    const auto &cluster_shells = basis.cluster_shells();
+    const auto nclusters = cluster_shells.size();
+    for (auto c = 0; c != nclusters; ++c) {
+      const auto nshells = cluster_shells[c].size();
+      result.insert(std::make_pair(c, shell_offset));
+      shell_offset += nshells;
     }
 
     return result;

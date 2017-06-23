@@ -98,8 +98,6 @@ class PeriodicFourCenterFockBuilder
         bra_basis_(bra_basis),
         ket_basis_(ket_basis),
         shell_pair_threshold_(shell_pair_threshold) {
-        ket_basis_(ket_basis)
-         {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");

@@ -55,7 +55,6 @@ class PeriodicThreeCenterContractionBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         shell_pair_threshold_(shell_pair_threshold) {
-        RD_size_(RD_size) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
     // WorldObject mandates this is called from the ctor
@@ -158,12 +157,13 @@ class PeriodicThreeCenterContractionBuilder
       for (auto tile0 = 0ul; tile0 != ntiles0; ++tile0) {
         for (auto tileRD = 0ul; tileRD != ntilesRD; ++tileRD) {
           auto D_0RD = (D_repl.is_zero({tile0, tileRD}))
-                          ? empty
-                          : D_repl.find({tile0, tileRD});
+                           ? empty
+                           : D_repl.find({tile0, tileRD});
           auto norm_D_0RD = (shblk_norm_D.is_zero({tile0, tileRD}))
-                               ? empty
-                               : shblk_norm_D.find({tile0, tileRD});
-          if (D_0RD.get().data() == nullptr || norm_D_0RD.get().data() == nullptr)
+                                ? empty
+                                : shblk_norm_D.find({tile0, tileRD});
+          if (D_0RD.get().data() == nullptr ||
+              norm_D_0RD.get().data() == nullptr)
             continue;
           for (auto RJ = 0; RJ != RJ_size_; ++RJ, ++tile012) {
             if (tile012 % nproc == me)
@@ -492,7 +492,7 @@ class PeriodicThreeCenterContractionBuilder
         basisRD_shell_offset_map_ = basisR_shell_offset_map_;
       } else {
         sig_shellpair_list_RD_ = parallel_compute_shellpair_list(
-              basis0, basisRD, shell_pair_threshold_);
+            basis0, basisRD, shell_pair_threshold_);
         basisRD_shell_offset_map_ = compute_shell_offset(basisRD);
       }
     }
@@ -592,7 +592,8 @@ class PeriodicThreeCenterContractionBuilder
       {
         auto sh0_in_basis = sh0_offset;
         for (; sh0_in_basis != sh0_max; ++sh0_in_basis) {
-          for (const auto shRD_in_basis : sig_shellpair_list_RD_[sh0_in_basis]) {
+          for (const auto shRD_in_basis :
+               sig_shellpair_list_RD_[sh0_in_basis]) {
             if (shRD_in_basis >= shRD_offset && shRD_in_basis < shRD_max) {
               is_significant = true;
               break;
@@ -610,7 +611,8 @@ class PeriodicThreeCenterContractionBuilder
         const auto &computed_shell_sets = engine.results();
 
         // compute offset list of clusterRD (ket1)
-        auto offset_list_ket1 = compute_func_offset_list(clusterRD, rngRD.first);
+        auto offset_list_ket1 =
+            compute_func_offset_list(clusterRD, rngRD.first);
 
         // this is the index of the first basis functions for each shell *in
         // this shell cluster*
@@ -635,7 +637,8 @@ class PeriodicThreeCenterContractionBuilder
             const auto nf0 = shell0.size();
 
             const auto sh0_in_basis = sh0 + sh0_offset;
-            for (const auto &shRD_in_basis : sig_shellpair_list_RD_[sh0_in_basis]) {
+            for (const auto &shRD_in_basis :
+                 sig_shellpair_list_RD_[sh0_in_basis]) {
               if (shRD_in_basis < shRD_offset || shRD_in_basis >= shRD_max)
                 continue;
 
@@ -793,7 +796,8 @@ class PeriodicThreeCenterContractionBuilder
             const auto nf0 = shell0.size();
 
             const auto sh0_in_basis = sh0 + sh0_offset;
-            for (const auto &shR_in_basis : sig_shellpair_list_R_[sh0_in_basis]) {
+            for (const auto &shR_in_basis :
+                 sig_shellpair_list_R_[sh0_in_basis]) {
               if (shR_in_basis < shR_offset || shR_in_basis >= shR_max)
                 continue;
 

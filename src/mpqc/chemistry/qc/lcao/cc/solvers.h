@@ -146,6 +146,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T>
+// template <typename Tile, typename Policy>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                   public madness::WorldObject<PNOSolver<T>> {
  public:
@@ -233,52 +234,160 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
 
+    // Determine number of tiles along each dim of K
+    const auto ntiles_a = ktrange.dim(0).tile_extent();
+    const auto ntiles_b = ktrange.dim(1).tile_extent();
+    const auto ntiles_i = ktrange.dim(2).tile_extent();
+    const auto ntiles_j = ktrange.dim(3).tile_extent();
+
+    // zero out amplitudes
+    if (!T_.is_initialized()) {
+      T_ = Array(world, K.trange(), K.shape());
+      T_.fill(0.0);
+    }
 
 
 
-    /// Step (3): D_array -> D_tensor
+    /// Step (1): Convert K to T
+    // template <typename Tile, typename Policy> 
+    // TA::DistArray<Tile, Policy> form_T_array(
+    //     const TA::DistArray<Tile, Policy>& K,
+    //     const Eigen::VectorXd& eps_o,
+    //     const Eigen::VectorXd& eps_v) {
+
+    // lambda function to convert K to T
+
+    auto form_T = [eps_o, eps_v, this](
+                     TA::TensorD& result_tile, const TA::TensorD& arg_tile) {
 
 
-    // Get number of tiles along each dim
-    const auto nt_a = ktrange.dim(0).tile_extent();
-    const auto nt_b = ktrange.dim(1).tile_extent();
-    const auto nt_i = ktrange.dim(2).tile_extent();
-    const auto nt_j = ktrange.dim(3).tile_extent();
- 
 
-    for (auto ti = 0; ti != nt_i; ++ti) {
-      for (auto tj = 0; tj != nt_j; ++tj) {
-        TA::TensorD K_ij;
+      result_tile = TA::TensorD(arg_tile.range());
 
-        for (auto ta = 0; ta != nt_a; ++ta) {
-          for (auto tb = 0; tb != nt_b; ++tb) {
-            TA::TensorD K_ab = K.find({ta, tb, ti, tj});
+      // determine range of i and j indices
+      const int i0 = arg_tile.range().lobound()[2];
+      const int in = arg_tile.range().upbound()[2];
+      const int j0 = arg_tile.range().lobound()[3];
+      const int jn = arg_tile.range().upbound()[3];
 
-            auto a_off = 0;
-            auto b_off = 0;
-            auto i_off = 0;
-            auto j_off = 0;
+      // determine range of a and b indices
+      const int a0 = arg_tile.range().lobound()[0];
+      const int an = arg_tile.range().upbound()[0];
+      const int b0 = arg_tile.range().lobound()[1];
+      const int bn = arg_tile.range().upbound()[1];
 
-            auto a0 = K_ab.range().lobound()[0];
-            auto an = K_ab.range().upbound()[0];
+      auto norm = 0.0;
+
+      // Loop over all four indices to form T
+      for (int a = a0, tile_idx = 0; a != an; ++a) {
+        const auto e_a = eps_v[a];
+
+        for (int b = b0; b!= bn; ++b) {
+          const auto e_b = eps_v[b];
+          const auto e_ab = e_a + e_b;
+
+          for (int i = i0; i != in; ++i) {
+            const auto e_i = eps_o[i];
+
+            for (int j = j0; j != jn; ++j, ++tile_idx) {
+              const auto e_j = eps_o[j];
+              const auto e_ij = -e_i - e_j;
+
+              const auto e_abij = e_ab + e_ij;
+              //const auto e_abij = e_a + e_b - e_i - e_j;
+              const auto K_abij = arg_tile[tile_idx];
+              const auto T_abij = -K_abij / e_abij;
+              const auto abs_result = std::abs(T_abij);
+              norm += abs_result * abs_result;
+              result_tile[tile_idx] = T_abij;
+            } // j
+          } // i
+        } // b
+      } // a
+      return std::sqrt(norm);
+    };
+
+    auto T_ = TA::foreach(K, form_T);
+    T_.world().gop.fence();
+
+  //   return T_;
+  // }
+
+
+
+    /// Steps (2) and (3): For each ti, tj pair, compute D_ij and convert
+    // D_ij to local tensor
+
+    typedef std::vector<std::size_t> block;
+
+    // Loop over ti, tj; get block indices
+    for (auto ti = 0; ti != ntiles_i; ++ti) {
+      const auto i_low = ti;
+      const auto i_up = ti + 1;
+
+      for (auto tj = 0; tj != ntiles_j; ++tj) {
+        const auto j_low = tj;
+        const auto j_up = tj + 1;
+
+        // D_ij array
+        TA::DistArray D_ij_array;
+
+        // D_ij local tensor
+        TA::TensorD D_ij_tensor;
+
+        // Lower and upper bounds for block expressions
+        block low_bound{0, 0, i_low, j_low};
+        block up_bound{nuocc, nuocc, i_up, j_up};
+
+        // Block expression to form D from T
+        D_ij_array("a,b,i,j").block(low_bound, up_bound) =
+          (4 * T_("c,a,i,j").block(low_bound, up_bound) -
+           2 * T_("c,a,j,i").block(low_bound, up_bound)) *
+            T_("c,b,i,j").block(low_bound, up_bound) + 
+          (4 * T_("a,c,i,j").block(low_bound, up_bound) -
+           2 * T_("a,c,j,i").block(low_bound, up_bound)) *
+            T_("b,c,i,j").block(low_bound, up_bound);
+
+        // Pack contents of D_ij_array into local tensor
+
+        // Loop over ta, tb
+        for (auto ta = 0; ta != ntiles_a; ++ta) {
+
+          for (auto tb = 0; tb != ntiles_b; ++tb) {
+
+            // Pull particular tile corresponding to ta, tb, ti, tj
+            TA::TensorD D_ab = D_ij_array.find({ta, tb, ti, tj});
+
+            // Element info along all four dims of D_ab
+            auto a0 = D_ab.range().lobound()[0];
+            auto an = D_ab.range().upbound()[0];
             auto a_ext = an - a0;
 
-            auto b0 = K_ab.range().lobound()[1];
-            auto bn = K_ab.range().upbound()[1];
+            auto b0 = D_ab.range().lobound()[1];
+            auto bn = D_ab.range().upbound()[1];
             auto b_ext = bn - b0;
 
-            auto i0 = K_ab.range().lobound()[2];
-            auto in = K_ab.range().upbound()[2];
+            auto i0 = D_ab.range().lobound()[2];
+            auto in = D_ab.range().upbound()[2];
             auto i_ext = in - i0;
 
-            auto j0 = K_ab.range().lobound()[3];
-            auto jn = K_ab.range().upbound()[4];
+            auto j0 = D_ab.range().lobound()[3];
+            auto jn = D_ab.range().upbound()[3];
             auto j_ext = jn - j0;
 
             auto da = b_ext * i_ext * j_ext;
             auto db = i_ext * j_ext;
             auto di = j_ext;
 
+            // Element off-set in going from D_ab to D_ij tensor
+            auto a_off = ta * a_ext;
+            auto b_off = tb * b_ext;
+            auto i_off = ti * i_ext; 
+            auto j_off = tj * j_ext;
+
+
+            // Loop over elements of D_ab
+            // a_shift is shifted a, etc.
             for (auto a = a0; a != an; ++a) {
               auto a_shift = a + a_off;
 
@@ -291,19 +400,198 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                   for (auto j = j0; j != jn; ++j) {
                     auto j_shift = j + j_off;
 
-                    auto K_ab_idx = a * da + b * db + i * di + j;
-                    auto K_ij_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
+                    auto D_ab_idx = a * da + b * db + i * di + j;
+                    auto D_ij_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
 
-                    K_ij[K_ij_idx] = K_ab[K_ab_idx];
+                    D_ij_tensor[D_ij_idx] = D_ab[D_ab_idx];
 
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  } // j
+                } // i
+              } // b
+            } // a
+          } // tb
+        } // ta
+      } // tj
+    } // ti
+
+
+
+  //   template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> form_D_array(
+  //     TA::DistArray<Tile, Policy>& D_,
+  //     const TA::DistArray<Tile, Policy>& T_,
+  //     int& ti_idx,
+  //     int& tj_idx,
+  //     const int& nuocc) {
+
+  //   auto form_D = [nuocc, this](
+  //                 TA::DistArray<Tile, Policy>& D_,
+  //                 const TA::DistArray<Tile, Policy>& T_,
+  //                 auto& ti_idx,
+  //                 auto& tj_idx) {
+
+  //     typedef std::vector<std::size_t> block;
+
+  //     // Block indices
+  //     // a, b, c go from 0 to nuocc
+  //     // i, j only have single given index
+
+  //     const auto i_low = ti_idx;
+  //     const auto i_up = ti_idx + 1;
+  //     const auto j_low = tj_idx;
+  //     const auto j_up = tj_idx + 1;
+
+  //     block low_bound{0, 0, i_low, j_low};
+  //     block up_bound{nuocc, nuocc, i_up, j_up};
+
+  //     D_("a,b,i,j") =
+  //         (4 * T_("c,a,i,j").block(low_bound, up_bound) -
+  //          2 * T_("c,a,j,i").block(low_bound, up_bound)) *
+  //           T_("c,b,i,j").block(low_bound, up_bound) + 
+  //         (4 * T_("a,c,i,j").block(low_bound, up_bound) -
+  //          2 * T_("a,c,j,i").block(low_bound, up_bound)) *
+  //           T_("b,c,i,j").block(low_bound, up_bound);
+
+  //   };
+
+  //   // Get number of tiles along i and j dimensions
+  //   const auto Ttrange = T_.trange();
+  //   const auto ntiles_i = Ttrange.dim(2).tile_extent();
+  //   const auto ntiles_j = Ttrange.dim(3).tile_extent();
+
+  //   for (auto ti = 0; ti != ntiles_i; ++ti) {
+  //     for (auto tj = 0; tj != ntiles_j; ++tj) {
+        
+  //       // apply lambda expression
+        
+
+  //     }
+  //   }
+  //}
+
+
+
+    /// Step (4): For each i, j pair, convert slice of D_ij to matrix,
+    // diagonalize, truncate PNOs, etc. 
+
+
+
+    // /// Step (3): D_array -> D_tensor
+
+
+    // // Get number of tiles along each dim
+    // const auto nt_a = ktrange.dim(0).tile_extent();
+    // const auto nt_b = ktrange.dim(1).tile_extent();
+    // const auto nt_i = ktrange.dim(2).tile_extent();
+    // const auto nt_j = ktrange.dim(3).tile_extent();
+ 
+
+    // for (auto ti = 0; ti != nt_i; ++ti) {
+    //   for (auto tj = 0; tj != nt_j; ++tj) {
+    //     TA::TensorD K_ij;
+
+    //     for (auto ta = 0; ta != nt_a; ++ta) {
+    //       for (auto tb = 0; tb != nt_b; ++tb) {
+    //         TA::TensorD K_ab = K.find({ta, tb, ti, tj});
+
+    //         auto a_off = 0;
+    //         auto b_off = 0;
+    //         auto i_off = 0;
+    //         auto j_off = 0;
+
+    //         auto a0 = K_ab.range().lobound()[0];
+    //         auto an = K_ab.range().upbound()[0];
+    //         auto a_ext = an - a0;
+
+    //         auto b0 = K_ab.range().lobound()[1];
+    //         auto bn = K_ab.range().upbound()[1];
+    //         auto b_ext = bn - b0;
+
+    //         auto i0 = K_ab.range().lobound()[2];
+    //         auto in = K_ab.range().upbound()[2];
+    //         auto i_ext = in - i0;
+
+    //         auto j0 = K_ab.range().lobound()[3];
+    //         auto jn = K_ab.range().upbound()[4];
+    //         auto j_ext = jn - j0;
+
+    //         auto da = b_ext * i_ext * j_ext;
+    //         auto db = i_ext * j_ext;
+    //         auto di = j_ext;
+
+    //         for (auto a = a0; a != an; ++a) {
+    //           auto a_shift = a + a_off;
+
+    //           for (auto b = b0; b != bn; ++b) {
+    //             auto b_shift = b + b_off;
+
+    //             for (auto i = i0; i != in; ++i) {
+    //               auto i_shift = i + i_off;
+
+    //               for (auto j = j0; j != jn; ++j) {
+    //                 auto j_shift = j + j_off;
+
+    //                 auto K_ab_idx = a * da + b * db + i * di + j;
+    //                 auto K_ij_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
+
+    //                 K_ij[K_ij_idx] = K_ab[K_ab_idx];
+
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
+
+  // /// Step (4): Take slice of tensor D_ij corresponding to single
+  // // value of i, single value of j and transform to eigen matrix D_ij
+
+  // TA::TensorD D_ij;
+
+
+  // // Get element info along each dim of tensor
+  // auto a0 = D_ij.range().lobound()[0];
+  // auto an = D_ij.range().upbound()[0];
+  // auto a_ext = an - a0;
+
+  // auto b0 = D_ij.range().lobound()[1];
+  // auto bn = D_ij.range().upbound()[1];
+  // auto b_ext = bn - b0;
+
+  // auto i0 = D_ij.range().lobound()[2];
+  // auto in = D_ij.range().upbound()[2];
+  // auto i_ext = in - i0;
+
+  // auto j0 = D_ij.range().lobound()[3];
+  // auto jn = D_ij.range().upbound()[3];
+  // auto j_ext = jn - j0;
+
+  // typedef std::vector<std::size_t> block;
+
+  // for (auto i = i0; i != in; ++i) {
+  //   auto i_low = i;
+  //   auto i_hi = i + 1;
+  //   for (auto j = j0; j != jn; ++j) {
+  //     auto j_low = j;
+  //     auto j_hi = j + 1;
+
+  //     block low{a0, b0, i_low, j_low};
+  //     block high{an, bn, i_hi, j_hi};
+
+  //     Eigen::MatrixXd D_ij_mat = TA::eigen_map(D_ij.block(low, high),
+  //                                 a_ext, b_ext);
+
+
+  //   }
+  // }
+
+
+
+/// !!! Original PNO formation code !!! ///
+// Do not delete! //
 
 
     // zero out amplitudes
@@ -336,7 +624,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   
 
-    // Original PNO formation code //
+    
 
 
     // Loop over each pair of occupieds to form PNOs
@@ -549,120 +837,188 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
 
-  /// Step (1): K -> T
+  // /// Step (1): K -> T
 
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> form_T_array(
-      const TA::DistArray<Tile, Policy>& K,
-      const Eigen::VectorXd& eps_o,
-      const Eigen::VectorXd& eps_v) {
+  // template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> form_T_array(
+  //     const TA::DistArray<Tile, Policy>& K,
+  //     const Eigen::VectorXd& eps_o,
+  //     const Eigen::VectorXd& eps_v) {
 
-    auto form_T = [eps_o, eps_v, this](
-                  Tile& result_tile, const Tile& arg_tile) {
+  //   auto form_T = [eps_o, eps_v, this](
+  //                 Tile& result_tile, const Tile& arg_tile) {
 
-      result_tile = Tile(arg_tile.range());
+  //     result_tile = Tile(arg_tile.range());
 
-      // determine range of i and j indices
-      const auto i0 = arg_tile.range().lobound()[2];
-      const auto in = arg_tile.range().upbound()[2];
-      const auto j0 = arg_tile.range().lobound()[3];
-      const auto jn = arg_tile.range().upbound()[3];
+  //     // determine range of i and j indices
+  //     const auto i0 = arg_tile.range().lobound()[2];
+  //     const auto in = arg_tile.range().upbound()[2];
+  //     const auto j0 = arg_tile.range().lobound()[3];
+  //     const auto jn = arg_tile.range().upbound()[3];
 
-      // determine range of a and b indices
-      const auto a0 = arg_tile.range().lobound()[0];
-      const auto an = arg_tile.range().upbound()[0];
-      const auto b0 = arg_tile.range().lobound()[1];
-      const auto bn = arg_tile.range().upbound()[1];
+  //     // determine range of a and b indices
+  //     const auto a0 = arg_tile.range().lobound()[0];
+  //     const auto an = arg_tile.range().upbound()[0];
+  //     const auto b0 = arg_tile.range().lobound()[1];
+  //     const auto bn = arg_tile.range().upbound()[1];
 
-      // Loop over all four indices to form T
-      for (auto a = a0, tile_idx = 0; a != an; ++a) {
-        const auto e_a = eps_v[a];
+  //     // Loop over all four indices to form T
+  //     for (auto a = a0, tile_idx = 0; a != an; ++a) {
+  //       const auto e_a = eps_v[a];
 
-        for (auto b = b0; b!= bn; ++b) {
-          const auto e_b = eps_v[b];
-          const auto e_ab = e_a + e_b;
+  //       for (auto b = b0; b!= bn; ++b) {
+  //         const auto e_b = eps_v[b];
+  //         const auto e_ab = e_a + e_b;
 
-          for (auto i = i0; i != in; ++i) {
-            const auto e_i = eps_o[i];
+  //         for (auto i = i0; i != in; ++i) {
+  //           const auto e_i = eps_o[i];
 
-            for (auto j = j0; j != jn; ++j, ++tile_idx) {
-              const auto e_j = eps_o[j];
-              const auto e_ij = -e_i - e_j;
+  //           for (auto j = j0; j != jn; ++j, ++tile_idx) {
+  //             const auto e_j = eps_o[j];
+  //             const auto e_ij = -e_i - e_j;
 
-              const auto e_abij = e_ab + e_ij;
-              //const auto e_abij = e_a + e_b - e_i - e_j;
-              const auto K_abij = arg_tile[tile_idx];
-              const auto T_abij = -K_abij / e_abij;
-              result_tile[tile_idx] = T_abij;
-            }
-          }
-        }
-      }
+  //             const auto e_abij = e_ab + e_ij;
+  //             //const auto e_abij = e_a + e_b - e_i - e_j;
+  //             const auto K_abij = arg_tile[tile_idx];
+  //             const auto T_abij = -K_abij / e_abij;
+  //             result_tile[tile_idx] = T_abij;
+  //           }
+  //         }
+  //       }
+  //     }
 
-    };
+  //   };
 
-    auto T_ = TA::foreach(K, form_T);
-    T_.world().gop.fence();
-    return T_;
-  }
+  //   auto T_ = TA::foreach(K, form_T);
+  //   T_.world().gop.fence();
+  //   return T_;
+  // }
 
 
-  /// Step (2): T -> D
+  // /// Step (2): T -> D
 
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> form_D_array(
-      TA::DistArray<Tile, Policy>& D_,
-      const TA::DistArray<Tile, Policy>& T_,
-      int& ti_idx,
-      int& tj_idx,
-      const int& nuocc) {
+  // template <typename Tile, typename Policy>
+  // TA::DistArray<Tile, Policy> form_D_array(
+  //     TA::DistArray<Tile, Policy>& D_,
+  //     const TA::DistArray<Tile, Policy>& T_,
+  //     int& ti_idx,
+  //     int& tj_idx,
+  //     const int& nuocc) {
 
-    auto form_D = [nuocc, this](
-                  TA::DistArray<Tile, Policy>& D_,
-                  const TA::DistArray<Tile, Policy>& T_,
-                  auto& ti_idx,
-                  auto& tj_idx) {
+  //   auto form_D = [nuocc, this](
+  //                 TA::DistArray<Tile, Policy>& D_,
+  //                 const TA::DistArray<Tile, Policy>& T_,
+  //                 auto& ti_idx,
+  //                 auto& tj_idx) {
 
-      typedef std::vector<std::size_t> block;
+  //     typedef std::vector<std::size_t> block;
 
-      // Block indices
-      // a, b, c go from 0 to nuocc
-      // i, j only have single given index
+  //     // Block indices
+  //     // a, b, c go from 0 to nuocc
+  //     // i, j only have single given index
 
-      const auto i_low = ti_idx;
-      const auto i_up = ti_idx + 1;
-      const auto j_low = tj_idx;
-      const auto j_up = tj_idx + 1;
+  //     const auto i_low = ti_idx;
+  //     const auto i_up = ti_idx + 1;
+  //     const auto j_low = tj_idx;
+  //     const auto j_up = tj_idx + 1;
 
-      block low_bound{0, 0, i_low, j_low};
-      block up_bound{nuocc, nuocc, i_up, j_up};
+  //     block low_bound{0, 0, i_low, j_low};
+  //     block up_bound{nuocc, nuocc, i_up, j_up};
 
-      D_("a,b,i,j") =
-          (4 * T_("c,a,i,j").block(low_bound, up_bound) -
-           2 * T_("c,a,j,i").block(low_bound, up_bound)) *
-            T_("c,b,i,j").block(low_bound, up_bound) + 
-          (4 * T_("a,c,i,j").block(low_bound, up_bound) -
-           2 * T_("a,c,j,i").block(low_bound, up_bound)) *
-            T_("b,c,i,j").block(low_bound, up_bound);
+  //     D_("a,b,i,j") =
+  //         (4 * T_("c,a,i,j").block(low_bound, up_bound) -
+  //          2 * T_("c,a,j,i").block(low_bound, up_bound)) *
+  //           T_("c,b,i,j").block(low_bound, up_bound) + 
+  //         (4 * T_("a,c,i,j").block(low_bound, up_bound) -
+  //          2 * T_("a,c,j,i").block(low_bound, up_bound)) *
+  //           T_("b,c,i,j").block(low_bound, up_bound);
 
-    };
+  //   };
 
-    // Get number of tiles along i and j dimensions
-    const auto Ttrange = T_.trange();
-    const auto ntiles_i = Ttrange.dim(2).tile_extent();
-    const auto ntiles_j = Ttrange.dim(3).tile_extent();
+  //   // Get number of tiles along i and j dimensions
+  //   const auto Ttrange = T_.trange();
+  //   const auto ntiles_i = Ttrange.dim(2).tile_extent();
+  //   const auto ntiles_j = Ttrange.dim(3).tile_extent();
 
-    for (auto ti = 0; ti != ntiles_i; ++ti) {
-      for (auto tj = 0; tj != ntiles_j; ++tj) {
+  //   for (auto ti = 0; ti != ntiles_i; ++ti) {
+  //     for (auto tj = 0; tj != ntiles_j; ++tj) {
         
-        // apply lambda expression
+  //       // apply lambda expression
+        
 
-      }
-    }
-  }
+  //     }
+  //   }
+  // }
 
 
   /// Step (3): D_array -> D_tensor
+  
+    // // Get number of tiles along each dim
+    // const auto nt_a = D_.trange().dim(0).tile_extent();
+    // const auto nt_b = D_.trange(.dim(1).tile_extent();
+    // const auto nt_i = D_.trange().dim(2).tile_extent();
+    // const auto nt_j = D_.trange().dim(3).tile_extent();
+ 
+
+    // for (auto ti = 0; ti != nt_i; ++ti) {
+    //   for (auto tj = 0; tj != nt_j; ++tj) {
+    //     TA::TensorD D_ij;
+
+    //     for (auto ta = 0; ta != nt_a; ++ta) {
+    //       for (auto tb = 0; tb != nt_b; ++tb) {
+    //         TA::TensorD D_ab = D_.find({ta, tb, ti, tj});
+
+    //         auto a_off = 0;
+    //         auto b_off = 0;
+    //         auto i_off = 0;
+    //         auto j_off = 0;
+
+    //         auto a0 = D_ab.range().lobound()[0];
+    //         auto an = D_ab.range().upbound()[0];
+    //         auto a_ext = an - a0;
+
+    //         auto b0 = D_ab.range().lobound()[1];
+    //         auto bn = D_ab.range().upbound()[1];
+    //         auto b_ext = bn - b0;
+
+    //         auto i0 = D_ab.range().lobound()[2];
+    //         auto in = D_ab.range().upbound()[2];
+    //         auto i_ext = in - i0;
+
+    //         auto j0 = D_ab.range().lobound()[3];
+    //         auto jn = D_ab.range().upbound()[4];
+    //         auto j_ext = jn - j0;
+
+    //         auto da = b_ext * i_ext * j_ext;
+    //         auto db = i_ext * j_ext;
+    //         auto di = j_ext;
+
+    //         for (auto a = a0; a != an; ++a) {
+    //           auto a_shift = a + a_off;
+
+    //           for (auto b = b0; b != bn; ++b) {
+    //             auto b_shift = b + b_off;
+
+    //             for (auto i = i0; i != in; ++i) {
+    //               auto i_shift = i + i_off;
+
+    //               for (auto j = j0; j != jn; ++j) {
+    //                 auto j_shift = j + j_off;
+
+    //                 auto D_ab_idx = a * da + b * db + i * di + j;
+    //                 auto D_ij_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
+
+    //                 D_ij[D_ij_idx] = D_ab[D_ab_idx];
+
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
 
   // template <typename Tile, typename Policy>
   // TA::DistArray<Tile, Policy> form_D_tensor(
@@ -709,6 +1065,46 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   //   }
   // }
 
+
+
+  /// Step (4): Take slice of tensor D_ij corresponding to single
+  // value of i, single value of j and transform to eigen matrix D_ij
+
+  // // Get element info along each dim of tensor
+  // auto a0 = D_ij.range().lobound()[0];
+  // auto an = D_ij.range().upbound()[0];
+  // auto a_ext = an - a0;
+
+  // auto b0 = D_ij.range().lobound()[1];
+  // auto bn = D_ij.range().upbound()[1];
+  // auto b_ext = bn - b0;
+
+  // auto i0 = D_ij.range().lobound()[2];
+  // auto in = D_ij.range().upbound()[2];
+  // auto i_ext = in - i0;
+
+  // auto j0 = D_ij.range().lobound()[3];
+  // auto jn = D_ij.range().upbound()[3];
+  // auto j_ext = jn - j0;
+
+  // typedef std::vector<std::size_t> block
+
+  // for (auto i = i0; i != in; ++i) {
+  //   auto i_low = i;
+  //   auto i_hi = i + 1;
+  //   for (auto j = j0; j != jn; ++j) {
+  //     auto j_low = j;
+  //     auto j_hi = j + 1;
+
+  //     block low{a0, b0, i_low, j_low};
+  //     block high{an, bn, i_hi, j_hi};
+
+  //     Eigen::MatrixXd D_ij_mat = TA::eigen_map(D_ij.block(low, high),
+  //                                 a_ext, b_ext);
+
+
+  //   }
+  // }
 
 
 

@@ -306,7 +306,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T_.world().gop.fence();
 
 
-    /// Steps (2) and (3): For each ti, tj pair, compute D_ij and convert
+    /// Steps (2) and (3): For each ti, tj pair, compute D_ij array and convert
     // D_ij to local tensor
 
     typedef std::vector<std::size_t> block;
@@ -342,9 +342,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         // Pack contents of D_ij_array into local tensor
 
         // Loop over ta, tb
-        for (auto ta = 0; ta != ntiles_a; ++ta) {
+        for (std::size_t ta = 0; ta != ntiles_a; ++ta) {
 
-          for (auto tb = 0; tb != ntiles_b; ++tb) {
+          for (std::size_t tb = 0; tb != ntiles_b; ++tb) {
 
             // Pull particular tile corresponding to ta, tb, ti, tj
             TA::TensorD D_ab = D_ij_array.find({ta, tb, ti, tj});
@@ -463,7 +463,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
     /// Step (4): For each i, j pair, convert slice of D_ij to matrix,
-    // diagonalize, truncate PNOs, etc. 
+    // diagonalize, truncate PNOs, store matrix of PNOs, etc. 
 
 
   
@@ -720,61 +720,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
 
-  // /// Step (2): T -> D
-
-  // template <typename Tile, typename Policy>
-  // TA::DistArray<Tile, Policy> form_D_array(
-  //     TA::DistArray<Tile, Policy>& D_,
-  //     const TA::DistArray<Tile, Policy>& T_,
-  //     int& ti_idx,
-  //     int& tj_idx,
-  //     const int& nuocc) {
-
-  //   auto form_D = [nuocc, this](
-  //                 TA::DistArray<Tile, Policy>& D_,
-  //                 const TA::DistArray<Tile, Policy>& T_,
-  //                 auto& ti_idx,
-  //                 auto& tj_idx) {
-
-  //     typedef std::vector<std::size_t> block;
-
-  //     // Block indices
-  //     // a, b, c go from 0 to nuocc
-  //     // i, j only have single given index
-
-  //     const auto i_low = ti_idx;
-  //     const auto i_up = ti_idx + 1;
-  //     const auto j_low = tj_idx;
-  //     const auto j_up = tj_idx + 1;
-
-  //     block low_bound{0, 0, i_low, j_low};
-  //     block up_bound{nuocc, nuocc, i_up, j_up};
-
-  //     D_("a,b,i,j") =
-  //         (4 * T_("c,a,i,j").block(low_bound, up_bound) -
-  //          2 * T_("c,a,j,i").block(low_bound, up_bound)) *
-  //           T_("c,b,i,j").block(low_bound, up_bound) + 
-  //         (4 * T_("a,c,i,j").block(low_bound, up_bound) -
-  //          2 * T_("a,c,j,i").block(low_bound, up_bound)) *
-  //           T_("b,c,i,j").block(low_bound, up_bound);
-
-  //   };
-
-  //   // Get number of tiles along i and j dimensions
-  //   const auto Ttrange = T_.trange();
-  //   const auto ntiles_i = Ttrange.dim(2).tile_extent();
-  //   const auto ntiles_j = Ttrange.dim(3).tile_extent();
-
-  //   for (auto ti = 0; ti != ntiles_i; ++ti) {
-  //     for (auto tj = 0; tj != ntiles_j; ++tj) {
-        
-  //       // apply lambda expression
-        
-
-  //     }
-  //   }
-  // }
-
+  
 
   /// Step (3): D_array -> D_tensor
   

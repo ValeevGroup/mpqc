@@ -150,6 +150,9 @@ template <typename T>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                   public madness::WorldObject<PNOSolver<T>> {
  public:
+
+  typedef typename T::value_type Tile;
+
   // clang-format off
   /**
    * @brief The KeyVal constructor.
@@ -253,11 +256,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     // lambda function to convert K to T
 
     auto form_T = [eps_o, eps_v, this](
-                     TA::TensorD& result_tile, const TA::TensorD& arg_tile) {
+                     Tile& result_tile, const Tile& arg_tile) {
 
 
-
-      result_tile = TA::TensorD(arg_tile.range());
+      result_tile = Tile(arg_tile.range());
 
       // determine range of i and j indices
       const int i0 = arg_tile.range().lobound()[2];
@@ -321,17 +323,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         const std::size_t j_up = tj + 1;
 
         // D_ij array
-        TA::DistArray D_ij_array;
+        T D_ij_array;
 
         // D_ij local tensor
-        TA::TensorD D_ij_tensor;
+        Tile D_ij_tensor;
 
         // Lower and upper bounds for block expressions
         block low_bound{0, 0, i_low, j_low};
         block up_bound{nuocc, nuocc, i_up, j_up};
 
         // Block expression to form D from T
-        D_ij_array("a,b,i,j").block(low_bound, up_bound) =
+        D_ij_array("a,b,i,j") =
           (4 * T_("c,a,i,j").block(low_bound, up_bound) -
            2 * T_("c,a,j,i").block(low_bound, up_bound)) *
             T_("c,b,i,j").block(low_bound, up_bound) + 
@@ -347,7 +349,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           for (std::size_t tb = 0; tb != ntiles_b; ++tb) {
 
             // Pull particular tile corresponding to ta, tb, ti, tj
-            TA::TensorD D_ab = D_ij_array.find({ta, tb, ti, tj});
+            Tile D_ab = D_ij_array.find({ta, tb, ti, tj});
 
             // Element info along all four dims of D_ab
             auto a0 = D_ab.range().lobound()[0];

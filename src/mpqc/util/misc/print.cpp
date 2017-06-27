@@ -5,13 +5,11 @@
  *      Author: evaleev
  */
 
-#include <cmath>
-#include <iostream>
-#include <vector>
-
-#include <algorithm>
 
 #include "mpqc/util/misc/print.h"
+
+namespace mpqc{
+namespace util{
 
 // print progress
 void print_progress(std::size_t lowprogress, std::size_t upprogress,
@@ -23,7 +21,18 @@ void print_progress(std::size_t lowprogress, std::size_t upprogress,
         progress_points.end()) {
       int percent = 10 * (double(i) / total);
       percent *= 10;
-      std::cout << percent << "% done." << std::endl;
+      ExEnv::out0() << percent << "% done." << std::endl;
     }
   }
 }
+
+
+
+
+
+
+} // end of namespace util
+} // end of namespace mpqc
+
+
+

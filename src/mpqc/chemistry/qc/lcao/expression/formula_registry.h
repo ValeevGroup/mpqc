@@ -25,7 +25,8 @@ template <typename Key, typename Value>
 class Registry {
  public:
   using container_type = std::map<Key, Value>;
-  using value_type = typename container_type::value_type;  // std::pair<Key,std::shared_ptr<Value>>
+  using value_type = typename container_type::
+      value_type;  // std::pair<Key,std::shared_ptr<Value>>
   using iterator = typename container_type::iterator;
   using const_iterator = typename container_type::const_iterator;
 
@@ -39,7 +40,7 @@ class Registry {
   Registry(Registry&&) = default;
   Registry& operator=(Registry&&) = default;
 
-  virtual ~Registry() { }
+  virtual ~Registry() {}
 
   /// return the registry
   const container_type& registry() const { return registry_; }
@@ -48,15 +49,14 @@ class Registry {
   void insert(const value_type& val) {
     auto insert_result = registry_.insert(val);
     if (insert_result.second == false) {
-      throw std::runtime_error("Key Already Exist!!!");
+      throw ProgrammingError("Registry::insert: Key Already Exist!!!", __FILE__,
+                             __LINE__);
     }
   }
 
   /// insert {Key,Value} pair
   /// @note \c val is copied
-  void insert(const Key& key, const Value& val) {
-    registry_[key] = val;
-  }
+  void insert(const Key& key, const Value& val) { registry_[key] = val; }
 
   /// insert {Key,std::shared_ptr<Value>} pair
   void insert(const Key& key, std::shared_ptr<Value> val) {
@@ -87,7 +87,8 @@ class Registry {
   Value& retrieve(const Key& key) {
     auto iter = registry_.find(key);
     if (iter == registry_.end()) {
-      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__,
+                             __LINE__);
     }
     return iter->second;
   }
@@ -98,7 +99,8 @@ class Registry {
   const Value& retrieve(const Key& key) const {
     auto iter = registry_.find(key);
     if (iter == registry_.cend()) {
-      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__,
+                             __LINE__);
     }
     return iter->second;
   }
@@ -157,13 +159,11 @@ class FormulaRegistry : public Registry<Formula, Value> {
   FormulaRegistry& operator=(FormulaRegistry&&) = default;
 
   /// print out formula that stored in registry
-  void print_formula(madness::World& world) const {
-    if (world.rank() == 0) {
-      for (const auto& item : this->registry_) {
-        mpqc::detail::print_size_info(item.second, item.first.string());
-      }
-      std::cout << std::endl;
+  void print_formula() const {
+    for (const auto& item : this->registry_) {
+      mpqc::detail::print_size_info(item.second, item.first.string());
     }
+    ExEnv::out0() << std::endl;
   }
 
   /// purges all objects if p(key) == true
@@ -171,9 +171,11 @@ class FormulaRegistry : public Registry<Formula, Value> {
   void purge_if(const Pred& p) {
     auto i = this->registry_.begin();
     for (; i != this->registry_.end();) {
-      if (p(*i)) {
-        ExEnv::out0() << indent << "Removed from Registry: ";
-        ExEnv::out0() << utility::to_string(i->first.string()) << "\n";
+      if (p(i->first)) {
+        if (verbose_) {
+          ExEnv::out0() << indent << "Removed from FormulaRegistry: ";
+          ExEnv::out0() << utility::to_string(i->first.string()) << "\n";
+        }
         this->registry_.erase(i++);
       } else {
         ++i;
@@ -183,8 +185,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges formulae that contain Operator whose type matches \c optype
   void purge_operator(const Operator::Type& optype) {
-    auto pred = [optype](const value_type& item) {
-      return item.first.oper().type() == optype;
+    auto pred = [optype](const Formula& item) {
+      return item.oper().type() == optype;
     };
 
     this->purge_if(pred);
@@ -199,8 +201,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges the Formula object that equals \c formula from the registry
   void purge_formula(const Formula& formula) {
-    auto pred = [&formula](const value_type& item) {
-      return item.first == formula;
+    auto pred = [&formula](const Formula& item) {
+      return item == formula;
     };
 
     this->purge_if(pred);
@@ -214,8 +216,8 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges formulae that contain index \c idx
   void purge_index(const OrbitalIndex& idx) {
-    auto pred = [&idx](const value_type& item) {
-      return item.first.has_index(idx);
+    auto pred = [&idx](const Formula& item) {
+      return item.has_index(idx);
     };
 
     this->purge_if(pred);
@@ -223,10 +225,15 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges all formula in registry
   void purge() {
-    auto pred = [](const value_type& item) { return true; };
+    auto pred = [](const Formula& item) { return true; };
 
     this->purge_if(pred);
   }
+
+  void set_verbose(bool verbose) { verbose_ = verbose; }
+
+ private:
+  bool verbose_ = false;
 };
 }  // namespace mpqc
 

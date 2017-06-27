@@ -1,8 +1,12 @@
 set(sources
         ccsd.h
+        ccsd_hbar.h
         ccsd.cpp
         ccsd_t.h
         ccsd_t.cpp
+        eom/eom_ccsd.h
+        eom/eom_ccsd_impl.h
+        eom/eom_ccsd.cpp
         gamma_point_ccsd.h
         gamma_point_ccsd.cpp
         linkage.h

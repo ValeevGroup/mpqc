@@ -69,17 +69,25 @@ class DavidsonDiag {
   /**
    *
    * @param n_roots number of lowest roots to solve
+
+   * @param symmetric if matrix is symmetric
+
    * @param n_guess number of eigen vector per root at subspace collapse,
    * default is 2
+
    * @param max_n_guess max number of guess vector per root, default is 4
-   * @param symmetric if matrix is symmetric
+   *
+   * @param vector_threshold threshold for the norm of new guess vector in gram
+   schmidt orthonormalization
    */
   DavidsonDiag(unsigned int n_roots, bool symmetric = true,
-               unsigned int n_guess = 2, unsigned int max_n_guess = 4)
+               unsigned int n_guess = 2, unsigned int max_n_guess = 4,
+               double vector_threshold = 1.0e-5)
       : n_roots_(n_roots),
         symmetric_(symmetric),
         n_guess_(n_guess),
         max_n_guess_(max_n_guess),
+        vector_threshold_(vector_threshold),
         eigen_vector_(),
         HB_(),
         B_(),
@@ -135,22 +143,22 @@ class DavidsonDiag {
       G.block(0, 0, n_s, n_s) << subspace_;
       // initialize new value
       if (symmetric_) {
-        for (auto i = 0; i < n_b; ++i) {
+        for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
-          for (auto j = 0; j <= ii; ++j) {
-            G(ii, j) = dot_product(B_[j], HB_[ii]);
+          for (std::size_t j = 0; j <= ii; ++j) {
+            G(ii, j) = dot_product(B_[ii], HB_[j]);
             if (ii != j) {
-              G(j, ii) = G(j, ii);
+              G(j, ii) = G(ii, j);
             }
           }
         }
       } else {
-        for (auto i = 0; i < n_b; ++i) {
+        for (std::size_t i = 0; i < n_b; ++i) {
           const auto ii = i + n_s;
-          for (auto j = 0; j <= ii; ++j) {
-            G(ii, j) = dot_product(B_[j], HB_[ii]);
+          for (std::size_t j = 0; j <= ii; ++j) {
+            G(ii, j) = dot_product(B_[ii], HB_[j]);
             if (ii != j) {
-              G(j, ii) = dot_product(B_[ii], HB_[j]);
+              G(j, ii) = dot_product(B_[j], HB_[ii]);
             }
           }
         }
@@ -185,19 +193,8 @@ class DavidsonDiag {
     }
     // non-symmetric matrix
     else {
-      // unitary transform to upper triangular matrix
-      Eigen::RealSchur<RowMatrix<element_type>> rs(subspace_);
-
-      RowMatrix<element_type> T = rs.matrixT();
-      RowMatrix<element_type> U = rs.matrixU();
-
-      if (rs.info() != Eigen::Success) {
-        throw AlgorithmException("Eigen::RealSchur Failed!\n", __FILE__,
-                                 __LINE__);
-      }
-
       // do eigen solve on T
-      Eigen::EigenSolver<RowMatrix<element_type>> es(T);
+      Eigen::EigenSolver<RowMatrix<element_type>> es(subspace_);
 
       // sort eigen values
       std::vector<EigenPair> eg;
@@ -205,12 +202,12 @@ class DavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
-        if (rs.info() != Eigen::Success) {
+        if (es.info() != Eigen::Success) {
           throw AlgorithmException("Eigen::EigenSolver Failed!\n", __FILE__,
                                    __LINE__);
         }
 
-        for (auto i = 0; i < n_v; ++i) {
+        for (std::size_t i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
         }
 
@@ -218,19 +215,41 @@ class DavidsonDiag {
       }
 
       // obtain final eigen value and eigen vector
-      for (auto i = 0; i < n_roots_; ++i) {
+      for (std::size_t i = 0; i < n_roots_; ++i) {
         E[i] = eg[i].eigen_value;
-        C.col(i) = U * eg[i].eigen_vector;
+        C.col(i) = eg[i].eigen_vector;
       }
+
+      // orthonormalize C
+      //      RowMatrix<element_type> Q = C;
+      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(Q);
+      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(C);
+      //      C = qr.householderQ();
+
+      //      const auto tolerance =
+      //          std::numeric_limits<typename D::element_type>::epsilon() *
+      //          100;
+      //      for (auto i = 0; i < n_roots_; ++i) {
+      //        for (auto j = i; j < n_roots_; ++j) {
+      //          const auto test = C.col(i).dot(C.col(j));
+      //          if (i == j) {
+      //            TA_ASSERT(test - 1.0 < tolerance);
+      //          } else {
+      //            TA_ASSERT(test < tolerance);
+      //          }
+      //          std::cout << "i= " << i << " j= " << j << " dot= " << test
+      //                    << std::endl;
+      //        }
+      //      }
     }
 
     // compute eigen_vector at current iteration and store it
     // X(i) = B(i)*C(i)
     value_type X(n_roots_);
-    for (auto i = 0; i < n_roots_; ++i) {
+    for (std::size_t i = 0; i < n_roots_; ++i) {
       X[i] = copy(B_[i]);
       zero(X[i]);
-      for (auto j = 0; j < n_v; ++j) {
+      for (std::size_t j = 0; j < n_v; ++j) {
         axpy(X[i], C(j, i), B_[j]);
       }
     }
@@ -245,11 +264,11 @@ class DavidsonDiag {
     // R(i) = (H - e(i)I)*B(i)*C(i)
     //      = (HB(i)*C(i) - e(i)*X(i)
     value_type residual(n_roots_);
-    for (auto i = 0; i < n_roots_; ++i) {
+    for (std::size_t i = 0; i < n_roots_; ++i) {
       residual[i] = copy(X[i]);
       const auto e_i = -E[i];
       scale(residual[i], e_i);
-      for (auto j = 0; j < n_v; ++j) {
+      for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
     }
@@ -259,7 +278,7 @@ class DavidsonDiag {
     // usually it is D(i) = (e(i) - H_D)^-1 R(i)
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
-    for (auto i = 0; i < n_roots_; i++) {
+    for (std::size_t i = 0; i < n_roots_; i++) {
       pred(E[i], residual[i]);
     }
 
@@ -272,21 +291,28 @@ class DavidsonDiag {
       HB_.clear();
       subspace_.resize(0, 0);
       B.insert(B.end(), residual.begin(), residual.end());
+      // TODO this generates too much eigen vectors
       // use all stored eigen vector from last n_guess interation
       for (auto& vector : eigen_vector_) {
         B.insert(B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
-      gram_schmidt(B);
+      gram_schmidt(B, vector_threshold_);
       // call it second times
-      gram_schmidt(B);
+      gram_schmidt(B, vector_threshold_);
     } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
-      gram_schmidt(B_, residual);
+      gram_schmidt(B_, residual, vector_threshold_);
       // call it twice
-      gram_schmidt(B_, residual);
+      gram_schmidt(B_, residual, vector_threshold_);
       B = residual;
+
+      //      for (std::size_t i = 0; i < n_roots_; i++) {
+      //        const auto m = norm2(B[i]);
+      //        std::cout << "norm: " << i << " " << m << std::endl;
+      //        TA_ASSERT(m > 1.0e-3);
+      //      }
     }
 
 // test if orthonomalized
@@ -294,11 +320,12 @@ class DavidsonDiag {
     const auto k = B.size();
     const auto tolerance =
         std::numeric_limits<typename D::element_type>::epsilon() * 100;
-    for (auto i = 0; i < k; ++i) {
-      for (auto j = i; j < k; ++j) {
+    for (std::size_t i = 0; i < k; ++i) {
+      for (std::size_t j = i; j < k; ++j) {
         const auto test = dot_product(B[i], B[j]);
-        //        std::cout << "i= " << i << " j= " << j << " dot= " << test <<
-        //        std::endl;
+        //                std::cout << "i= " << i << " j= " << j << " dot= " <<
+        //                test <<
+        //                std::endl;
         if (i == j) {
           TA_ASSERT(test - 1.0 < tolerance);
         } else {
@@ -316,6 +343,7 @@ class DavidsonDiag {
   bool symmetric_;
   unsigned int n_guess_;
   unsigned int max_n_guess_;
+  double vector_threshold_;
   std::deque<value_type> eigen_vector_;
   value_type HB_;
   value_type B_;

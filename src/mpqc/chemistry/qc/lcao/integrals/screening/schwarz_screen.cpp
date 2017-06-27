@@ -92,7 +92,6 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     TA::Pmap const &pmap, bool replicate) const {
   const auto ndims = bs_array.size();
   auto trange = gaussian::detail::create_trange(bs_array);
-  auto const &tile_range = trange.tiles_range();
   auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
 
   if (ndims == 3) {

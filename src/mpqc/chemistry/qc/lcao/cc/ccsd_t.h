@@ -191,7 +191,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       this->set_value(result, ccsd_energy + triples_energy_);
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "(T) Time in CCSD(T): " << duration0 << std::endl;
+      ExEnv::out0() << "(T) Time in CCSD(T): " << duration0 << " S"
+                    << std::endl;
     }
   }
 
@@ -573,7 +574,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       // print the progress
       if (rank == 0) {
-        print_progress(a, a + 1, progress_points);
+        util::print_progress(a, a + 1, progress_points);
       }
     }  // loop of a
     this_world.gop.fence();
@@ -1020,7 +1021,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
 
       if (t1.world().rank() == 0) {
-        print_progress(a, a + increase, progress_points);
+        util::print_progress(a, a + increase, progress_points);
       }
       a += a_increase;
     }
@@ -1092,8 +1093,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   // performs Laplace transform perturbative triple correction to CCSD energy
   double compute_ccsd_t_laplace_transform(const TArray &t1, const TArray &t2) {
-    auto &world = this->wfn_world()->world();
-    bool accurate_time = this->lcao_factory().accurate_time();
 
     // get integral
     TArray g_cjkl = get_aijk();
@@ -2136,40 +2135,40 @@ const TArray get_Xai() {
 }
 
 /// <ai|jk>
-const TArray get_aijk() override {
-  std::wstring post_fix = L"";
-  if (this->is_df()) {
-    post_fix = L"[df]";
-  }
+const TArray get_aijk() {
+  std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+  TArray result;
 
   if (reblock_inner_) {
-    return this->lcao_factory().compute(L"<a i|G|j m>" + post_fix);
+    result = this->lcao_factory().compute(L"<i j|G|m a>" + post_fix);
   } else {
-    return this->lcao_factory().compute(L"<a i|G|j k>" + post_fix);
+    result = this->lcao_factory().compute(L"<i j|G|k a>" + post_fix);
   }
+  result("a,i,j,k") = result("i,j,k,a");
+  return result;
 }
 
 /// <ab|ci>
 const TArray get_abci() {
-  std::wstring post_fix = L"";
-  if (this->is_df()) {
-    post_fix = L"[df]";
-  }
+  std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+  TArray result;
 
   if (reblock_inner_) {
-    return this->lcao_factory().compute(L"<a' b|G|c i>" + post_fix);
+    result = this->lcao_factory().compute(L"<i a'|G|b c>" + post_fix);
   } else {
-    return this->lcao_factory().compute(L"<a b|G|c i>" + post_fix);
+    result = this->lcao_factory().compute(L"<i a|G|b c>" + post_fix);
   }
+  result("a,b,c,i") = result("i,a,b,c");
+  return result;
 }
 
 /// <ab|ij>
-const TArray get_abij() override {
-  if (this->is_df()) {
-    return this->lcao_factory().compute(L"<a b|G|i j>[df]");
-  } else {
-    return this->lcao_factory().compute(L"<a b|G|i j>");
-  }
+const TArray get_abij() {
+    std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+    TArray result;
+    result = this->lcao_factory().compute(L"<i j|G|a b>" + post_fix);
+    result("a,b,i,j") = result("i,j,a,b");
+    return result;
 }
 
 private:

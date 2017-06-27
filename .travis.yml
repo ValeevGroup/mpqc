@@ -53,7 +53,7 @@ before_install:
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
 - "./bin/build-libint-$TRAVIS_OS_NAME.sh"
 - "./bin/build-TA-$TRAVIS_OS_NAME.sh"
-script: "./bin/build-$TRAVIS_OS_NAME.sh"
+script: "travis_wait 50 ./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
 - cat ./mpqc4_build/CMakeFiles/CMakeOutput.log
 - cat ./mpqc4_build/CMakeFiles/CMakeError.log

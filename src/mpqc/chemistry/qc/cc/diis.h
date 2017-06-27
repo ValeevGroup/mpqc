@@ -19,17 +19,27 @@ template <typename T1, typename T2>
 struct T1T2 {
   typedef typename T1::element_type element_type;
   typedef decltype(norm2(std::declval<T1>())) scalar_type;
+
+  // constructor
   T1T2(T1 &_t1, T2 &_t2) : t1(_t1), t2(_t2) {}
+
+  // default constructor
+  T1T2() : t1(), t2() {}
 
   T1 t1;
   T2 t2;
 
-  auto norm() {
+  auto norm() const{
     auto t1_norm = norm2(t1);
     auto t2_norm = norm2(t2);
     return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm));
   }
 };
+
+template <typename T1, typename T2>
+auto norm2(const T1T2<T1, T2> &a) -> decltype(norm2(std::declval<T1>())) {
+  return a.norm();
+}
 
 template <typename T1, typename T2>
 inline void zero(T1T2<T1, T2> &a) {
@@ -46,6 +56,17 @@ template <typename T1, typename T2, typename Scalar>
 inline void axpy(T1T2<T1, T2> &y, Scalar a, const T1T2<T1, T2> &x) {
   axpy(y.t1, a, x.t1);
   axpy(y.t2, a, x.t2);
+};
+
+template <typename T1, typename T2>
+inline T1T2<T1,T2> copy(T1T2<T1, T2> &a) {
+  return a;
+}
+
+template <typename T1, typename T2, typename Scalar>
+inline void scale(T1T2<T1, T2> &y, Scalar a) {
+  scale(y.t1, a);
+  scale(y.t2, a);
 };
 
 }  // namespace cc

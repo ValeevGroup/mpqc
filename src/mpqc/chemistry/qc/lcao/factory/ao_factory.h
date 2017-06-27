@@ -68,9 +68,6 @@ std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
   return result;
 };
 
-// TODO better inverse of two center
-// TODO direct integral
-// TODO Screener for different type of integral
 /**
  * \brief Atomic Integral Class
  *
@@ -102,6 +99,8 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
    *
    * @param kv the KeyVal object, it will be queried for all keywords of the Factory ctor as well as the
    * following additional keywords:
+   *
+   * @warning Those keys should be defined under WfnWorld object in order to get passed to AOFactory
    *
    *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|

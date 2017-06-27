@@ -51,7 +51,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
         if (plist.is_canonical(lb0, lb1)) {
           shell_set(eng, s0, s1);
-          const auto ns01 = ns0 * ns1;
           assert(ints_shell_sets.size() == 1 &&
              "integral_kernel can't handle multi-shell-set engines");
           if (ints_shell_sets[0] != nullptr) {
@@ -127,7 +126,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
         if (plist.is_canonical(lb0, lb1) && !screen.skip(lb0, lb1)) {
           lb[2] = ub[2] = lobound[2];
-          const auto ns01 = ns0 * ns1;
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
             const auto ns2 = s2.size();
@@ -136,7 +134,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
             if (plist.is_canonical(lb0, lb1, lb2) && !screen.skip(lb0, lb1, lb2)) {
               shell_set(eng, s0, s1, s2);
-              const auto ns012 = ns01 * ns2;
               assert(ints_shell_sets.size() == 1 &&
                      "integral_kernel can't handle multi-shell-set engines");
               if (ints_shell_sets[0] != nullptr) {
@@ -227,7 +224,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
         if (plist.is_canonical(lb0, lb1) && !screen.skip(lb0, lb1)) {
           lb[2] = ub[2] = lobound[2];
-          const auto ns01 = ns0 * ns1;
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
             const auto ns2 = s2.size();
@@ -236,7 +232,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
             if (plist.is_canonical(lb0, lb1, lb2) && !screen.skip(lb0, lb1, lb2)) {
               lb[3] = ub[3] = lobound[3];
-              const auto ns012 = ns01 * ns2;
               for (auto idx3 = 0ul; idx3 < end3; ++idx3) {
                 auto const &s3 = sh3[idx3];
                 const auto ns3 = s3.size();
@@ -246,7 +241,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                 // convert type of lb3 to avoid overload ambiguity
                 if (plist.is_canonical(lb0, lb1, lb2, lb3) && !screen.skip(lb0, lb1, lb2, int64_t(lb3))) {
                   shell_set(eng, s0, s1, s2, s3);
-                  const auto ns0123 = ns012 * ns3;
                   assert(
                       ints_shell_sets.size() == 1 &&
                       "integral_kernel can't handle multi-shell-set engines");

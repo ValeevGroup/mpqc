@@ -99,7 +99,10 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
                   << indent << "Keep partial transform = "
                   << (keep_partial_transforms_ ? "true" : "false") << "\n"
                   << indent << "Accurate time = "
-                  << (this->accurate_time_ ? "true" : "false") << "\n\n";
+                  << (this->accurate_time_ ? "true" : "false") << "\n"
+                  << indent
+                  << "Verbose = " << (this->verbose_ ? "true" : "false")
+                  << "\n\n";
   }
 
   void obsolete() override {
@@ -203,12 +206,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    ExEnv::out0() << indent;
-    ExEnv::out0() << "Computed Identity: "
-                  << utility::to_string(formula_string.string());
-    double size = mpqc::detail::array_size(result);
-    ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+    if (this->verbose_) {
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Identity: "
+                    << utility::to_string(formula_string.string());
+      double size = mpqc::detail::array_size(result);
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
+    }
     return result;
   }
 
@@ -236,13 +241,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
-
+  if (this->verbose_) {
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+  }
   return result;
 }
 
@@ -357,12 +362,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
+  if (this->verbose_) {
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+  }
 
   return result;
 };
@@ -489,12 +496,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
   result.truncate();
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Transformed LCAO Integral: "
-                << utility::to_string(formula_string.string());
-  double size = mpqc::detail::array_size(result);
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
+  if (this->verbose_) {
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Transformed LCAO Integral: "
+                  << utility::to_string(formula_string.string());
+    double size = mpqc::detail::array_size(result);
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+  }
 
   return result;
 }
@@ -589,11 +598,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
   if (iter != this->registry_.end()) {
     result = iter->second;
 
-    ExEnv::out0() << indent;
-    ExEnv::out0() << "Retrieved LCAO Integral: "
-                  << utility::to_string(formula.string());
-    double size = mpqc::detail::array_size(result);
-    ExEnv::out0() << " Size: " << size << " GB\n";
+    if (this->verbose_) {
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Retrieved LCAO Integral: "
+                    << utility::to_string(formula.string());
+      double size = mpqc::detail::array_size(result);
+      ExEnv::out0() << " Size: " << size << " GB\n";
+    }
   } else {
     // find a permutation
     std::vector<Formula> permutes = permutations(formula);
@@ -611,13 +622,15 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
         mpqc::time_point time1 = mpqc::now(world, this->accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
-        ExEnv::out0() << indent;
-        ExEnv::out0() << "Permuted LCAO Integral: "
-                      << utility::to_string(formula.string()) << " From "
-                      << utility::to_string(permute.string());
-        double size = mpqc::detail::array_size(result);
-        ExEnv::out0() << " Size: " << size << " GB "
-                      << " Time: " << time << " s\n";
+        if (this->verbose_) {
+          ExEnv::out0() << indent;
+          ExEnv::out0() << "Permuted LCAO Integral: "
+                        << utility::to_string(formula.string()) << " From "
+                        << utility::to_string(permute.string());
+          double size = mpqc::detail::array_size(result);
+          ExEnv::out0() << " Size: " << size << " GB "
+                        << " Time: " << time << " s\n";
+        }
 
         // store current array and delete old one
         this->registry_.insert(formula, result);
@@ -664,11 +677,14 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
 
   if (iter != this->direct_registry_.end()) {
     result = iter->second;
-    ExEnv::out0() << indent;
-    ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
-                  << utility::to_string(formula.string());
-    double size = mpqc::detail::array_size(result.array());
-    ExEnv::out0() << " Size: " << size << " GB\n";
+
+    if (this->verbose_) {
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
+                    << utility::to_string(formula.string());
+      double size = mpqc::detail::array_size(result.array());
+      ExEnv::out0() << " Size: " << size << " GB\n";
+    }
   } else {
     // get three center integral
     auto df_formulas = gaussian::detail::get_df_formula(formula);
@@ -684,13 +700,15 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
     this->direct_registry_.insert(formula, result);
   }
 
-  ExEnv::out0() << indent;
-  ExEnv::out0() << "Computed LCAO Direct Integral From Density-Fitting: "
-                << utility::to_string(formula.string());
-  double size = mpqc::detail::array_size(result.array());
-  ExEnv::out0() << " Size: " << size << " GB"
-                << " Time: " << time << " s\n";
-  ExEnv::out0() << decindent;
+  if (this->verbose_) {
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Computed LCAO Direct Integral From Density-Fitting: "
+                  << utility::to_string(formula.string());
+    double size = mpqc::detail::array_size(result.array());
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
+    ExEnv::out0() << decindent;
+  }
   return result;
 };
 

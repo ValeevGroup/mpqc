@@ -5,19 +5,18 @@
 #ifndef MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_
 #define MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_
 
-#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-#include "mpqc/math/external/eigen/eigen.h"
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace array_ops {
 
-template<typename T>
+template <typename T>
 std::tuple<RowMatrix<T>, RowMatrix<T>, size_t, double, double> gensqrtinv(
     const RowMatrix<T>& S, bool symmetric = false,
     double max_condition_number = 1e8) {
-
   using Matrix = RowMatrix<T>;
 
   Eigen::SelfAdjointEigenSolver<Matrix> eig_solver(S);
@@ -57,8 +56,7 @@ std::tuple<RowMatrix<T>, RowMatrix<T>, size_t, double, double> gensqrtinv(
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
-    TA::DistArray <Tile, Policy> S_array, double S_condition_number_threshold) {
-
+    TA::DistArray<Tile, Policy> S_array, double S_condition_number_threshold) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   auto& world = S_array.world();
 
@@ -75,26 +73,29 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
       gensqrtinv(S, true, S_condition_number_threshold);
   auto obs_nbf_omitted = (long)S.rows() - (long)obs_rank;
 
-  if(world.rank() == 0){
-    std::cout << "overlap condition number = " << S_condition_number;
-  }
+  ExEnv::out0() << "\n\t Using Symmetric Orthogonalization. \n"
+                << "\t S Condition Number Threshold: "
+                << S_condition_number_threshold << '\n';
+  ExEnv::out0() << "\t Overlap condition number = "
+                << S_condition_number << "\n\n";
 
-  if (obs_nbf_omitted > 0 && world.rank() == 0){
+  if (obs_nbf_omitted > 0 && world.rank() == 0) {
     std::cout << " (dropped " << obs_nbf_omitted << " "
               << (obs_nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
               << XtX_condition_number << ")";
     std::cout << std::endl;
   }
 
-  if (obs_nbf_omitted > 0 && world.rank()==0)  {
+  if (obs_nbf_omitted > 0 && world.rank() == 0) {
     Matrix should_be_I = X.transpose() * S * X;
     Matrix I = Matrix::Identity(should_be_I.rows(), should_be_I.cols());
     std::cout << "||X^t * S * X - I||_2 = " << (should_be_I - I).norm()
               << " (should be 0)" << std::endl;
   }
 
-//  return std::make_tuple(X, Xinv, XtX_condition_number);
-  return array_ops::eigen_to_array<Tile,Policy>(world,X,S_array.trange().data()[0], S_array.trange().data()[1]);
+  //  return std::make_tuple(X, Xinv, XtX_condition_number);
+  return array_ops::eigen_to_array<Tile, Policy>(
+      world, X, S_array.trange().data()[0], S_array.trange().data()[1]);
 }
 
 }  // namespace  array_ops

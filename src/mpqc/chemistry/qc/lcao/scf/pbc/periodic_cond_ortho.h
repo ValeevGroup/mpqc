@@ -18,7 +18,6 @@ MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
                    int64_t k, bool print = false) {
   double S_condition_num;
   MatrixZ X;
-  auto &world = S.world();
   auto S_eig = array_ops::array_to_eigen(S);
 
   assert(S_eig.rows() == S_eig.cols());

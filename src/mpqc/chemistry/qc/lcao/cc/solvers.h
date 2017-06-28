@@ -341,9 +341,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         occ_blocks.push_back(i);
     }
 
-//    std::cout << "occ_blocks has length " << occ_blocks.size() << std::endl;
-//    std::cout << "occ_row has " << ktrange.elements_range().upbound()[3] - ktrange.elements_range().lobound()[3] << " elements" << std::endl;
-
     const TA::TiledRange1 occ_col = TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
     const TA::TiledRange1 occ_row = ktrange.dim(3);
 
@@ -373,17 +370,29 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T j_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
                             TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
-//    std::cout << a_trans_array << "\n";
-//    std::cout << b_trans_array << "\n";
 
 
     // Reblock T_
-    auto T_reblock = T_("a,b,i,j") * j_trans_array("j,jn")
-                                   * i_trans_array("i,in")
-                                   * b_trans_array("b,bn")
-                                   * a_trans_array("a,an");
+    T T_reblock;
+
+    T_reblock("an,bn,in,jn") = T_("a,b,i,j") * j_trans_array("j,jn")
+                                     * i_trans_array("i,in")
+                                     * b_trans_array("b,bn")
+                                     * a_trans_array("a,an");
+
+
 
     std::cout << "first reblocking step worked" << std::endl;
+
+    // Need to get number of tiles and number of elements
+    // along each dim of T_reblock
+
+
+
+    /// Steps (2) and (3): For each ti, tj pair, compute D_titj
+    /// and transform to matrix
+    /// Store D_titj matrices in vector
+
 
 
 

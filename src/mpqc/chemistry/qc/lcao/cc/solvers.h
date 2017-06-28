@@ -10,6 +10,8 @@
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "mpqc/math/linalg/diagonal_array.h"
 
 using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
 
@@ -152,6 +154,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
  public:
 
   typedef typename T::value_type Tile;
+//  typedef typename T::
 
   // clang-format off
   /**
@@ -324,56 +327,63 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     // a single element and
     // each uocc dim has single tile containing nuocc elements
 
-    // Declare transformation matrices
-    Eigen::MatrixXd a_transform = Eigen::MatrixXd::Identity(nuocc, nuocc);
-    Eigen::MatrixXd b_transform = Eigen::MatrixXd::Identity(nuocc, nuocc);
-    Eigen::MatrixXd i_transform = Eigen::MatrixXd::Identity(nocc_act, nocc_act);
-    Eigen::MatrixXd j_transform = Eigen::MatrixXd::Identity(nocc_act, nocc_act);
 
-    std::cout << "a_transform:\n" << a_transform << std::endl;
+    // Create TiledRange1 objects for uocc transformation arrays
+    std::vector<std::size_t> uocc_blocks {0, nuocc};
 
-    // Convert transformation matrices to arrays with appropriate tiling
+    const TA::TiledRange1 uocc_col = TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
+    const TA::TiledRange1 uocc_row = ktrange.dim(0);
 
-    // Create tiled range object for uocc transformation arrays
-    std::vector<std::size_t> uocc_blocks;
-    for (std::size_t i = 0; i != nuocc; i += nuocc) {
-        uocc_blocks.push_back(i);
-    }
 
-    std::array<TA::TiledRange1, 2> uocc_blocks2 =
-        {{TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end()),
-         ktrange.dim(0)}};
-
-    TA::TiledRange uocc_trange(uocc_blocks2.begin(), uocc_blocks2.end());
-
-    // Create tiled range object for occ transformation arrays
+    // Create TiledRange1 objects for occ transformation arrays
     std::vector<std::size_t> occ_blocks;
-    for(std::size_t i = 0; i != nocc_act; ++i) {
+    for (std::size_t i = 0; i <= nocc_act; ++i) {
         occ_blocks.push_back(i);
     }
 
-    std::array<TA::TiledRange1, 2> occ_blocks2 =
-        {{TA::TiledRange1(occ_blocks.begin(), occ_blocks.end()),
-         ktrange.dim(2)}};
+//    std::cout << "occ_blocks has length " << occ_blocks.size() << std::endl;
+//    std::cout << "occ_row has " << ktrange.elements_range().upbound()[3] - ktrange.elements_range().lobound()[3] << " elements" << std::endl;
 
-    TA::TiledRange occ_trange(occ_blocks2.begin(), occ_blocks2.end());
+    const TA::TiledRange1 occ_col = TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
+    const TA::TiledRange1 occ_row = ktrange.dim(3);
 
-    // Transform uocc matrices to arrays
-    TA::Array<double, 2> a_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, uocc_trange, a_transform);
-    TA::Array<double, 2> b_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, uocc_trange, b_transform);
+    std::cout << "uocc_row number of tiles: " << uocc_row.tile_extent() << std::endl;
+    std::cout << "uocc_col number of tiles: " << uocc_col.tile_extent() << std::endl;
 
-    std::cout << a_trans_array.trange() << std::endl;
+    std::cout << "uocc_row number of elements: " << uocc_row.extent() << std::endl;
+    std::cout << "uocc_col number of elements: " << uocc_col.extent() << std::endl;
 
-//    // Transform occ matrices to arrays
-//    TA::Array<double, 2> i_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, occ_trange, i_transform);
-//    TA::Array<double, 2> j_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, occ_trange, j_transform);
+    std::cout << "occ_row number of tiles: " << occ_row.tile_extent() << std::endl;
+    std::cout << "occ_col number of tiles: " << occ_col.tile_extent() << std::endl;
+
+    std::cout << "occ_row number of elements: " << occ_row.extent() << std::endl;
+    std::cout << "occ_col number of elements: " << occ_col.extent() << std::endl;
 
 
-//    // Reblock T_
-//    T T_reblock = T_("a,b,i,j") * j_trans_array("j,jn");
-////                                * i_trans_array("i,in")
-////                                * b_trans_array("b,bn")
-////                                * a_trans_array("a,an");
+    // Create transition arrays
+    T a_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
+
+    T b_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
+
+    T i_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
+
+    T j_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
+
+//    std::cout << a_trans_array << "\n";
+//    std::cout << b_trans_array << "\n";
+
+
+    // Reblock T_
+    auto T_reblock = T_("a,b,i,j") * j_trans_array("j,jn")
+                                   * i_trans_array("i,in")
+                                   * b_trans_array("b,bn")
+                                   * a_trans_array("a,an");
+
+    std::cout << "first reblocking step worked" << std::endl;
 
 
 

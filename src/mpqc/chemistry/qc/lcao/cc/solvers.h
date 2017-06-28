@@ -316,310 +316,401 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     auto T_ = TA::foreach(K, form_T);
     T_.world().gop.fence();
+    std::cout << "Successfully transformed K to T" << std::endl;
 
 
-    /// Steps (2) and (3): For each ti, tj pair, compute D_titj array and convert
-    // D_titj to local tensor
+    // Reblock T_ so that
+    // each occ dim has nocc_act tiles, each of which contains
+    // a single element and
+    // each uocc dim has single tile containing nuocc elements
 
-    // Store local D_titj tensors in a vector with
-    // each D_titj tensor indexed by {ti,tj}
-    std::vector<Tile> D_titj_tensor_list(ntiles_i * ntiles_j);
+    // Declare transformation matrices
+    Eigen::MatrixXd a_transform = Eigen::MatrixXd::Identity(nuocc, nuocc);
+    Eigen::MatrixXd b_transform = Eigen::MatrixXd::Identity(nuocc, nuocc);
+    Eigen::MatrixXd i_transform = Eigen::MatrixXd::Identity(nocc_act, nocc_act);
+    Eigen::MatrixXd j_transform = Eigen::MatrixXd::Identity(nocc_act, nocc_act);
 
-    typedef std::vector<std::size_t> block;
+    std::cout << "a_transform:\n" << a_transform << std::endl;
 
-    // Loop over ti, tj; get block indices
-    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
-      const std::size_t i_low = ti;
-      const std::size_t i_up = ti + 1;
+    // Convert transformation matrices to arrays with appropriate tiling
 
-      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
-        const std::size_t j_low = tj;
-        const std::size_t j_up = tj + 1;
+    // Create tiled range object for uocc transformation arrays
+    std::vector<std::size_t> uocc_blocks;
+    for (std::size_t i = 0; i != nuocc; i += nuocc) {
+        uocc_blocks.push_back(i);
+    }
 
-        // auto delta_titj = (ti == tj) ? 1.0 : 0;
+    std::array<TA::TiledRange1, 2> uocc_blocks2 =
+        {{TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end()),
+         ktrange.dim(0)}};
 
-        auto titj = ti * ntiles_j + tj; // ti,tj index for D_titj_tensor
+    TA::TiledRange uocc_trange(uocc_blocks2.begin(), uocc_blocks2.end());
 
-        // D_titj array
-        T D_titj_array;
+    // Create tiled range object for occ transformation arrays
+    std::vector<std::size_t> occ_blocks;
+    for(std::size_t i = 0; i != nocc_act; ++i) {
+        occ_blocks.push_back(i);
+    }
 
-        // D_titj local tensor
-        Tile D_titj_tensor;
+    std::array<TA::TiledRange1, 2> occ_blocks2 =
+        {{TA::TiledRange1(occ_blocks.begin(), occ_blocks.end()),
+         ktrange.dim(2)}};
 
-        // Lower and upper bounds for block expressions
-        block low_bound{0, 0, i_low, j_low};
-        block up_bound{nuocc, nuocc, i_up, j_up};
+    TA::TiledRange occ_trange(occ_blocks2.begin(), occ_blocks2.end());
 
-        // Block expression to form D from T
-        // ** note ** divide by 1 + delta_ij later when D_ij matrix has been formed
-        D_titj_array("a,b,i,j") =
-          (4 * T_("c,a,i,j").block(low_bound, up_bound) -
-           2 * T_("c,a,j,i").block(low_bound, up_bound)) *
-            T_("c,b,i,j").block(low_bound, up_bound) + 
-          (4 * T_("a,c,i,j").block(low_bound, up_bound) -
-           2 * T_("a,c,j,i").block(low_bound, up_bound)) *
-            T_("b,c,i,j").block(low_bound, up_bound);
+    // Transform uocc matrices to arrays
+    TA::Array<double, 2> a_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, uocc_trange, a_transform);
+    TA::Array<double, 2> b_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, uocc_trange, b_transform);
 
-        // // Divide D_titj_array by 1 + delta(ti,tj)
-        // if (ti == tj) {
-        //   D_titj_array = D_titj_array / (2.0);
-        // }
+    std::cout << a_trans_array.trange() << std::endl;
 
-        // Pack contents of D_titj_array into local tensor
-
-        // Loop over ta, tb
-        for (std::size_t ta = 0; ta != ntiles_a; ++ta) {
-
-          for (std::size_t tb = 0; tb != ntiles_b; ++tb) {
-
-            // Pull particular tile corresponding to ta, tb, ti, tj
-            Tile D_ab = D_titj_array.find({ta, tb, ti, tj});
-
-            // Element info along all four dims of D_ab
-            auto a0 = D_ab.range().lobound()[0];
-            auto an = D_ab.range().upbound()[0];
-            auto a_ext = an - a0;
-
-            auto b0 = D_ab.range().lobound()[1];
-            auto bn = D_ab.range().upbound()[1];
-            auto b_ext = bn - b0;
-
-            auto i0 = D_ab.range().lobound()[2];
-            auto in = D_ab.range().upbound()[2];
-            auto i_ext = in - i0;
-
-            auto j0 = D_ab.range().lobound()[3];
-            auto jn = D_ab.range().upbound()[3];
-            auto j_ext = jn - j0;
-
-            auto da = b_ext * i_ext * j_ext;
-            auto db = i_ext * j_ext;
-            auto di = j_ext;
-
-            // Element off-set in going from D_ab to D_titj tensor
-            auto a_off = ta * a_ext;
-            auto b_off = tb * b_ext;
-            auto i_off = ti * i_ext; 
-            auto j_off = tj * j_ext;
+//    // Transform occ matrices to arrays
+//    TA::Array<double, 2> i_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, occ_trange, i_transform);
+//    TA::Array<double, 2> j_trans_array = TA::eigen_to_array<TA::Array<double, 2>>(world, occ_trange, j_transform);
 
 
-            // Loop over elements of D_ab
-            // a_shift is shifted a, etc.
-            for (auto a = a0; a != an; ++a) {
-              auto a_shift = a + a_off;
-
-              for (auto b = b0; b != bn; ++b) {
-                auto b_shift = b + b_off;
-
-                for (auto i = i0; i != in; ++i) {
-                  auto i_shift = i + i_off;
-
-                  for (auto j = j0; j != jn; ++j) {
-                    auto j_shift = j + j_off;
-
-                    auto D_ab_idx = a * da + b * db + i * di + j;
-                    auto D_titj_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
-
-                    D_titj_tensor[D_titj_idx] = D_ab[D_ab_idx];
-
-                  } // j
-                } // i
-              } // b
-            } // a
-          } // tb
-        } // ta
-
-        // Store D_titj_tensor in D_titj_tensor_list
-        D_titj_tensor_list[titj] = D_titj_tensor;
-
-      } // tj
-    } // ti
+//    // Reblock T_
+//    T T_reblock = T_("a,b,i,j") * j_trans_array("j,jn");
+////                                * i_trans_array("i,in")
+////                                * b_trans_array("b,bn")
+////                                * a_trans_array("a,an");
 
 
 
-    /// Step (4): For each {ti, tj} pair, for each {i,j} pair
-    // convert slice of D_ij to matrix, diagonalize, truncate PNOs,
-    // store matrix of PNOs, etc. 
 
-    // Vector hold D_ij matrices for particular {i,j}
-    std::vector<Eigen::MatrixXd> D_ij_mat_list(nocc_act * nocc_act);
+//    /// Steps (2) and (3): For each ti, tj pair, compute D_titj array and convert
+//    // D_titj to local tensor
 
-    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
-      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
+//    // Store local D_titj tensors in a vector with
+//    // each D_titj tensor indexed by {ti,tj}
+//    std::vector<Tile> D_titj_tensor_list(ntiles_i * ntiles_j);
+
+//    typedef std::vector<std::size_t> block;
+
+//    // Loop over ti, tj; get block indices
+//    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
+//      const std::size_t i_low = ti;
+//      const std::size_t i_up = ti + 1;
+
+//      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
+//        const std::size_t j_low = tj;
+//        const std::size_t j_up = tj + 1;
+
+//        // auto delta_titj = (ti == tj) ? 1.0 : 0;
+
+//        auto titj = ti * ntiles_j + tj; // ti,tj index for D_titj_tensor
+//        std::cout << "Successfully evaluated titj" << std::endl;
+      
+
+//        // D_titj array
+//        T D_titj_array;
+
+//        // D_titj local tensor
+//        Tile D_titj_tensor;
+
+//    std::cout << "Successfully declared D_titj_array, D_titj_tensor" << std::endl;
+
+
+
+
+//        // Lower and upper bounds for block expressions
+//        block low_bound{0, 0, i_low, j_low};
+//        block up_bound{ntiles_a, ntiles_b, i_up, j_up};
+
+//        auto T_caij_block = T_("c,a,i,j").block(low_bound, up_bound);
+//        auto T_caji_block = T_("c,a,j,i").block(low_bound, up_bound);
+//        auto T_cbij_block = T_("c,b,i,j").block(low_bound, up_bound);
+//        auto T_acij_block = T_("a,c,i,j").block(low_bound, up_bound);
+//        auto T_acji_block = T_("a,c,j,i").block(low_bound, up_bound);
+//        auto T_bcij_block = T_("b,c,i,j").block(low_bound, up_bound);
+
+//        D_titj_array("a,b") =
+//                                  ((4 * T_caij_block - 2 * T_caji_block) * T_cbij_block) +
+//                                  ((4 * T_acij_block - 2 * T_acji_block) * T_bcij_block);
+
+
+//        // D_titj_array("a,b,i,j") = T_caij_block;
+
+
+//        //Block expression to form D from T
+//        //** note ** divide by 1 + delta_ij later when D_ij matrix has been formed
+//        // D_titj_array("a,b,i,j") =
+//        //   (4 * T_("c,a,i,j").block(low_bound, up_bound) -
+//        //    2 * T_("c,a,j,i").block(low_bound, up_bound)) *
+//        //     T_("c,b,i,j").block(low_bound, up_bound) +
+//        //   (4 * T_("a,c,i,j").block(low_bound, up_bound) -
+//        //    2 * T_("a,c,j,i").block(low_bound, up_bound)) *
+//        //     T_("b,c,i,j").block(low_bound, up_bound);
+
+//      std::cout << "For ti = " << ti << ", tj = " << tj
+//      << " block expression successful." << std::endl;
+
+ 
+
+
+
+//        // // Divide D_titj_array by 1 + delta(ti,tj)
+//        // if (ti == tj) {
+//        //   D_titj_array = D_titj_array / (2.0);
+//        // }
+
+//        // Pack contents of D_titj_array into local tensor
+
+//        // Loop over ta, tb
+//        for (std::size_t ta = 0; ta != ntiles_a; ++ta) {
+
+//          for (std::size_t tb = 0; tb != ntiles_b; ++tb) {
+
+//            // Pull particular tile corresponding to ta, tb, ti, tj
+//            Tile D_ab = D_titj_array.find({ta, tb, ti, tj});
+
+//            // Element info along all four dims of D_ab
+//            auto a0 = D_ab.range().lobound()[0];
+//            auto an = D_ab.range().upbound()[0];
+//            auto a_ext = an - a0;
+
+//            auto b0 = D_ab.range().lobound()[1];
+//            auto bn = D_ab.range().upbound()[1];
+//            auto b_ext = bn - b0;
+
+//            auto i0 = D_ab.range().lobound()[2];
+//            auto in = D_ab.range().upbound()[2];
+//            auto i_ext = in - i0;
+
+//            auto j0 = D_ab.range().lobound()[3];
+//            auto jn = D_ab.range().upbound()[3];
+//            auto j_ext = jn - j0;
+
+//            auto da = b_ext * i_ext * j_ext;
+//            auto db = i_ext * j_ext;
+//            auto di = j_ext;
+
+//            // Element off-set in going from D_ab to D_titj tensor
+//            auto a_off = ta * a_ext;
+//            auto b_off = tb * b_ext;
+//            auto i_off = ti * i_ext;
+//            auto j_off = tj * j_ext;
+
+
+//            // Loop over elements of D_ab
+//            // a_shift is shifted a, etc.
+//            for (auto a = a0; a != an; ++a) {
+//              auto a_shift = a + a_off;
+
+//              for (auto b = b0; b != bn; ++b) {
+//                auto b_shift = b + b_off;
+
+//                for (auto i = i0; i != in; ++i) {
+//                  auto i_shift = i + i_off;
+
+//                  for (auto j = j0; j != jn; ++j) {
+//                    auto j_shift = j + j_off;
+
+//                    auto D_ab_idx = a * da + b * db + i * di + j;
+//                    auto D_titj_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
+
+//                    D_titj_tensor[D_titj_idx] = D_ab[D_ab_idx];
+
+//                  } // j
+//                } // i
+//              } // b
+//            } // a
+//          } // tb
+//        } // ta
+
+//        // Store D_titj_tensor in D_titj_tensor_list
+//        D_titj_tensor_list[titj] = D_titj_tensor;
+
+//      } // tj
+//    } // ti
+
+//    std::cout << "Successfully formed D_ij" << std::endl;
+
+
+
+//    /// Step (4): For each {ti, tj} pair, for each {i,j} pair
+//    // convert slice of D_ij to matrix, diagonalize, truncate PNOs,
+//    // store matrix of PNOs, etc.
+
+//    // Vector hold D_ij matrices for particular {i,j}
+//    std::vector<Eigen::MatrixXd> D_ij_mat_list(nocc_act * nocc_act);
+
+//    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
+//      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
         
-        auto titj = ti * ntiles_j + tj;
-        Tile D_ij = D_titj_tensor_list[titj];
+//        auto titj = ti * ntiles_j + tj;
+//        Tile D_ij = D_titj_tensor_list[titj];
 
-        // Get number of a, b, i, j in D_ij
+//        // Get number of a, b, i, j in D_ij
 
-        auto a0 = D_ij.range().lobound()[0];
-        auto an = D_ij.range().upbound()[0];
-        const std::size_t a_ext = an - a0;
+//        auto a0 = D_ij.range().lobound()[0];
+//        auto an = D_ij.range().upbound()[0];
+//        const std::size_t a_ext = an - a0;
 
-        auto b0 = D_ij.range().lobound()[1];
-        auto bn = D_ij.range().upbound()[1];
-        const std::size_t b_ext = bn - b0;
+//        auto b0 = D_ij.range().lobound()[1];
+//        auto bn = D_ij.range().upbound()[1];
+//        const std::size_t b_ext = bn - b0;
 
-        auto i0 = D_ij.range().lobound()[2];
-        auto in = D_ij.range().upbound()[2];
-        auto i_ext = in - i0;
+//        auto i0 = D_ij.range().lobound()[2];
+//        auto in = D_ij.range().upbound()[2];
+//        auto i_ext = in - i0;
 
-        auto j0 = D_ij.range().lobound()[3];
-        auto jn = D_ij.range().upbound()[3];
-        auto j_ext = jn - j0;
+//        auto j0 = D_ij.range().lobound()[3];
+//        auto jn = D_ij.range().upbound()[3];
+//        auto j_ext = jn - j0;
 
-        // Offset for index of D_ij
-        auto i_off = ti * i_ext;
-        auto j_off = tj * j_ext;
+//        // Offset for index of D_ij
+//        auto i_off = ti * i_ext;
+//        auto j_off = tj * j_ext;
 
-        // Block indices for converting to matrix
-        auto a_low = a0;
-        auto a_hi = an;
+//        // Block indices for converting to matrix
+//        auto a_low = a0;
+//        auto a_hi = an;
 
-        auto b_low = b0;
-        auto b_hi = bn;
+//        auto b_low = b0;
+//        auto b_hi = bn;
 
-        // Loop over individual i,j elements in D_titj tensor
+//        // Loop over individual i,j elements in D_titj tensor
 
-        for (auto i = i0; i != in; ++i) {
-          auto i_low = i;
-          auto i_hi = i + 1;
-          auto i_shift = i + i_off;
+//        for (auto i = i0; i != in; ++i) {
+//          auto i_low = i;
+//          auto i_hi = i + 1;
+//          auto i_shift = i + i_off;
 
-          for (auto j = j0; j != jn; ++j) {
-            auto j_low = j;
-            auto j_hi = j + 1;
-            auto j_shift = j + j_off;
+//          for (auto j = j0; j != jn; ++j) {
+//            auto j_low = j;
+//            auto j_hi = j + 1;
+//            auto j_shift = j + j_off;
 
-            auto ij = i_shift * nocc_act + j_shift;
-            int delta_ij = (i == j) ? 1 : 0;
+//            auto ij = i_shift * nocc_act + j_shift;
+//            int delta_ij = (i == j) ? 1 : 0;
 
-            block low{a_low, b_low, i_low, j_low};
-            block high{a_hi, b_hi, i_hi, j_hi};
+//            block low{a_low, b_low, i_low, j_low};
+//            block high{a_hi, b_hi, i_hi, j_hi};
 
-            Tile D_ij_data = D_ij.block(low, high);
+//            Tile D_ij_data = D_ij.block(low, high);
 
-            Eigen::MatrixXd D_ij_mat = TA::eigen_map(D_ij_data, a_ext, b_ext);
-            D_ij_mat = D_ij_mat / (1 + delta_ij);
+//            Eigen::MatrixXd D_ij_mat = TA::eigen_map(D_ij_data, a_ext, b_ext);
+//            D_ij_mat = D_ij_mat / (1 + delta_ij);
 
-            D_ij_mat_list[ij] = D_ij_mat;
+//            D_ij_mat_list[ij] = D_ij_mat;
 
-          }
-        }
-      }
-    }
+//          }
+//        }
+//      }
+//    }
 
 
-    // Loop over i,j indices and diagonalize D_ij
-    for (auto i = 0; i != nocc_act; ++i) {
-      for (auto j = 0; j != nocc_act; ++j) {
-        auto ij = i * nocc_act + j;
-        Eigen::MatrixXd D_ij = D_ij_mat_list[ij];
+//    // Loop over i,j indices and diagonalize D_ij
+//    for (auto i = 0; i != nocc_act; ++i) {
+//      for (auto j = 0; j != nocc_act; ++j) {
+//        auto ij = i * nocc_act + j;
+//        Eigen::MatrixXd D_ij = D_ij_mat_list[ij];
 
-        // Diagonalize D_ij
-        es.compute(D_ij);
-        Eigen::MatrixXd pno_ij = es.eigenvectors();
-        auto occ_ij = es.eigenvalues();
+//        // Diagonalize D_ij
+//        es.compute(D_ij);
+//        Eigen::MatrixXd pno_ij = es.eigenvectors();
+//        auto occ_ij = es.eigenvalues();
 
-        // truncate PNOs
-        size_t pnodrop = 0;
-        if (tpno_ != 0.0) {
-          for (size_t k = 0; k != occ_ij.rows(); ++k) {
-            if (!(occ_ij(k) >= tpno_))
-              ++pnodrop;
-            else
-              break;
-          }
-        }
-        const auto npno = nuocc - pnodrop;
+//        // truncate PNOs
+//        size_t pnodrop = 0;
+//        if (tpno_ != 0.0) {
+//          for (size_t k = 0; k != occ_ij.rows(); ++k) {
+//            if (!(occ_ij(k) >= tpno_))
+//              ++pnodrop;
+//            else
+//              break;
+//          }
+//        }
+//        const auto npno = nuocc - pnodrop;
 
-        // Store truncated PNOs
-        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-        pnos_[ij] = pno_trunc; 
+//        // Store truncated PNOs
+//        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+//        pnos_[ij] = pno_trunc;
 
-        // Transform F to PNO space
-        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+//        // Transform F to PNO space
+//        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-        // Store just the diagonal elements of F_pno_ij
-        F_pno_diag_[ij] = F_pno_ij.diagonal();
+//        // Store just the diagonal elements of F_pno_ij
+//        F_pno_diag_[ij] = F_pno_ij.diagonal();
 
-        /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
+//        /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-        if (pno_canonical_ == "true" && npno > 0) {
-          // Compute eigenvectors of F in PNO space
-          es.compute(F_pno_ij);
-          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+//        if (pno_canonical_ == "true" && npno > 0) {
+//          // Compute eigenvectors of F in PNO space
+//          es.compute(F_pno_ij);
+//          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+//          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+//          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
-          // Replace standard with canonical PNOs
-          pnos_[ij] = can_pno_ij;
-          F_pno_diag_[ij] = es.eigenvalues();
-        }
+//          // Replace standard with canonical PNOs
+//          pnos_[ij] = can_pno_ij;
+//          F_pno_diag_[ij] = es.eigenvalues();
+//        }
 
-        // truncate OSVs
+//        // truncate OSVs
 
-        // auto osvdrop = 0;
-        if (i == j) {
-          size_t osvdrop = 0;
-          if (tosv_ != 0.0) {
-            for (size_t k = 0; k != occ_ij.rows(); ++k) {
-              if (!(occ_ij(k) >= tosv_))
-                ++osvdrop;
-              else
-                break;
-            }
-          }
-          const auto nosv = nuocc - osvdrop;
-          if (nosv == 0) {  // all OSV truncated indicates total nonsense
-            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-                                        __LINE__, 1, 0);
-          }
+//        // auto osvdrop = 0;
+//        if (i == j) {
+//          size_t osvdrop = 0;
+//          if (tosv_ != 0.0) {
+//            for (size_t k = 0; k != occ_ij.rows(); ++k) {
+//              if (!(occ_ij(k) >= tosv_))
+//                ++osvdrop;
+//              else
+//                break;
+//            }
+//          }
+//          const auto nosv = nuocc - osvdrop;
+//          if (nosv == 0) {  // all OSV truncated indicates total nonsense
+//            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+//                                        __LINE__, 1, 0);
+//          }
 
-          // Store truncated OSVs
-          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-          osvs_[i] = osv_trunc;
+//          // Store truncated OSVs
+//          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+//          osvs_[i] = osv_trunc;
 
-          // Transform F to OSV space
-          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+//          // Transform F to OSV space
+//          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
 
-          // Store just the diagonal elements of F_osv_i
-          F_osv_diag_[i] = F_osv_i.diagonal();
+//          // Store just the diagonal elements of F_osv_i
+//          F_osv_diag_[i] = F_osv_i.diagonal();
 
-          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-          if (pno_canonical_ == "true") {
-            // Compute eigenvectors of F in OSV space
-            es.compute(F_osv_i);
-            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+//          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+//          if (pno_canonical_ == "true") {
+//            // Compute eigenvectors of F in OSV space
+//            es.compute(F_osv_i);
+//            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+//            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+//            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
 
-            // Replace standard with canonical OSVs
-            osvs_[i] = can_osv_i;
-            F_osv_diag_[i] = es.eigenvalues();
-          }
-        } // if (i == j)
-      } // j
-    } // i
+//            // Replace standard with canonical OSVs
+//            osvs_[i] = can_osv_i;
+//            F_osv_diag_[i] = es.eigenvalues();
+//          }
+//        } // if (i == j)
+//      } // j
+//    } // i
 
-    auto sum_osv = 0;
-    for (int i = 0; i < nocc_act; ++i) {
-      sum_osv += osvs_[i].cols();
-    }
-    auto ave_nosv = sum_osv / nocc_act;
-    ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
+//    auto sum_osv = 0;
+//    for (int i = 0; i < nocc_act; ++i) {
+//      sum_osv += osvs_[i].cols();
+//    }
+//    auto ave_nosv = sum_osv / nocc_act;
+//    ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
-    auto sum_pno = 0;
-    for (int i = 0; i < nocc_act; ++i) {
-      for (int j = 0; j < nocc_act; ++j) {
-        sum_pno += pnos_[i * nocc_act + j].cols();
-      }
-    }
-    auto ave_npno = sum_pno / (nocc_act * nocc_act);
-    ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
-  }
+//    auto sum_pno = 0;
+//    for (int i = 0; i < nocc_act; ++i) {
+//      for (int j = 0; j < nocc_act; ++j) {
+//        sum_pno += pnos_[i * nocc_act + j].cols();
+//      }
+//    }
+//    auto ave_npno = sum_pno / (nocc_act * nocc_act);
+//    ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+//  }
 
 
 
@@ -629,218 +720,218 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
 
-// /// !!! Original PNO formation code !!! ///
-// // Do not delete! //
+ /// !!! Original PNO formation code !!! ///
+ // Do not delete! //
 
 
-//     // zero out amplitudes
-//     if (!T_.is_initialized()) {
-//       T_ = Array(world, K.trange(), K.shape());
-//       T_.fill(0.0);
-//     }
+     // zero out amplitudes
+     if (!T_.is_initialized()) {
+       T_ = Array(world, K.trange(), K.shape());
+       T_.fill(0.0);
+     }
 
-//     // For storing PNOs and and the Fock matrix in the PNO basis
-//     pnos_.resize(nocc_act * nocc_act);
-//     F_pno_diag_.resize(nocc_act * nocc_act);
+     // For storing PNOs and and the Fock matrix in the PNO basis
+     pnos_.resize(nocc_act * nocc_act);
+     F_pno_diag_.resize(nocc_act * nocc_act);
 
-//     // For storing OSVs (PNOs when i = j) and the Fock matrix in
-//     // the OSV basis
-//     osvs_.resize(nocc_act);
-//     F_osv_diag_.resize(nocc_act);
+     // For storing OSVs (PNOs when i = j) and the Fock matrix in
+     // the OSV basis
+     osvs_.resize(nocc_act);
+     F_osv_diag_.resize(nocc_act);
 
-// #if PRODUCE_PNO_MOLDEN_FILES
-//     // prepare to Molden
-//     const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
-//     const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
-//     const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
-//     const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
+ #if PRODUCE_PNO_MOLDEN_FILES
+     // prepare to Molden
+     const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
+     const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
+     const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
+     const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
 
-//     // write out active occupied orbitals
-//     auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
-//     libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig, occs);
-//     xport.write("occ.molden");
-// #endif
+     // write out active occupied orbitals
+     auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
+     libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig, occs);
+     xport.write("occ.molden");
+ #endif
 
   
 
     
 
 
-//     // Loop over each pair of occupieds to form PNOs
-//     for (int i = 0; i < nocc_act; ++i) {
-//       double eps_i = eps_o[i];
+     // Loop over each pair of occupieds to form PNOs
+     for (int i = 0; i < nocc_act; ++i) {
+       double eps_i = eps_o[i];
 
-//       for (int j = 0; j < nocc_act; ++j) {
-//         double eps_j = eps_o[j];
-//         int delta_ij = (i == j) ? 1 : 0;
-//         std::array<int, 4> tile_ij = {{0, 0, i, j}};
-//         std::array<int, 4> tile_ji = {{0, 0, j, i}};
-//         const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
-//         const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
-//         TA::TensorD K_ij = K.find(ord_ij);
-//         TA::TensorD K_ji = K.find(ord_ji);
-//         auto ext_ij = K_ij.range().extent_data();
-//         auto ext_ji = K_ji.range().extent_data();
-//         Eigen::MatrixXd K_ij_mat =
-//             TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
-//         Eigen::MatrixXd K_ji_mat =
-//             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
+       for (int j = 0; j < nocc_act; ++j) {
+         double eps_j = eps_o[j];
+         int delta_ij = (i == j) ? 1 : 0;
+         std::array<int, 4> tile_ij = {{0, 0, i, j}};
+         std::array<int, 4> tile_ji = {{0, 0, j, i}};
+         const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
+         const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
+         TA::TensorD K_ij = K.find(ord_ij);
+         TA::TensorD K_ji = K.find(ord_ji);
+         auto ext_ij = K_ij.range().extent_data();
+         auto ext_ji = K_ji.range().extent_data();
+         Eigen::MatrixXd K_ij_mat =
+             TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
+         Eigen::MatrixXd K_ji_mat =
+             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
-//         Eigen::MatrixXd T_ij(nuocc, nuocc);
-//         Eigen::MatrixXd T_ji(nuocc, nuocc);
-//         Eigen::MatrixXd T_tilde_ij(nuocc, nuocc);
+         Eigen::MatrixXd T_ij(nuocc, nuocc);
+         Eigen::MatrixXd T_ji(nuocc, nuocc);
+         Eigen::MatrixXd T_tilde_ij(nuocc, nuocc);
 
-//         for (int a = 0; a < nuocc; ++a) {
-//           double eps_a = eps_v[a];
-//           for (int b = 0; b < nuocc; ++b) {
-//             double eps_b = eps_v[b];
+         for (int a = 0; a < nuocc; ++a) {
+           double eps_a = eps_v[a];
+           for (int b = 0; b < nuocc; ++b) {
+             double eps_b = eps_v[b];
 
-//             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
-//             T_ji(a, b) = -K_ji_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
-//           }
-//         }
+             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
+             T_ji(a, b) = -K_ji_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
+           }
+         }
 
-//         // Eq. 23, JCP 128 034106 (2013)
-//         T_tilde_ij = 4 * T_ij - 2 * T_ji;
-//         Eigen::MatrixXd D_ij =
-//             (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
-//             (1.0 + delta_ij);
+         // Eq. 23, JCP 128 034106 (2013)
+         T_tilde_ij = 4 * T_ij - 2 * T_ji;
+         Eigen::MatrixXd D_ij =
+             (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
+             (1.0 + delta_ij);
 
-//         // Diagonalize D_ij to get PNOs and corresponding occupation numbers.
-//         es.compute(D_ij);
-//         Eigen::MatrixXd pno_ij = es.eigenvectors();
-//         auto occ_ij = es.eigenvalues();
+         // Diagonalize D_ij to get PNOs and corresponding occupation numbers.
+         es.compute(D_ij);
+         Eigen::MatrixXd pno_ij = es.eigenvectors();
+         auto occ_ij = es.eigenvalues();
 
-//         // truncate PNOs
-//         size_t pnodrop = 0;
-//         if (tpno_ != 0.0) {
-//           for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//             if (!(occ_ij(k) >= tpno_))
-//               ++pnodrop;
-//             else
-//               break;
-//           }
-//         }
-//         const auto npno = nuocc - pnodrop;
+         // truncate PNOs
+         size_t pnodrop = 0;
+         if (tpno_ != 0.0) {
+           for (size_t k = 0; k != occ_ij.rows(); ++k) {
+             if (!(occ_ij(k) >= tpno_))
+               ++pnodrop;
+             else
+               break;
+           }
+         }
+         const auto npno = nuocc - pnodrop;
 
-//         // Store truncated PNOs
-//         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
-//         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-//         // pnos_[ij] = pno_trunc;
-//         pnos_[i * nocc_act + j] = pno_trunc;
+         // Store truncated PNOs
+         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
+         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+         // pnos_[ij] = pno_trunc;
+         pnos_[i * nocc_act + j] = pno_trunc;
 
-// #if PRODUCE_PNO_MOLDEN_FILES
-//         // write PNOs to Molden
-//         {
-//           Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
-//           molden_coefs.col(0) = C_i_eig.col(i);
-//           molden_coefs.col(1) = C_i_eig.col(j);
-//           molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) = C_a_eig * pno_trunc;
+ #if PRODUCE_PNO_MOLDEN_FILES
+         // write PNOs to Molden
+         {
+           Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
+           molden_coefs.col(0) = C_i_eig.col(i);
+           molden_coefs.col(1) = C_i_eig.col(j);
+           molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) = C_a_eig * pno_trunc;
 
-//           Eigen::VectorXd occs(2 + pno_trunc.cols());
-//           occs.setZero();
-//           occs[0] = 2.0;
-//           occs[1] = 2.0;
+           Eigen::VectorXd occs(2 + pno_trunc.cols());
+           occs.setZero();
+           occs[0] = 2.0;
+           occs[1] = 2.0;
 
-//           Eigen::VectorXd evals(2 + pno_trunc.cols());
-//           evals(0) = 0.0;
-//           evals(1) = 0.0;
-//           evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
+           Eigen::VectorXd evals(2 + pno_trunc.cols());
+           evals(0) = 0.0;
+           evals(1) = 0.0;
+           evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
 
-//           libint2::molden::Export xport(libint2_atoms, libint2_shells,
-//                                         molden_coefs, occs, evals);
-//           xport.write(std::string("pno_") + std::to_string(i) + "_" +
-//                       std::to_string(j) + ".molden");
-//         }
-// #endif
+           libint2::molden::Export xport(libint2_atoms, libint2_shells,
+                                         molden_coefs, occs, evals);
+           xport.write(std::string("pno_") + std::to_string(i) + "_" +
+                       std::to_string(j) + ".molden");
+         }
+ #endif
 
-//         // Transform F to PNO space
-//         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+         // Transform F to PNO space
+         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-//         // Store just the diagonal elements of F_pno_ij
-//         // F_pno_diag_[ij] = F_pno_ij.diagonal();
-//         F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
+         // Store just the diagonal elements of F_pno_ij
+         // F_pno_diag_[ij] = F_pno_ij.diagonal();
+         F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
 
-//         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
+         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-//         if (pno_canonical_ == "true" && npno > 0) {
-//           // Compute eigenvectors of F in PNO space
-//           es.compute(F_pno_ij);
-//           Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+         if (pno_canonical_ == "true" && npno > 0) {
+           // Compute eigenvectors of F in PNO space
+           es.compute(F_pno_ij);
+           Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-//           // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-//           Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+           // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+           Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
-//           // Replace standard with canonical PNOs
-//           // pnos_[ij] = can_pno_ij;
-//           // F_pno_diag_[ij] = es.eigenvalues();
-//           pnos_[i * nocc_act + j] = can_pno_ij;
-//           F_pno_diag_[i * nocc_act + j] = es.eigenvalues();
-//         }
+           // Replace standard with canonical PNOs
+           // pnos_[ij] = can_pno_ij;
+           // F_pno_diag_[ij] = es.eigenvalues();
+           pnos_[i * nocc_act + j] = can_pno_ij;
+           F_pno_diag_[i * nocc_act + j] = es.eigenvalues();
+         }
 
-//         // truncate OSVs
+         // truncate OSVs
 
-//         // auto nosv = 0;
+         // auto nosv = 0;
 
-//         // auto osvdrop = 0;
-//         if (i == j) {
-//           size_t osvdrop = 0;
-//           if (tosv_ != 0.0) {
-//             for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//               if (!(occ_ij(k) >= tosv_))
-//                 ++osvdrop;
-//               else
-//                 break;
-//             }
-//           }
-//           const auto nosv = nuocc - osvdrop;
-//           if (nosv == 0) {  // all OSV truncated indicates total nonsense
-//             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-//                                         __LINE__, 1, 0);
-//           }
+         // auto osvdrop = 0;
+         if (i == j) {
+           size_t osvdrop = 0;
+           if (tosv_ != 0.0) {
+             for (size_t k = 0; k != occ_ij.rows(); ++k) {
+               if (!(occ_ij(k) >= tosv_))
+                 ++osvdrop;
+               else
+                 break;
+             }
+           }
+           const auto nosv = nuocc - osvdrop;
+           if (nosv == 0) {  // all OSV truncated indicates total nonsense
+             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+                                         __LINE__, 1, 0);
+           }
 
-//           // Store truncated OSVs
-//           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-//           osvs_[i] = osv_trunc;
+           // Store truncated OSVs
+           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+           osvs_[i] = osv_trunc;
 
-//           // Transform F to OSV space
-//           Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+           // Transform F to OSV space
+           Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
 
-//           // Store just the diagonal elements of F_osv_i
-//           F_osv_diag_[i] = F_osv_i.diagonal();
+           // Store just the diagonal elements of F_osv_i
+           F_osv_diag_[i] = F_osv_i.diagonal();
 
-//           /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-//           if (pno_canonical_ == "true") {
-//             // Compute eigenvectors of F in OSV space
-//             es.compute(F_osv_i);
-//             Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+           /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+           if (pno_canonical_ == "true") {
+             // Compute eigenvectors of F in OSV space
+             es.compute(F_osv_i);
+             Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-//             // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-//             Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+             // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+             Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
 
-//             // Replace standard with canonical OSVs
-//             osvs_[i] = can_osv_i;
-//             F_osv_diag_[i] = es.eigenvalues();
-//           }
-//         }
-//       }
-//     }
-//     auto sum_osv = 0;
-//     for (int i = 0; i < nocc_act; ++i) {
-//       sum_osv += osvs_[i].cols();
-//     }
-//     auto ave_nosv = sum_osv / nocc_act;
-//     ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
+             // Replace standard with canonical OSVs
+             osvs_[i] = can_osv_i;
+             F_osv_diag_[i] = es.eigenvalues();
+           }
+         }
+       }
+     }
+     auto sum_osv = 0;
+     for (int i = 0; i < nocc_act; ++i) {
+       sum_osv += osvs_[i].cols();
+     }
+     auto ave_nosv = sum_osv / nocc_act;
+     ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
-//     auto sum_pno = 0;
-//     for (int i = 0; i < nocc_act; ++i) {
-//       for (int j = 0; j < nocc_act; ++j) {
-//         sum_pno += pnos_[i * nocc_act + j].cols();
-//       }
-//     }
-//     auto ave_npno = sum_pno / (nocc_act * nocc_act);
-//     ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
-//   }
+     auto sum_pno = 0;
+     for (int i = 0; i < nocc_act; ++i) {
+       for (int j = 0; j < nocc_act; ++j) {
+         sum_pno += pnos_[i * nocc_act + j].cols();
+       }
+     }
+     auto ave_npno = sum_pno / (nocc_act * nocc_act);
+     ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+   }
 
 
 

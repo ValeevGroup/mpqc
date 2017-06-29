@@ -376,16 +376,75 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T T_reblock;
 
     T_reblock("an,bn,in,jn") = T_("a,b,i,j") * j_trans_array("j,jn")
-                                     * i_trans_array("i,in")
-                                     * b_trans_array("b,bn")
-                                     * a_trans_array("a,an");
+                                             * i_trans_array("i,in")
+                                             * b_trans_array("b,bn")
+                                             * a_trans_array("a,an");
 
 
 
-    std::cout << "first reblocking step worked" << std::endl;
+    std::cout << "reblocking step worked" << std::endl;
 
-    // Need to get number of tiles and number of elements
+    // Get number of tiles and number of elements
     // along each dim of T_reblock
+
+    typedef std::vector<std::size_t> block;
+
+    auto TRtrange = T_reblock.trange();
+
+    const auto TRtiles_a = TRtrange.dim(0).tile_extent();
+    const auto TRtiles_b = TRtrange.dim(1).tile_extent();
+    const auto TRtiles_i = TRtrange.dim(2).tile_extent();
+    const auto TRtiles_j = TRtrange.dim(3).tile_extent();
+
+    // For each ti, tj pair, compute D_titj and transform to matrix
+    for (std::size_t ti = 0; ti != TRtiles_i; ++ti) {
+        std::size_t i_low = ti;
+        std::size_t i_up = ti + 1;
+
+        for (std::size_t tj = 0; tj != TRtiles_j; ++tj) {
+            std::size_t j_low = tj;
+            std::size_t j_up = tj + 1;
+
+            std::size_t a_low = 0;
+            std::size_t a_up = TRtiles_a;
+
+            std::size_t b_low = 0;
+            std::size_t b_up = TRtiles_b;
+
+            int delta_ij = (ti == tj) ? 1 : 0;
+
+            // Lower and upper bounds for block expressions
+            block low_bound{a_low, b_low, i_low, j_low};
+            block up_bound{a_up, b_up, i_up, j_up};
+
+            auto T_caij_block = T_reblock("c,a,i,j").block(low_bound, up_bound);
+            auto T_caji_block = T_reblock("c,a,j,i").block(low_bound, up_bound);
+            auto T_cbij_block = T_reblock("c,b,i,j").block(low_bound, up_bound);
+            auto T_acij_block = T_reblock("a,c,i,j").block(low_bound, up_bound);
+            auto T_acji_block = T_reblock("a,c,j,i").block(low_bound, up_bound);
+            auto T_bcij_block = T_reblock("b,c,i,j").block(low_bound, up_bound);
+
+            // Declare D_ij array
+            T D_ij;
+
+            // Compute D_ij using block expressions (without division by
+            // (1 + delta_ij) )
+            D_ij("a,b") = ((4 * T_caij_block - 2 * T_caji_block) * T_cbij_block) +
+                          ((4 * T_acij_block - 2 * T_acji_block) * T_bcij_block);
+
+//            std::cout << "created D_ij" << std::endl;
+//            std::cout << D_ij << std::endl;
+
+            // Transform D_ij from array to matrix
+            // and divide by (1 + delta_ij)
+            Eigen::MatrixXd D_ij_mat = array_to_eigen(D_ij);
+            D_ij_mat = D_ij_mat / (1.0 + delta_ij);
+
+            std::cout << "created  D_ij_mat" << std::endl;
+            std::cout << "D_ij_mat:\n" << D_ij_mat << std::endl;
+
+        }
+    }
 
 
 

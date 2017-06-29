@@ -252,6 +252,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       T_.fill(0.0);
     }
 
+    // For storing D_ij matrices
+    D_ij_.resize(nocc_act * nocc_act);
+
     // For storing PNOs and and the Fock matrix in the PNO basis
     pnos_.resize(nocc_act * nocc_act);
     F_pno_diag_.resize(nocc_act * nocc_act);
@@ -396,7 +399,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     const auto TRtiles_i = TRtrange.dim(2).tile_extent();
     const auto TRtiles_j = TRtrange.dim(3).tile_extent();
 
-    // For each ti, tj pair, compute D_titj and transform to matrix
+    // For each ti, tj pair, compute D_ij and transform to matrix
+    // Store D_ij in D_ij_
     for (std::size_t ti = 0; ti != TRtiles_i; ++ti) {
         std::size_t i_low = ti;
         std::size_t i_up = ti + 1;
@@ -440,243 +444,68 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
             Eigen::MatrixXd D_ij_mat = array_to_eigen(D_ij);
             D_ij_mat = D_ij_mat / (1.0 + delta_ij);
 
+            D_ij_[ti * nocc_act + tj] = D_ij_mat;
+
             std::cout << "created  D_ij_mat" << std::endl;
             std::cout << "D_ij_mat:\n" << D_ij_mat << std::endl;
 
-        }
-    }
+        }   // tj
+    }   // ti
+
+    // For each D_ij matrix, diagonalize to form PNOs, truncate
+    // PNOs, and store matrix of PNOs in pnos_
+
+    for (auto i = 0; i != nocc_act; ++i) {
+        for (auto j = 0; j != nocc_act; ++j) {
+            auto ij = i * nocc_act + j;
+            Eigen::MatrixXd D_ij = D_ij_[ij];
+
+            // Diagonalize D_ij
+            es.compute(D_ij);
+            Eigen::MatrixXd pno_ij = es.eigenvectors();
+            auto occ_ij = es.eigenvalues();
+
+            // truncate PNOs
+            std::size_t pnodrop = 0;
+            if (tpno_ != 0.0) {
+              for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+                if (!(occ_ij(k) >= tpno_))
+                  ++pnodrop;
+                else
+                  break;
+              }
+            }
+            const auto npno = nuocc - pnodrop;
+
+            // Store truncated PNOs
+            Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+            pnos_[ij] = pno_trunc;
+
+            // Transform F to PNO space
+            Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+
+            // Store just the diagonal elements of F_pno_ij
+            F_pno_diag_[ij] = F_pno_ij.diagonal();
+
+            ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+
+            if (pno_canonical_ == "true" && npno > 0) {
+              // Compute eigenvectors of F in PNO space
+              es.compute(F_pno_ij);
+              Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+
+              // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+              Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+
+              // Replace standard with canonical PNOs
+              pnos_[ij] = can_pno_ij;
+              F_pno_diag_[ij] = es.eigenvalues();
+            }   // pno_canonical
+
+
+        }   // j
+    }   // i
 
-
-
-    /// Steps (2) and (3): For each ti, tj pair, compute D_titj
-    /// and transform to matrix
-    /// Store D_titj matrices in vector
-
-
-
-
-
-//    /// Steps (2) and (3): For each ti, tj pair, compute D_titj array and convert
-//    // D_titj to local tensor
-
-//    // Store local D_titj tensors in a vector with
-//    // each D_titj tensor indexed by {ti,tj}
-//    std::vector<Tile> D_titj_tensor_list(ntiles_i * ntiles_j);
-
-//    typedef std::vector<std::size_t> block;
-
-//    // Loop over ti, tj; get block indices
-//    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
-//      const std::size_t i_low = ti;
-//      const std::size_t i_up = ti + 1;
-
-//      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
-//        const std::size_t j_low = tj;
-//        const std::size_t j_up = tj + 1;
-
-//        // auto delta_titj = (ti == tj) ? 1.0 : 0;
-
-//        auto titj = ti * ntiles_j + tj; // ti,tj index for D_titj_tensor
-//        std::cout << "Successfully evaluated titj" << std::endl;
-      
-
-//        // D_titj array
-//        T D_titj_array;
-
-//        // D_titj local tensor
-//        Tile D_titj_tensor;
-
-//    std::cout << "Successfully declared D_titj_array, D_titj_tensor" << std::endl;
-
-
-
-
-//        // Lower and upper bounds for block expressions
-//        block low_bound{0, 0, i_low, j_low};
-//        block up_bound{ntiles_a, ntiles_b, i_up, j_up};
-
-//        auto T_caij_block = T_("c,a,i,j").block(low_bound, up_bound);
-//        auto T_caji_block = T_("c,a,j,i").block(low_bound, up_bound);
-//        auto T_cbij_block = T_("c,b,i,j").block(low_bound, up_bound);
-//        auto T_acij_block = T_("a,c,i,j").block(low_bound, up_bound);
-//        auto T_acji_block = T_("a,c,j,i").block(low_bound, up_bound);
-//        auto T_bcij_block = T_("b,c,i,j").block(low_bound, up_bound);
-
-//        D_titj_array("a,b") =
-//                                  ((4 * T_caij_block - 2 * T_caji_block) * T_cbij_block) +
-//                                  ((4 * T_acij_block - 2 * T_acji_block) * T_bcij_block);
-
-
-//        // D_titj_array("a,b,i,j") = T_caij_block;
-
-
-//        //Block expression to form D from T
-//        //** note ** divide by 1 + delta_ij later when D_ij matrix has been formed
-//        // D_titj_array("a,b,i,j") =
-//        //   (4 * T_("c,a,i,j").block(low_bound, up_bound) -
-//        //    2 * T_("c,a,j,i").block(low_bound, up_bound)) *
-//        //     T_("c,b,i,j").block(low_bound, up_bound) +
-//        //   (4 * T_("a,c,i,j").block(low_bound, up_bound) -
-//        //    2 * T_("a,c,j,i").block(low_bound, up_bound)) *
-//        //     T_("b,c,i,j").block(low_bound, up_bound);
-
-//      std::cout << "For ti = " << ti << ", tj = " << tj
-//      << " block expression successful." << std::endl;
-
- 
-
-
-
-//        // // Divide D_titj_array by 1 + delta(ti,tj)
-//        // if (ti == tj) {
-//        //   D_titj_array = D_titj_array / (2.0);
-//        // }
-
-//        // Pack contents of D_titj_array into local tensor
-
-//        // Loop over ta, tb
-//        for (std::size_t ta = 0; ta != ntiles_a; ++ta) {
-
-//          for (std::size_t tb = 0; tb != ntiles_b; ++tb) {
-
-//            // Pull particular tile corresponding to ta, tb, ti, tj
-//            Tile D_ab = D_titj_array.find({ta, tb, ti, tj});
-
-//            // Element info along all four dims of D_ab
-//            auto a0 = D_ab.range().lobound()[0];
-//            auto an = D_ab.range().upbound()[0];
-//            auto a_ext = an - a0;
-
-//            auto b0 = D_ab.range().lobound()[1];
-//            auto bn = D_ab.range().upbound()[1];
-//            auto b_ext = bn - b0;
-
-//            auto i0 = D_ab.range().lobound()[2];
-//            auto in = D_ab.range().upbound()[2];
-//            auto i_ext = in - i0;
-
-//            auto j0 = D_ab.range().lobound()[3];
-//            auto jn = D_ab.range().upbound()[3];
-//            auto j_ext = jn - j0;
-
-//            auto da = b_ext * i_ext * j_ext;
-//            auto db = i_ext * j_ext;
-//            auto di = j_ext;
-
-//            // Element off-set in going from D_ab to D_titj tensor
-//            auto a_off = ta * a_ext;
-//            auto b_off = tb * b_ext;
-//            auto i_off = ti * i_ext;
-//            auto j_off = tj * j_ext;
-
-
-//            // Loop over elements of D_ab
-//            // a_shift is shifted a, etc.
-//            for (auto a = a0; a != an; ++a) {
-//              auto a_shift = a + a_off;
-
-//              for (auto b = b0; b != bn; ++b) {
-//                auto b_shift = b + b_off;
-
-//                for (auto i = i0; i != in; ++i) {
-//                  auto i_shift = i + i_off;
-
-//                  for (auto j = j0; j != jn; ++j) {
-//                    auto j_shift = j + j_off;
-
-//                    auto D_ab_idx = a * da + b * db + i * di + j;
-//                    auto D_titj_idx = a_shift * da + b_shift * db + i_shift * di + j_shift;
-
-//                    D_titj_tensor[D_titj_idx] = D_ab[D_ab_idx];
-
-//                  } // j
-//                } // i
-//              } // b
-//            } // a
-//          } // tb
-//        } // ta
-
-//        // Store D_titj_tensor in D_titj_tensor_list
-//        D_titj_tensor_list[titj] = D_titj_tensor;
-
-//      } // tj
-//    } // ti
-
-//    std::cout << "Successfully formed D_ij" << std::endl;
-
-
-
-//    /// Step (4): For each {ti, tj} pair, for each {i,j} pair
-//    // convert slice of D_ij to matrix, diagonalize, truncate PNOs,
-//    // store matrix of PNOs, etc.
-
-//    // Vector hold D_ij matrices for particular {i,j}
-//    std::vector<Eigen::MatrixXd> D_ij_mat_list(nocc_act * nocc_act);
-
-//    for (std::size_t ti = 0; ti != ntiles_i; ++ti) {
-//      for (std::size_t tj = 0; tj != ntiles_j; ++tj) {
-        
-//        auto titj = ti * ntiles_j + tj;
-//        Tile D_ij = D_titj_tensor_list[titj];
-
-//        // Get number of a, b, i, j in D_ij
-
-//        auto a0 = D_ij.range().lobound()[0];
-//        auto an = D_ij.range().upbound()[0];
-//        const std::size_t a_ext = an - a0;
-
-//        auto b0 = D_ij.range().lobound()[1];
-//        auto bn = D_ij.range().upbound()[1];
-//        const std::size_t b_ext = bn - b0;
-
-//        auto i0 = D_ij.range().lobound()[2];
-//        auto in = D_ij.range().upbound()[2];
-//        auto i_ext = in - i0;
-
-//        auto j0 = D_ij.range().lobound()[3];
-//        auto jn = D_ij.range().upbound()[3];
-//        auto j_ext = jn - j0;
-
-//        // Offset for index of D_ij
-//        auto i_off = ti * i_ext;
-//        auto j_off = tj * j_ext;
-
-//        // Block indices for converting to matrix
-//        auto a_low = a0;
-//        auto a_hi = an;
-
-//        auto b_low = b0;
-//        auto b_hi = bn;
-
-//        // Loop over individual i,j elements in D_titj tensor
-
-//        for (auto i = i0; i != in; ++i) {
-//          auto i_low = i;
-//          auto i_hi = i + 1;
-//          auto i_shift = i + i_off;
-
-//          for (auto j = j0; j != jn; ++j) {
-//            auto j_low = j;
-//            auto j_hi = j + 1;
-//            auto j_shift = j + j_off;
-
-//            auto ij = i_shift * nocc_act + j_shift;
-//            int delta_ij = (i == j) ? 1 : 0;
-
-//            block low{a_low, b_low, i_low, j_low};
-//            block high{a_hi, b_hi, i_hi, j_hi};
-
-//            Tile D_ij_data = D_ij.block(low, high);
-
-//            Eigen::MatrixXd D_ij_mat = TA::eigen_map(D_ij_data, a_ext, b_ext);
-//            D_ij_mat = D_ij_mat / (1 + delta_ij);
-
-//            D_ij_mat_list[ij] = D_ij_mat;
-
-//          }
-//        }
-//      }
-//    }
 
 
 //    // Loop over i,j indices and diagonalize D_ij
@@ -1368,6 +1197,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   Array D_;                    //!< the array of MP2 density values 
 
   Eigen::MatrixXd F_occ_act_;
+
+  // For storing D_ij matrices
+  std::vector<Eigen::MatrixXd> D_ij_;
 
   // For storing PNOs and and the Fock matrix in the PNO basis
   std::vector<Eigen::MatrixXd> pnos_;

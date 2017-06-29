@@ -311,26 +311,7 @@ class PeriodicCADFKBuilder
       t1 = mpqc::fenced_now(world);
       t_Qbra += mpqc::duration_in_s(t0, t1);
 
-      // compute Q(Y, ν_R, ρ) = C(X, ν_R, σ(Rj+Rd)) * D(ρ, σ_Rd)
-      //
-      // note: no need to compute C(X, ν_R, σ(Rj+Rd)). Just find the right
-      // tiles from C(X, μ_0, ρ_Rj) due to translational symmetry
-      t0 = mpqc::fenced_now(world);
-//      array_type Q_ket;
-//      Q_ket = compute_Q_ket(C_bra_, D, RJ);
-      t1 = mpqc::fenced_now(world);
-      t_Qket += mpqc::duration_in_s(t0, t1);
-
-      // test
-      {
-//        if (RJ == (RJ_size_ - 1) / 2) {
-//          ExEnv::out0() << "Q_bra = \n" << Q_bra << std::endl;
-//        }
-//        ExEnv::out0() << "\nRJ = " << RJ << ", Q_bra = \n" << Q_bra << std::endl;
-
-      }
-
-      // compute E(Y, ρ, μ_0)
+      // compute direct-integral E(Y, ρ, μ_0)
       t0 = mpqc::fenced_now(world);
       DirectTArray E_ket;
       {
@@ -357,19 +338,11 @@ class PeriodicCADFKBuilder
       // compute F(Y, μ_0, ρ) = E(Y, μ_0, ρ) - C(X, μ_0, ρ) M(X, Y)
       t0 = mpqc::fenced_now(world);
       array_type F;
-//      array_type E_tmp;
-
       {
-//        auto normsp =
-//            force_normsp(Q_ket.shape().data(), E_ket.array().shape().data());
         auto F_norms =
             force_F_norms(Q_bra.shape().data(), E_ket.array().shape().data());
         auto trange = E_ket.array().trange();
         TA::SparseShape<float> forced_shape(world, F_norms, trange);
-
-        // test
-//        E_tmp("Y, mu, rho") = (E_ket("Y, mu, rho")).set_shape(forced_shape);
-//        E_tmp.truncate();
 
         auto t0 = mpqc::fenced_now(world);
         F("Y, rho, mu") = (E_ket("Y, rho, mu")).set_shape(forced_shape);
@@ -386,12 +359,7 @@ class PeriodicCADFKBuilder
 
       // compute K(μ_0, ν_R) += F(Y, μ_0, ρ) Q(Y, ν_R, ρ)
       t0 = mpqc::fenced_now(world);
-//      array_type FQ;
-//      FQ("mu, nu") = F("Y, mu, rho") * Q_ket("Y, nu, rho");
-//      array_type F_new;
-//      F_new("Y, rho, mu") = F("Y, mu, rho");
-      auto FQ = compute_contr_FQ(F, Q_bra, RJ);
-
+      auto FQ = compute_contr_FQ(F, Q_bra);
       if (!K.is_initialized()) {
         K("mu, nu") = FQ("mu, nu");
       } else {
@@ -406,34 +374,6 @@ class PeriodicCADFKBuilder
       K("mu, nu") += EQ("mu, nu");
       t1 = mpqc::fenced_now(world);
       t_Kpart2 += mpqc::duration_in_s(t0, t1);
-
-      // test translational symmetry of Q_bra and Q_ket
-      {
-        // compute K(μ_0, ν_R) += F(Y, ρ, μ_0) Q_ket(Y, ρ, ν_R)
-        // Q_ket is replace by Q_bra with translational symmetry
-//        array_type F_new;
-//        F_new("Y, rho, mu") = F("Y, mu, rho");
-//        t0 = mpqc::fenced_now(world);
-//        auto FQ_new = compute_contr_FQ(F_new, Q_bra, RJ);
-//        t1 = mpqc::fenced_now(world);
-//        t_FQ += mpqc::duration_in_s(t0, t1);
-
-//        array_type FQ_diff;
-//        FQ_diff("mu, nu") = FQ_new("mu, nu") - FQ("mu, nu");
-
-//        ExEnv::out0() << "\nRJ = " << RJ << ", FQ_old = \n" << FQ << std::endl;
-//        ExEnv::out0() << "\nRJ = " << RJ << ", FQ_new = \n" << FQ_new << std::endl;
-//        ExEnv::out0() << "\nRJ = " << RJ << ", FQ_diff = \n" << FQ_diff << std::endl;
-      }
-
-      // test if E_ket Q_ket  == E_bra Q_bra
-//      array_type EQ_tmp;
-//      EQ_tmp("mu, nu") = E_tmp("Y, mu, rho") * Q_ket("Y, nu, rho");
-//      array_type EQ_diff;
-//      EQ_diff("mu, nu") = EQ_tmp("mu, nu") - EQ("mu, nu");
-//      ExEnv::out0() << "RJ = " << RJ << ", E_bra Q_bra - E_ket Q_ket = \n" << EQ_diff << std::endl;
-//      dump_shape_d2(EQ_diff, "EQ_diff", RJ);
-
     }
     auto t1_k = mpqc::fenced_now(world);
     auto t_tot = mpqc::duration_in_s(t0_k, t1_k);
@@ -457,12 +397,10 @@ class PeriodicCADFKBuilder
       ExEnv::out0() << "\nCADF-K time decomposition:\n"
                     << "\tC(X, μ_0, ρ) block:       " << t_Cblock << " s\n"
                     << "\tQ_bra(X, μ_0, σ_Rd) :     " << t_Qbra << " s\n"
-                    << "\tQ_ket(Y, ν_R, ρ):         " << t_Qket << " s\n"
                     << "\tE_ket(Y, μ_0, ρ) direct:  " << t_Eket << " s\n"
-                    << "\tEval E_ket(Y, μ_0, ρ):    " << t_eval_Eket << " s\n"
                     << "\tF = E_ket - C M:          " << t_F << " s\n"
+                    << "\t  Eval E_ket(Y, μ_0, ρ):  " << t_eval_Eket << " s\n"
                     << "\tK_part1 = F Qket:         " << t_Kpart1 << " s\n"
-                    << "\tK_part1 = F Qket with translation symm: " << t_Kpart1 << " s\n"
                     << "\tK_part2 = E Qbra:         " << t_Kpart2 << " s\n"
                     << "\nTotal K builder time:     " << t_tot << " s"
                     << std::endl;
@@ -471,55 +409,9 @@ class PeriodicCADFKBuilder
     return K;
   }
 
-  auto force_normsp(TA::Tensor<float> const &in,
-                    TA::Tensor<float> const &F_norms) {
-    auto const &irange = in.range();
-    auto iext = irange.extent_data();
-
-    // Q("Y, nu, rho")
-    const auto Y_size = iext[0];
-    const auto nu_size = iext[1];
-    const auto rho_size = iext[2];
-
-    using SigPair = std::pair<int64_t, int64_t>;
-    std::unordered_set<SigPair, boost::hash<SigPair>> Y_rho;
-    Y_rho.reserve(Y_size * rho_size);
-
-    for (auto Y = 0ul; Y < Y_size; ++Y) {
-      for (auto rho = 0ul; rho < rho_size; ++rho) {
-        for (auto nu = 0ul; nu < nu_size; ++nu) {
-          const auto val = in(Y, nu, rho);
-          if (val > force_shape_threshold_) {
-            SigPair Y_rho_pair(Y, rho);
-            Y_rho.insert(Y_rho_pair);
-            break;
-          }
-        }
-      }
-    }
-
-    auto const &orange = F_norms.range();
-    TA::Tensor<float> out(orange, 0.0);
-
-    // F("X, nu, sigma")
-    auto oext = orange.extent_data();
-    assert(Y_size == oext[0]);
-    assert(rho_size == oext[2]);
-    const auto mu_size = oext[1];
-
-    for (auto mu = 0ul; mu < mu_size; ++mu) {
-      for (auto const &Y_rho_pair : Y_rho) {
-        const auto Y = Y_rho_pair.first;
-        const auto rho = Y_rho_pair.second;
-        out(Y, mu, rho) = std::numeric_limits<float>::max();
-      }
-    }
-
-    return out;
-  }
-
   TA::Tensor<float> force_F_norms(TA::Tensor<float> const &in,
-                                  TA::Tensor<float> const &out_norms) {
+                                  TA::Tensor<float> const &out_norms,
+                                  bool translate) {
     const auto ntiles_Y = Y_dfbs_->nclusters();
     const auto ntiles_rho = ntiles_per_uc_;
     const auto ntiles_nu = basisR_->nclusters();
@@ -531,29 +423,44 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
 
-    for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
-      const auto RY_ord = tile_Y / ntiles_per_uc_;
-      const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
-      const auto tile_Y_in_uc = tile_Y % ntiles_per_uc_;
-      for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
-        SigPair Y_rho_pair(tile_Y, tile_rho);
-        for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
-          const auto R_ord = tile_nu / ntiles_per_uc_;
-          const auto R_3D = direct_3D_idx(R_ord, R_max_);
+    if (translate) {
+      for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
+        const auto RY_ord = tile_Y / ntiles_per_uc_;
+        const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
+        const auto tile_Y_in_uc = tile_Y % ntiles_per_uc_;
+        for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
+          SigPair Y_rho_pair(tile_Y, tile_rho);
+          for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
+            const auto R_ord = tile_nu / ntiles_per_uc_;
+            const auto R_3D = direct_3D_idx(R_ord, R_max_);
 
-          const auto mR_3D = Vector3i(0, 0, 0) - R_3D;
-          const auto RYmR_3D = RY_3D - R_3D;
+            const auto mR_3D = Vector3i(0, 0, 0) - R_3D;
+            const auto RYmR_3D = RY_3D - R_3D;
 
-          if (is_in_lattice_range(mR_3D, RD_max_) && is_in_lattice_range(RYmR_3D, RJ_max_)) {
-            const auto RYmR_ord = direct_ord_idx(RYmR_3D, RJ_max_);
-            const auto mR_ord = direct_ord_idx(mR_3D, RD_max_);
+            if (is_in_lattice_range(mR_3D, RD_max_) && is_in_lattice_range(RYmR_3D, RJ_max_)) {
+              const auto RYmR_ord = direct_ord_idx(RYmR_3D, RJ_max_);
+              const auto mR_ord = direct_ord_idx(mR_3D, RD_max_);
 
-            const auto shifted_Y = tile_Y_in_uc + RYmR_ord * ntiles_per_uc_;
-            const auto shifted_rho = tile_rho + mR_ord * ntiles_per_uc_;
-            const auto shifted_nu = tile_nu % ntiles_per_uc_;
+              const auto shifted_Y = tile_Y_in_uc + RYmR_ord * ntiles_per_uc_;
+              const auto shifted_rho = tile_rho + mR_ord * ntiles_per_uc_;
+              const auto shifted_nu = tile_nu % ntiles_per_uc_;
 
-            const auto val = in(shifted_Y, shifted_rho, shifted_nu);
+              const auto val = in(shifted_Y, shifted_rho, shifted_nu);
+              if (val > force_shape_threshold_) {
+                Y_rho.insert(Y_rho_pair);
+                break;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
+        for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
+          for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
+            const auto val = in(tile_Y, tile_nu, tile_rho);
             if (val > force_shape_threshold_) {
+              SigPair Y_rho_pair(tile_Y, tile_rho);
               Y_rho.insert(Y_rho_pair);
               break;
             }
@@ -801,7 +708,6 @@ class PeriodicCADFKBuilder
     const auto ntiles_X = X_dfbs_->nclusters();
     const auto ntiles_sig = basisRD_->nclusters();
 
-//    ExEnv::out0() << "\nRJ = " << RJ << "\n";
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile_X = 0ul, task = 0ul; tile_X != ntiles_X; ++tile_X) {
 
@@ -816,62 +722,11 @@ class PeriodicCADFKBuilder
           }
 
           WorldObject_::task(
-              me, &PeriodicCADFKBuilder_::compute_contr_EQ_task_v3, vec_fut_tile,
+              me, &PeriodicCADFKBuilder_::compute_contr_EQ_task, vec_fut_tile,
               RJ, std::array<size_t, 2>{{tile_X, tile_sig}});
         }
       }
-
     }
-
-    // clang-format off
-//    for (auto tile_X = 0ul, task = 0ul; tile_X != ntiles_X; ++tile_X) {
-//      const auto RX_ord = tile_X / ntiles_per_uc_;
-//      const auto RX_3D = direct_3D_idx(RX_ord, RJ_max_);
-//      const auto tile_X_in_uc = tile_X % ntiles_per_uc_;
-
-//      for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
-//        for (auto tile_sig = 0ul; tile_sig != ntiles_sig; ++tile_sig) {
-//          const auto tile_sig_in_uc = tile_sig % ntiles_per_uc_;
-
-//          std::array<size_t, 3> idx_Q = {{tile_X, tile_mu, tile_sig}};
-//          if (Q.is_zero(idx_Q)) continue;
-
-//          auto Qtile = Q.find(idx_Q);
-
-//          const auto RD_ord = tile_sig / ntiles_per_uc_;
-//          const auto RD_3D = direct_3D_idx(RD_ord, RD_max_);
-
-//          for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu, ++task) {
-//            const auto R_ord = tile_nu / ntiles_per_uc_;
-//            const auto R_3D = direct_3D_idx(R_ord, R_max_);
-
-//            const auto RJpRDmR_3D = RJ_3D + RD_3D - R_3D;
-//            if (!is_in_lattice_range(RJpRDmR_3D, RJ_max_)) continue;
-
-//            auto RJpRDmR_ord = direct_ord_idx(RJpRDmR_3D, RJ_max_);
-//            if (std::find(RJ_list_.begin(), RJ_list_.end(), RJpRDmR_ord) ==
-//                RJ_list_.end())
-//              continue;
-
-//            const auto RXmR_3D = RX_3D - R_3D;
-//            const auto RXmR_ord = direct_ord_idx(RXmR_3D, RJ_max_ + R_max_);
-
-//            const auto eri3_tile_X = tile_X_in_uc + RXmR_ord * ntiles_per_uc_;
-//            const auto eri3_tile_nu = tile_nu % ntiles_per_uc_;
-//            const auto eri3_tile_sig = tile_sig_in_uc + RJpRDmR_ord * ntiles_per_uc_;
-
-//            if (task % nproc == me) {
-//              WorldObject_::task(
-//                  me, &PeriodicCADFKBuilder_::compute_contr_EQ_task_v1, Qtile, RJ,
-//                  std::array<size_t, 4>{{tile_mu, tile_nu, tile_X, tile_sig}},
-//                  std::array<size_t, 3>{
-//                      {eri3_tile_X, eri3_tile_nu, eri3_tile_sig}});
-//            }
-//          }
-//        }
-//      }
-//    }
-    // clang-format on
 
     world.gop.fence();
 
@@ -912,406 +767,7 @@ class PeriodicCADFKBuilder
     return result;
   }
 
-  void compute_contr_EQ_task_v1(Tile Q, int64_t RJ,
-                                   std::array<size_t, 4> tile_idx,
-                                   std::array<size_t, 3> eri3_idx) {
-    const auto tile_mu = tile_idx[0];
-    const auto tile_nu = tile_idx[1];
-    const auto tile_X = tile_idx[2];
-    const auto tile_sig = tile_idx[3];
-
-    // get tile indices of eri3
-    const auto eri3_tile_X = eri3_idx[0];
-    const auto eri3_tile_nu = eri3_idx[1];
-    const auto eri3_tile_sig = eri3_idx[2];
-
-    // get reference to basis sets
-    const auto &eri3_basis_X = eri3_X_dfbs_;
-    const auto &eri3_basis_nu = eri3_bs0_;
-    const auto &eri3_basis_sig = eri3_bs1_;
-    const auto &basis_sig = basisRD_;
-    const auto &basis_X = X_dfbs_;
-
-    // shell clusters for this tile
-    const auto &eri3_cluster_X = eri3_basis_X->cluster_shells()[eri3_tile_X];
-    const auto &eri3_cluster_nu = eri3_basis_nu->cluster_shells()[eri3_tile_nu];
-    const auto &eri3_cluster_sig =
-        eri3_basis_sig->cluster_shells()[eri3_tile_sig];
-
-    // # of shells in each cluster
-    const auto eri3_nshells_nu = eri3_cluster_nu.size();
-    const auto eri3_nshells_sig = eri3_cluster_sig.size();
-
-    // 1-d tile ranges
-    const auto &tr0 = result_trange_.dim(0);
-    const auto &tr1 = result_trange_.dim(1);
-    const auto ntiles_nu = tr1.tile_extent();
-    const auto &rng_mu = tr0.tile(tile_mu);
-    const auto &rng_nu = tr1.tile(tile_nu);
-    const auto &rng_sig = basisRD_trange1_.tile(tile_sig);
-    const auto &eri3_rng_X = eri3_X_trange1_.tile(eri3_tile_X);
-    const auto &eri3_rng_nu = eri3_bs0_trange1_.tile(eri3_tile_nu);
-    const auto &eri3_rng_sig = eri3_bs1_trange1_.tile(eri3_tile_sig);
-
-    // range sizes
-    const auto rng_size_mu = rng_mu.second - rng_mu.first;
-    const auto rng_size_nu = rng_nu.second - rng_nu.first;
-    const auto rng_size_sig = rng_sig.second - rng_sig.first;
-
-    // 2-d tile ranges describing the contribution blocks produced by this
-    auto result_rng = TA::Range({rng_mu, rng_nu});
-    // initialize contribution to the result matrices
-    auto result_tile = Tile(std::move(result_rng), 0.0);
-
-    // grab ptrs to tile data to make addressing more efficient
-    auto *result_ptr = result_tile.data();
-    const auto *Q_ptr = Q.data();
-    assert(Q_ptr != nullptr);
-
-    // compute eri3 * Q contribution to all Fock matrices
-    {
-      // index of first shell in this cluster
-      const auto eri3_sh_offset_nu = eri3_bs0_shell_offset_map_[eri3_tile_nu];
-      const auto eri3_sh_offset_sig = eri3_bs1_shell_offset_map_[eri3_tile_sig];
-
-      // index of last shell in this cluster
-      const auto eri3_sh_max_nu = eri3_sh_offset_nu + eri3_nshells_nu;
-      const auto eri3_sh_max_sig = eri3_sh_offset_sig + eri3_nshells_sig;
-
-      // determine if this task is worth computing by checking whether there
-      // are significant shell pairs in (tile_nu, tile_sig)
-      auto is_significant = false;
-      {
-        auto eri3_sh_nu = eri3_sh_offset_nu;
-        for (; eri3_sh_nu != eri3_sh_max_nu; ++eri3_sh_nu) {
-          for (const auto &eri3_sh_sig : sig_shellpair_list_[eri3_sh_nu]) {
-            if (eri3_sh_sig >= eri3_sh_offset_sig &&
-                eri3_sh_sig < eri3_sh_max_sig) {
-              is_significant = true;
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-
-      if (is_significant) {
-        auto &screen = *(p_screener_);
-        auto engine = engines_->local();
-        const auto engine_precision = target_precision_;
-        engine.set_precision(engine_precision);
-        const auto &computed_shell_sets = engine.results();
-
-        // compute max value of mu for each (X, sigma) pair for Q
-        const auto &cluster_X = basis_X->cluster_shells()[tile_X];
-        const auto &cluster_sig = basis_sig->cluster_shells()[tile_sig];
-        auto sig_X_shpair_val_list = compute_shell_pair_with_val(
-            Q, cluster_X, cluster_sig, shell_pair_threshold_);
-
-        // compute offset list of cluster_sig
-        auto eri3_offset_list_sig =
-            compute_func_offset_list(eri3_cluster_sig, eri3_rng_sig.first);
-        auto eri3_offset_list_X =
-            compute_func_offset_list(eri3_cluster_X, eri3_rng_X.first);
-
-        // this is the index of the first basis functions for each shell *in
-        // this shell cluster*
-        auto cf_offset_nu = 0;
-        // this is the index of the first basis functions for each shell *in the
-        // basis set*
-        auto eri3_bf_offset_nu = eri3_rng_nu.first;
-
-        size_t cf_offset_sig, eri3_bf_offset_sig, cf_offset_X, eri3_bf_offset_X;
-
-        // loop over all shell sets
-        for (auto eri3_sh_nu = 0; eri3_sh_nu != eri3_nshells_nu; ++eri3_sh_nu) {
-          const auto &eri3_shell_nu = eri3_cluster_nu[eri3_sh_nu];
-          const auto eri3_nf_nu = eri3_shell_nu.size();
-
-          const auto sh_nu_in_basis = eri3_sh_nu + eri3_sh_offset_nu;
-          for (const auto &sh_sig_in_basis :
-               sig_shellpair_list_[sh_nu_in_basis]) {
-            if (sh_sig_in_basis < eri3_sh_offset_sig ||
-                sh_sig_in_basis >= eri3_sh_max_sig)
-              continue;
-
-            const auto eri3_sh_sig = sh_sig_in_basis - eri3_sh_offset_sig;
-            std::tie(cf_offset_sig, eri3_bf_offset_sig) =
-                eri3_offset_list_sig[eri3_sh_sig];
-
-            const auto &eri3_shell_sig = eri3_cluster_sig[eri3_sh_sig];
-            const auto eri3_nf_sig = eri3_shell_sig.size();
-
-            for (const auto &X_with_maxval :
-                 sig_X_shpair_val_list[eri3_sh_sig]) {
-              const auto eri3_sh_X = X_with_maxval.first;
-              const auto norm_Q = X_with_maxval.second;
-
-              const auto &eri3_shell_X = eri3_cluster_X[eri3_sh_X];
-              const auto eri3_nf_X = eri3_shell_X.size();
-              std::tie(cf_offset_X, eri3_bf_offset_X) =
-                  eri3_offset_list_X[eri3_sh_X];
-              if (screen.skip(eri3_bf_offset_X, eri3_bf_offset_nu,
-                              eri3_bf_offset_sig, norm_Q))
-                continue;
-
-              num_ints_computed_ += eri3_nf_X * eri3_nf_nu * eri3_nf_sig;
-
-              // compute shell set
-              engine.compute(eri3_shell_X, eri3_shell_nu, eri3_shell_sig);
-              const auto &eri3 = computed_shell_sets[0];
-
-              if (eri3 != nullptr) {
-                for (auto f_X = 0, eri3_ord = 0; f_X != eri3_nf_X; ++f_X) {
-                  const auto cf_X = f_X + cf_offset_X;
-                  for (auto f_nu = 0; f_nu != eri3_nf_nu; ++f_nu) {
-                    const auto cf_nu = f_nu + cf_offset_nu;
-                    for (auto f_sig = 0; f_sig != eri3_nf_sig;
-                         ++f_sig, ++eri3_ord) {
-                      const auto cf_sig = f_sig + cf_offset_sig;
-
-                      const auto eri3_value = eri3[eri3_ord];
-                      for (auto cf_mu = 0; cf_mu != rng_size_mu; ++cf_mu) {
-                        const auto cf_mu_nu = cf_mu * rng_size_nu + cf_nu;
-                        const auto cf_X_mu_sig =
-                            cf_X * rng_size_mu * rng_size_sig +
-                            cf_mu * rng_size_sig + cf_sig;
-                        result_ptr[cf_mu_nu] += eri3_value * Q_ptr[cf_X_mu_sig];
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          eri3_bf_offset_nu += eri3_nf_nu;
-          cf_offset_nu += eri3_nf_nu;
-        }
-      }
-    }
-
-    // accumulate the local contributions
-    {
-      const auto tile_ord = tile_mu * ntiles_nu + tile_nu;
-      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, tile_ord);
-    }
-  }
-
-  void compute_contr_EQ_task_v2(std::vector<madness::Future<Tile>> Q_mu_vec,
-                             int64_t RJ, std::array<size_t, 3> tile_idx,
-                             std::array<size_t, 3> eri3_idx) {
-    const auto tile_X = tile_idx[0];
-    const auto tile_nu = tile_idx[1];
-    const auto tile_sig = tile_idx[2];
-
-    // get tile indices of eri3
-    const auto eri3_tile_X = eri3_idx[0];
-    const auto eri3_tile_nu = eri3_idx[1];
-    const auto eri3_tile_sig = eri3_idx[2];
-
-    // get reference to basis sets
-    const auto &eri3_basis_X = eri3_X_dfbs_;
-    const auto &eri3_basis_nu = eri3_bs0_;
-    const auto &eri3_basis_sig = eri3_bs1_;
-
-    // shell clusters for this tile
-    const auto &eri3_cluster_X = eri3_basis_X->cluster_shells()[eri3_tile_X];
-    const auto &eri3_cluster_nu = eri3_basis_nu->cluster_shells()[eri3_tile_nu];
-    const auto &eri3_cluster_sig =
-        eri3_basis_sig->cluster_shells()[eri3_tile_sig];
-
-    // # of shells in each cluster
-    const auto eri3_nshells_X = eri3_cluster_X.size();
-    const auto eri3_nshells_nu = eri3_cluster_nu.size();
-    const auto eri3_nshells_sig = eri3_cluster_sig.size();
-
-    // 1-d tile ranges
-    const auto &tr0 = result_trange_.dim(0);
-    const auto &tr1 = result_trange_.dim(1);
-    const auto ntiles_nu = tr1.tile_extent();
-    const auto &rng_nu = tr1.tile(tile_nu);
-    const auto &rng_sig = basisRD_trange1_.tile(tile_sig);
-    const auto &eri3_rng_X = eri3_X_trange1_.tile(eri3_tile_X);
-    const auto &eri3_rng_nu = eri3_bs0_trange1_.tile(eri3_tile_nu);
-    const auto &eri3_rng_sig = eri3_bs1_trange1_.tile(eri3_tile_sig);
-
-    // range sizes
-    const auto rng_size_nu = rng_nu.second - rng_nu.first;
-    const auto rng_size_sig = rng_sig.second - rng_sig.first;
-
-    // initialize result tiles with ranges and zeros
-    std::vector<Tile> result_tiles(ntiles_per_uc_, Tile());
-    std::vector<typename Tile::numeric_type *> Q_ptrs(ntiles_per_uc_);
-    auto num_nonzero_Q = 0;
-    for (auto tile_mu = 0ul; tile_mu != ntiles_per_uc_; ++tile_mu) {
-      const auto &rng_mu = tr0.tile(tile_mu);
-      // 2-d tile ranges describing the contribution blocks
-      // produced by this
-      auto result_rng = TA::Range({rng_mu, rng_nu});
-      // initialize contribution to the result matrices
-      auto &result_tile = result_tiles[tile_mu];
-      result_tile = Tile(std::move(result_rng), 0.0);
-
-      Q_ptrs[tile_mu] = Q_mu_vec[tile_mu].get().data();
-      if (Q_ptrs[tile_mu] != nullptr) num_nonzero_Q++;
-    }
-
-    // compute eri3 * Q contribution to all Fock matrices
-    {
-      // index of first shell in this cluster
-      const auto eri3_sh_offset_nu = eri3_bs0_shell_offset_map_[eri3_tile_nu];
-      const auto eri3_sh_offset_sig = eri3_bs1_shell_offset_map_[eri3_tile_sig];
-
-      // index of last shell in this cluster
-      const auto eri3_sh_max_nu = eri3_sh_offset_nu + eri3_nshells_nu;
-      const auto eri3_sh_max_sig = eri3_sh_offset_sig + eri3_nshells_sig;
-
-      // determine if this task is worth computing by checking whether there
-      // are significant shell pairs in (tile_nu, tile_sig)
-      auto is_significant = false;
-      {
-        auto eri3_sh_nu = eri3_sh_offset_nu;
-        for (; eri3_sh_nu != eri3_sh_max_nu; ++eri3_sh_nu) {
-          for (const auto &eri3_sh_sig : sig_shellpair_list_[eri3_sh_nu]) {
-            if (eri3_sh_sig >= eri3_sh_offset_sig &&
-                eri3_sh_sig < eri3_sh_max_sig) {
-              is_significant = true;
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-
-      if (is_significant && num_nonzero_Q > 0) {
-        auto &screen = *(p_screener_);
-        auto engine = engines_->local();
-        const auto engine_precision = target_precision_;
-        engine.set_precision(engine_precision);
-        const auto &computed_shell_sets = engine.results();
-
-        // compute offset list of cluster_sig
-        auto eri3_offset_list_sig =
-            compute_func_offset_list(eri3_cluster_sig, eri3_rng_sig.first);
-        auto eri3_offset_list_X =
-            compute_func_offset_list(eri3_cluster_X, eri3_rng_X.first);
-
-        // index of first shell in this cluster
-        const auto sh_offset_X = Q_X_shell_offset_map_[tile_X];
-        const auto sh_offset_sig = Q_sig_shell_offset_map_[tile_sig];
-        // index of last shell in this cluster
-        const auto sh_max_X = sh_offset_X + eri3_nshells_X;
-        const auto sh_max_sig = sh_offset_sig + eri3_nshells_sig;
-
-        // this is the index of the first basis functions for each shell *in
-        // this shell cluster*
-        auto cf_offset_nu = 0;
-        // this is the index of the first basis functions for each shell *in the
-        // basis set*
-        auto eri3_bf_offset_nu = eri3_rng_nu.first;
-
-        size_t cf_offset_sig, eri3_bf_offset_sig, cf_offset_X, eri3_bf_offset_X;
-
-        // loop over all shell sets
-        for (auto eri3_sh_nu = 0; eri3_sh_nu != eri3_nshells_nu; ++eri3_sh_nu) {
-          const auto &eri3_shell_nu = eri3_cluster_nu[eri3_sh_nu];
-          const auto eri3_nf_nu = eri3_shell_nu.size();
-
-          const auto sh_nu_in_basis = eri3_sh_nu + eri3_sh_offset_nu;
-          for (const auto &sh_sig_in_basis :
-               sig_shellpair_list_[sh_nu_in_basis]) {
-            if (sh_sig_in_basis < eri3_sh_offset_sig ||
-                sh_sig_in_basis >= eri3_sh_max_sig)
-              continue;
-
-            const auto eri3_sh_sig = sh_sig_in_basis - eri3_sh_offset_sig;
-            std::tie(cf_offset_sig, eri3_bf_offset_sig) =
-                eri3_offset_list_sig[eri3_sh_sig];
-
-            const auto &eri3_shell_sig = eri3_cluster_sig[eri3_sh_sig];
-            const auto eri3_nf_sig = eri3_shell_sig.size();
-
-            const auto sh_sig = eri3_sh_sig + sh_offset_sig;
-            for (const auto &X_with_maxval :
-                 sig_X_shellpair_val_list_[sh_sig]) {
-              const auto sh_X = X_with_maxval.first;
-              if (sh_X < sh_offset_X || sh_X >= sh_max_X) continue;
-
-              const auto eri3_sh_X = sh_X - sh_offset_X;
-              const auto norm_Q = X_with_maxval.second;
-
-              const auto &eri3_shell_X = eri3_cluster_X[eri3_sh_X];
-              const auto eri3_nf_X = eri3_shell_X.size();
-              std::tie(cf_offset_X, eri3_bf_offset_X) =
-                  eri3_offset_list_X[eri3_sh_X];
-              if (screen.skip(eri3_bf_offset_X, eri3_bf_offset_nu,
-                              eri3_bf_offset_sig, norm_Q))
-                continue;
-
-              num_ints_computed_ += eri3_nf_X * eri3_nf_nu * eri3_nf_sig;
-
-              // compute shell set
-              engine.compute(eri3_shell_X, eri3_shell_nu, eri3_shell_sig);
-              const auto &eri3 = computed_shell_sets[0];
-
-              if (eri3 != nullptr) {
-                for (auto tile_mu = 0ul; tile_mu != ntiles_per_uc_; ++tile_mu) {
-                  // Tile &Q = Q_mu_vec[tile_mu];
-                  const auto Q_ptr = Q_ptrs[tile_mu];
-                  if (Q_ptr == nullptr) continue;
-
-                  const auto &rng_mu = tr0.tile(tile_mu);
-                  const auto rng_size_mu = rng_mu.second - rng_mu.first;
-                  auto &result_tile = result_tiles[tile_mu];
-                  // grab ptrs to tile data to make addressing more
-                  // efficient
-                  auto *result_ptr = result_tile.data();
-
-                  for (auto f_X = 0, eri3_ord = 0; f_X != eri3_nf_X; ++f_X) {
-                    const auto cf_X = f_X + cf_offset_X;
-                    for (auto f_nu = 0; f_nu != eri3_nf_nu; ++f_nu) {
-                      const auto cf_nu = f_nu + cf_offset_nu;
-                      for (auto f_sig = 0; f_sig != eri3_nf_sig;
-                           ++f_sig, ++eri3_ord) {
-                        const auto cf_sig = f_sig + cf_offset_sig;
-
-                        const auto eri3_value = eri3[eri3_ord];
-
-                        for (auto cf_mu = 0; cf_mu != rng_size_mu; ++cf_mu) {
-                          const auto cf_mu_nu = cf_mu * rng_size_nu + cf_nu;
-                          const auto cf_X_mu_sig =
-                              cf_X * rng_size_mu * rng_size_sig +
-                              cf_mu * rng_size_sig + cf_sig;
-                          result_ptr[cf_mu_nu] +=
-                              eri3_value * Q_ptr[cf_X_mu_sig];
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          eri3_bf_offset_nu += eri3_nf_nu;
-          cf_offset_nu += eri3_nf_nu;
-        }
-      }
-    }
-
-    // accumulate the local contributions
-    for (auto tile_mu = 0ul; tile_mu != ntiles_per_uc_; ++tile_mu) {
-      const auto Q_ptr = Q_ptrs[tile_mu];
-      if (Q_ptr == nullptr) continue;
-
-      auto &result_tile = result_tiles[tile_mu];
-      const auto tile_ord = tile_mu * ntiles_nu + tile_nu;
-      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, tile_ord);
-    }
-  }
-
-  void compute_contr_EQ_task_v3(std::vector<madness::Future<Tile>> Q_mu_vec,
+  void compute_contr_EQ_task(std::vector<madness::Future<Tile>> Q_mu_vec,
                              int64_t RJ, std::array<size_t, 2> tile_idx) {
     const auto tile_X = tile_idx[0];
     const auto tile_sig = tile_idx[1];
@@ -1599,7 +1055,7 @@ class PeriodicCADFKBuilder
 
   }
 
-  array_type compute_contr_FQ(const array_type &F, const array_type &Q, int64_t RJ) {
+  array_type compute_contr_FQ(const array_type &F, const array_type &Q) {
     auto &world = this->get_world();
     const auto me = world.rank();
     const auto nproc = world.nproc();

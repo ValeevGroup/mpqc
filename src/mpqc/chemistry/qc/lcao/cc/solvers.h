@@ -446,178 +446,124 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
             D_ij_[ti * nocc_act + tj] = D_ij_mat;
 
-            std::cout << "created  D_ij_mat" << std::endl;
-            std::cout << "D_ij_mat:\n" << D_ij_mat << std::endl;
+//            std::cout << "created  D_ij_mat" << std::endl;
+//            std::cout << "D_ij_mat:\n" << D_ij_mat << std::endl;
 
-        }   // tj
-    }   // ti
+      } // tj
+    } // ti
 
     // For each D_ij matrix, diagonalize to form PNOs, truncate
     // PNOs, and store matrix of PNOs in pnos_
 
     for (auto i = 0; i != nocc_act; ++i) {
-        for (auto j = 0; j != nocc_act; ++j) {
-            auto ij = i * nocc_act + j;
-            Eigen::MatrixXd D_ij = D_ij_[ij];
+      for (auto j = 0; j != nocc_act; ++j) {
+          auto ij = i * nocc_act + j;
+          Eigen::MatrixXd D_ij = D_ij_[ij];
 
-            // Diagonalize D_ij
-            es.compute(D_ij);
-            Eigen::MatrixXd pno_ij = es.eigenvectors();
-            auto occ_ij = es.eigenvalues();
+          // Diagonalize D_ij
+          es.compute(D_ij);
+          Eigen::MatrixXd pno_ij = es.eigenvectors();
+          auto occ_ij = es.eigenvalues();
 
-            // truncate PNOs
-            std::size_t pnodrop = 0;
-            if (tpno_ != 0.0) {
-              for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
-                if (!(occ_ij(k) >= tpno_))
-                  ++pnodrop;
-                else
-                  break;
-              }
+          // truncate PNOs
+          std::size_t pnodrop = 0;
+          if (tpno_ != 0.0) {
+            for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+              if (!(occ_ij(k) >= tpno_))
+                ++pnodrop;
+              else
+                break;
             }
-            const auto npno = nuocc - pnodrop;
+          }
+          const auto npno = nuocc - pnodrop;
 
-            // Store truncated PNOs
-            Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-            pnos_[ij] = pno_trunc;
+        // Store truncated PNOs
+        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+        pnos_[ij] = pno_trunc;
 
-            // Transform F to PNO space
-            Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+        // Transform F to PNO space
+        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-            // Store just the diagonal elements of F_pno_ij
-            F_pno_diag_[ij] = F_pno_ij.diagonal();
+        // Store just the diagonal elements of F_pno_ij
+        F_pno_diag_[ij] = F_pno_ij.diagonal();
 
-            ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+        ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-            if (pno_canonical_ == "true" && npno > 0) {
-              // Compute eigenvectors of F in PNO space
-              es.compute(F_pno_ij);
-              Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+        if (pno_canonical_ == "true" && npno > 0) {
+          // Compute eigenvectors of F in PNO space
+          es.compute(F_pno_ij);
+          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-              // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-              Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
-              // Replace standard with canonical PNOs
-              pnos_[ij] = can_pno_ij;
-              F_pno_diag_[ij] = es.eigenvalues();
-            }   // pno_canonical
+          // Replace standard with canonical PNOs
+          pnos_[ij] = can_pno_ij;
+          F_pno_diag_[ij] = es.eigenvalues();
+        }   // pno_canonical
 
+        // truncate OSVs
 
-        }   // j
-    }   // i
+        auto osvdrop = 0;
+        if (i == j) {
+          size_t osvdrop = 0;
+          if (tosv_ != 0.0) {
+            for (size_t k = 0; k != occ_ij.rows(); ++k) {
+              if (!(occ_ij(k) >= tosv_))
+                ++osvdrop;
+              else
+                break;
+            }
+          }
+          const auto nosv = nuocc - osvdrop;
+          if (nosv == 0) {  // all OSV truncated indicates total nonsense
+            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+                                        __LINE__, 1, 0);
+          }
 
+          // Store truncated OSVs
+          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+          osvs_[i] = osv_trunc;
 
+          // Transform F to OSV space
+          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
 
-//    // Loop over i,j indices and diagonalize D_ij
-//    for (auto i = 0; i != nocc_act; ++i) {
-//      for (auto j = 0; j != nocc_act; ++j) {
-//        auto ij = i * nocc_act + j;
-//        Eigen::MatrixXd D_ij = D_ij_mat_list[ij];
+          // Store just the diagonal elements of F_osv_i
+          F_osv_diag_[i] = F_osv_i.diagonal();
 
-//        // Diagonalize D_ij
-//        es.compute(D_ij);
-//        Eigen::MatrixXd pno_ij = es.eigenvectors();
-//        auto occ_ij = es.eigenvalues();
+          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+          if (pno_canonical_ == "true") {
+            // Compute eigenvectors of F in OSV space
+            es.compute(F_osv_i);
+            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-//        // truncate PNOs
-//        size_t pnodrop = 0;
-//        if (tpno_ != 0.0) {
-//          for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//            if (!(occ_ij(k) >= tpno_))
-//              ++pnodrop;
-//            else
-//              break;
-//          }
-//        }
-//        const auto npno = nuocc - pnodrop;
+            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
 
-//        // Store truncated PNOs
-//        Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-//        pnos_[ij] = pno_trunc;
+            // Replace standard with canonical OSVs
+            osvs_[i] = can_osv_i;
+            F_osv_diag_[i] = es.eigenvalues();
+          } // pno_canonical
+        } // if (i == j)
+      } // j
+    } // i
 
-//        // Transform F to PNO space
-//        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+    auto sum_osv = 0;
+    for (int i = 0; i < nocc_act; ++i) {
+      sum_osv += osvs_[i].cols();
+    }
+    auto ave_nosv = sum_osv / nocc_act;
+    ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
-//        // Store just the diagonal elements of F_pno_ij
-//        F_pno_diag_[ij] = F_pno_ij.diagonal();
-
-//        /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
-
-//        if (pno_canonical_ == "true" && npno > 0) {
-//          // Compute eigenvectors of F in PNO space
-//          es.compute(F_pno_ij);
-//          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
-
-//          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-//          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
-
-//          // Replace standard with canonical PNOs
-//          pnos_[ij] = can_pno_ij;
-//          F_pno_diag_[ij] = es.eigenvalues();
-//        }
-
-//        // truncate OSVs
-
-//        // auto osvdrop = 0;
-//        if (i == j) {
-//          size_t osvdrop = 0;
-//          if (tosv_ != 0.0) {
-//            for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//              if (!(occ_ij(k) >= tosv_))
-//                ++osvdrop;
-//              else
-//                break;
-//            }
-//          }
-//          const auto nosv = nuocc - osvdrop;
-//          if (nosv == 0) {  // all OSV truncated indicates total nonsense
-//            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-//                                        __LINE__, 1, 0);
-//          }
-
-//          // Store truncated OSVs
-//          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-//          osvs_[i] = osv_trunc;
-
-//          // Transform F to OSV space
-//          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
-
-//          // Store just the diagonal elements of F_osv_i
-//          F_osv_diag_[i] = F_osv_i.diagonal();
-
-//          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-//          if (pno_canonical_ == "true") {
-//            // Compute eigenvectors of F in OSV space
-//            es.compute(F_osv_i);
-//            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
-
-//            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-//            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
-
-//            // Replace standard with canonical OSVs
-//            osvs_[i] = can_osv_i;
-//            F_osv_diag_[i] = es.eigenvalues();
-//          }
-//        } // if (i == j)
-//      } // j
-//    } // i
-
-//    auto sum_osv = 0;
-//    for (int i = 0; i < nocc_act; ++i) {
-//      sum_osv += osvs_[i].cols();
-//    }
-//    auto ave_nosv = sum_osv / nocc_act;
-//    ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
-
-//    auto sum_pno = 0;
-//    for (int i = 0; i < nocc_act; ++i) {
-//      for (int j = 0; j < nocc_act; ++j) {
-//        sum_pno += pnos_[i * nocc_act + j].cols();
-//      }
-//    }
-//    auto ave_npno = sum_pno / (nocc_act * nocc_act);
-//    ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
-//  }
+    auto sum_pno = 0;
+    for (int i = 0; i < nocc_act; ++i) {
+      for (int j = 0; j < nocc_act; ++j) {
+        sum_pno += pnos_[i * nocc_act + j].cols();
+      }
+    }
+    auto ave_npno = sum_pno / (nocc_act * nocc_act);
+    ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+  }
 
 
 
@@ -627,218 +573,218 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
 
- /// !!! Original PNO formation code !!! ///
- // Do not delete! //
+// /// !!! Original PNO formation code !!! ///
+// // Do not delete! //
 
 
-     // zero out amplitudes
-     if (!T_.is_initialized()) {
-       T_ = Array(world, K.trange(), K.shape());
-       T_.fill(0.0);
-     }
+//     // zero out amplitudes
+//     if (!T_.is_initialized()) {
+//       T_ = Array(world, K.trange(), K.shape());
+//       T_.fill(0.0);
+//     }
 
-     // For storing PNOs and and the Fock matrix in the PNO basis
-     pnos_.resize(nocc_act * nocc_act);
-     F_pno_diag_.resize(nocc_act * nocc_act);
+//     // For storing PNOs and and the Fock matrix in the PNO basis
+//     pnos_.resize(nocc_act * nocc_act);
+//     F_pno_diag_.resize(nocc_act * nocc_act);
 
-     // For storing OSVs (PNOs when i = j) and the Fock matrix in
-     // the OSV basis
-     osvs_.resize(nocc_act);
-     F_osv_diag_.resize(nocc_act);
+//     // For storing OSVs (PNOs when i = j) and the Fock matrix in
+//     // the OSV basis
+//     osvs_.resize(nocc_act);
+//     F_osv_diag_.resize(nocc_act);
 
- #if PRODUCE_PNO_MOLDEN_FILES
-     // prepare to Molden
-     const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
-     const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
-     const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
-     const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
+// #if PRODUCE_PNO_MOLDEN_FILES
+//     // prepare to Molden
+//     const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
+//     const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
+//     const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
+//     const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
 
-     // write out active occupied orbitals
-     auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
-     libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig, occs);
-     xport.write("occ.molden");
- #endif
+//     // write out active occupied orbitals
+//     auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
+//     libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig, occs);
+//     xport.write("occ.molden");
+// #endif
 
   
 
     
 
 
-     // Loop over each pair of occupieds to form PNOs
-     for (int i = 0; i < nocc_act; ++i) {
-       double eps_i = eps_o[i];
+//     // Loop over each pair of occupieds to form PNOs
+//     for (int i = 0; i < nocc_act; ++i) {
+//       double eps_i = eps_o[i];
 
-       for (int j = 0; j < nocc_act; ++j) {
-         double eps_j = eps_o[j];
-         int delta_ij = (i == j) ? 1 : 0;
-         std::array<int, 4> tile_ij = {{0, 0, i, j}};
-         std::array<int, 4> tile_ji = {{0, 0, j, i}};
-         const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
-         const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
-         TA::TensorD K_ij = K.find(ord_ij);
-         TA::TensorD K_ji = K.find(ord_ji);
-         auto ext_ij = K_ij.range().extent_data();
-         auto ext_ji = K_ji.range().extent_data();
-         Eigen::MatrixXd K_ij_mat =
-             TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
-         Eigen::MatrixXd K_ji_mat =
-             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
+//       for (int j = 0; j < nocc_act; ++j) {
+//         double eps_j = eps_o[j];
+//         int delta_ij = (i == j) ? 1 : 0;
+//         std::array<int, 4> tile_ij = {{0, 0, i, j}};
+//         std::array<int, 4> tile_ji = {{0, 0, j, i}};
+//         const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
+//         const auto ord_ji = ktrange.tiles_range().ordinal(tile_ji);
+//         TA::TensorD K_ij = K.find(ord_ij);
+//         TA::TensorD K_ji = K.find(ord_ji);
+//         auto ext_ij = K_ij.range().extent_data();
+//         auto ext_ji = K_ji.range().extent_data();
+//         Eigen::MatrixXd K_ij_mat =
+//             TA::eigen_map(K_ij, ext_ij[0] * ext_ij[2], ext_ij[1] * ext_ij[3]);
+//         Eigen::MatrixXd K_ji_mat =
+//             TA::eigen_map(K_ji, ext_ji[0] * ext_ji[2], ext_ji[1] * ext_ji[3]);
 
-         Eigen::MatrixXd T_ij(nuocc, nuocc);
-         Eigen::MatrixXd T_ji(nuocc, nuocc);
-         Eigen::MatrixXd T_tilde_ij(nuocc, nuocc);
+//         Eigen::MatrixXd T_ij(nuocc, nuocc);
+//         Eigen::MatrixXd T_ji(nuocc, nuocc);
+//         Eigen::MatrixXd T_tilde_ij(nuocc, nuocc);
 
-         for (int a = 0; a < nuocc; ++a) {
-           double eps_a = eps_v[a];
-           for (int b = 0; b < nuocc; ++b) {
-             double eps_b = eps_v[b];
+//         for (int a = 0; a < nuocc; ++a) {
+//           double eps_a = eps_v[a];
+//           for (int b = 0; b < nuocc; ++b) {
+//             double eps_b = eps_v[b];
 
-             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
-             T_ji(a, b) = -K_ji_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
-           }
-         }
+//             T_ij(a, b) = -K_ij_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
+//             T_ji(a, b) = -K_ji_mat(a, b) / (eps_a + eps_b - eps_i - eps_j);
+//           }
+//         }
 
-         // Eq. 23, JCP 128 034106 (2013)
-         T_tilde_ij = 4 * T_ij - 2 * T_ji;
-         Eigen::MatrixXd D_ij =
-             (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
-             (1.0 + delta_ij);
+//         // Eq. 23, JCP 128 034106 (2013)
+//         T_tilde_ij = 4 * T_ij - 2 * T_ji;
+//         Eigen::MatrixXd D_ij =
+//             (T_tilde_ij.transpose() * T_ij + T_tilde_ij * T_ij.transpose()) /
+//             (1.0 + delta_ij);
 
-         // Diagonalize D_ij to get PNOs and corresponding occupation numbers.
-         es.compute(D_ij);
-         Eigen::MatrixXd pno_ij = es.eigenvectors();
-         auto occ_ij = es.eigenvalues();
+//         // Diagonalize D_ij to get PNOs and corresponding occupation numbers.
+//         es.compute(D_ij);
+//         Eigen::MatrixXd pno_ij = es.eigenvectors();
+//         auto occ_ij = es.eigenvalues();
 
-         // truncate PNOs
-         size_t pnodrop = 0;
-         if (tpno_ != 0.0) {
-           for (size_t k = 0; k != occ_ij.rows(); ++k) {
-             if (!(occ_ij(k) >= tpno_))
-               ++pnodrop;
-             else
-               break;
-           }
-         }
-         const auto npno = nuocc - pnodrop;
+//         // truncate PNOs
+//         size_t pnodrop = 0;
+//         if (tpno_ != 0.0) {
+//           for (size_t k = 0; k != occ_ij.rows(); ++k) {
+//             if (!(occ_ij(k) >= tpno_))
+//               ++pnodrop;
+//             else
+//               break;
+//           }
+//         }
+//         const auto npno = nuocc - pnodrop;
 
-         // Store truncated PNOs
-         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
-         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-         // pnos_[ij] = pno_trunc;
-         pnos_[i * nocc_act + j] = pno_trunc;
+//         // Store truncated PNOs
+//         // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
+//         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+//         // pnos_[ij] = pno_trunc;
+//         pnos_[i * nocc_act + j] = pno_trunc;
 
- #if PRODUCE_PNO_MOLDEN_FILES
-         // write PNOs to Molden
-         {
-           Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
-           molden_coefs.col(0) = C_i_eig.col(i);
-           molden_coefs.col(1) = C_i_eig.col(j);
-           molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) = C_a_eig * pno_trunc;
+// #if PRODUCE_PNO_MOLDEN_FILES
+//         // write PNOs to Molden
+//         {
+//           Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
+//           molden_coefs.col(0) = C_i_eig.col(i);
+//           molden_coefs.col(1) = C_i_eig.col(j);
+//           molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) = C_a_eig * pno_trunc;
 
-           Eigen::VectorXd occs(2 + pno_trunc.cols());
-           occs.setZero();
-           occs[0] = 2.0;
-           occs[1] = 2.0;
+//           Eigen::VectorXd occs(2 + pno_trunc.cols());
+//           occs.setZero();
+//           occs[0] = 2.0;
+//           occs[1] = 2.0;
 
-           Eigen::VectorXd evals(2 + pno_trunc.cols());
-           evals(0) = 0.0;
-           evals(1) = 0.0;
-           evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
+//           Eigen::VectorXd evals(2 + pno_trunc.cols());
+//           evals(0) = 0.0;
+//           evals(1) = 0.0;
+//           evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
 
-           libint2::molden::Export xport(libint2_atoms, libint2_shells,
-                                         molden_coefs, occs, evals);
-           xport.write(std::string("pno_") + std::to_string(i) + "_" +
-                       std::to_string(j) + ".molden");
-         }
- #endif
+//           libint2::molden::Export xport(libint2_atoms, libint2_shells,
+//                                         molden_coefs, occs, evals);
+//           xport.write(std::string("pno_") + std::to_string(i) + "_" +
+//                       std::to_string(j) + ".molden");
+//         }
+// #endif
 
-         // Transform F to PNO space
-         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+//         // Transform F to PNO space
+//         Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-         // Store just the diagonal elements of F_pno_ij
-         // F_pno_diag_[ij] = F_pno_ij.diagonal();
-         F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
+//         // Store just the diagonal elements of F_pno_ij
+//         // F_pno_diag_[ij] = F_pno_ij.diagonal();
+//         F_pno_diag_[i * nocc_act + j] = F_pno_ij.diagonal();
 
-         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
+//         /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-         if (pno_canonical_ == "true" && npno > 0) {
-           // Compute eigenvectors of F in PNO space
-           es.compute(F_pno_ij);
-           Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+//         if (pno_canonical_ == "true" && npno > 0) {
+//           // Compute eigenvectors of F in PNO space
+//           es.compute(F_pno_ij);
+//           Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-           // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-           Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+//           // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+//           Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
-           // Replace standard with canonical PNOs
-           // pnos_[ij] = can_pno_ij;
-           // F_pno_diag_[ij] = es.eigenvalues();
-           pnos_[i * nocc_act + j] = can_pno_ij;
-           F_pno_diag_[i * nocc_act + j] = es.eigenvalues();
-         }
+//           // Replace standard with canonical PNOs
+//           // pnos_[ij] = can_pno_ij;
+//           // F_pno_diag_[ij] = es.eigenvalues();
+//           pnos_[i * nocc_act + j] = can_pno_ij;
+//           F_pno_diag_[i * nocc_act + j] = es.eigenvalues();
+//         }
 
-         // truncate OSVs
+//         // truncate OSVs
 
-         // auto nosv = 0;
+//         // auto nosv = 0;
 
-         // auto osvdrop = 0;
-         if (i == j) {
-           size_t osvdrop = 0;
-           if (tosv_ != 0.0) {
-             for (size_t k = 0; k != occ_ij.rows(); ++k) {
-               if (!(occ_ij(k) >= tosv_))
-                 ++osvdrop;
-               else
-                 break;
-             }
-           }
-           const auto nosv = nuocc - osvdrop;
-           if (nosv == 0) {  // all OSV truncated indicates total nonsense
-             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-                                         __LINE__, 1, 0);
-           }
+//         // auto osvdrop = 0;
+//         if (i == j) {
+//           size_t osvdrop = 0;
+//           if (tosv_ != 0.0) {
+//             for (size_t k = 0; k != occ_ij.rows(); ++k) {
+//               if (!(occ_ij(k) >= tosv_))
+//                 ++osvdrop;
+//               else
+//                 break;
+//             }
+//           }
+//           const auto nosv = nuocc - osvdrop;
+//           if (nosv == 0) {  // all OSV truncated indicates total nonsense
+//             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+//                                         __LINE__, 1, 0);
+//           }
 
-           // Store truncated OSVs
-           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-           osvs_[i] = osv_trunc;
+//           // Store truncated OSVs
+//           Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+//           osvs_[i] = osv_trunc;
 
-           // Transform F to OSV space
-           Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+//           // Transform F to OSV space
+//           Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
 
-           // Store just the diagonal elements of F_osv_i
-           F_osv_diag_[i] = F_osv_i.diagonal();
+//           // Store just the diagonal elements of F_osv_i
+//           F_osv_diag_[i] = F_osv_i.diagonal();
 
-           /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-           if (pno_canonical_ == "true") {
-             // Compute eigenvectors of F in OSV space
-             es.compute(F_osv_i);
-             Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+//           /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+//           if (pno_canonical_ == "true") {
+//             // Compute eigenvectors of F in OSV space
+//             es.compute(F_osv_i);
+//             Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-             // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-             Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+//             // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+//             Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
 
-             // Replace standard with canonical OSVs
-             osvs_[i] = can_osv_i;
-             F_osv_diag_[i] = es.eigenvalues();
-           }
-         }
-       }
-     }
-     auto sum_osv = 0;
-     for (int i = 0; i < nocc_act; ++i) {
-       sum_osv += osvs_[i].cols();
-     }
-     auto ave_nosv = sum_osv / nocc_act;
-     ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
+//             // Replace standard with canonical OSVs
+//             osvs_[i] = can_osv_i;
+//             F_osv_diag_[i] = es.eigenvalues();
+//           }
+//         }
+//       }
+//     }
+//     auto sum_osv = 0;
+//     for (int i = 0; i < nocc_act; ++i) {
+//       sum_osv += osvs_[i].cols();
+//     }
+//     auto ave_nosv = sum_osv / nocc_act;
+//     ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
-     auto sum_pno = 0;
-     for (int i = 0; i < nocc_act; ++i) {
-       for (int j = 0; j < nocc_act; ++j) {
-         sum_pno += pnos_[i * nocc_act + j].cols();
-       }
-     }
-     auto ave_npno = sum_pno / (nocc_act * nocc_act);
-     ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
-   }
+//     auto sum_pno = 0;
+//     for (int i = 0; i < nocc_act; ++i) {
+//       for (int j = 0; j < nocc_act; ++j) {
+//         sum_pno += pnos_[i * nocc_act + j].cols();
+//       }
+//     }
+//     auto ave_npno = sum_pno / (nocc_act * nocc_act);
+//     ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+//   }
 
 
 

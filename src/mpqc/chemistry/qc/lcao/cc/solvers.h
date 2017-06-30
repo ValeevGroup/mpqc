@@ -209,12 +209,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     auto& fac = factory_;
     auto& world = fac.world();
+//    world_ = world;
     auto& ofac = fac.orbital_registry();
 
     auto nocc = ofac.retrieve("m").rank();
     auto nocc_act = ofac.retrieve("i").rank();
     nocc_act_ = nocc_act;
     auto nuocc = ofac.retrieve("a").rank();
+    nuocc_ = nuocc;
     auto nfzc = nocc - nocc_act;
 
     // Form Fock array
@@ -318,7 +320,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         } // b
       } // a
       return std::sqrt(norm);
-    };
+    };  // form_T
 
     auto T_ = TA::foreach(K, form_T);
     T_.world().gop.fence();
@@ -386,6 +388,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
     std::cout << "reblocking step worked" << std::endl;
+    std::cout << "T_trange:\n" << T_.trange() << std::endl;
+    std::cout << "Reblocked T_ trange:\n" << T_reblock.trange() << std::endl;
 
     // Get number of tiles and number of elements
     // along each dim of T_reblock
@@ -559,17 +563,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     for (int i = 0; i < nocc_act; ++i) {
       for (int j = 0; j < nocc_act; ++j) {
         sum_pno += pnos_[i * nocc_act + j].cols();
-      }
-    }
+      } // j
+    } // i
     auto ave_npno = sum_pno / (nocc_act * nocc_act);
     ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
   }
 
-
-
-
-
-  
 
 
 
@@ -803,6 +802,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+//    std::cout << "the trange of r2 is " << r2.trange() << std::endl;
+//    std::cout << "the trange of r1 is " << r1.trange() << std::endl;
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
     t1("a,i") += delta_t1_ai("a,i");
@@ -812,15 +813,58 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
-    update_only(t1, t2, r1, r2);
-    T r1_osv = osv_transform_ai(r1, osvs_);
-    T r2_pno = pno_transform_abij(r2, pnos_);
+    auto T_trange = T_.trange();
+    auto& world = factory_.world();
+//    TA::World& world =<T>::world();
+
+    // Create TiledRange1 objects for uocc transformation arrays
+    std::vector<int> uocc_blocks {0, nuocc_};
+
+    const TA::TiledRange1 uocc_col = TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
+    const TA::TiledRange1 uocc_row = T_trange.dim(0);
+
+
+    // Create TiledRange1 objects for occ transformation arrays
+    std::vector<int> occ_blocks;
+    for (std::size_t i = 0; i <= nocc_act_; ++i) {
+        occ_blocks.push_back(i);
+    }
+
+    const TA::TiledRange1 occ_col = TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
+    const TA::TiledRange1 occ_row = T_trange.dim(3);
+
+
+    // Create occ and uocc transformation arrays
+    T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
+
+    T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
+                            TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
+
+    std::cout << "created transformation arrays" << std::endl;
+
+    // Reblock r1 and r2
+    T r1_reblock;
+    T r2_reblock;
+    r2_reblock("an,bn,in,jn") = r2("a,b,i,j") * occ_trans_array("j,jn")
+                                              * occ_trans_array("i,in")
+                                              * uocc_trans_array("b,bn")
+                                              * uocc_trans_array("a,an");
+
+    r1_reblock("an,in") = r1("a,i") * occ_trans_array("i,in")
+                                    * uocc_trans_array("a,an");
+    std::cout << "the update function is getting called" << std::endl;
+    update_only(t1, t2, r1_reblock, r2_reblock);
+    T r1_osv = osv_transform_ai(r1_reblock, osvs_);
+    T r2_pno = pno_transform_abij(r2_reblock, pnos_);
     mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
     mpqc::cc::T1T2<T, T> t(t1, t2);
     this->diis().extrapolate(t, r);
     t1 = t.t1;
     t2 = t.t2;
   }
+
+
 
 
 
@@ -934,7 +978,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           osv_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
 
       // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
-      // basis this matrix will then be back transformed to full basis before
+      // basis. This matrix will then be back transformed to full basis before
       // being converted to a tile
       Eigen::VectorXd delta_t1_osv = r1_osv;
 
@@ -1134,13 +1178,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
  private:
   Factory<T>& factory_;
+//  TA::World world_;
   std::string pno_method_;     //!< the PNO construction method
   std::string pno_canonical_;  //!< whether or not to canonicalize PNO/OSV
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold
   int nocc_act_;               //!< the number of active occupied orbitals
+  int nuocc_;                  //!< the number of unoccupied orbitals
   Array T_;                    //!< the array of MP2 T amplitudes
-  Array D_;                    //!< the array of MP2 density values 
+//  Array D_;                    //!< the array of MP2 density values
 
   Eigen::MatrixXd F_occ_act_;
 

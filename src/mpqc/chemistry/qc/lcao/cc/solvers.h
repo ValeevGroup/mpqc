@@ -813,47 +813,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
-//    auto T_trange = T_.trange();
-//    auto& world = factory_.world();
-////    TA::World& world =<T>::world();
+    T r2_reblock = reblock_r2(r2);
+    T r1_reblock = reblock_r1(r1);
 
-//    // Create TiledRange1 objects for uocc transformation arrays
-//    std::vector<int> uocc_blocks {0, nuocc_};
-
-//    const TA::TiledRange1 uocc_col = TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-//    const TA::TiledRange1 uocc_row = T_trange.dim(0);
-
-
-//    // Create TiledRange1 objects for occ transformation arrays
-//    std::vector<int> occ_blocks;
-//    for (std::size_t i = 0; i <= nocc_act_; ++i) {
-//        occ_blocks.push_back(i);
-//    }
-
-//    const TA::TiledRange1 occ_col = TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-//    const TA::TiledRange1 occ_row = T_trange.dim(3);
-
-
-//    // Create occ and uocc transformation arrays
-//    T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
-//                            TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-//    T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,
-//                            TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-//    std::cout << "created transformation arrays" << std::endl;
-
-//    // Reblock r1 and r2
-//    T r1_reblock;
-//    T r2_reblock;
-//    r2_reblock("an,bn,in,jn") = r2("a,b,i,j") * occ_trans_array("j,jn")
-//                                              * occ_trans_array("i,in")
-//                                              * uocc_trans_array("b,bn")
-//                                              * uocc_trans_array("a,an");
-
-//    r1_reblock("an,in") = r1("a,i") * occ_trans_array("i,in")
-//                                    * uocc_trans_array("a,an");
-//    std::cout << "the update function is getting called" << std::endl;
     update_only(t1, t2, r1_reblock, r2_reblock);
     T r1_osv = osv_transform_ai(r1_reblock, osvs_);
     T r2_pno = pno_transform_abij(r2_reblock, pnos_);
@@ -867,7 +829,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> reblock_r2(
       const TA::DistArray<Tile, Policy>& r2) {
-    auto reblock2 = [this] (T& result, const T& arg) {
+    auto reblock2 = [this] (const T& arg) {
       auto T_trange = T_.trange();
       auto& world = factory_.world();
 
@@ -898,7 +860,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       std::cout << "created transformation arrays" << std::endl;
 
       // Reblock r2
-//      T result;
+      T result;
       result("an,bn,in,jn") = arg("a,b,i,j") * occ_trans_array("j,jn")
                                                 * occ_trans_array("i,in")
                                                 * uocc_trans_array("b,bn")
@@ -915,7 +877,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   template <typename Tile, typename Policy>
   TA::DistArray<Tile, Policy> reblock_r1(
       const TA::DistArray<Tile, Policy>& r1) {
-    auto reblock1 = [this] (T& result, const T& arg) {
+    auto reblock1 = [this] (const T& arg) {
       auto T_trange = T_.trange();
       auto& world = factory_.world();
 
@@ -946,14 +908,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       std::cout << "created transformation arrays" << std::endl;
 
       // Reblock r1
-//      T result;
+      T result;
       result("an,in") = arg("a,i") * occ_trans_array("i,in") * uocc_trans_array("a,an");
 
       return result;
 
 
     };
-    auto r1_reblock = reblock(r1);
+    auto r1_reblock = reblock1(r1);
     return r1_reblock;
   }
 

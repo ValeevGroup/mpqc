@@ -805,7 +805,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
 
-    // Undo reblocking of delta_t1_ai and delta_t2_abij
+    // Reblock delta_t1_ai and delta_t2_abij to match original tiling
     auto delta_t1 = unblock_delta_t1(delta_t1_ai);
     auto delta_t2 = unblock_delta_t2(delta_t2_abij);
     t1("a,i") += delta_t1("a,i");
@@ -1880,22 +1880,23 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   const auto& l_svo2(int i, int j) const { return l_svo2s_[i*nocc_act_ + j]; }
   const auto& r_svo2(int i, int j) const { return r_svo2s_[i*nocc_act_ + j]; }
+  const auto& sov1(int i) const { return svo1s_[i]; }
 
 private:
   /// Overrides DIISSolver::update_only() .
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_svo1_diag_, svo1s_);
 
+    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_svo1_diag_, svo1s_);
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_l_svo2_diag_,
                                           F_r_svo2_diag_, l_svo2s_, r_svo2s_);
 
     // Reblock delta_t1_ai and delta_t2_abij to match original tiling
-    auto delta_ti = unblock_delta_t1(delta_t1_ai);
+    auto delta_t1 = unblock_delta_t1(delta_t1_ai);
     auto delta_t2 = unblock_delta_t2(delta_t2_abij);
-    t1("a,i") += delta_t1_ai("a,i");
-    t2("a,b,i,j") += delta_t2_abij("a,b,i,j");
+    t1("a,i") += delta_t1("a,i");
+    t2("a,b,i,j") += delta_t2("a,b,i,j");
     t1.truncate();
     t2.truncate();
   }
@@ -1905,9 +1906,9 @@ private:
     T r2_reblock = reblock_r2(r2);
     T r1_reblock = reblock_r1(r1);
 
-    update_only(t1, t2, r1, r2);
-    T r1_svo1 = svo_transform_ai(r1, svo1s_);
-    T r2_svo2 = svo_transform_abij(r2, l_svo2s_, r_svo2s_);
+    update_only(t1, t2, r1_reblock, r2_reblock);
+    T r1_svo1 = svo_transform_ai(r1_reblock, svo1s_);
+    T r2_svo2 = svo_transform_abij(r2_reblock, l_svo2s_, r_svo2s_);
     mpqc::cc::T1T2<T, T> r(r1_svo1, r2_svo2);
     mpqc::cc::T1T2<T, T> t(t1, t2);
     this->diis().extrapolate(t, r);

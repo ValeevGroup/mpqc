@@ -480,6 +480,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           }
           const auto npno = nuocc - pnodrop;
 
+          std::cout << "For i = " << i << " and j = " << j << " npno = "
+                    << npno << std::endl;
+
         // Store truncated PNOs
         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
         pnos_[ij] = pno_trunc;
@@ -519,6 +522,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
             }
           }
           const auto nosv = nuocc - osvdrop;
+          std::cout << "For i = " << i << " and j = " << j << " nosv = "
+                    << nosv << std::endl;
+
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
                                         __LINE__, 1, 0);
@@ -1034,19 +1040,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto ij = i * nocc_act_ + j;
       Eigen::MatrixXd pno_ij = pnos[ij];
 
-      // Extent data of tile
-      const auto ext = arg_tile.range().extent_data();
-
-      // Convert data in tile to Eigen::Map and transform to PNO basis
-      const Eigen::MatrixXd r2_pno =
-          pno_ij.transpose() *
-          TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
-
-      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
-      // basis this matrix will then be back transformed to full basis before
-      // being converted to a tile
-      Eigen::MatrixXd delta_t2_pno = r2_pno;
-
       // Select correct vector containing diagonal elements of Fock matrix in
       // PNO basis
       const Eigen::VectorXd& ens_uocc = F_pno_diag[ij];
@@ -1057,37 +1050,87 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Determine number of uocc
       const auto nuocc = pno_ij.rows();
 
-      // Select e_i and e_j
-      const auto e_i = F_occ_act(i, i);
-      const auto e_j = F_occ_act(j, j);
+      // If npno == 0, skip this i,j pair
+      if (npno == 0) {
+        std::cout << "Handling a case where npno = 0" << std::endl;
+        // Create delta_t2 matrix, populated with zeroes
+        Eigen::MatrixXd delta_t2 = Eigen::MatrixXd::Zero(nuocc, nuocc);
 
-      for (auto a = 0; a < npno; ++a) {
-        const auto e_a = ens_uocc[a];
-        for (auto b = 0; b < npno; ++b) {
-          const auto e_b = ens_uocc[b];
-          const auto e_abij = e_i + e_j - e_a - e_b;
-          const auto r_abij = r2_pno(a, b);
-          delta_t2_pno(a, b) = r_abij / e_abij;
+        // Convert delta_t2 to tile and compute norm
+
+        typename Tile::scalar_type norm = 0.0;
+        for (auto r = 0; r < nuocc; ++r) {
+          for (auto c = 0; c < nuocc; ++c) {
+            const auto idx = r * nuocc + c;
+            const auto elem = delta_t2(r, c);
+            const auto abs_elem = std::abs(elem);
+            norm += abs_elem * abs_elem;
+            result_tile[idx] = elem;
+          }
         }
-      }
 
-      // Back transform delta_t2_pno to full space
-      Eigen::MatrixXd delta_t2_full =
-          pno_ij * delta_t2_pno * pno_ij.transpose();
+        return std::sqrt(norm);
+      } // if npno == 0
 
-      // Convert delta_t2_full to tile and compute norm
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < nuocc; ++r) {
-        for (auto c = 0; c < nuocc; ++c) {
-          const auto idx = r * nuocc + c;
-          const auto elem = delta_t2_full(r, c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
+
+
+      // If npno != 0, form delta_t
+      else {
+        // Extent data of tile
+        const auto ext = arg_tile.range().extent_data();
+
+        // Convert data in tile to Eigen::Map and transform to PNO basis
+        const Eigen::MatrixXd r2_pno =
+            pno_ij.transpose() *
+            TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
+
+        // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
+        // basis this matrix will then be back transformed to full basis before
+        // being converted to a tile
+        Eigen::MatrixXd delta_t2_pno = r2_pno;
+
+  //      // Select correct vector containing diagonal elements of Fock matrix in
+  //      // PNO basis
+  //      const Eigen::VectorXd& ens_uocc = F_pno_diag[ij];
+
+  //      // Determine number of PNOs
+  //      const auto npno = ens_uocc.rows();
+
+  //      // Determine number of uocc
+  //      const auto nuocc = pno_ij.rows();
+
+        // Select e_i and e_j
+        const auto e_i = F_occ_act(i, i);
+        const auto e_j = F_occ_act(j, j);
+
+        for (auto a = 0; a < npno; ++a) {
+          const auto e_a = ens_uocc[a];
+          for (auto b = 0; b < npno; ++b) {
+            const auto e_b = ens_uocc[b];
+            const auto e_abij = e_i + e_j - e_a - e_b;
+            const auto r_abij = r2_pno(a, b);
+            delta_t2_pno(a, b) = r_abij / e_abij;
+          }
         }
-      }
 
-      return std::sqrt(norm);
+        // Back transform delta_t2_pno to full space
+        Eigen::MatrixXd delta_t2_full =
+            pno_ij * delta_t2_pno * pno_ij.transpose();
+
+        // Convert delta_t2_full to tile and compute norm
+        typename Tile::scalar_type norm = 0.0;
+        for (auto r = 0; r < nuocc; ++r) {
+          for (auto c = 0; c < nuocc; ++c) {
+            const auto idx = r * nuocc + c;
+            const auto elem = delta_t2_full(r, c);
+            const auto abs_elem = std::abs(elem);
+            norm += abs_elem * abs_elem;
+            result_tile[idx] = elem;
+          }
+        }
+
+        return std::sqrt(norm);
+    } // npno != 0
     };
 
     auto delta_t2_abij = TA::foreach(r2_abij, update2);

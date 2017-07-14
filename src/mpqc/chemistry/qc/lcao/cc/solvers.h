@@ -283,7 +283,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
 
-
+      // Keep running sum of all PNOs in systems for computing average
+      auto total_pno_sum = 0;
 
 
       // Loop over each pair of occupieds to form PNOs
@@ -343,9 +344,38 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
          }
          const auto npno = nuocc - pnodrop;
 
+         // add npno to running total of all PNOs in system
+         total_pno_sum += npno;
+
+//         std::cout << "npno = " << npno << std::endl;
+
+         // Declare eigen matrix pno_trunc
+         Eigen::MatrixXd pno_trunc;
+
+         // If npno = 0, substitute a single fake "PNO" with all coefficients
+         // equal to zero. All other code will behave the same way
+         if (npno == 0) {
+
+           // resize pno_trunc to be size nocc_act x 1
+           pno_trunc.resize(nuocc_, 1);
+
+           // Create a zero matrix of size nocc_act x 1
+           Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
+
+           // Set pno_trunc eqaul to pno_zero matrix
+           pno_trunc = pno_zero;
+         }  // npno == 0
+
+         // If npno != zero, use actual zet of truncated PNOs
+         else {
+           pno_trunc.resize(nuocc_, npno);
+           pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+         }  // npno != 0
+
+
          // Store truncated PNOs
          // pnos[i*nocc_act + j] = pno_ij.block(0,pnodrop,nuocc,npno);
-         Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+         //Eigen::MatrixXd pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
          // pnos_[ij] = pno_trunc;
          pnos_[i * nocc_act + j] = pno_trunc;
 
@@ -452,14 +482,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto ave_nosv = sum_osv / nocc_act;
       ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
-      auto sum_pno = 0;
-      for (int i = 0; i < nocc_act; ++i) {
-       for (int j = 0; j < nocc_act; ++j) {
-         sum_pno += pnos_[i * nocc_act + j].cols();
-       }
-      }
-      auto ave_npno = sum_pno / (nocc_act * nocc_act);
+      // Compute and print out average number of PNOs per pair
+      auto ave_npno = total_pno_sum / (nocc_act * nocc_act);
       ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+
+
+//      auto sum_pno = 0;
+//      for (int i = 0; i < nocc_act; ++i) {
+//       for (int j = 0; j < nocc_act; ++j) {
+//         sum_pno += pnos_[i * nocc_act + j].cols();
+//       }
+//      }
+//      auto ave_npno = sum_pno / (nocc_act * nocc_act);
+//      ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
       }  // end if tiling_method_ == rigid
 
 

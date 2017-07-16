@@ -332,6 +332,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
          Eigen::MatrixXd pno_ij = es.eigenvectors();
          auto occ_ij = es.eigenvalues();
 
+         std::cout << "D_" << i << j << " mat:\n" << D_ij << std::endl;
+
          // truncate PNOs
          size_t pnodrop = 0;
          if (tpno_ != 0.0) {
@@ -716,18 +718,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
               std::size_t b_low = 0;
               std::size_t b_up = TRtiles_b;
 
-              int delta_ij = (ti == tj) ? 1 : 0;
+              auto delta_ij = (ti == tj) ? 1.0 : 0;
 
               // Lower and upper bounds for block expressions
-              block low_bound{a_low, b_low, i_low, j_low};
-              block up_bound{a_up, b_up, i_up, j_up};
+              block ij_low_bound{a_low, b_low, i_low, j_low};
+              block ij_up_bound{a_up, b_up, i_up, j_up};
+              block ji_low_bound{a_low, b_low, j_low, i_low};
+              block ji_up_bound{a_up, b_up, j_up, i_up};
 
-              auto T_caij_block = T_reblock("c,a,i,j").block(low_bound, up_bound);
-              auto T_caji_block = T_reblock("c,a,j,i").block(low_bound, up_bound);
-              auto T_cbij_block = T_reblock("c,b,i,j").block(low_bound, up_bound);
-              auto T_acij_block = T_reblock("a,c,i,j").block(low_bound, up_bound);
-              auto T_acji_block = T_reblock("a,c,j,i").block(low_bound, up_bound);
-              auto T_bcij_block = T_reblock("b,c,i,j").block(low_bound, up_bound);
+              auto T_caij_block = T_reblock("c,a,i,j").block(ij_low_bound, ij_up_bound);
+              auto T_caji_block = T_reblock("c,a,i,j").block(ji_low_bound, ji_up_bound);
+              auto T_cbij_block = T_reblock("c,b,i,j").block(ij_low_bound, ij_up_bound);
+              auto T_acij_block = T_reblock("a,c,i,j").block(ij_low_bound, ij_up_bound);
+              auto T_acji_block = T_reblock("a,c,i,j").block(ji_low_bound, ji_up_bound);
+              auto T_bcij_block = T_reblock("b,c,i,j").block(ij_low_bound, ij_up_bound);
+
+
+
+//              auto T_ij_block = T_reblock("a,b,i,j").block(ij_low_bound, ij_up_bound);
+//              auto T_ji_block = T_reblock("a,b,i,j").block(ji_low_bound, ji_up_bound);
 
               // Declare D_ij array
               T D_ij;
@@ -738,19 +747,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                             ((4 * T_acij_block - 2 * T_acji_block) * T_bcij_block);
 
 
-              // This does not correctly evaluate D_ij
-  //            D_ij("a,b") = ((4 * T_caij_block - 2 * T_caji_block) * T_bcij_block) +
-  //                          ((4 * T_acij_block - 2 * T_acji_block) * T_cbij_block);
-
-  //            std::cout << "created D_ij" << std::endl;
-  //            std::cout << D_ij << std::endl;
-
               // Transform D_ij from array to matrix
               // and divide by (1 + delta_ij)
               Eigen::MatrixXd D_ij_mat = array_to_eigen(D_ij);
               D_ij_mat = D_ij_mat / (1.0 + delta_ij);
 
-              std::cout << "D_ij mat:\n" << D_ij_mat << std::endl;
+              std::cout << "D_" << ti << tj << " mat:\n" << D_ij_mat << std::endl;
 
               D_ij_[ti * nocc_act + tj] = D_ij_mat;
 

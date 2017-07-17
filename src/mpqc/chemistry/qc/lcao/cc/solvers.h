@@ -1675,8 +1675,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           } // nsvo2 != 0
 
           // store truncated SVO2s
-//          Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, 0, nuocc, nsvo2);
-//          Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, 0, nuocc, nsvo2);
           r_svo2s_[i*nocc_act + j] = r_svo2_trunc;
           l_svo2s_[i*nocc_act + j] = l_svo2_trunc;
 
@@ -1745,14 +1743,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto ave_nsvo2 = total_lsvo2_sum / (nocc_act_ * nocc_act_);
       ExEnv::out0() << "The average number of SVO2s is " << ave_nsvo2 << std::endl;
 
-//      auto sum_svo2 = 0;
-//      for (int i=0; i<nocc_act; ++i) {
-//        for (int j=0; j<nocc_act; ++j) {
-//          sum_svo2 += r_svo2s_[i*nocc_act + j].cols();
-//        }
-//      }
-//      auto ave_nsvo2 = sum_svo2 / (nocc_act * nocc_act);
-//      ExEnv::out0() << "The average number of SVO2s is " << ave_nsvo2 << std::endl;
 
 
     } // if (tiling_method_ == rigid)
@@ -2024,8 +2014,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
           // store truncated SVO2s
-//          Eigen::MatrixXd r_svo2_trunc = svd.matrixV().block(0, 0, nuocc, nsvo2);
-//          Eigen::MatrixXd l_svo2_trunc = svd.matrixU().block(0, 0, nuocc, nsvo2);
           r_svo2s_[i*nocc_act + j] = r_svo2_trunc;
           l_svo2s_[i*nocc_act + j] = l_svo2_trunc;
 
@@ -2090,18 +2078,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Compute average number of SVO2s per pair and print out
       auto ave_nsvo2 = total_lsvo2_sum / (nocc_act_ * nocc_act_);
       ExEnv::out0() << "The average number of SVO2s is " << ave_nsvo2 << std::endl;
-
-//      // Compute average number of SVO2s per pair and print out
-
-//      auto sum_svo2 = 0;
-//      for (int i=0; i<nocc_act; ++i) {
-//        for (int j=0; j<nocc_act; ++j) {
-//          sum_svo2 += r_svo2s_[i*nocc_act + j].cols();
-//        }
-//      }
-//      auto ave_nsvo2 = sum_svo2 / (nocc_act * nocc_act);
-//      ExEnv::out0() << "The average number of SVO2s is " << ave_nsvo2 << std::endl;*/
-
 
 
     } // tilinig_method_ != rigid

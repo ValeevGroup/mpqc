@@ -36,7 +36,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-   * | approaximation | char | C | approaximation to use (C or D) |
+   * | approximation | char | C | approximation to use (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    *
    */
@@ -118,7 +118,7 @@ class RIRMP2F12 : public RMP2F12<Tile> {
  * | Keyword | Type | Default| Description |
  * |---------|------|--------|-------------|
  * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
- * | approaximation | char | C | approaximation to use (C or D) |
+ * | approximation | char | C | approximation to use (C or D) |
  * | cabs_singles | bool | true | if do CABSSingles calculation |
  *
  */

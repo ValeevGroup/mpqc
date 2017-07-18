@@ -24,9 +24,9 @@ RMP2F12<Tile>::RMP2F12(const KeyVal& kv)
         "Default Ref Wfn in RMP2F12 is not support! \n");
   }
 
-  approximation_ = kv.value<char>("approaximation", 'C');
+  approximation_ = kv.value<char>("approximation", 'C');
   if (approximation_ != 'C' && approximation_ != 'D') {
-    throw std::invalid_argument("Only approaximation C or D is supported!");
+    throw std::invalid_argument("Only approximation C or D is supported!");
   }
 
   cabs_singles_ = kv.value<bool>("cabs_singles", true);

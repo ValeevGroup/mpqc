@@ -220,6 +220,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       auto& fac = factory_;
       auto& world = fac.world();
+//      world_ = world;
       auto& ofac = fac.orbital_registry();
 
       auto nocc = ofac.retrieve("m").rank();
@@ -234,12 +235,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing PNOs
-      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+      Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+      Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
       F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
@@ -332,7 +335,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
          Eigen::MatrixXd pno_ij = es.eigenvectors();
          auto occ_ij = es.eigenvalues();
 
-         std::cout << "D_" << i << j << " mat:\n" << D_ij << std::endl;
+//         std::cout << "D_" << i << j << " mat:\n" << D_ij << std::endl;
 
          // truncate PNOs
          size_t pnodrop = 0;
@@ -496,6 +499,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       auto& fac = factory_;
       auto& world = fac.world();
+//      world_ = world;
       auto& ofac = fac.orbital_registry();
 
       auto nocc = ofac.retrieve("m").rank();
@@ -510,12 +514,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing PNOs
-      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+      Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+      Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
       F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
@@ -733,10 +739,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
               // Transform D_ij from array to matrix
               // and divide by (1 + delta_ij)
-              Eigen::MatrixXd D_ij_mat = array_to_eigen(D_ij);
+              Eigen::MatrixXd D_ij_mat = array_ops::array_to_eigen(D_ij);
               D_ij_mat = D_ij_mat / (1.0 + delta_ij);
 
-              std::cout << "D_" << ti << tj << " mat:\n" << D_ij_mat << std::endl;
+//              std::cout << "D_" << ti << tj << " mat:\n" << D_ij_mat << std::endl;
 
               D_ij_[ti * nocc_act + tj] = D_ij_mat;
 
@@ -922,7 +928,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     // reblock r1 and r2
+//    mpqc::time_point r2_reblock_time0 = mpqc::now();
     T r2_reblock = reblock_r2(r2);
+//    auto r2_reblock_time1 = mpqc::fenced_now(world_);
+//    auto r2_reblock_duration = mpqc::duration_in_s(r2_reblock_time0, r2_reblock_time1);
+//    std::cout << "r2_reblock time: " << r2_reblock_duration << "s" << std::endl;
+
     T r1_reblock = reblock_r1(r1);
 
     update_only(t1, t2, r1_reblock, r2_reblock);
@@ -1431,6 +1442,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
  private:
   Factory<T>& factory_;
+//  madness::World& world_;
   std::string pno_method_;     //!< the PNO construction method
   std::string pno_canonical_;  //!< whether or not to canonicalize PNO/OSV
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible tiling PNO code
@@ -1543,12 +1555,14 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing SVO2s
-      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+      Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+      Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
       F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
@@ -1769,12 +1783,14 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing SVO2s
-      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
+      Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
+      Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
       F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);

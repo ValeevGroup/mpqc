@@ -235,13 +235,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing PNOs
-//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
       Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
       Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
@@ -274,8 +272,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       #if PRODUCE_PNO_MOLDEN_FILES
       // prepare to Molden
       const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
-      const auto C_i_eig = TA::array_to_eigen(ofac.retrieve("i").coefs());
-      const auto C_a_eig = TA::array_to_eigen(ofac.retrieve("a").coefs());
+      const auto C_i_eig =  array_ops::array_to_eigen(ofac.retrieve("i").coefs());
+      const auto C_a_eig =  array_ops::array_to_eigen(ofac.retrieve("a").coefs());
       const auto libint2_shells = fac.basis_registry()->retrieve(L"μ")->flattened_shells();
 
       // write out active occupied orbitals
@@ -514,13 +512,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing PNOs
-//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
       Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
       Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
@@ -1555,13 +1551,11 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing SVO2s
-//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
       Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
       Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
@@ -1783,13 +1777,11 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing SVO2s
-//      Eigen::VectorXd eps_p = TA::array_to_eigen(F).diagonal();
       Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
 
       // Transform entire Fock array to Eigen Matrix
-//      Eigen::MatrixXd F_all = TA::array_to_eigen(F);
       Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix

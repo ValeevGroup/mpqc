@@ -41,7 +41,8 @@ class RHF
    * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
    * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
-   * | decompo_type | string | cholesky_inverse | (cholesky_inverse, inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
+   * | decompo_type | string | conditioned | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
+   * | s_tolerance | double | 1.0e8 | S condition number threshold in DensityBuilder, valid when decompo_type is set to conditioned |
    *
    */
   // clang-format on

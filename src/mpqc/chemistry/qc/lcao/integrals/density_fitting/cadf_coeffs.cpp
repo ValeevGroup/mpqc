@@ -16,14 +16,12 @@ gaussian::Basis by_center_basis(gaussian::Basis const &in) {
 
   std::vector<gaussian::ShellVec> out;
   while (it != end) {
-    auto center = it->O;
-    auto next_center = center;
 
+    auto center = it->O;
     gaussian::ShellVec atom;
-    while (it != end && next_center == center) {
+    while (it != end && it->O == center) {
       atom.push_back(*it);
       ++it;
-      next_center = it->O;
     }
 
     out.emplace_back(std::move(atom));

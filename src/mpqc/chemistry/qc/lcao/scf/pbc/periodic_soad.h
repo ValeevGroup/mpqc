@@ -32,8 +32,6 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   ExEnv::out0() << "\nBuilding Fock Matrix from SOAD Guess ...\n";
   auto t0 = mpqc::now(world, true);
 
-  using TArray = typename FactoryType::TArray;
-  using DirectTArray = typename FactoryType::DirectTArray;
   using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
 
   // soad density

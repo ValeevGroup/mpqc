@@ -34,9 +34,9 @@
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
-    "method" : "direct",
+    "method" : "direct_df",
     "occ_block_size" : 4,
-    "unocc_block_size" : 8
+    "unocc_block_size" : 4
   },
   "property" : {
     "type" : "Energy",

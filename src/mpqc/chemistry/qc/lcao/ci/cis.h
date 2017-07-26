@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
 #include "mpqc/math/linalg/davidson_diag.h"
+#include "mpqc/util/misc/print.h"
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
@@ -15,50 +16,9 @@ namespace lcao {
 
 namespace detail {
 
-template<typename T>
-inline void print_cis_iteration(std::size_t iter, T norm,
-                                const EigenVector<T> &eig, double time1,
-                                double time2) {
-  ExEnv::out0() << indent << "iteration: " << iter << "\n";
-  ExEnv::out0() << indent << "norm: " << norm << "\n";
-  ExEnv::out0() << indent << "excitation energy: "
-                << "\n";
 
-  const auto size = eig.size();
-  for (auto i = 0; i < size - 1; i++) {
-    ExEnv::out0() << indent << indent << eig[i] << "\n";
-  }
-  ExEnv::out0() << indent << indent << eig[size - 1];
 
-  ExEnv::out0() << "\n";
-  ExEnv::out0() << indent << "total time: " << time1 + time2 << " S\n";
-  ExEnv::out0() << indent << indent << "product time: " << time1 << " S\n";
-  ExEnv::out0() << indent << indent << "davidson time: " << time2 << " S\n\n";
-}
 
-template<typename T>
-inline void print_cis_excitation_energy(const EigenVector<T> &eig,
-                                        bool triplets) {
-  const auto &unit_factory = UnitFactory::get_default();
-  const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
-  const auto Hartree_to_wavenumber =
-      unit_factory->make_unit("energy_wavenumber[cm]").from_atomic_units();
-
-  ExEnv::out0() << "CIS Excitation Energy: ( "
-                << (triplets ? "Triplets" : "Singlets") << " )\n";
-
-  ExEnv::out0() << mpqc::printf("%5s \t %10s \t %10s \t %10s \n", "state", "au",
-                                "eV", "cm^-1");
-
-  const auto size = eig.size();
-
-  for (auto i = 1; i <= size; i++) {
-    T e = eig[i - 1];
-    ExEnv::out0() << mpqc::printf("%5i \t %10.8f \t %10.5f \t %10.2f \n", i, e,
-                                  e * Hartree_to_eV, e * Hartree_to_wavenumber);
-  }
-  ExEnv::out0() << "\n";
-}
 }  // namespace detail
 
 /**
@@ -90,7 +50,7 @@ private:
       const auto &eps_v = this->eps_v;
       const auto &eps_o = this->eps_o;
 
-      auto task = [&eps_v, &eps_o, e](TA::TensorD &result_tile) {
+      auto task = [&eps_v, &eps_o, e](Tile &result_tile) {
         const auto &range = result_tile.range();
         float norm = 0.0;
         for (const auto &i : range) {
@@ -299,9 +259,6 @@ CIS<Tile, Policy>::compute_cis(
         G_iajb("i,a,j,b");
   }
 
-  factory.registry().purge_formula(L"<i j|G|a b>");
-  factory.registry().purge_formula(L"<i a|G|j b>");
-
   auto time1 = mpqc::fenced_now(world);
   // used later
   auto time2 = mpqc::fenced_now(world);
@@ -317,7 +274,7 @@ CIS<Tile, Policy>::compute_cis(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     time0 = mpqc::fenced_now(world);
 
@@ -326,7 +283,7 @@ CIS<Tile, Policy>::compute_cis(
     std::vector<TA::DistArray < Tile, Policy>>
     HB(n_v);
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       HB[i]("i,a") = H("i,j,a,b") * guess[i]("j,b");
     }
@@ -337,11 +294,12 @@ CIS<Tile, Policy>::compute_cis(
 
     time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -351,7 +309,7 @@ CIS<Tile, Policy>::compute_cis(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -406,7 +364,7 @@ CIS<Tile, Policy>::compute_cis_df(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     auto time0 = mpqc::fenced_now(world);
 
@@ -415,7 +373,7 @@ CIS<Tile, Policy>::compute_cis_df(
     std::vector<TA::DistArray < Tile, Policy>>
     HB(n_v);
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       const auto &vec = guess[i];
       // singlets
@@ -440,11 +398,12 @@ CIS<Tile, Policy>::compute_cis_df(
 
     auto time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -454,7 +413,7 @@ CIS<Tile, Policy>::compute_cis_df(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -510,7 +469,7 @@ CIS<Tile, Policy>::compute_cis_direct(
 
   // solve the lowest n_roots eigenvalues
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  auto i = 0;
+  std::size_t i = 0;
   for (; i < max_iter_; i++) {
     auto time0 = mpqc::fenced_now(world);
 
@@ -520,7 +479,7 @@ CIS<Tile, Policy>::compute_cis_direct(
     HB(n_v);
     // TODO need to avoid compute all four center at each iteration
     // product of H with guess vector
-    for (auto i = 0; i < n_v; i++) {
+    for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       const auto &vec = guess[i];
       // singlets
@@ -550,11 +509,12 @@ CIS<Tile, Policy>::compute_cis_direct(
 
     auto time2 = mpqc::fenced_now(world);
 
-    auto norm = (eig - eig_new).norm();
+    EigenVector<numeric_type> delta_e = eig - eig_new;
+    auto norm = delta_e.norm();
 
-    detail::print_cis_iteration(i, norm, eig_new,
-                                mpqc::duration_in_s(time0, time1),
-                                mpqc::duration_in_s(time1, time2));
+    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+                                              mpqc::duration_in_s(time0, time1),
+                                              mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -564,7 +524,7 @@ CIS<Tile, Policy>::compute_cis_direct(
   }
 
   ExEnv::out0() << "\n";
-  detail::print_cis_excitation_energy(eig, triplets);
+  util::print_excitation_energy(eig, triplets);
 
   if (i == max_iter_) {
     throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
@@ -589,7 +549,7 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   auto &factory = this->lcao_factory();
 
   std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
-  std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
+//  std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
 
   // use f_ia for shape
   auto f_ia =

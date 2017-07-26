@@ -50,6 +50,7 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
       array_type const &S, std::vector<array_type> r_xyz, int64_t nocc,
       int64_t nclusters, double TcutC = 0.0,
       std::string const &metric_decomp_type = "cholesky_inverse",
+      double s_tolerance = 1.0e8,
       bool localize = true);
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;

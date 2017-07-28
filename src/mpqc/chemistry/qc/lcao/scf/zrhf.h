@@ -216,6 +216,23 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
   double force_shape_threshold_;
 };
 
+/*!
+ * \brief MARIJCADFKzRHF uses MA-RI-J for coulomb and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+
+  MARIJCADFKzRHF(const KeyVal& kv);
+
+  ~MARIJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  double force_shape_threshold_;
+};
+
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
@@ -223,6 +240,7 @@ extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MARIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

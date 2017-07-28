@@ -7,6 +7,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
@@ -485,6 +486,24 @@ template <typename Tile, typename Policy>
 void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicRIJCADFKFockBuilder<
       Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
+  this->f_builder_ =
+      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+}
+
+/**
+ *  MARIJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MARIJCADFKzRHF<Tile, Policy>::MARIJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+}
+
+template <typename Tile, typename Policy>
+void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMARIJCADFKFockBuilder<
+      Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ =
       std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
 }

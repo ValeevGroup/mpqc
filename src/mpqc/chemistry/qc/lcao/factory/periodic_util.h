@@ -149,6 +149,21 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3i &nshift,
                                           const Vector3d &dcell);
 
+/*!
+ * \brief This shifts the origin of a Basis object by multiple vectors,
+ * and returns a compound Basis that combines all shifted bases
+ *
+ * \param basis the original Basis object
+ * \param shift_base the base position where all shifting vectors start
+ * \param shifts a vector of 3D unit cell indices
+ * \param dcell the direct unit cell params
+ * \return the shared pointer of the compound Basis object
+ */
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift_base,
+                                          const std::vector<Vector3i> & shifts,
+                                          const Vector3d &dcell);
+
 }  // namespace detail
 }  // namespace gaussian
 

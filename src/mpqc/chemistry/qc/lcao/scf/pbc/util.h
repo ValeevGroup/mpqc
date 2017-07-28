@@ -97,6 +97,25 @@ double dot_product(TA::DistArray<Tile, Policy> const &L,
   return result;
 }
 
+using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
+using Basis = ::mpqc::lcao::gaussian::Basis;
+/*!
+ * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
+ * form a non-negligible pair if they share a center or the Frobenius norm of
+ * their overlap is greater than threshold
+ * \param basis1 a basis
+ * \param basis2 a basis
+ * \param threshold
+ *
+ * \return a list of pairs with
+ * key: shell index
+ * mapped value: a vector of shell indices
+ */
+shellpair_list_t parallel_compute_shellpair_list(
+    madness::World &world, const Basis &basis1, const Basis &basis2,
+    double threshold = 1e-12,
+    double target_precision = std::numeric_limits<double>::epsilon());
+
 }  // namespace detail
 }  // namespace pbc
 }  // namespace mpqc

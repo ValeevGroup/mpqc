@@ -2,10 +2,67 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MM_H_
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/screening/cached_shell_info.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace pbc {
+
+namespace detail {
+
+/*!
+ * \brief Class to hold information of basis pairs
+ */
+class BasisPairInfo {
+ public:
+  using Shell = ::mpqc::lcao::gaussian::Shell;
+  using Basis = ::mpqc::lcao::gaussian::Basis;
+
+  BasisPairInfo() = default;
+  BasisPairInfo(std::shared_ptr<const Basis> bs0,
+                std::shared_ptr<const Basis> bs1, const double thresh = 1.0e-8);
+
+ private:
+  const double thresh_;  /// threshold of multiple approximation error
+
+  std::shared_ptr<const Basis> bs0_;
+  std::shared_ptr<const Basis> bs1_;
+  size_t nshells0_;
+  size_t nshells1_;
+  RowMatrixXd pair_extents_;
+  std::vector<std::vector<Vector3d>> pair_centers_;
+
+ public:
+  double extent(int64_t i, int64_t j) const { return pair_extents_(i, j); }
+  Vector3d center(int64_t i, int64_t j) const { return pair_centers_[i][j]; }
+
+  double extent(int64_t ij) const;
+  Vector3d center(int64_t ij) const;
+
+  double max_distance_to(const Vector3d &ref_point);
+
+ private:
+  /*!
+   * \brief This computes the center and the extent of the product of two shells
+   * \param sh0
+   * \param sh1
+   * \return
+   */
+  std::pair<Vector3d, double> shell_pair_center_extent(const Shell &sh0,
+                                                       const Shell &sh1);
+
+  /*!
+   * \brief This computes the center of the product of two primitives
+   * \param exp0
+   * \param exp1
+   * \param thresh
+   * \return
+   */
+  double prim_pair_extent(const double exp0, const double exp1,
+                          const double rab);
+};
+
+}  // namespace detail
+
 namespace mm {
 
 /*!
@@ -18,148 +75,127 @@ class PeriodicMM {
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
-  using ShellInfo = ::mpqc::lcao::gaussian::detail::CachedShellInfo;
 
-  PeriodicMM(Factory &ao_factory_, double mm_thresh = 1.0e-8, double ws = 3)
-      : ao_factory_(ao_factory_), mm_thresh_(mm_thresh), ws_(ws) {}
+  PeriodicMM(Factory &ao_factory, double mm_thresh = 1.0e-8, double ws = 3.0)
+      : ao_factory_(ao_factory), mm_thresh_(mm_thresh), ws_(ws) {
+    auto &world = ao_factory_.world();
+    obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+    dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
+
+    dcell_ = ao_factory_.unitcell().dcell();
+    R_max_ = ao_factory_.R_max();
+    RJ_max_ = ao_factory_.RJ_max();
+    RD_max_ = ao_factory_.RD_max();
+    R_size_ = ao_factory_.R_size();
+    RJ_size_ = ao_factory_.RJ_size();
+    RD_size_ = ao_factory_.RD_size();
+
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::detail::direct_3D_idx;
+    Vector3d zero_shift_base(0.0, 0.0, 0.0);
+    // determine non-negligible shell pairs from ref unit cell and all nearby
+    // unit cells
+    auto basisR = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+    auto significant_shellpair_list =
+        detail::parallel_compute_shellpair_list(world, *obs_, *basisR);
+    // determine necessary nearby unit cells involved in product density
+    for (auto R = 0; R != R_size_; ++R) {
+      const auto R_3D = direct_3D_idx(R, R_max_);
+
+      const auto nshells = obs_->flattened_shells().size();
+      const auto shell1_min = nshells * R;
+      const auto shell1_max = shell1_min + nshells;
+
+      auto is_significant = false;
+      for (auto shell0 = 0; shell0 != nshells; ++shell0) {
+        for (const auto &shell1 : significant_shellpair_list[shell0]) {
+          if (shell1 >= shell1_min && shell1 < shell1_max) {
+            is_significant = true;
+            uc_near_list_.emplace_back(R_3D);
+            break;
+          }
+        }
+        if (is_significant) break;
+      }
+    }
+  }
 
  private:
   Factory &ao_factory_;
   const double mm_thresh_;  /// threshold of multiple approximation error
   const double ws_;         /// well-separateness criterion
 
-  std::shared_ptr<const Basis> obs_;
-  std::shared_ptr<const Basis> dfbs_;
-  RowMatrixXd pair_extents_;
-  std::vector<std::vector<Vector3d>> pair_centers_;
+  std::shared_ptr<Basis> obs_;
+  std::shared_ptr<Basis> dfbs_;
+  Vector3d dcell_;
+  Vector3i R_max_;
+  Vector3i RJ_max_;
+  Vector3i RD_max_;
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+
+  std::vector<Vector3i> uc_near_list_;
 
  public:
-  Vector3d uc_pair_center(const Vector3d &L) {}
-
- private:
-  /*!
-   * \brief basis_pair_center
-   * \param L
-   * \param bs0
-   * \param bs1
-   */
-  void basis_pair_center(const Basis &bs0, const Basis &bs1) {
-    const auto &shellvec0 = bs0.flattened_shells();
-    const auto &shellvec1 = bs1.flattened_shells();
-
-    const auto nshells0 = shellvec0.size();
-    const auto nshells1 = shellvec1.size();
-
-    pair_extents_.resize(nshells0, nshells1);
-    pair_centers_ = std::vector<std::vector<Vector3d>>(
-        nshells0, std::vector<Vector3d>(nshells1));
-
-    for (auto s0 = 0ul; s0 != nshells0; ++s0) {
-      const auto &shell0 = shellvec0[s0];
-
-      for (auto s1 = 0ul; s1 != nshells1; ++s1) {
-        const auto &shell1 = shellvec1[s1];
-
-        auto &extent = pair_extents_(s0, s1);
-        auto &center = pair_centers_[s0][s1];
-        std::make_pair(center, extent) =
-            shell_pair_center_extent(shell0, shell1);
-      }
-    }
-  }
 
   /*!
-   * \brief This computes the center and the extent of the product of two shells
-   * \param sh0
-   * \param sh1
-   * \return
+   * \brief This determines if a unit cell \c uc_ket is in the crystal far
+   * field of the bra unit cell \c uc_bra.
    */
-  std::pair<Vector3d, double> shell_pair_center_extent(const Shell &sh0,
-                                                       const Shell &sh1) {
-    const auto &O0 = sh0.O;
-    const auto &O1 = sh1.O;
-    Vector3d center0 = {O0[0], O0[1], O0[2]};
-    Vector3d center1 = {O1[0], O1[1], O1[2]};
-    const auto &exp0 = sh0.alpha;
-    const auto &exp1 = sh1.alpha;
+  bool is_uc_in_CFF(const Vector3i &uc_ket,
+                    const Vector3i &uc_bra = {0, 0, 0}) {
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
-    Vector3d R_a2b = center1 - center0;
-    // compute |O1 - O0|
-    double rab = R_a2b.norm();
-    // unit vector from O0 to O1
-    Vector3d n_a2b = 1.0 / rab * R_a2b;
+    Vector3d vec_bra = uc_bra.cast<double>().cwiseProduct(dcell_);
+    auto basis_bra = shift_basis_origin(*obs_, vec_bra);
+    auto basis_near_bra =
+        shift_basis_origin(*obs_, vec_bra, uc_near_list_, dcell_);
+    auto bra_pairs =
+        std::make_shared<detail::BasisPairInfo>(basis_bra, basis_near_bra);
 
-    Vector3d center = 0.5 * (center0 + center1);
-    double extent = 0.5 * rab;
-    Vector3d l = center0;
-    Vector3d r = center1;
+    Vector3d vec_ket = uc_ket.cast<double>().cwiseProduct(dcell_);
+    auto basis_ket = shift_basis_origin(*obs_, vec_ket);
+    auto basis_near_ket =
+        shift_basis_origin(*obs_, vec_bra, uc_near_list_, dcell_);
+    auto ket_pairs =
+        std::make_shared<detail::BasisPairInfo>(basis_ket, basis_near_ket);
 
-    // determine if \c a is between \c b and \c c (a, b, and c are collinear)
-    auto is_between = [](const Vector3d &a, const Vector3d &b,
-                         const Vector3d &c) {
-      const Vector3d bc = c - b;
+    const auto npairs_bra = basis_bra->flattened_shells().size() *
+                            basis_near_bra->flattened_shells().size();
+    const auto npairs_ket = basis_ket->flattened_shells().size() *
+                            basis_near_ket->flattened_shells().size();
 
-      bool is_x_between = bc[0] > 0 ? (a[0] >= b[0] && a[0] <= c[0])
-                                    : (a[0] <= b[0] && a[0] >= c[0]);
-      bool is_y_between = bc[1] > 0 ? (a[1] >= b[1] && a[1] <= c[1])
-                                    : (a[1] <= b[1] && a[1] >= c[1]);
-      bool is_z_between = bc[2] > 0 ? (a[2] >= b[2] && a[2] <= c[2])
-                                    : (a[2] <= b[2] && a[2] >= c[2]);
+    // CFF condition #1: all charge distributions are well seperated
+    auto condition1 = true;
+    for (auto p0 = 0ul; p0 != npairs_bra; ++p0) {
+      const auto center0 = bra_pairs->center(p0);
+      const auto extent0 = bra_pairs->extent(p0);
 
-      return (is_x_between && is_y_between && is_z_between);
-    };
+      for (auto p1 = 0ul; p1 != npairs_ket; ++p1) {
+        const auto center1 = ket_pairs->center(p1);
+        const auto extent1 = ket_pairs->extent(p1);
 
-    //  update center and extent for shell pair
-    auto update = [&center, &extent, &l, &r, &n_a2b](const Vector3d &center_new,
-                                                     const double extent_new) {
-      Vector3d l_new = center_new - extent_new * n_a2b;
-      Vector3d r_new = center_new + extent_new * n_a2b;
-      l = is_between(l_new, center, l) ? l : l_new;
-      r = is_between(r_new, center, r) ? r : r_new;
-      center = 0.5 * (l + r);
-      extent = 0.5 * ((r - l).norm());
-    };
-
-    const auto nprim0 = sh0.nprim();
-    const auto nprim1 = sh1.nprim();
-    for (auto i = 0ul; i != nprim0; ++i) {
-      const auto exp_i = exp0[i];
-
-      for (auto j = 0ul; j != nprim1; ++j) {
-        const auto exp_j = exp1[j];
-
-        const Vector3d center_ij =
-            (exp_i * center0 + exp_j * center1) / (exp_i + exp_j);
-
-        const double extent_ij = prim_pair_extent(exp_i, exp_j, rab);
-        update(center_ij, extent_ij);
+        const double rab = (center1 - center0).norm();
+        if (rab < (extent0 + extent1)) {
+          condition1 = false;
+          break;
+        }
       }
+
+      if (!condition1) break;
     }
 
-    return std::make_pair(center, extent);
-  }
+    // CFF condition #2: |L| >= ws * (r0_max + r1_max)
+    auto condition2 = false;
+    const auto L = (vec_ket - vec_bra).norm();
+    const auto uc_center_bra = vec_bra + 0.5 * dcell_;
+    const auto uc_center_ket = vec_ket + 0.5 * dcell_;
+    const auto r0_max = bra_pairs->max_distance_to(uc_center_bra);
+    const auto r1_max = ket_pairs->max_distance_to(uc_center_ket);
+    condition2 = (L >= (r0_max + r1_max)) ? true : false;
 
-  /*!
-   * \brief This computes the center of the product of two primitives
-   * \param exp0
-   * \param exp1
-   * \param thresh
-   * \return
-   */
-  double prim_pair_extent(const double exp0, const double exp1,
-                          const double rab) {
-    const auto exp_sum = exp0 + exp1;
-    const auto exp_mult = exp0 * exp1;
-
-    // compute overlap integral between two primitives, neglecting angular parts
-    const auto prefactor = std::pow(4.0 * exp_mult / (exp_sum * exp_sum), 0.75);
-    const auto exponent = std::exp(-1.0 * (exp_mult / exp_sum) * rab * rab);
-    const auto S = prefactor * exponent;
-
-    const auto extent2 =
-        (-1.0 * std::log(mm_thresh_) + std::Log(S) + 0.5 * std::log(exp_sum)) /
-        exp_sum;
-    return std::sqrt(extent2);
+    return (condition1 && condition2);
   }
 };
 

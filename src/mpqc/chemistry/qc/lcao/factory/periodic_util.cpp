@@ -184,6 +184,40 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
   return result_ptr;
 }
 
+std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
+                                          const Vector3d &shift_base,
+                                          const std::vector<Vector3i> & shifts,
+                                          const Vector3d &dcell) {
+  std::vector<ShellVec> vec_of_shells;
+
+  using ::mpqc::lcao::detail::direct_ord_idx;
+  using ::mpqc::lcao::detail::direct_vector;
+  int64_t shift_size = shifts.size();
+
+  for (auto uc_idx = 0; uc_idx < shift_size; ++uc_idx) {
+    Vector3d shift = shifts[uc_idx].cast<double>().cwiseProduct(dcell);
+    shift += shift_base;
+
+    for (auto shell_vec : basis.cluster_shells()) {
+      ShellVec shells;
+      for (auto shell : shell_vec) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        shells.push_back(shell);
+      }
+      vec_of_shells.push_back(shells);
+    }
+  }
+
+  Basis result(vec_of_shells);
+  auto result_ptr = std::make_shared<Basis>(result);
+  return result_ptr;
+
+}
+
+
 }  // namespace detail
 }  // namespace gaussian
 }  // namespace lcao

@@ -20,7 +20,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
   using numeric_type = typename Tile::numeric_type;
 
-public:
   // clang-format off
   /**
    * KeyVal constructor

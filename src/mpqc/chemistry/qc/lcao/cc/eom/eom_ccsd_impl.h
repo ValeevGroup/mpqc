@@ -1,8 +1,5 @@
 /*
- * eom_cc.cpp
  *
- *  Created on: Feb 26, 2016
- *      Author: jinmei
  */
 
 namespace mpqc {

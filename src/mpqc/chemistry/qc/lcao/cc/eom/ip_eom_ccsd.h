@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_H_
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsd_intermediates.h"
 #include "mpqc/math/linalg/davidson_diag.h"
 
 namespace mpqc {
@@ -50,9 +51,8 @@ class IP_EOM_CCSD : public CCSD<Tile, Policy>,
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-
-
-  // preconditioner in DavidsonDiag, approximate the diagonal of H matrix
+  /// preconditioner in DavidsonDiag, approximate the diagonal of H matrix
+  /// with F_aa - F_ii - F_jj
   struct Preconditioner {
     /// diagonal of F_ij matrix
     EigenVector<numeric_type> eps_o;
@@ -103,6 +103,20 @@ class IP_EOM_CCSD : public CCSD<Tile, Policy>,
 
   /// @return guess vector of size n_roots as unit vector
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);
+
+  /// @return intermediates needed
+  cc::Intermediates<Tile,Policy> compute_intermediates();
+
+  /// @return ionization potentials
+  EigenVector<numeric_type> ip_eom_ccsd_davidson_solver(
+      std::vector<GuessVector> &C, const cc::Intermediates<Tile, Policy> &imds,
+      std::size_t max_iter, double convergence);
+
+  /// compute the product of H with vectors
+  TArray compute_HS1(const TArray &Ci, const TArray &Caij,
+                     const cc::Intermediates<Tile, Policy> &imds);
+  TArray compute_HS2(const TArray &Ci, const TArray &Caij,
+                     const cc::Intermediates<Tile, Policy> &imds);
 
  private:
   std::size_t max_vector_;   // max number of guess vector

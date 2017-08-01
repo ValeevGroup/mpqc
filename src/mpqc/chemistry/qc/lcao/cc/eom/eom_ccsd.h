@@ -144,7 +144,7 @@ private:
   std::vector<GuessVector> C_; // initial guess vector
 
   // compute F and W intermediates
-  void compute_FWintermediates();
+  void compute_intermediates();
 
   // compute contractions of HSS, HSD, HDS, and HDD
   //                         with guess vector Ci
@@ -155,7 +155,7 @@ private:
   void init() {
     g_ijab_ = this->get_ijab();
 
-    compute_FWintermediates();
+    compute_intermediates();
 
     auto remove_integral = [] (const Formula& formula){
       return formula.rank() == 4;

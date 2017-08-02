@@ -104,9 +104,6 @@ class IP_EOM_CCSD : public CCSD<Tile, Policy>,
   /// @return guess vector of size n_roots as unit vector
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);
 
-  /// @return intermediates needed
-  cc::Intermediates<Tile,Policy> compute_intermediates();
-
   /// @return ionization potentials
   EigenVector<numeric_type> ip_eom_ccsd_davidson_solver(
       std::vector<GuessVector> &C, const cc::Intermediates<Tile, Policy> &imds,

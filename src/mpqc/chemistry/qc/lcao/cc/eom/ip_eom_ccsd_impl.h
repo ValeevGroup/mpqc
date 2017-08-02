@@ -36,7 +36,8 @@ void IP_EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     // initialize intermediates
     ExEnv::out0() << indent << "\nInitialize Intermediates \n";
-    auto imds = compute_intermediates();
+    auto imds = cc::compute_intermediates(this->lcao_factory(), this->ao_factory(),
+                                          this->t2(), this->t1(), this->is_df(), "ip");
 
     auto max_iter = this->max_iter_;
     auto result =
@@ -109,15 +110,6 @@ IP_EOM_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
 }
 
 template <typename Tile, typename Policy>
-cc::Intermediates<Tile, Policy>
-IP_EOM_CCSD<Tile, Policy>::compute_intermediates() {
-  bool df = this->is_df();
-
-  return cc::compute_intermediates(this->lcao_factory(), this->ao_factory(),
-                                   this->t2(), this->t1(), df, "ip");
-}
-
-template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
 IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
     std::vector<typename IP_EOM_CCSD<Tile, Policy>::GuessVector>& C,
@@ -132,7 +124,6 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
   /// make preconditioner
   Preconditioner pred;
   {
-    std::cout << imds.FIJ << std::endl;
     EigenVector<numeric_type> eps_o =
         array_ops::array_to_eigen(imds.FIJ).diagonal();
     EigenVector<numeric_type> eps_v =

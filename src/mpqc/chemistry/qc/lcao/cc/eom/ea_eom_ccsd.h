@@ -6,6 +6,7 @@
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EA_EOM_CCSD_H_
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsd_intermediates.h"
 #include "mpqc/math/linalg/davidson_diag.h"
 
 namespace mpqc {
@@ -119,6 +120,18 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
 
   /// @return guess vector of size n_roots as unit vector
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);
+
+  /// @return ionization potentials
+  EigenVector<numeric_type> ea_eom_ccsd_davidson_solver(
+      std::vector<GuessVector> &C, const cc::Intermediates<Tile, Policy> &imds,
+      std::size_t max_iter, double convergence);
+
+  /// compute the product of H with vectors
+  TArray compute_HS1(const TArray &Ca, const TArray &Cabi,
+                     const cc::Intermediates<Tile, Policy> &imds);
+
+  TArray compute_HS2(const TArray &Ca, const TArray &Cabi,
+                     const cc::Intermediates<Tile, Policy> &imds);
 
  private:
   std::size_t max_vector_;   // max number of guess vector

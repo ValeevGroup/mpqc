@@ -49,7 +49,7 @@ struct Intermediates {
 
 /**
  * @param f_oo  <i|F|j>
- * @param g_ijab_bar   2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar   2<i j|G|a b> - <j i|G|a b>
  * @param tau   T2("a,b,i,j") + T1("a,i")*T1("b,j")
  */
 template <typename Tile, typename Policy>
@@ -65,7 +65,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_F_oo(
 /**
  *
  * @param f_vv   <a|F|b>
- * @param g_ijab_bar  2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar 2<i j|G|a b> - <j i|G|a b>
  * @param tau   T2("a,b,i,j") + T1("a,i")*T1("b,j")
  */
 template <typename Tile, typename Policy>
@@ -85,7 +85,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_F_vv(
 /**
  *
  * @param f_ov  <i|F|a>
- * @param g_ijab_bar  2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar  2<i j|G|a b> - <j i|G|a b>
  * @param t1  CCSD T1 amplitude T1("a,i")
  */
 template <typename Tile, typename Policy>
@@ -121,7 +121,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_F_OO(
  *
  * @param f_oo  <i|F|j>
  * @param f_ov <i|F|a>
- * @param g_ijab_bar   2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar   2<i j|G|a b> - <j i|G|a b>
  * @param g_ijka_bar 2 <i j|G|k a> - <j i|G|k a>
  * @param tau  T2("a,b,i,j") + T1("a,i")*T1("b,j")
  * @param t1   CCSD T1 amplitude T1("a,i")
@@ -165,7 +165,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_F_VV(
  *
  * @param f_vv  <a|F|b>
  * @param f_ov <i|F|a>
- * @param g_ijab_bar   2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar   2<i j|G|a b> - <j i|G|a b>
  * @param g_iabc_bar  2 <i a|G|b c> - <i a|G|c b>
  * @param tau  T2("a,b,i,j") + T1("a,i")*T1("b,j")
  * @param t1   CCSD T1 amplitude T1("a,i")
@@ -180,7 +180,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_F_VV(
     const TA::DistArray<Tile, Policy>& tau,
     const TA::DistArray<Tile, Policy>& t1) {
   TA::DistArray<Tile, Policy> F_VV;
-  F_VV("a,c") = f_vv("a,c") + g_ijab_bar("k,l,c,d") * tau("a,d,k,l") +
+  F_VV("a,c") = f_vv("a,c") - g_ijab_bar("k,l,c,d") * tau("a,d,k,l") -
                 f_ov("k,c") * t1("a,k") + g_iabc_bar("k,a,d,c") * t1("d,k");
   return F_VV;
 };
@@ -207,7 +207,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_oooo(
   TA::DistArray<Tile, Policy> W_oooo;
 
   W_oooo("k,l,i,j") = g_ijkl("k,l,i,j") + g_ijka("k,l,i,c") * t1("c,j") +
-                      g_ijka("k,l,j,c") * t1("c,i") +
+                      g_ijka("l,k,j,c") * t1("c,i") +
                       g_ijab("k,l,c,d") * tau("c,d,i,j");
 
   return W_oooo;
@@ -295,7 +295,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_ovov(
 
 /**
  *
- * @param g_ijab_bar  2<i j|G|a b> - <i j|G|b a>
+ * @param g_ijab_bar  2<i j|G|a b> - <j i|G|a b>
  * @param g_ijab  <i j|G|a b>
  * @param g_iajb  <i a|G|j b>
  * @param t2  CCSD T2 amplitude T2("a,b,i,j")
@@ -308,7 +308,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_ovvo1(
     const TA::DistArray<Tile, Policy>& g_iajb,
     const TA::DistArray<Tile, Policy>& t2) {
   TA::DistArray<Tile, Policy> W_ovvo1;
-  W_ovvo1("i,a,b,j") = g_iajb("j,a,i,b") +
+  W_ovvo1("i,a,b,j") = g_ijab("j,i,a,b") +
                        g_ijab_bar("i,k,b,c") * t2("a,c,j,k") -
                        g_ijab("i,k,b,c") * t2("a,c,k,j");
   return W_ovvo1;
@@ -360,13 +360,6 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_ovvo(
 };
 
 template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_ovoo(
-
-    ){
-
-};
-
-template <typename Tile, typename Policy>
 cc::Intermediates<Tile, Policy> compute_intermediates(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
     gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
@@ -396,17 +389,19 @@ cc::Intermediates<Tile, Policy> compute_intermediates(
   {
     TA::DistArray<Tile, Policy> g_ijka_bar;
     g_ijka_bar("i,j,k,a") = 2.0 * g_ijka("i,j,k,a") - g_ijka("j,i,k,a");
-
+//
     imds.FIJ =
         compute_cs_ccsd_F_OO(f_ij, f_ia, g_ijab_bar, g_ijka_bar, tau, t1);
-
+//
     imds.FIA = compute_cs_ccsd_F_ov(f_ia, g_ijab_bar, t1);
 
     TA::DistArray<Tile, Policy> g_iabc_bar;
     g_iabc_bar("k,a,d,b") = 2.0 * g_iabc("k,a,d,b") - g_iabc("k,a,b,d");
-
+//
     imds.FAB =
         compute_cs_ccsd_F_VV(f_ab, f_ia, g_ijab_bar, g_iabc_bar, tau, t1);
+
+//    std::tie(imds.FAB, imds.FIA, imds.FIJ) = compute_cs_ccsd_F(lcao_factory,ao_factory,t1,tau,df);
   }
 
   // two body

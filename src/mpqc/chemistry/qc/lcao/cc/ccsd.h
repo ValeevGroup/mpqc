@@ -350,7 +350,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         {
           h_ac("a,c") =
               f_ab("a,c") -
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("l,k,c,d")) * tau("a,d,k,l");
+              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("a,d,k,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 

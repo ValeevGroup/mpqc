@@ -90,7 +90,7 @@ IP_EOM_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     guess_vector[i].t1 = TA::DistArray<Tile, Policy>(world, trange_ci, shape_o);
     guess_vector[i].t1.fill(0.0);
     // make unit vector
-    std::vector<std::size_t> element_idx{{n_o - i - 1}};
+    std::vector<std::size_t> element_idx = {n_o - i - 1};
 
     auto tile_idx = trange_ci.element_to_tile(element_idx);
 
@@ -193,7 +193,7 @@ TA::DistArray<Tile, Policy> IP_EOM_CCSD<Tile, Policy>::compute_HS1(
     HS1("i") = -imds.FIJ("k,i") * Ci("k");
 
     HS1("i") +=
-        2 * imds.FIA("l,d") * Caij("d,i,l") -
+        2 * imds.FIA("k,d") * Caij("d,i,k") -
 
         imds.FIA("k,d") * Caij("d,k,i") -
 
@@ -215,15 +215,15 @@ TA::DistArray<Tile, Policy> IP_EOM_CCSD<Tile, Policy>::compute_HS2(
 
                     imds.FIJ("k,i") * Caij("a,k,j") -
 
-                    imds.FIJ("l,j") * Caij("a,i,l") +
+                    imds.FIJ("k,j") * Caij("a,i,k") +
 
                     imds.Wijkl("k,l,i,j") * Caij("a,k,l") +
 
-                    2 * imds.Wiabj("l,a,c,j") * Caij("c,i,l") -
+                    2 * imds.Wiabj("k,a,c,j") * Caij("c,i,k") -
 
                     imds.Wiabj("k,a,c,j") * Caij("c,k,i") -
 
-                    imds.Wiajb("l,a,j,c") * Caij("c,i,l") -
+                    imds.Wiajb("k,a,j,c") * Caij("c,i,k") -
 
                     imds.Wiajb("k,a,i,c") * Caij("c,k,j") -
 

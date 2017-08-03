@@ -637,18 +637,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const TA::TiledRange1 occ_col = TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
       const TA::TiledRange1 occ_row = ktrange.dim(3);
 
-      std::cout << "uocc_row number of tiles: " << uocc_row.tile_extent() << std::endl;
-      std::cout << "uocc_col number of tiles: " << uocc_col.tile_extent() << std::endl;
-
-      std::cout << "uocc_row number of elements: " << uocc_row.extent() << std::endl;
-      std::cout << "uocc_col number of elements: " << uocc_col.extent() << std::endl;
-
-      std::cout << "occ_row number of tiles: " << occ_row.tile_extent() << std::endl;
-      std::cout << "occ_col number of tiles: " << occ_col.tile_extent() << std::endl;
-
-      std::cout << "occ_row number of elements: " << occ_row.extent() << std::endl;
-      std::cout << "occ_col number of elements: " << occ_col.extent() << std::endl;
-
 
       // Create transition arrays
       T a_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<Tile,

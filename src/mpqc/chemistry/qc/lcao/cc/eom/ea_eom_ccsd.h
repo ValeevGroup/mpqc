@@ -92,7 +92,7 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
         const auto &range = result_tile.range();
         float norm = 0.0;
         for (const auto &i : range) {
-          const auto result = result_tile[i] / (e + eps_v[i[0]]);
+          const auto result = result_tile[i] / (e - eps_v[i[0]]);
           result_tile[i] = result;
           norm += result * result;
         }

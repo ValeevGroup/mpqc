@@ -195,8 +195,7 @@ TA::DistArray<Tile, Policy> EA_EOM_CCSD<Tile, Policy>::compute_HS1(
     HS1("a") = imds.FAB("a,c") * Ca("c");
 
     HS1("a") +=
-        2.0 * imds.FIA("k,c") * Cabi("a,c,k") -
-        imds.FIA("k,c") * Cabi("c,a,k") +
+        imds.FIA("k,c") * (2.0 * Cabi("a,c,k") - Cabi("c,a,k")) +
         (2.0 * imds.Waibc("a,k,b,c") - imds.Waibc("a,k,c,b")) * Cabi("b,c,k");
   }
   return HS1;
@@ -208,7 +207,7 @@ TA::DistArray<Tile, Policy> EA_EOM_CCSD<Tile, Policy>::compute_HS2(
     const cc::Intermediates<Tile, Policy>& imds) {
   TArray HS2;
   {
-    HS2("a,b,i") = imds.Wabci("a,b,c,i")*Ca("c");
+    HS2("a,b,i") = imds.Wabci("a,b,c,i") * Ca("c");
 
     HS2("a,b,i") +=
         imds.FAB("a,c") * Cabi("c,b,i") + imds.FAB("b,c") * Cabi("a,c,i") -

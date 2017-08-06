@@ -260,6 +260,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
        T_.fill(0.0);
       }
 
+
+
       // For storing PNOs and and the Fock matrix in the PNO basis
       pnos_.resize(nocc_act * nocc_act);
       F_pno_diag_.resize(nocc_act * nocc_act);
@@ -542,15 +544,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         T_.fill(0.0);
       }
 
-      // For storing D_ij matrices
-      D_ij_.resize(nocc_act * nocc_act);
+
 
       // For storing PNOs and and the Fock matrix in the PNO basis
+      npnos_.resize(nocc_act * nocc_act);
       pnos_.resize(nocc_act * nocc_act);
       F_pno_diag_.resize(nocc_act * nocc_act);
 
       // For storing OSVs (PNOs when i = j) and the Fock matrix in
       // the OSV basis
+      nosvs_.resize(nocc_act);
       osvs_.resize(nocc_act);
       F_osv_diag_.resize(nocc_act);
 
@@ -630,7 +633,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Create TiledRange1 objects for occ transformation arrays
       std::vector<std::size_t> occ_blocks;
-      for (std::size_t i = 0; i <= nocc_act; ++i) {
+      for (std::size_t i = 0; i <= nocc_act_; ++i) {
           occ_blocks.push_back(i);
       }
 
@@ -713,6 +716,179 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto D_ = TA::foreach(T_reblock, form_D);
       D_.world().gop.fence();
       std::cout << "Successfully transformed reblocked T to D" << std::endl;
+      std::cout << "D_ trange:\n" << D_.trange() << std::endl;
+
+
+      /// Step (3): Form PNO_ij from D_ij
+
+      // Diagonalize each D_ij matrix to get the PNOs and occupation
+      // numbers
+
+      // Lambda function to form PNOs; implement using a for_each
+      auto form_PNO = [F_uocc, this](
+                       Tile& result_tile, const Tile& arg_tile) {
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+
+        result_tile = Tile(arg_tile.range());
+
+        // Get values of i,j and compute ij
+        const int i = arg_tile.range().lobound()[2];
+        const int j = arg_tile.range().lobound()[3];
+        const int ij = i * nocc_act_ + j;
+
+
+        // Form D_ij matrix from arg_tile
+        Eigen::MatrixXd D_ij = TA::eigen_map(arg_tile, nuocc_, nuocc_);
+
+
+
+        // Diagonalize D_ij
+        es.compute(D_ij);
+        Eigen::MatrixXd pno_ij = es.eigenvectors();
+        auto occ_ij = es.eigenvalues();
+
+        // Determine number of PNOs to be dropped
+        std::size_t pnodrop = 0;
+
+        if (tpno_ != 0.0) {
+          for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+            if (!(occ_ij(k) >= tpno_))
+              ++pnodrop;
+            else
+              break;
+          }
+        }
+
+        // Calculate the number of PNOs kept and store in vector npnos_
+        // for calculating average npno later
+        const auto npno = nuocc_ - pnodrop;
+        npnos_[ij] = npno;
+
+//        std::cout << "For i = " << i << " and j = " << j << " npno = " << npno << std::endl;
+
+        // Truncate PNO matrix and store in pnos_
+
+        // Declare matrix pno_trunc to hold truncated set of PNOs
+        Eigen::MatrixXd pno_trunc;
+
+        // If npno = 0, substitute a single fake "PNO" with all coefficients
+        // equal to zero. All other code will behave the same way
+        if (npno == 0) {
+
+          // resize pno_trunc to be size nocc_act x 1
+          pno_trunc.resize(nuocc_, 1);
+
+          // Create a zero matrix of size nuocc x 1
+          Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
+
+          // Set pno_trunc eqaul to pno_zero matrix
+          pno_trunc = pno_zero;
+        }
+
+        // If npno != zero, use actual zet of truncated PNOs
+        else {
+          pno_trunc.resize(nuocc_, npno);
+          pno_trunc = pno_ij.block(0, pnodrop, nuocc_, npno);
+        }
+
+        // Store truncated PNOs
+        pnos_[ij] = pno_trunc;
+
+        // Transform F to PNO space
+        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+
+        // Store just the diagonal elements of F_pno_ij
+        F_pno_diag_[ij] = F_pno_ij.diagonal();
+
+        ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+
+//        if (pno_canonical_ == "true" && npno > 0) {
+          if (pno_canonical_ == "true") {
+          // Compute eigenvectors of F in PNO space
+          es.compute(F_pno_ij);
+          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+
+          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+
+          // Replace standard with canonical PNOs
+          pnos_[ij] = can_pno_ij;
+          F_pno_diag_[ij] = es.eigenvalues();
+        }   // pno_canonical
+
+
+        // truncate OSVs
+
+        auto osvdrop = 0;
+        if (i == j) {
+          size_t osvdrop = 0;
+          if (tosv_ != 0.0) {
+            for (size_t k = 0; k != occ_ij.rows(); ++k) {
+              if (!(occ_ij(k) >= tosv_))
+                ++osvdrop;
+              else
+                break;
+            }
+          }
+          const auto nosv = nuocc_ - osvdrop;
+          nosvs_[i] = nosv;
+//          std::cout << "For i = " << i << " and j = " << j << " nosv = "
+//                    << nosv << std::endl;
+
+          if (nosv == 0) {  // all OSV truncated indicates total nonsense
+            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+                                        __LINE__, 1, 0);
+          }
+
+          // Store truncated OSVs
+          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc_, nosv);
+          osvs_[i] = osv_trunc;
+
+          // Transform F to OSV space
+          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+
+          // Store just the diagonal elements of F_osv_i
+          F_osv_diag_[i] = F_osv_i.diagonal();
+
+          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+          if (pno_canonical_ == "true") {
+            // Compute eigenvectors of F in OSV space
+            es.compute(F_osv_i);
+            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+
+            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+
+            // Replace standard with canonical OSVs
+            osvs_[i] = can_osv_i;
+            F_osv_diag_[i] = es.eigenvalues();
+          } // pno_canonical
+
+        } // if i == j
+
+
+
+
+        // Transform D_ij into a tile
+        auto norm = 0.0;
+        for (int a = 0, tile_idx = 0; a != nuocc_; ++a) {
+          for (int b = 0; b != nuocc_; ++b, ++tile_idx) {
+            const auto elem = D_ij(a, b);
+            const auto abs_result = std::abs(elem);
+            norm += abs_result;
+            result_tile[tile_idx] = elem;
+          }
+        }
+        return std::sqrt(norm);
+       }; // form_PNO
+
+
+      auto D_prime = TA::foreach(D_, form_PNO);
+      D_prime.world().gop.fence();
+      std::cout << "Successfully formed PNOs" << std::endl;
+      std::cout << "D_prime trange:\n" << D_prime.trange();
+
 
 
 
@@ -785,147 +961,147 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 //      } // ti
 
 
-      // For each D_ij matrix, diagonalize to form PNOs, truncate
-      // PNOs, and store matrix of PNOs in pnos_
+//      // For each D_ij matrix, diagonalize to form PNOs, truncate
+//      // PNOs, and store matrix of PNOs in pnos_
 
-      // Keep running sum of all PNOs in systems for computing average
-      auto total_pno_sum = 0;
+//      // Keep running sum of all PNOs in systems for computing average
+//      auto total_pno_sum = 0;
 
-      for (auto i = 0; i != nocc_act; ++i) {
-        for (auto j = 0; j != nocc_act; ++j) {
-            auto ij = i * nocc_act + j;
-            Eigen::MatrixXd D_ij = D_ij_[ij];
+//      for (auto i = 0; i != nocc_act; ++i) {
+//        for (auto j = 0; j != nocc_act; ++j) {
+//            auto ij = i * nocc_act + j;
+//            Eigen::MatrixXd D_ij = D_ij_[ij];
 
-            // Diagonalize D_ij
-            es.compute(D_ij);
-            Eigen::MatrixXd pno_ij = es.eigenvectors();
-            auto occ_ij = es.eigenvalues();
+//            // Diagonalize D_ij
+//            es.compute(D_ij);
+//            Eigen::MatrixXd pno_ij = es.eigenvectors();
+//            auto occ_ij = es.eigenvalues();
 
-            // truncate PNOs
-            std::size_t pnodrop = 0;
-            if (tpno_ != 0.0) {
-              for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
-                if (!(occ_ij(k) >= tpno_))
-                  ++pnodrop;
-                else
-                  break;
-              }
-            }
-            const auto npno = nuocc - pnodrop;
+//            // truncate PNOs
+//            std::size_t pnodrop = 0;
+//            if (tpno_ != 0.0) {
+//              for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+//                if (!(occ_ij(k) >= tpno_))
+//                  ++pnodrop;
+//                else
+//                  break;
+//              }
+//            }
+//            const auto npno = nuocc - pnodrop;
 
-            // Add npno to total_pno_sum
-            total_pno_sum += npno;
+//            // Add npno to total_pno_sum
+//            total_pno_sum += npno;
 
-            // Declare matrix pno_trunc to hold truncated set of PNOs
-            Eigen::MatrixXd pno_trunc;
+//            // Declare matrix pno_trunc to hold truncated set of PNOs
+//            Eigen::MatrixXd pno_trunc;
 
-            // If npno = 0, substitute a single fake "PNO" with all coefficients
-            // equal to zero. All other code will behave the same way
-            if (npno == 0) {
+//            // If npno = 0, substitute a single fake "PNO" with all coefficients
+//            // equal to zero. All other code will behave the same way
+//            if (npno == 0) {
 
-              // resize pno_trunc to be size nocc_act x 1
-              pno_trunc.resize(nuocc_, 1);
+//              // resize pno_trunc to be size nocc_act x 1
+//              pno_trunc.resize(nuocc_, 1);
 
-              // Create a zero matrix of size nocc_act x 1
-              Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
+//              // Create a zero matrix of size nocc_act x 1
+//              Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
 
-              // Set pno_trunc eqaul to pno_zero matrix
-              pno_trunc = pno_zero;
-            }
+//              // Set pno_trunc eqaul to pno_zero matrix
+//              pno_trunc = pno_zero;
+//            }
 
-            // If npno != zero, use actual zet of truncated PNOs
-            else {
-              pno_trunc.resize(nuocc_, npno);
-              pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-            }
+//            // If npno != zero, use actual zet of truncated PNOs
+//            else {
+//              pno_trunc.resize(nuocc_, npno);
+//              pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+//            }
 
-            // Store truncated PNOs
-            pnos_[ij] = pno_trunc;
+//            // Store truncated PNOs
+//            pnos_[ij] = pno_trunc;
 
-  //          std::cout << "For i = " << i << " and j = " << j << " npno = "
-  //                    << npno << std::endl;
+//  //          std::cout << "For i = " << i << " and j = " << j << " npno = "
+//  //                    << npno << std::endl;
 
-          // Transform F to PNO space
-          Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+//          // Transform F to PNO space
+//          Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-          // Store just the diagonal elements of F_pno_ij
-          F_pno_diag_[ij] = F_pno_ij.diagonal();
+//          // Store just the diagonal elements of F_pno_ij
+//          F_pno_diag_[ij] = F_pno_ij.diagonal();
 
-          ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+//          ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-          if (pno_canonical_ == "true" && npno > 0) {
-            // Compute eigenvectors of F in PNO space
-            es.compute(F_pno_ij);
-            Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
+//          if (pno_canonical_ == "true" && npno > 0) {
+//            // Compute eigenvectors of F in PNO space
+//            es.compute(F_pno_ij);
+//            Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
 
-            // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-            Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
+//            // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+//            Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
 
-            // Replace standard with canonical PNOs
-            pnos_[ij] = can_pno_ij;
-            F_pno_diag_[ij] = es.eigenvalues();
-          }   // pno_canonical
+//            // Replace standard with canonical PNOs
+//            pnos_[ij] = can_pno_ij;
+//            F_pno_diag_[ij] = es.eigenvalues();
+//          }   // pno_canonical
 
-          // truncate OSVs
+//          // truncate OSVs
 
-          auto osvdrop = 0;
-          if (i == j) {
-            size_t osvdrop = 0;
-            if (tosv_ != 0.0) {
-              for (size_t k = 0; k != occ_ij.rows(); ++k) {
-                if (!(occ_ij(k) >= tosv_))
-                  ++osvdrop;
-                else
-                  break;
-              }
-            }
-            const auto nosv = nuocc - osvdrop;
-            std::cout << "For i = " << i << " and j = " << j << " nosv = "
-                      << nosv << std::endl;
+//          auto osvdrop = 0;
+//          if (i == j) {
+//            size_t osvdrop = 0;
+//            if (tosv_ != 0.0) {
+//              for (size_t k = 0; k != occ_ij.rows(); ++k) {
+//                if (!(occ_ij(k) >= tosv_))
+//                  ++osvdrop;
+//                else
+//                  break;
+//              }
+//            }
+//            const auto nosv = nuocc - osvdrop;
+//            std::cout << "For i = " << i << " and j = " << j << " nosv = "
+//                      << nosv << std::endl;
 
-            if (nosv == 0) {  // all OSV truncated indicates total nonsense
-              throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-                                          __LINE__, 1, 0);
-            }
+//            if (nosv == 0) {  // all OSV truncated indicates total nonsense
+//              throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
+//                                          __LINE__, 1, 0);
+//            }
 
-            // Store truncated OSVs
-            Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-            osvs_[i] = osv_trunc;
+//            // Store truncated OSVs
+//            Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+//            osvs_[i] = osv_trunc;
 
-            // Transform F to OSV space
-            Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+//            // Transform F to OSV space
+//            Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
 
-            // Store just the diagonal elements of F_osv_i
-            F_osv_diag_[i] = F_osv_i.diagonal();
+//            // Store just the diagonal elements of F_osv_i
+//            F_osv_diag_[i] = F_osv_i.diagonal();
 
-            /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-            if (pno_canonical_ == "true") {
-              // Compute eigenvectors of F in OSV space
-              es.compute(F_osv_i);
-              Eigen::MatrixXd osv_transform_i = es.eigenvectors();
+//            /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+//            if (pno_canonical_ == "true") {
+//              // Compute eigenvectors of F in OSV space
+//              es.compute(F_osv_i);
+//              Eigen::MatrixXd osv_transform_i = es.eigenvectors();
 
-              // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-              Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
+//              // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+//              Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
 
-              // Replace standard with canonical OSVs
-              osvs_[i] = can_osv_i;
-              F_osv_diag_[i] = es.eigenvalues();
-            } // pno_canonical
-          } // if (i == j)
-        } // j
-      } // i
+//              // Replace standard with canonical OSVs
+//              osvs_[i] = can_osv_i;
+//              F_osv_diag_[i] = es.eigenvalues();
+//            } // pno_canonical
+//          } // if (i == j)
+//        } // j
+//      } // i
 
-      auto sum_osv = 0;
-      for (int i = 0; i < nocc_act; ++i) {
-        sum_osv += osvs_[i].cols();
-      }
-      auto ave_nosv = sum_osv / nocc_act;
-      ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
+//      auto sum_osv = 0;
+//      for (int i = 0; i < nocc_act; ++i) {
+//        sum_osv += osvs_[i].cols();
+//      }
+//      auto ave_nosv = sum_osv / nocc_act;
+//      ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
 
 
-      // Compute average number of PNOs per pair and print out
-      auto ave_npno = total_pno_sum / (nocc_act * nocc_act);
-      ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+//      // Compute average number of PNOs per pair and print out
+//      auto ave_npno = total_pno_sum / (nocc_act * nocc_act);
+//      ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
 
       } // end if tiling_method_ != rigid
   }
@@ -1486,18 +1662,21 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   int nocc_act_;               //!< the number of active occupied orbitals
   int nuocc_;                  //!< the number of unoccupied orbitals
   Array T_;                    //!< the array of MP2 T amplitudes
+  Array D_;                    //!< the array of densities
 
   Eigen::MatrixXd F_occ_act_;
 
   // For storing D_ij matrices
   std::vector<Eigen::MatrixXd> D_ij_;
 
-  // For storing PNOs and and the Fock matrix in the PNO basis
+  // For storing number of PNOs, PNOs and and the Fock matrix in the PNO basis
+  std::vector<int> npnos_;
   std::vector<Eigen::MatrixXd> pnos_;
   std::vector<Eigen::VectorXd> F_pno_diag_;
 
-  // For storing OSVs (PNOs when i = j) and the Fock matrix in
+  // For storing number of OSVs, OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis
+  std::vector<int> nosvs_;
   std::vector<Eigen::MatrixXd> osvs_;
   std::vector<Eigen::VectorXd> F_osv_diag_;
 };  // class: PNO solver

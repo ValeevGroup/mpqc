@@ -430,10 +430,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
          }
 
          // truncate OSVs
-
-         // auto nosv = 0;
-
-         // auto osvdrop = 0;
          if (i == j) {
            size_t osvdrop = 0;
            if (tosv_ != 0.0) {
@@ -881,16 +877,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       std::cout << "Successfully formed PNOs" << std::endl;
       std::cout << "D_prime_ trange:\n" << D_prime_.trange();
 
-      // Actual, theoretical, and max size of osvs_
-      std::cout << "\nFor osvs_:\n"
-      << "size of osvs_: " << osvs_.size() << "\n"
-      << "capacity of osvs_: " << osvs_.capacity() << "\n" << std::endl;
-
-
-      // Actual, theoretical, and max size of pnos_
-      std::cout << "\nFor pnos_:\n"
-      << "size of pnos_: " << pnos_.size() << "\n"
-      << "capacity of pnos_: " << pnos_.capacity() << "\n" << std::endl;
 
       // Compute and print average number of OSVs per pair
       auto tot_osv = 0;

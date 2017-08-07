@@ -499,7 +499,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       auto& fac = factory_;
       auto& world = fac.world();
-//      world_ = world;
       auto& ofac = fac.orbital_registry();
 
       auto nocc = ofac.retrieve("m").rank();
@@ -820,7 +819,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         // truncate OSVs
 
-        auto osvdrop = 0;
+//        auto osvdrop = 0;
         if (i == j) {
           size_t osvdrop = 0;
           if (tosv_ != 0.0) {
@@ -889,219 +888,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       std::cout << "Successfully formed PNOs" << std::endl;
       std::cout << "D_prime trange:\n" << D_prime.trange();
 
+      // Actual, theoretical, and max size of osvs_
+      std::cout << "\nFor osvs_:\n"
+      << "size of osvs_: " << osvs_.size() << "\n"
+      << "capacity of osvs_: " << osvs_.capacity() << "\n" << std::endl;
 
 
-
-
-
-//      // Get number of tiles and number of elements
-//      // along each dim of T_reblock
-
-//      typedef std::vector<std::size_t> block;
-
-//      auto TRtrange = T_reblock.trange();
-
-//      const auto TRtiles_a = TRtrange.dim(0).tile_extent();
-//      const auto TRtiles_b = TRtrange.dim(1).tile_extent();
-//      const auto TRtiles_i = TRtrange.dim(2).tile_extent();
-//      const auto TRtiles_j = TRtrange.dim(3).tile_extent();
-
-//      // For each ti, tj pair, compute D_ij and transform to matrix
-//      // Store D_ij in D_ij_
-//      for (std::size_t ti = 0; ti != TRtiles_i; ++ti) {
-//          std::size_t i_low = ti;
-//          std::size_t i_up = ti + 1;
-
-//          for (std::size_t tj = 0; tj != TRtiles_j; ++tj) {
-//              std::size_t j_low = tj;
-//              std::size_t j_up = tj + 1;
-
-//              std::size_t a_low = 0;
-//              std::size_t a_up = TRtiles_a;
-
-//              std::size_t b_low = 0;
-//              std::size_t b_up = TRtiles_b;
-
-//              auto delta_ij = (ti == tj) ? 1.0 : 0;
-
-//              // Lower and upper bounds for block expressions
-//              block ij_low_bound{a_low, b_low, i_low, j_low};
-//              block ij_up_bound{a_up, b_up, i_up, j_up};
-//              block ji_low_bound{a_low, b_low, j_low, i_low};
-//              block ji_up_bound{a_up, b_up, j_up, i_up};
-
-//              auto T_caij_block = T_reblock("c,a,i,j").block(ij_low_bound, ij_up_bound);
-//              auto T_caji_block = T_reblock("c,a,i,j").block(ji_low_bound, ji_up_bound);
-//              auto T_cbij_block = T_reblock("c,b,i,j").block(ij_low_bound, ij_up_bound);
-//              auto T_acij_block = T_reblock("a,c,i,j").block(ij_low_bound, ij_up_bound);
-//              auto T_acji_block = T_reblock("a,c,i,j").block(ji_low_bound, ji_up_bound);
-//              auto T_bcij_block = T_reblock("b,c,i,j").block(ij_low_bound, ij_up_bound);
-
-
-
-//              // Declare D_ij array
-//              T D_ij;
-
-//              // Compute D_ij using block expressions (without division by
-//              // (1 + delta_ij) )
-//              D_ij("a,b") = ((4 * T_caij_block - 2 * T_caji_block) * T_cbij_block) +
-//                            ((4 * T_acij_block - 2 * T_acji_block) * T_bcij_block);
-
-
-//              // Transform D_ij from array to matrix
-//              // and divide by (1 + delta_ij)
-//              Eigen::MatrixXd D_ij_mat = array_ops::array_to_eigen(D_ij);
-//              D_ij_mat = D_ij_mat / (1.0 + delta_ij);
-
-////              std::cout << "D_" << ti << tj << " mat:\n" << D_ij_mat << std::endl;
-
-//              D_ij_[ti * nocc_act + tj] = D_ij_mat;
-
-//        } // tj
-//      } // ti
-
-
-//      // For each D_ij matrix, diagonalize to form PNOs, truncate
-//      // PNOs, and store matrix of PNOs in pnos_
-
-//      // Keep running sum of all PNOs in systems for computing average
-//      auto total_pno_sum = 0;
-
-//      for (auto i = 0; i != nocc_act; ++i) {
-//        for (auto j = 0; j != nocc_act; ++j) {
-//            auto ij = i * nocc_act + j;
-//            Eigen::MatrixXd D_ij = D_ij_[ij];
-
-//            // Diagonalize D_ij
-//            es.compute(D_ij);
-//            Eigen::MatrixXd pno_ij = es.eigenvectors();
-//            auto occ_ij = es.eigenvalues();
-
-//            // truncate PNOs
-//            std::size_t pnodrop = 0;
-//            if (tpno_ != 0.0) {
-//              for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
-//                if (!(occ_ij(k) >= tpno_))
-//                  ++pnodrop;
-//                else
-//                  break;
-//              }
-//            }
-//            const auto npno = nuocc - pnodrop;
-
-//            // Add npno to total_pno_sum
-//            total_pno_sum += npno;
-
-//            // Declare matrix pno_trunc to hold truncated set of PNOs
-//            Eigen::MatrixXd pno_trunc;
-
-//            // If npno = 0, substitute a single fake "PNO" with all coefficients
-//            // equal to zero. All other code will behave the same way
-//            if (npno == 0) {
-
-//              // resize pno_trunc to be size nocc_act x 1
-//              pno_trunc.resize(nuocc_, 1);
-
-//              // Create a zero matrix of size nocc_act x 1
-//              Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
-
-//              // Set pno_trunc eqaul to pno_zero matrix
-//              pno_trunc = pno_zero;
-//            }
-
-//            // If npno != zero, use actual zet of truncated PNOs
-//            else {
-//              pno_trunc.resize(nuocc_, npno);
-//              pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-//            }
-
-//            // Store truncated PNOs
-//            pnos_[ij] = pno_trunc;
-
-//  //          std::cout << "For i = " << i << " and j = " << j << " npno = "
-//  //                    << npno << std::endl;
-
-//          // Transform F to PNO space
-//          Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
-
-//          // Store just the diagonal elements of F_pno_ij
-//          F_pno_diag_[ij] = F_pno_ij.diagonal();
-
-//          ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
-
-//          if (pno_canonical_ == "true" && npno > 0) {
-//            // Compute eigenvectors of F in PNO space
-//            es.compute(F_pno_ij);
-//            Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
-
-//            // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-//            Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
-
-//            // Replace standard with canonical PNOs
-//            pnos_[ij] = can_pno_ij;
-//            F_pno_diag_[ij] = es.eigenvalues();
-//          }   // pno_canonical
-
-//          // truncate OSVs
-
-//          auto osvdrop = 0;
-//          if (i == j) {
-//            size_t osvdrop = 0;
-//            if (tosv_ != 0.0) {
-//              for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//                if (!(occ_ij(k) >= tosv_))
-//                  ++osvdrop;
-//                else
-//                  break;
-//              }
-//            }
-//            const auto nosv = nuocc - osvdrop;
-//            std::cout << "For i = " << i << " and j = " << j << " nosv = "
-//                      << nosv << std::endl;
-
-//            if (nosv == 0) {  // all OSV truncated indicates total nonsense
-//              throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-//                                          __LINE__, 1, 0);
-//            }
-
-//            // Store truncated OSVs
-//            Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-//            osvs_[i] = osv_trunc;
-
-//            // Transform F to OSV space
-//            Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
-
-//            // Store just the diagonal elements of F_osv_i
-//            F_osv_diag_[i] = F_osv_i.diagonal();
-
-//            /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-//            if (pno_canonical_ == "true") {
-//              // Compute eigenvectors of F in OSV space
-//              es.compute(F_osv_i);
-//              Eigen::MatrixXd osv_transform_i = es.eigenvectors();
-
-//              // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-//              Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
-
-//              // Replace standard with canonical OSVs
-//              osvs_[i] = can_osv_i;
-//              F_osv_diag_[i] = es.eigenvalues();
-//            } // pno_canonical
-//          } // if (i == j)
-//        } // j
-//      } // i
-
-//      auto sum_osv = 0;
-//      for (int i = 0; i < nocc_act; ++i) {
-//        sum_osv += osvs_[i].cols();
-//      }
-//      auto ave_nosv = sum_osv / nocc_act;
-//      ExEnv::out0() << "The average number of OSVs is " << ave_nosv << std::endl;
-
-
-//      // Compute average number of PNOs per pair and print out
-//      auto ave_npno = total_pno_sum / (nocc_act * nocc_act);
-//      ExEnv::out0() << "The average number of PNOs is " << ave_npno << std::endl;
+      // Actual, theoretical, and max size of pnos_
+      std::cout << "\nFor pnos_:\n"
+      << "size of pnos_: " << pnos_.size() << "\n"
+      << "capacity of pnos_: " << pnos_.capacity() << "\n" << std::endl;
 
       } // end if tiling_method_ != rigid
   }
@@ -1139,12 +935,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     // reblock r1 and r2
-//    mpqc::time_point r2_reblock_time0 = mpqc::now();
     T r2_reblock = reblock_r2(r2);
-//    auto r2_reblock_time1 = mpqc::fenced_now(world_);
-//    auto r2_reblock_duration = mpqc::duration_in_s(r2_reblock_time0, r2_reblock_time1);
-//    std::cout << "r2_reblock time: " << r2_reblock_duration << "s" << std::endl;
-
     T r1_reblock = reblock_r1(r1);
 
     update_only(t1, t2, r1_reblock, r2_reblock);
@@ -1191,9 +982,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Reblock r2
       T result;
       result("an,bn,in,jn") = arg("a,b,i,j") * occ_trans_array("j,jn")
-                                                * occ_trans_array("i,in")
-                                                * uocc_trans_array("b,bn")
-                                                * uocc_trans_array("a,an");
+                                             * occ_trans_array("i,in")
+                                             * uocc_trans_array("b,bn")
+                                             * uocc_trans_array("a,an");
 
       return result;
 
@@ -1284,9 +1075,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Reblock delta_t2_abij to original blocking
       T result;
       result("an,bn,in,jn") = arg("a,b,i,j") * occ_trans_array("j,jn")
-                                                * occ_trans_array("i,in")
-                                                * uocc_trans_array("b,bn")
-                                                * uocc_trans_array("a,an");
+                                             * occ_trans_array("i,in")
+                                             * uocc_trans_array("b,bn")
+                                             * uocc_trans_array("a,an");
 
       return result;
 
@@ -1461,7 +1252,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const Eigen::VectorXd& ens_uocc = F_osv_diag[i];
 
       // Determine number of OSVs
-      const auto nosv = ens_uocc.rows();
+//      const auto nosv = ens_uocc.rows();
+      const auto nosv = osv_i.cols();
 
       // Determine number of uocc
       const auto nuocc = osv_i.rows();

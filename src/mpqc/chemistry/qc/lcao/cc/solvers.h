@@ -695,9 +695,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                                 4 * T_ij * T_ji -
                                 2 * T_ji * T_ji);
 
-//        std::cout << "D_ij:\n" << D_ij << std::endl;
-
-
         // Transform D_ij into a tile
         auto norm = 0.0;
         for (int a = 0, tile_idx = 0; a != nuocc_; ++a) {
@@ -716,7 +713,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       D_.world().gop.fence();
       std::cout << "Successfully transformed reblocked T to D" << std::endl;
       std::cout << "D_ trange:\n" << D_.trange() << std::endl;
-      std::cout << "D_:\n" << D_ << std::endl;
+//      std::cout << "D_:\n" << D_ << std::endl;
 
 
       /// Step (3): Form PNO_ij from D_ij
@@ -740,9 +737,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         // Form D_ij matrix from arg_tile
         Eigen::MatrixXd D_ij = TA::eigen_map(arg_tile, nuocc_, nuocc_);
-
-        std::cout << "D_ij:\n" << D_ij << std::endl;
-
 
 
         // Diagonalize D_ij
@@ -897,6 +891,24 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       std::cout << "\nFor pnos_:\n"
       << "size of pnos_: " << pnos_.size() << "\n"
       << "capacity of pnos_: " << pnos_.capacity() << "\n" << std::endl;
+
+      // Compute and print average number of OSVs per pair
+      auto tot_osv = 0;
+      for (int i = 0; i != nosvs_.size(); ++i) {
+        tot_osv += nosvs_[i];
+      }
+
+      auto ave_nosv = tot_osv / nocc_act_;
+      std::cout << "The average number of OSVs per pair is " << ave_nosv << std::endl;
+
+      // Compute and print average number of PNOs per pair
+      auto tot_pno = 0;
+      for (int i = 0; i != npnos_.size(); ++i) {
+        tot_pno += npnos_[i];
+      }
+
+      auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
+      std::cout << "The average number of PNOs per pair is " << ave_npno << std::endl;
 
       } // end if tiling_method_ != rigid
   }

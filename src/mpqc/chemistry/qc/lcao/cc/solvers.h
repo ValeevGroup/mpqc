@@ -663,8 +663,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                                                * b_trans_array("b,bn")
                                                * a_trans_array("a,an");
 
-
-
       std::cout << "reblocking step worked" << std::endl;
       std::cout << "T_trange:\n" << T_.trange() << std::endl;
       std::cout << "Reblocked T_ trange:\n" << T_reblock.trange() << std::endl;
@@ -691,11 +689,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         Eigen::MatrixXd T_ji = T_ij.transpose();
 
         // Form D_ij from T_ij and T_ji
-        Eigen::MatrixXd D_ij = (1 / (1 + delta_ij)) *
+        Eigen::MatrixXd D_ij = (1.0 / (1 + delta_ij)) *
                                (4 * T_ji * T_ij -
                                 2 * T_ij * T_ij +
                                 4 * T_ij * T_ji -
                                 2 * T_ji * T_ji);
+
+//        std::cout << "D_ij:\n" << D_ij << std::endl;
 
 
         // Transform D_ij into a tile
@@ -716,6 +716,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       D_.world().gop.fence();
       std::cout << "Successfully transformed reblocked T to D" << std::endl;
       std::cout << "D_ trange:\n" << D_.trange() << std::endl;
+      std::cout << "D_:\n" << D_ << std::endl;
 
 
       /// Step (3): Form PNO_ij from D_ij
@@ -740,6 +741,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         // Form D_ij matrix from arg_tile
         Eigen::MatrixXd D_ij = TA::eigen_map(arg_tile, nuocc_, nuocc_);
 
+        std::cout << "D_ij:\n" << D_ij << std::endl;
+
 
 
         // Diagonalize D_ij
@@ -763,8 +766,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         // for calculating average npno later
         const auto npno = nuocc_ - pnodrop;
         npnos_[ij] = npno;
-
-//        std::cout << "For i = " << i << " and j = " << j << " npno = " << npno << std::endl;
 
         // Truncate PNO matrix and store in pnos_
 
@@ -802,8 +803,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-//        if (pno_canonical_ == "true" && npno > 0) {
-          if (pno_canonical_ == "true") {
+        if (pno_canonical_ == "true" && npno > 0) {
+//          if (pno_canonical_ == "true") {
           // Compute eigenvectors of F in PNO space
           es.compute(F_pno_ij);
           Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
@@ -832,8 +833,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
           }
           const auto nosv = nuocc_ - osvdrop;
           nosvs_[i] = nosv;
-//          std::cout << "For i = " << i << " and j = " << j << " nosv = "
-//                    << nosv << std::endl;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
             throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
@@ -883,10 +882,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
        }; // form_PNO
 
 
-      auto D_prime = TA::foreach(D_, form_PNO);
-      D_prime.world().gop.fence();
+      auto D_prime_ = TA::foreach(D_, form_PNO);
+      D_prime_.world().gop.fence();
       std::cout << "Successfully formed PNOs" << std::endl;
-      std::cout << "D_prime trange:\n" << D_prime.trange();
+      std::cout << "D_prime_ trange:\n" << D_prime_.trange();
 
       // Actual, theoretical, and max size of osvs_
       std::cout << "\nFor osvs_:\n"
@@ -1455,6 +1454,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   int nuocc_;                  //!< the number of unoccupied orbitals
   Array T_;                    //!< the array of MP2 T amplitudes
   Array D_;                    //!< the array of densities
+  Array D_prime_;
 
   Eigen::MatrixXd F_occ_act_;
 

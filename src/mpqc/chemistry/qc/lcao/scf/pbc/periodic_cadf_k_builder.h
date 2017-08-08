@@ -1701,6 +1701,7 @@ class PeriodicCADFKBuilder
         std::array<size_t, 2> idx_M = {{X_in_uc, Y_in_M}};
         if (M_repl.is_zero(idx_M)) continue;
         auto M_tile = M_repl.find(idx_M);
+        const auto M_norm = M_tile.get().norm();
 
         for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
           for (auto tile_rho = 0ul; tile_rho != ntiles_rho;
@@ -1718,6 +1719,8 @@ class PeriodicCADFKBuilder
                 continue;
 
               auto C_tile = C_repl.find(idx_C);
+              const auto C_norm = C_tile.get().norm();
+              if (C_norm * M_norm < force_shape_threshold_) continue;
 
               WorldObject_::task(
                   me, &PeriodicCADFKBuilder_::compute_contr_CM_task, C_tile,

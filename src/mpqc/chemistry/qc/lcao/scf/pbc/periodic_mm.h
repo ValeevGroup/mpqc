@@ -42,7 +42,7 @@ class BasisPairInfo {
   double extent(int64_t ij) const;
   Vector3d center(int64_t ij) const;
 
-  size_t npairs() const {return npairs_;}
+  size_t npairs() const { return npairs_; }
 
   /*!
    * \brief This computes maximum distance between \cref_point and all charge
@@ -129,13 +129,6 @@ class PeriodicMM {
       }
     }
 
-    // test
-    {
-      for (auto &uc : uc_near_list_) {
-        ExEnv::out0() << "nearby unit cell: " << uc.transpose() << std::endl;
-      }
-    }
-
     // compute centers and extents of product density between the referene
     // unit cell and its neighbours
     ref_pairs_ = compute_basis_pairs();
@@ -143,12 +136,6 @@ class PeriodicMM {
     // all charge centers
     const auto ref_center = 0.5 * dcell_;
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_center);
-
-    // test
-    {
-      ExEnv::out0() << "max_distance_to_refcenter_ = "
-                    << max_distance_to_refcenter_ << std::endl;
-    }
   }
 
  private:
@@ -180,24 +167,8 @@ class PeriodicMM {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
     Vector3d vec_bra = uc_bra.cast<double>().cwiseProduct(dcell_);
-//    auto basis_bra = shift_basis_origin(*obs_, vec_bra);
-//    auto basis_near_bra =
-//        shift_basis_origin(*obs_, vec_bra, uc_near_list_, dcell_);
-//    auto ref_pairs_ =
-//        std::make_shared<detail::BasisPairInfo>(basis_bra, basis_near_bra);
-
     Vector3d vec_ket = uc_ket.cast<double>().cwiseProduct(dcell_);
-//    auto basis_ket = shift_basis_origin(*obs_, vec_ket);
-//    auto basis_near_ket =
-//        shift_basis_origin(*obs_, vec_ket, uc_near_list_, dcell_);
-//    auto ket_pairs =
-//        std::make_shared<detail::BasisPairInfo>(basis_ket, basis_near_ket);
     const auto vec_rel = vec_ket - vec_bra;
-
-//    const auto npairs_bra = basis_bra->flattened_shells().size() *
-//                            basis_near_bra->flattened_shells().size();
-//    const auto npairs_ket = basis_ket->flattened_shells().size() *
-//                            basis_near_ket->flattened_shells().size();
 
     const auto npairs = ref_pairs_->npairs();
     // CFF condition #1: all charge distributions are well seperated
@@ -218,68 +189,22 @@ class PeriodicMM {
       if (!condition1) break;
     }
 
-//    for (auto p0 = 0ul; p0 != npairs_bra; ++p0) {
-//      const auto center0 = bra_pairs->center(p0);
-//      const auto extent0 = bra_pairs->extent(p0);
-
-//      for (auto p1 = 0ul; p1 != npairs_ket; ++p1) {
-//        const auto center1 = ket_pairs->center(p1);
-//        const auto extent1 = ket_pairs->extent(p1);
-
-//        const double rab = (center1 - center0).norm();
-//        if (rab < (extent0 + extent1)) {
-//          condition1 = false;
-//          break;
-//        }
-//      }
-
-//      if (!condition1) break;
-//    }
-
     // CFF condition #2: |L| >= ws * (r0_max + r1_max)
     auto condition2 = false;
     const auto L = vec_rel.norm();
     const auto uc_center_bra = vec_bra + 0.5 * dcell_;
-//    const auto uc_center_ket = vec_ket + 0.5 * dcell_;
-//    const auto r0_max = ref_pairs_->max_distance_to(uc_center_bra);
-//    const auto r1_max = ket_pairs->max_distance_to(uc_center_ket);
-//    condition2 = (L >= ws_ * (r0_max + r1_max)) ? true : false;
-
     condition2 = (L >= ws_ * (max_distance_to_refcenter_ * 2.0)) ? true : false;
 
     // test:
     {
-      //    for (auto s0 = 0ul; s0 != basis_bra->flattened_shells().size();
-      //    ++s0) {
-      //      for (auto s1 = 0ul; s1 !=
-      //      basis_near_bra->flattened_shells().size(); ++s1) {
-      //        const auto center0 = bra_pairs->center(s0, s1);
-      //        const auto extent0 = bra_pairs->extent(s0, s1);
-      //        ExEnv::out0() << "s0 = " << s0 << ", s1 = " << s1 << std::endl;
-      //        ExEnv::out0() << "\tcenter = " << center0.transpose() <<
-      //        std::endl; ExEnv::out0() << "\textent = " << extent0 <<
-      //        std::endl;
-      //      }
-      //    }
-      //    for (auto p0 = 0ul; p0 != npairs_bra; ++p0) {
-      //      const auto center0 = bra_pairs->center(p0);
-      //      const auto extent0 = bra_pairs->extent(p0);
-      //      ExEnv::out0() << "\npair # = " << p0 << std::endl;
-      //      ExEnv::out0() << "\tcenter = " << center0.transpose() <<
-      //      std::endl; ExEnv::out0() << "\textent = " << extent0 << std::endl;
-      //    }
-
       ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
                     << std::endl;
       ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
                     << std::endl;
       ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
                     << std::endl;
-//      ExEnv::out0() << "Vector ket center = " << uc_center_ket.transpose()
-//                    << std::endl;
       ExEnv::out0() << "Distance between bra and ket = " << L << std::endl;
       ExEnv::out0() << "r0_max = " << max_distance_to_refcenter_ << std::endl;
-//      ExEnv::out0() << "r1_max = " << r1_max << std::endl;
       auto cond1_val = (condition1) ? "true" : "false";
       auto cond2_val = (condition2) ? "true" : "false";
       ExEnv::out0() << "Is Condition 1 true? " << cond1_val << std::endl;
@@ -289,14 +214,13 @@ class PeriodicMM {
     return (condition1 && condition2);
   }
 
-private:
-
+ private:
   /*!
    * \brief This computes centers and extents of product density between unit
    * cell \c ref_uc and its neighbours
    */
   std::shared_ptr<detail::BasisPairInfo> compute_basis_pairs(
-      const Vector3i& ref_uc = {0, 0, 0}) {
+      const Vector3i &ref_uc = {0, 0, 0}) {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
     Vector3d uc_vec = ref_uc.cast<double>().cwiseProduct(dcell_);
@@ -306,10 +230,6 @@ private:
 
     return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour);
   }
-
-
-
-
 };
 
 }  // namespace mm

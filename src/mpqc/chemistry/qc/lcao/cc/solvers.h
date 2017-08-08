@@ -13,21 +13,31 @@
 #include "mpqc/math/linalg/diagonal_array.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 
-using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
-
 namespace mpqc {
 namespace lcao {
 namespace cc {
 
 namespace detail {
+inline void print_local(TiledArray::World& world,
+                 const std::shared_ptr<TiledArray::Pmap>& pmap) {
+  for (ProcessID r = 0; r < world.size(); ++r) {
+    world.gop.fence();
+    if (r == world.rank()) {
+      std::cout << r << ": { ";
+      for (TiledArray::Pmap::const_iterator it = pmap->begin();
+           it != pmap->end(); ++it)
+        std::cout << *it << " ";
+      std::cout << "}\n";
+    }
+  }
+}
 
-template <typename Tile, typename Policy,
-          typename EigenVectorX =
-              Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
-    const TA::DistArray<Tile, Policy>& r2_abij, const EigenVectorX& ens_occ,
-    const EigenVectorX& ens_uocc) {
-  auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
+    const TA::DistArray<Tile, Policy>& r2_abij,
+    const EigenVector<typename Tile::numeric_type>& ens_occ,
+    const EigenVector<typename Tile::numeric_type>& ens_uocc) {
+  auto denom = [&ens_occ, &ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -69,13 +79,12 @@ TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
   return delta_t2_abij;
 }
 
-template <typename Tile, typename Policy,
-          typename EigenVectorX =
-              Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
-    const TA::DistArray<Tile, Policy>& r1_ai, const EigenVectorX& ens_occ,
-    const EigenVectorX& ens_uocc) {
-  auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
+    const TA::DistArray<Tile, Policy>& r1_ai,
+    const EigenVector<typename Tile::numeric_type>& ens_occ,
+    const EigenVector<typename Tile::numeric_type>& ens_uocc) {
+  auto denom = [&ens_occ, &ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -106,6 +115,610 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
   delta_t1_ai.world().gop.fence();
   return delta_t1_ai;
 }
+
+/**
+ *
+ * @param r2_abij  T2 like Array with dimention "a,b,i,j", it should blocked by
+ * V in a,b and 1 in i,j
+ * @param F_occ_act  active occupied Fock matrix in canonical basis
+ * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * will be initialized
+ * @param pnos vector of PNOs, only local i,j will be initialized
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
+    const TA::DistArray<Tile, Policy>& r2_abij,
+    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
+    const std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
+  auto update2 = [&F_occ_act, &F_pno_diag, &pnos](Tile& result_tile,
+                                                  const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // determine i and j indices
+    const auto i = arg_tile.range().lobound()[2];
+    const auto j = arg_tile.range().lobound()[3];
+
+    // Select appropriate matrix of PNOs
+    auto ij = i * F_occ_act.cols() + j;
+    Eigen::MatrixXd pno_ij = pnos[ij];
+
+    // Extent data of tile
+    const auto ext = arg_tile.range().extent_data();
+
+    // Convert data in tile to Eigen::Map and transform to PNO basis
+    const Eigen::MatrixXd r2_pno =
+        pno_ij.transpose() *
+        TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
+
+    // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
+    // basis this matrix will then be back transformed to full basis before
+    // being converted to a tile
+    Eigen::MatrixXd delta_t2_pno = r2_pno;
+
+    // Select correct vector containing diagonal elements of Fock matrix in
+    // PNO basis
+    const Eigen::VectorXd& ens_uocc = F_pno_diag[ij];
+
+    // Determine number of PNOs
+    const auto npno = ens_uocc.rows();
+
+    // Determine number of uocc
+    const auto nuocc = pno_ij.rows();
+
+    // Select e_i and e_j
+    const auto e_i = F_occ_act(i, i);
+    const auto e_j = F_occ_act(j, j);
+
+    for (auto a = 0; a < npno; ++a) {
+      const auto e_a = ens_uocc[a];
+      for (auto b = 0; b < npno; ++b) {
+        const auto e_b = ens_uocc[b];
+        const auto e_abij = e_i + e_j - e_a - e_b;
+        const auto r_abij = r2_pno(a, b);
+        delta_t2_pno(a, b) = r_abij / e_abij;
+      }
+    }
+
+    // Back transform delta_t2_pno to full space
+    Eigen::MatrixXd delta_t2_full = pno_ij * delta_t2_pno * pno_ij.transpose();
+
+    // Convert delta_t2_full to tile and compute norm
+    typename Tile::scalar_type norm = 0.0;
+    for (auto r = 0; r < nuocc; ++r) {
+      for (auto c = 0; c < nuocc; ++c) {
+        const auto idx = r * nuocc + c;
+        const auto elem = delta_t2_full(r, c);
+        const auto abs_elem = std::abs(elem);
+        norm += abs_elem * abs_elem;
+        result_tile[idx] = elem;
+      }
+    }
+
+    return std::sqrt(norm);
+  };
+  auto delta_t2_abij = TA::foreach (r2_abij, update2);
+  delta_t2_abij.world().gop.fence();
+  return delta_t2_abij;
+}
+
+/**
+ *
+ * @param r1_ai  T1 like Array with dimention "a,i", it should blocked by V in
+ * a,b and 1 in i,j
+ * @param F_occ_act  active occupied Fock matrix in canonical basis
+ * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * will be initialized
+ * @param osvs vector of OSVs, only local i will be initialized
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
+    const TA::DistArray<Tile, Policy>& r1_ai,
+    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
+    const std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs) {
+  auto update1 = [&F_occ_act, &F_osv_diag, &osvs](Tile& result_tile,
+                                                  const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // determine i index
+    const auto i = arg_tile.range().lobound()[1];
+
+    // Select appropriate matrix of OSVs
+    Eigen::MatrixXd osv_i = osvs[i];
+
+    // Extent data of tile
+    const auto ext = arg_tile.range().extent_data();
+
+    // Convert data in tile to Eigen::Map and transform to OSV basis
+    const Eigen::VectorXd r1_osv =
+        osv_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
+
+    // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
+    // basis. This matrix will then be back transformed to full basis before
+    // being converted to a tile
+    Eigen::VectorXd delta_t1_osv = r1_osv;
+
+    // Select correct vector containing diagonal elements of Fock matrix in
+    // OSV basis
+    const Eigen::VectorXd& ens_uocc = F_osv_diag[i];
+
+    // Determine number of OSVs
+    //      const auto nosv = ens_uocc.rows();
+    const auto nosv = osv_i.cols();
+
+    // Determine number of uocc
+    const auto nuocc = osv_i.rows();
+
+    // Select e_i
+    const auto e_i = F_occ_act(i, i);
+
+    for (auto a = 0; a < nosv; ++a) {
+      const auto e_a = ens_uocc[a];
+      const auto e_ai = e_i - e_a;
+      const auto r_ai = r1_osv(a);
+      delta_t1_osv(a) = r_ai / e_ai;
+    }
+
+    // Back transform delta_t1_osv to full space
+    Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
+
+    // Convert delta_t1_full to tile and compute norm
+    typename Tile::scalar_type norm = 0.0;
+    for (auto r = 0; r < nuocc; ++r) {
+      const auto elem = delta_t1_full(r);
+      const auto abs_elem = std::abs(elem);
+      norm += abs_elem * abs_elem;
+      result_tile[r] = elem;
+    }
+
+    return std::sqrt(norm);
+  };
+
+  auto delta_t1_ai = TA::foreach (r1_ai, update1);
+  delta_t1_ai.world().gop.fence();
+  return delta_t1_ai;
+}
+
+/**
+ *
+ * @param abij T2 like Array with dimention "a,b,i,j", it should blocked by V in
+ * a,b and 1 in i,j
+ * @param pnos vector of PNOs, only local i,j will be initialized
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> pno_transform_abij(
+    const TA::DistArray<Tile, Policy>& abij,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
+  std::size_t nocc_act = abij.trange().dim(2).extent();
+
+  auto tform = [&pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
+
+    // determine i and j indices
+    const auto i = arg_tile.range().lobound()[2];
+    const auto j = arg_tile.range().lobound()[3];
+
+    // Select appropriate matrix of PNOs
+    const auto ij = i * nocc_act + j;
+    Eigen::MatrixXd pno_ij = pnos[ij];
+    const auto nuocc = pno_ij.rows();
+    const auto npno = pno_ij.cols();
+
+    // Convert data in tile to Eigen::Map and transform to PNO basis
+    const Eigen::MatrixXd result_eig =
+        pno_ij.transpose() * TA::eigen_map(arg_tile, nuocc, nuocc) * pno_ij;
+
+    // Convert result_eig to tile and compute norm
+    result_tile = Tile(TA::Range{npno, npno, 1l, 1l});
+    typename Tile::scalar_type norm = 0.0;
+    for (auto r = 0; r < npno; ++r) {
+      for (auto c = 0; c < npno; ++c) {
+        const auto idx = r * npno + c;
+        const auto elem = result_eig(r, c);
+        const auto abs_elem = std::abs(elem);
+        norm += abs_elem * abs_elem;
+        result_tile[idx] = elem;
+      }
+    }
+
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach (abij, tform);
+  result.world().gop.fence();
+  return result;
+}
+
+/**
+ *
+ * @param ai  T1 like Array with dimention "a,i", it should blocked by V in a,b
+ * and 1 in i,j
+ * @param osvs vector of OSVs, only local i will be initialized
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> osv_transform_ai(
+    const TA::DistArray<Tile, Policy>& ai,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs) {
+  auto tform = [&osvs](Tile& result_tile, const Tile& arg_tile) {
+
+    // determine i index
+    const auto i = arg_tile.range().lobound()[1];
+
+    // Select appropriate matrix of OSVs
+    Eigen::MatrixXd osv_i = osvs[i];
+    const auto nuocc = osv_i.rows();
+    const auto nosv = osv_i.cols();
+
+    // Convert data in tile to Eigen::Map and transform to OSV basis
+    const Eigen::MatrixXd result_eig =
+        osv_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
+
+    // Convert result_eig to tile and compute norm
+    result_tile = Tile(TA::Range{nosv, 1l});
+    typename Tile::scalar_type norm = 0.0;
+    for (auto r = 0; r < nosv; ++r) {
+      const auto elem = result_eig(r, 0);
+      const auto abs_elem = std::abs(elem);
+      norm += abs_elem * abs_elem;
+      result_tile[r] = elem;
+    }
+
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach (ai, tform);
+  result.world().gop.fence();
+  return result;
+}
+
+/**
+ *
+ * @param t2   T2 like array with dimention "a,b,i,j"
+ * @param i_block array "i,j" reblock occupied dimention i to j
+ * @param a_block array "a,b" that reblock unoccupied dimention a to b
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> reblock_t2(
+    const TA::DistArray<Tile, Policy>& t2,
+    const TA::DistArray<Tile, Policy>& i_block,
+    const TA::DistArray<Tile, Policy>& a_block) {
+  // Reblock T2
+  TA::DistArray<Tile, Policy> result;
+  result("an,bn,in,jn") = t2("a,b,i,j") * i_block("j,jn") * i_block("i,in") *
+                          a_block("b,bn") * a_block("a,an");
+
+  return result;
+}
+
+/**
+ *
+ * @param t2   T2 like array with dimention "a,b,i,j"
+ * @param i_block array "i,j" reblock occupied dimention j to i
+ * @param a_block array "a,b" that reblock unoccupied dimention b to a
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> unblock_t2(
+    const TA::DistArray<Tile, Policy>& t2,
+    const TA::DistArray<Tile, Policy>& i_block,
+    const TA::DistArray<Tile, Policy>& a_block) {
+  // Reblock T2
+  TA::DistArray<Tile, Policy> result;
+  result("an,bn,in,jn") = t2("a,b,i,j") * i_block("jn,j") * i_block("in,i") *
+                          a_block("bn,b") * a_block("an,a");
+
+  return result;
+}
+
+/**
+ *
+ * @param t1  T1 like array with dimention "a,i"
+ * @param i_block array "i,j" reblock occupied dimention i to j
+ * @param a_block array "a,b" that reblock unoccupied dimention a to b
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> reblock_t1(
+    const TA::DistArray<Tile, Policy>& t1,
+    const TA::DistArray<Tile, Policy>& i_block,
+    const TA::DistArray<Tile, Policy>& a_block) {
+  // Reblock T1
+  TA::DistArray<Tile, Policy> result;
+  result("an,in") = t1("a,i") * i_block("i,in") * a_block("a,an");
+  return result;
+}
+
+/**
+ *
+ * @param t1  T1 like array with dimention "a,i"
+ * @param i_block array "i,j" reblock occupied dimention j to i
+ * @param a_block array "a,b" that reblock unoccupied dimention b to a
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> unblock_t1(
+    const TA::DistArray<Tile, Policy>& t1,
+    const TA::DistArray<Tile, Policy>& i_block,
+    const TA::DistArray<Tile, Policy>& a_block) {
+  // Reblock T1
+  TA::DistArray<Tile, Policy> result;
+  result("an,in") = t1("a,i") * i_block("in,i") * a_block("an,a");
+  return result;
+}
+
+/**
+ *
+ * @param t2
+ * @param pnos
+ * @param F_pno_diags
+ * @param osvs
+ * @param F_osv_diags
+ */
+template <typename Tile, typename Policy>
+void construct_pno(
+    const TA::DistArray<Tile, Policy>& t2,
+    const RowMatrix<typename Tile::numeric_type>& F_uocc, double tpno,
+    double tosv, std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
+    std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
+    std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
+    std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
+    bool pno_canonical = false) {
+  using Matrix = RowMatrix<typename Tile::numeric_type>;
+
+  auto& world = t2.world();
+  std::size_t nocc_act = t2.trange().dim(2).extent();
+  std::size_t nuocc = t2.trange().dim(0).extent();
+
+  // For storing PNOs and and the Fock matrix in the PNO basis
+  std::vector<int> npnos;
+  npnos.resize(nocc_act * nocc_act, 0);
+  pnos.resize(nocc_act * nocc_act);
+  F_pno_diag.resize(nocc_act * nocc_act);
+
+  // For storing OSVs (PNOs when i = j) and the Fock matrix in
+  // the OSV basis
+  std::vector<int> nosvs;
+  nosvs.resize(nocc_act, 0);
+  osvs.resize(nocc_act);
+  F_osv_diag.resize(nocc_act);
+  /// Step (2): Transform T to D
+
+  // lambda function to transform T to D; implement using a for_each
+  auto form_D = [nuocc](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // Get values of i,j and compute delta_ij
+    const int i = arg_tile.range().lobound()[2];
+    const int j = arg_tile.range().lobound()[3];
+
+    auto delta_ij = (i == j) ? 1 : 0;
+
+    // Form T_ij matrix from arg_tile
+    Matrix T_ij = TA::eigen_map(arg_tile, nuocc, nuocc);
+
+    // Form T_ji matrix from T_ij
+    Matrix T_ji = T_ij.transpose();
+
+    // Form D_ij from T_ij and T_ji
+    Matrix D_ij = (1.0 / (1 + delta_ij)) * (4 * T_ji * T_ij - 2 * T_ij * T_ij +
+                                            4 * T_ij * T_ji - 2 * T_ji * T_ji);
+
+    // Transform D_ij into a tile
+    auto norm = 0.0;
+    for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
+      for (int b = 0; b != nuocc; ++b, ++tile_idx) {
+        const auto elem = D_ij(a, b);
+        const auto abs_result = std::abs(elem);
+        norm += abs_result;
+        result_tile[tile_idx] = elem;
+      }
+    }
+    return std::sqrt(norm);
+  };  // form_D
+
+  auto D = TA::foreach (t2, form_D);
+  D.world().gop.fence();
+
+  // Print out the pmap for D_
+  ExEnv::out0() << "\nD_ pmap:\n";
+  print_local(world, D.pmap());
+  //      std::cout << "Successfully transformed reblocked T to D" <<
+  //      std::endl; std::cout << "D_ trange:\n" << D_.trange() <<
+  //      std::endl; std::cout << "D_:\n" << D_ << std::endl;
+
+  /// Step (3): Form PNO_ij from D_ij
+  // Diagonalize each D_ij matrix to get the PNOs and occupation
+  // numbers
+
+  // Lambda function to form PNOs; implement using a for_each
+  auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_uocc, &npnos,
+                   &nosvs, tpno, tosv, nuocc, nocc_act,
+                   pno_canonical](Tile& result_tile, const Tile& arg_tile) {
+
+    Eigen::SelfAdjointEigenSolver<Matrix> es;
+
+    result_tile = Tile(arg_tile.range());
+
+    // Get values of i,j and compute ij
+    const int i = arg_tile.range().lobound()[2];
+    const int j = arg_tile.range().lobound()[3];
+    const int ij = i * nocc_act + j;
+
+    // Form D_ij matrix from arg_tile
+    Matrix D_ij = TA::eigen_map(arg_tile, nuocc, nuocc);
+
+    // Diagonalize D_ij
+    es.compute(D_ij);
+    Matrix pno_ij = es.eigenvectors();
+    auto occ_ij = es.eigenvalues();
+
+    // Determine number of PNOs to be dropped
+    std::size_t pnodrop = 0;
+
+    if (tpno != 0.0) {
+      for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+        if (!(occ_ij(k) >= tpno))
+          ++pnodrop;
+        else
+          break;
+      }
+    }
+
+    // Calculate the number of PNOs kept and store in vector npnos
+    // for calculating average npno later
+    const auto npno = nuocc - pnodrop;
+    npnos[ij] = npno;
+
+    // Truncate PNO matrix and store in pnos_
+
+    // Declare matrix pno_trunc to hold truncated set of PNOs
+    Matrix pno_trunc;
+
+    // If npno = 0, substitute a single fake "PNO" with all coefficients
+    // equal to zero. All other code will behave the same way
+    if (npno == 0) {
+      // resize pno_trunc to be size nocc_act x 1
+      pno_trunc.resize(nuocc, 1);
+
+      // Create a zero matrix of size nuocc x 1
+      Matrix pno_zero = Matrix::Zero(nuocc, 1);
+
+      // Set pno_trunc eqaul to pno_zero matrix
+      pno_trunc = pno_zero;
+    }
+
+    // If npno != zero, use actual zet of truncated PNOs
+    else {
+      pno_trunc.resize(nuocc, npno);
+      pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+    }
+
+    // Store truncated PNOs
+    pnos[ij] = pno_trunc;
+
+    // Transform F to PNO space
+    Matrix F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+
+    // Store just the diagonal elements of F_pno_ij
+    F_pno_diag[ij] = F_pno_ij.diagonal();
+
+    ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+
+    if (pno_canonical && npno > 0) {
+      //          if (pno_canonical_ == "true") {
+      // Compute eigenvectors of F in PNO space
+      es.compute(F_pno_ij);
+      Matrix pno_transform_ij = es.eigenvectors();
+
+      // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+      Matrix can_pno_ij = pno_trunc * pno_transform_ij;
+
+      // Replace standard with canonical PNOs
+      pnos[ij] = can_pno_ij;
+      F_pno_diag[ij] = es.eigenvalues();
+    }  // pno_canonical
+
+    // truncate OSVs
+
+    //        auto osvdrop = 0;
+    if (i == j) {
+      std::cout << "World: " << TA::get_default_world().rank()
+                << " index: " << i << std::endl;
+
+      size_t osvdrop = 0;
+      if (tosv != 0.0) {
+        for (size_t k = 0; k != occ_ij.rows(); ++k) {
+          if (!(occ_ij(k) >= tosv))
+            ++osvdrop;
+          else
+            break;
+        }
+      }
+      const auto nosv = nuocc - osvdrop;
+      nosvs[i] = nosv;
+
+      if (nosv == 0) {  // all OSV truncated indicates total nonsense
+        throw LimitExceeded<size_t>("all OSVs truncated", __FILE__, __LINE__, 1,
+                                    0);
+      }
+
+      // Store truncated OSVs
+      Matrix osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
+      osvs[i] = osv_trunc;
+
+      // Transform F to OSV space
+      Matrix F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+
+      // Store just the diagonal elements of F_osv_i
+      F_osv_diag[i] = F_osv_i.diagonal();
+
+      /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
+      if (pno_canonical) {
+        // Compute eigenvectors of F in OSV space
+        es.compute(F_osv_i);
+        Matrix osv_transform_i = es.eigenvectors();
+
+        // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+        Matrix can_osv_i = osv_trunc * osv_transform_i;
+
+        // Replace standard with canonical OSVs
+        osvs[i] = can_osv_i;
+        F_osv_diag[i] = es.eigenvalues();
+      }  // pno_canonical
+
+    }  // if i == j
+
+    // Transform D_ij into a tile
+    auto norm = 0.0;
+    for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
+      for (int b = 0; b != nuocc; ++b, ++tile_idx) {
+        const auto elem = D_ij(a, b);
+        const auto abs_result = std::abs(elem);
+        norm += abs_result;
+        result_tile[tile_idx] = elem;
+      }
+    }
+    return std::sqrt(norm);
+  };  // form_PNO
+
+  auto D_prime = TA::foreach (D, form_PNO);
+  world.gop.fence();
+  //      std::cout << "Successfully formed PNOs" << std::endl;
+  //      std::cout << "D_prime_ trange:\n" << D_prime_.trange();
+  world.gop.sum(npnos.data(), npnos.size());
+  world.gop.sum(nosvs.data(), nosvs.size());
+
+  // Compute and print average number of OSVs per pair
+  if (D_prime.world().rank() == 0) {
+    auto tot_osv = 0;
+    for (int i = 0; i != nosvs.size(); ++i) {
+      tot_osv += nosvs[i];
+    }
+
+    auto ave_nosv = tot_osv / nocc_act;
+    ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
+                  << std::endl;
+
+    // Compute and print average number of PNOs per pair
+
+    auto tot_pno = 0;
+    for (int i = 0; i != npnos.size(); ++i) {
+      tot_pno += npnos[i];
+    }
+
+    auto ave_npno = tot_pno / (nocc_act * nocc_act);
+    ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
+                  << std::endl;
+  }  // end if D_prime_.world == 0
+};
 
 }  // namespace detail
 
@@ -152,8 +765,9 @@ template <typename T>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                   public madness::WorldObject<PNOSolver<T>> {
  public:
-  typedef typename T::value_type Tile;
-  //  typedef typename T::
+  using Tile = typename T::value_type;
+  using Matrix = RowMatrix<typename Tile::numeric_type>;
+  using Vector = EigenVector<typename Tile::numeric_type>;
 
   // clang-format off
   /**
@@ -167,7 +781,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
    * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
-   * | pno_canonical | string | false | Whether or not to canonicalize the PNOs and OSVs. Valid values are: \c true , \c false . |
+   * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    */
   // clang-format on
@@ -176,7 +790,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         madness::WorldObject<PNOSolver<T>>(factory.world()),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
-        pno_canonical_(kv.value<std::string>("pno_canonical", "false")),
+        pno_canonical_(kv.value<bool>("pno_canonical", false)),
         tiling_method_(kv.value<std::string>(
             "tiling_method", "flexible")),  // allows user to select whether
                                             // rigid or flexible tiling code is
@@ -258,7 +872,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // zero out amplitudes
       if (!T_.is_initialized()) {
-        T_ = Array(world, K.trange(), K.shape());
+        T_ = T(world, K.trange(), K.shape());
         T_.fill(0.0);
       }
 
@@ -414,7 +1028,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
           /////// Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-          if (pno_canonical_ == "true" && npno > 0) {
+          if (pno_canonical_ && npno > 0) {
             // Compute eigenvectors of F in PNO space
             es.compute(F_pno_ij);
             Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
@@ -458,7 +1072,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
             F_osv_diag_[i] = F_osv_i.diagonal();
 
             /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-            if (pno_canonical_ == "true") {
+            if (pno_canonical_) {
               // Compute eigenvectors of F in OSV space
               es.compute(F_osv_i);
               Eigen::MatrixXd osv_transform_i = es.eigenvectors();
@@ -491,8 +1105,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     // When tiling_method_ != rigid
 
     else {
-      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-
       auto& fac = factory_;
       auto& world = fac.world();
       auto& ofac = fac.orbital_registry();
@@ -507,20 +1119,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Form Fock array
       auto F = fac.compute(L"<p|F|q>[df]");
 
+      // Transform entire Fock array to Eigen Matrix
+      Matrix F_all = array_ops::array_to_eigen(F);
+
       // Select just diagonal elements of Fock aray and transform
       // to Eigen vector; use for computing PNOs
-      Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
+      Vector eps_p = F_all.diagonal();
       auto eps_o = eps_p.segment(nfzc, nocc_act);
       auto eps_v = eps_p.tail(nuocc);
-
-      // Transform entire Fock array to Eigen Matrix
-      Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
       F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
 
       // Select just the unoccupied portion of the Fock matrix
-      Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
+      Matrix F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
 
       // Compute all K_aibj
       // auto K = fac.compute(L"(a b|G|i j)");
@@ -529,35 +1141,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Determine number of tiles along each dim of K
       const auto ntiles_a = ktrange.dim(0).tile_extent();
-      const auto ntiles_b = ktrange.dim(1).tile_extent();
-      const auto ntiles_i = ktrange.dim(2).tile_extent();
-      const auto ntiles_j = ktrange.dim(3).tile_extent();
-
-      // zero out amplitudes
-      if (!T_.is_initialized()) {
-        T_ = Array(world, K.trange(), K.shape());
-        T_.fill(0.0);
-      }
-
-      // For storing PNOs and and the Fock matrix in the PNO basis
-      std::vector<int> npnos;
-      npnos.resize(nocc_act * nocc_act, 0);
-      pnos_.resize(nocc_act * nocc_act);
-      F_pno_diag_.resize(nocc_act * nocc_act);
-
-      // For storing OSVs (PNOs when i = j) and the Fock matrix in
-      // the OSV basis
-      std::vector<int> nosvs;
-      nosvs.resize(nocc_act, 0);
-      osvs_.resize(nocc_act);
-      F_osv_diag_.resize(nocc_act);
 
       /// Step (1): Convert K to T
 
       // lambda function to convert K to T; implement using a for_each
 
-      auto form_T = [eps_o, eps_v, this](Tile& result_tile,
-                                         const Tile& arg_tile) {
+      auto form_T = [&eps_o, &eps_v](Tile& result_tile, const Tile& arg_tile) {
 
         result_tile = Tile(arg_tile.range());
 
@@ -604,8 +1193,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         return std::sqrt(norm);
       };  // form_T
 
-      auto T_ = TA::foreach (K, form_T);
-      T_.world().gop.fence();
+      auto T2 = TA::foreach (K, form_T);
+      world.gop.fence();
       //      std::cout << "Successfully transformed K to T" << std::endl;
 
       // Reblock T_ so that
@@ -631,24 +1220,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const TA::TiledRange1 occ_row = ktrange.dim(3);
 
       // Create transition arrays
-      T a_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
 
-      T b_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-      T i_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
-      T j_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-      // Reblock T_
-      T T_reblock;
-
-      T_reblock("an,bn,in,jn") = T_("a,b,i,j") * j_trans_array("j,jn") *
-                                 i_trans_array("i,in") * b_trans_array("b,bn") *
-                                 a_trans_array("a,an");
+      // Reblock T2
+      T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
       //      std::cout << "reblocking step worked" << std::endl;
       //      std::cout << "T_trange:\n" << T_.trange() << std::endl;
@@ -657,236 +1236,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Print out the pmap for T_reblock
       ExEnv::out0() << "\nT_reblock pmap:\n";
-      print_local(T_reblock.world(), T_reblock.pmap());
+      detail::print_local(T_reblock.world(), T_reblock.pmap());
 
-      /// Step (2): Transform T to D
-
-      // lambda function to transform T to D; implement using a for_each
-      auto form_D = [this](Tile& result_tile, const Tile& arg_tile) {
-
-        result_tile = Tile(arg_tile.range());
-
-        // Get values of i,j and compute delta_ij
-        const int i = arg_tile.range().lobound()[2];
-        const int j = arg_tile.range().lobound()[3];
-
-        auto delta_ij = (i == j) ? 1 : 0;
-
-        // Form T_ij matrix from arg_tile
-        Eigen::MatrixXd T_ij = TA::eigen_map(arg_tile, nuocc_, nuocc_);
-
-        // Form T_ji matrix from T_ij
-        Eigen::MatrixXd T_ji = T_ij.transpose();
-
-        // Form D_ij from T_ij and T_ji
-        Eigen::MatrixXd D_ij =
-            (1.0 / (1 + delta_ij)) * (4 * T_ji * T_ij - 2 * T_ij * T_ij +
-                                      4 * T_ij * T_ji - 2 * T_ji * T_ji);
-
-        // Transform D_ij into a tile
-        auto norm = 0.0;
-        for (int a = 0, tile_idx = 0; a != nuocc_; ++a) {
-          for (int b = 0; b != nuocc_; ++b, ++tile_idx) {
-            const auto elem = D_ij(a, b);
-            const auto abs_result = std::abs(elem);
-            norm += abs_result;
-            result_tile[tile_idx] = elem;
-          }
-        }
-        return std::sqrt(norm);
-      };  // form_D
-
-      auto D_ = TA::foreach (T_reblock, form_D);
-      D_.world().gop.fence();
-
-      // Print out the pmap for D_
-      ExEnv::out0() << "\nD_ pmap:\n";
-      print_local(D_.world(), D_.pmap());
-      //      std::cout << "Successfully transformed reblocked T to D" <<
-      //      std::endl; std::cout << "D_ trange:\n" << D_.trange() <<
-      //      std::endl; std::cout << "D_:\n" << D_ << std::endl;
-
-      /// Step (3): Form PNO_ij from D_ij
-
-      // Diagonalize each D_ij matrix to get the PNOs and occupation
-      // numbers
-
-      // Lambda function to form PNOs; implement using a for_each
-      auto form_PNO = [&F_uocc, &npnos, &nosvs, this](Tile& result_tile,
-                                                      const Tile& arg_tile) {
-
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-
-        result_tile = Tile(arg_tile.range());
-
-        // Get values of i,j and compute ij
-        const int i = arg_tile.range().lobound()[2];
-        const int j = arg_tile.range().lobound()[3];
-        const int ij = i * nocc_act_ + j;
-
-        // Form D_ij matrix from arg_tile
-        Eigen::MatrixXd D_ij = TA::eigen_map(arg_tile, nuocc_, nuocc_);
-
-        // Diagonalize D_ij
-        es.compute(D_ij);
-        Eigen::MatrixXd pno_ij = es.eigenvectors();
-        auto occ_ij = es.eigenvalues();
-
-        // Determine number of PNOs to be dropped
-        std::size_t pnodrop = 0;
-
-        if (tpno_ != 0.0) {
-          for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
-            if (!(occ_ij(k) >= tpno_))
-              ++pnodrop;
-            else
-              break;
-          }
-        }
-
-        // Calculate the number of PNOs kept and store in vector npnos
-        // for calculating average npno later
-        const auto npno = nuocc_ - pnodrop;
-        npnos[ij] = npno;
-
-        // Truncate PNO matrix and store in pnos_
-
-        // Declare matrix pno_trunc to hold truncated set of PNOs
-        Eigen::MatrixXd pno_trunc;
-
-        // If npno = 0, substitute a single fake "PNO" with all coefficients
-        // equal to zero. All other code will behave the same way
-        if (npno == 0) {
-          // resize pno_trunc to be size nocc_act x 1
-          pno_trunc.resize(nuocc_, 1);
-
-          // Create a zero matrix of size nuocc x 1
-          Eigen::MatrixXd pno_zero = Eigen::MatrixXd::Zero(nuocc_, 1);
-
-          // Set pno_trunc eqaul to pno_zero matrix
-          pno_trunc = pno_zero;
-        }
-
-        // If npno != zero, use actual zet of truncated PNOs
-        else {
-          pno_trunc.resize(nuocc_, npno);
-          pno_trunc = pno_ij.block(0, pnodrop, nuocc_, npno);
-        }
-
-        // Store truncated PNOs
-        pnos_[ij] = pno_trunc;
-
-        // Transform F to PNO space
-        Eigen::MatrixXd F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
-
-        // Store just the diagonal elements of F_pno_ij
-        F_pno_diag_[ij] = F_pno_ij.diagonal();
-
-        ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
-
-        if (pno_canonical_ == "true" && npno > 0) {
-          // Compute eigenvectors of F in PNO space
-          es.compute(F_pno_ij);
-          Eigen::MatrixXd pno_transform_ij = es.eigenvectors();
-
-          // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-          Eigen::MatrixXd can_pno_ij = pno_trunc * pno_transform_ij;
-
-          // Replace standard with canonical PNOs
-          pnos_[ij] = can_pno_ij;
-          F_pno_diag_[ij] = es.eigenvalues();
-        }  // pno_canonical
-
-        // truncate OSVs
-        if (i == j) {
-          std::cout << "World: " << TA::get_default_world().rank()
-                    << " index: " << i << std::endl;
-
-          size_t osvdrop = 0;
-          if (tosv_ != 0.0) {
-            for (size_t k = 0; k != occ_ij.rows(); ++k) {
-              if (!(occ_ij(k) >= tosv_))
-                ++osvdrop;
-              else
-                break;
-            }
-          }
-          const auto nosv = nuocc_ - osvdrop;
-          nosvs[i] = nosv;
-
-          if (nosv == 0) {  // all OSV truncated indicates total nonsense
-            throw LimitExceeded<size_t>("all OSVs truncated", __FILE__,
-                                        __LINE__, 1, 0);
-          }
-
-          // Store truncated OSVs
-          Eigen::MatrixXd osv_trunc = pno_ij.block(0, osvdrop, nuocc_, nosv);
-          osvs_[i] = osv_trunc;
-
-          // Transform F to OSV space
-          Eigen::MatrixXd F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
-
-          // Store just the diagonal elements of F_osv_i
-          F_osv_diag_[i] = F_osv_i.diagonal();
-
-          /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-          if (pno_canonical_ == "true") {
-            // Compute eigenvectors of F in OSV space
-            es.compute(F_osv_i);
-            Eigen::MatrixXd osv_transform_i = es.eigenvectors();
-
-            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-            Eigen::MatrixXd can_osv_i = osv_trunc * osv_transform_i;
-
-            // Replace standard with canonical OSVs
-            osvs_[i] = can_osv_i;
-            F_osv_diag_[i] = es.eigenvalues();
-          }  // pno_canonical
-
-        }  // if i == j
-
-        // Transform D_ij into a tile
-        auto norm = 0.0;
-        for (int a = 0, tile_idx = 0; a != nuocc_; ++a) {
-          for (int b = 0; b != nuocc_; ++b, ++tile_idx) {
-            const auto elem = D_ij(a, b);
-            const auto abs_result = std::abs(elem);
-            norm += abs_result;
-            result_tile[tile_idx] = elem;
-          }
-        }
-        return std::sqrt(norm);
-      };  // form_PNO
-
-      auto D_prime_ = TA::foreach (D_, form_PNO);
-      D_prime_.world().gop.fence();
-      //      std::cout << "Successfully formed PNOs" << std::endl;
-      //      std::cout << "D_prime_ trange:\n" << D_prime_.trange();
-      D_prime_.world().gop.sum(npnos.data(), npnos.size());
-      D_prime_.world().gop.sum(nosvs.data(), nosvs.size());
-
-      // Compute and print average number of OSVs per pair
-      if (D_prime_.world().rank() == 0) {
-        auto tot_osv = 0;
-        for (int i = 0; i != nosvs.size(); ++i) {
-          tot_osv += nosvs[i];
-        }
-
-        auto ave_nosv = tot_osv / nocc_act_;
-        ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
-                      << std::endl;
-
-        // Compute and print average number of PNOs per pair
-
-        auto tot_pno = 0;
-        for (int i = 0; i != npnos.size(); ++i) {
-          tot_pno += npnos[i];
-        }
-
-        auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
-        ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
-                      << std::endl;
-      }  // end if D_prime_.world == 0
+      detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
+                            osvs_, F_osv_diag_, pno_canonical_);
 
     }  // end if tiling_method_ != rigid
   }
@@ -906,27 +1259,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
 
-  void print_local(TiledArray::World& world,
-                   const std::shared_ptr<TiledArray::Pmap>& pmap) {
-    for (ProcessID r = 0; r < world.size(); ++r) {
-      world.gop.fence();
-      if (r == world.rank()) {
-        std::cout << r << ": { ";
-        for (TiledArray::Pmap::const_iterator it = pmap->begin();
-             it != pmap->end(); ++it)
-          std::cout << *it << " ";
-        std::cout << "}\n";
-      }
-    }
-  }
-
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
-    auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-    auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+    auto delta_t1_ai =
+        detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+    auto delta_t2_abij =
+        detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
 
     // Reblock delta_t1_ai and delta_t2_abij to match original tiling
-    auto delta_t1 = unblock_delta_t1(delta_t1_ai);
-    auto delta_t2 = unblock_delta_t2(delta_t2_abij);
+    auto delta_t1 = detail::unblock_t1(delta_t1_ai, reblock_i_, reblock_a_);
+    auto delta_t2 = detail::unblock_t2(delta_t2_abij, reblock_i_, reblock_a_);
     t1("a,i") += delta_t1("a,i");
     t2("a,b,i,j") += delta_t2("a,b,i,j");
     t1.truncate();
@@ -935,8 +1276,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
     // reblock r1 and r2
-    T r2_reblock = reblock_r2(r2);
-    T r1_reblock = reblock_r1(r1);
+    T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
+    T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
     //    // Print out the pmap for r1_reblock and r2_reblock
     //    ExEnv::out0() << "\nr1_reblock pmap:\n";
@@ -946,414 +1287,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     //    print_local(r2_reblock.world(), r2_reblock.pmap());
 
     update_only(t1, t2, r1_reblock, r2_reblock);
-    T r1_osv = osv_transform_ai(r1_reblock, osvs_);
-    T r2_pno = pno_transform_abij(r2_reblock, pnos_);
+    T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
+    T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
     mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
     mpqc::cc::T1T2<T, T> t(t1, t2);
     this->diis().extrapolate(t, r);
     t1 = t.t1;
     t2 = t.t2;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> reblock_r2(
-      const TA::DistArray<Tile, Policy>& r2) {
-    auto reblock2 = [this](const T& arg) {
-      auto T_trange = T_.trange();
-      auto& world = factory_.world();
-
-      // Create TiledRange1 objects for uocc transformation arrays
-      std::vector<int> uocc_blocks{0, nuocc_};
-
-      const TA::TiledRange1 uocc_col =
-          TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-      const TA::TiledRange1 uocc_row = T_trange.dim(0);
-
-      // Create TiledRange1 objects for occ transformation arrays
-      std::vector<int> occ_blocks;
-      for (std::size_t i = 0; i <= nocc_act_; ++i) {
-        occ_blocks.push_back(i);
-      }
-
-      const TA::TiledRange1 occ_col =
-          TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-      const TA::TiledRange1 occ_row = T_trange.dim(3);
-
-      // Create occ and uocc transformation arrays
-      T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-      T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-      // Reblock r2
-      T result;
-      result("an,bn,in,jn") =
-          arg("a,b,i,j") * occ_trans_array("j,jn") * occ_trans_array("i,in") *
-          uocc_trans_array("b,bn") * uocc_trans_array("a,an");
-
-      return result;
-
-    };
-    auto r2_reblock = reblock2(r2);
-    return r2_reblock;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> reblock_r1(
-      const TA::DistArray<Tile, Policy>& r1) {
-    auto reblock1 = [this](const T& arg) {
-      auto T_trange = T_.trange();
-      auto& world = factory_.world();
-
-      // Create TiledRange1 objects for uocc transformation arrays
-      std::vector<int> uocc_blocks{0, nuocc_};
-
-      const TA::TiledRange1 uocc_col =
-          TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-      const TA::TiledRange1 uocc_row = T_trange.dim(0);
-
-      // Create TiledRange1 objects for occ transformation arrays
-      std::vector<int> occ_blocks;
-      for (std::size_t i = 0; i <= nocc_act_; ++i) {
-        occ_blocks.push_back(i);
-      }
-
-      const TA::TiledRange1 occ_col =
-          TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-      const TA::TiledRange1 occ_row = T_trange.dim(3);
-
-      // Create occ and uocc transformation arrays
-      T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-      T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-      // Reblock r1
-      T result;
-      result("an,in") =
-          arg("a,i") * occ_trans_array("i,in") * uocc_trans_array("a,an");
-
-      return result;
-
-    };
-    auto r1_reblock = reblock1(r1);
-    return r1_reblock;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> unblock_delta_t2(
-      const TA::DistArray<Tile, Policy>& delta_t2_abij) {
-    auto unblock2 = [this](const T& arg) {
-      auto T_trange = T_.trange();
-      auto& world = factory_.world();
-
-      // Create TiledRange1 objects for uocc transformation arrays
-      std::vector<int> uocc_blocks{0, nuocc_};
-
-      const TA::TiledRange1 uocc_row =
-          TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-      const TA::TiledRange1 uocc_col = T_trange.dim(0);
-
-      // Create TiledRange1 objects for occ transformation arrays
-      std::vector<int> occ_blocks;
-      for (std::size_t i = 0; i <= nocc_act_; ++i) {
-        occ_blocks.push_back(i);
-      }
-
-      const TA::TiledRange1 occ_row =
-          TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-      const TA::TiledRange1 occ_col = T_trange.dim(3);
-
-      // Create occ and uocc transformation arrays
-      T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-      T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-      // Reblock delta_t2_abij to original blocking
-      T result;
-      result("an,bn,in,jn") =
-          arg("a,b,i,j") * occ_trans_array("j,jn") * occ_trans_array("i,in") *
-          uocc_trans_array("b,bn") * uocc_trans_array("a,an");
-
-      return result;
-
-    };
-    auto delta_t2 = unblock2(delta_t2_abij);
-    return delta_t2;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> unblock_delta_t1(
-      const TA::DistArray<Tile, Policy>& delta_t1_ai) {
-    auto unblock1 = [this](const T& arg) {
-      auto T_trange = T_.trange();
-      auto& world = factory_.world();
-
-      // Create TiledRange1 objects for uocc transformation arrays
-      std::vector<int> uocc_blocks{0, nuocc_};
-
-      const TA::TiledRange1 uocc_row =
-          TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-      const TA::TiledRange1 uocc_col = T_trange.dim(0);
-
-      // Create TiledRange1 objects for occ transformation arrays
-      std::vector<int> occ_blocks;
-      for (std::size_t i = 0; i <= nocc_act_; ++i) {
-        occ_blocks.push_back(i);
-      }
-
-      const TA::TiledRange1 occ_row =
-          TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-      const TA::TiledRange1 occ_col = T_trange.dim(3);
-
-      // Create occ and uocc transformation arrays
-      T uocc_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-      T occ_trans_array = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
-
-      // Reblock delta_t1_ai to original blocking
-      T result;
-      result("an,in") =
-          arg("a,i") * occ_trans_array("i,in") * uocc_trans_array("a,an");
-
-      return result;
-
-    };
-    auto delta_t1 = unblock1(delta_t1_ai);
-    return delta_t1;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> jacobi_update_t2(
-      const TA::DistArray<Tile, Policy>& r2_abij,
-      const Eigen::MatrixXd& F_occ_act,
-      const std::vector<Eigen::VectorXd>& F_pno_diag,
-      const std::vector<Eigen::MatrixXd>& pnos) {
-    auto update2 = [F_occ_act, F_pno_diag, pnos, this](Tile& result_tile,
-                                                       const Tile& arg_tile) {
-
-      result_tile = Tile(arg_tile.range());
-
-      // determine i and j indices
-      const auto i = arg_tile.range().lobound()[2];
-      const auto j = arg_tile.range().lobound()[3];
-
-      // Select appropriate matrix of PNOs
-      auto ij = i * nocc_act_ + j;
-      Eigen::MatrixXd pno_ij = pnos[ij];
-
-      // Extent data of tile
-      const auto ext = arg_tile.range().extent_data();
-
-      // Convert data in tile to Eigen::Map and transform to PNO basis
-      const Eigen::MatrixXd r2_pno =
-          pno_ij.transpose() *
-          TA::eigen_map(arg_tile, ext[0] * ext[2], ext[1] * ext[3]) * pno_ij;
-
-      // Create a matrix delta_t2_pno to hold updated values of delta_t2 in PNO
-      // basis this matrix will then be back transformed to full basis before
-      // being converted to a tile
-      Eigen::MatrixXd delta_t2_pno = r2_pno;
-
-      // Select correct vector containing diagonal elements of Fock matrix in
-      // PNO basis
-      const Eigen::VectorXd& ens_uocc = F_pno_diag[ij];
-
-      // Determine number of PNOs
-      const auto npno = ens_uocc.rows();
-
-      // Determine number of uocc
-      const auto nuocc = pno_ij.rows();
-
-      // Select e_i and e_j
-      const auto e_i = F_occ_act(i, i);
-      const auto e_j = F_occ_act(j, j);
-
-      for (auto a = 0; a < npno; ++a) {
-        const auto e_a = ens_uocc[a];
-        for (auto b = 0; b < npno; ++b) {
-          const auto e_b = ens_uocc[b];
-          const auto e_abij = e_i + e_j - e_a - e_b;
-          const auto r_abij = r2_pno(a, b);
-          delta_t2_pno(a, b) = r_abij / e_abij;
-        }
-      }
-
-      // Back transform delta_t2_pno to full space
-      Eigen::MatrixXd delta_t2_full =
-          pno_ij * delta_t2_pno * pno_ij.transpose();
-
-      // Convert delta_t2_full to tile and compute norm
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < nuocc; ++r) {
-        for (auto c = 0; c < nuocc; ++c) {
-          const auto idx = r * nuocc + c;
-          const auto elem = delta_t2_full(r, c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
-        }
-      }
-
-      return std::sqrt(norm);
-    };
-
-    auto delta_t2_abij = TA::foreach (r2_abij, update2);
-    delta_t2_abij.world().gop.fence();
-    return delta_t2_abij;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> jacobi_update_t1(
-      const TA::DistArray<Tile, Policy>& r1_ai,
-      const Eigen::MatrixXd& F_occ_act,
-      const std::vector<Eigen::VectorXd>& F_osv_diag,
-      const std::vector<Eigen::MatrixXd>& osvs) {
-    auto update1 = [F_occ_act, F_osv_diag, osvs](Tile& result_tile,
-                                                 const Tile& arg_tile) {
-
-      result_tile = Tile(arg_tile.range());
-
-      // determine i index
-      const auto i = arg_tile.range().lobound()[1];
-
-      // Select appropriate matrix of OSVs
-      Eigen::MatrixXd osv_i = osvs[i];
-
-      // Extent data of tile
-      const auto ext = arg_tile.range().extent_data();
-
-      // Convert data in tile to Eigen::Map and transform to OSV basis
-      const Eigen::VectorXd r1_osv =
-          osv_i.transpose() * TA::eigen_map(arg_tile, ext[0], ext[1]);
-
-      // Create a matrix delta_t1_osv to hold updated values of delta t1 in OSV
-      // basis. This matrix will then be back transformed to full basis before
-      // being converted to a tile
-      Eigen::VectorXd delta_t1_osv = r1_osv;
-
-      // Select correct vector containing diagonal elements of Fock matrix in
-      // OSV basis
-      const Eigen::VectorXd& ens_uocc = F_osv_diag[i];
-
-      // Determine number of OSVs
-      //      const auto nosv = ens_uocc.rows();
-      const auto nosv = osv_i.cols();
-
-      // Determine number of uocc
-      const auto nuocc = osv_i.rows();
-
-      // Select e_i
-      const auto e_i = F_occ_act(i, i);
-
-      for (auto a = 0; a < nosv; ++a) {
-        const auto e_a = ens_uocc[a];
-        const auto e_ai = e_i - e_a;
-        const auto r_ai = r1_osv(a);
-        delta_t1_osv(a) = r_ai / e_ai;
-      }
-
-      // Back transform delta_t1_osv to full space
-      Eigen::VectorXd delta_t1_full = osv_i * delta_t1_osv;
-
-      // Convert delta_t1_full to tile and compute norm
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < nuocc; ++r) {
-        const auto elem = delta_t1_full(r);
-        const auto abs_elem = std::abs(elem);
-        norm += abs_elem * abs_elem;
-        result_tile[r] = elem;
-      }
-
-      return std::sqrt(norm);
-    };
-
-    auto delta_t1_ai = TA::foreach (r1_ai, update1);
-    delta_t1_ai.world().gop.fence();
-    return delta_t1_ai;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> pno_transform_abij(
-      const TA::DistArray<Tile, Policy>& abij,
-      const std::vector<Eigen::MatrixXd>& pnos) {
-    auto tform = [pnos, this](Tile& result_tile, const Tile& arg_tile) {
-
-      // determine i and j indices
-      const auto i = arg_tile.range().lobound()[2];
-      const auto j = arg_tile.range().lobound()[3];
-
-      // Select appropriate matrix of PNOs
-      const auto ij = i * nocc_act_ + j;
-      Eigen::MatrixXd pno_ij = pnos[ij];
-      const auto nuocc = pno_ij.rows();
-      const auto npno = pno_ij.cols();
-
-      // Convert data in tile to Eigen::Map and transform to PNO basis
-      const Eigen::MatrixXd result_eig =
-          pno_ij.transpose() * TA::eigen_map(arg_tile, nuocc, nuocc) * pno_ij;
-
-      // Convert result_eig to tile and compute norm
-      result_tile = Tile(TA::Range{npno, npno, 1l, 1l});
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < npno; ++r) {
-        for (auto c = 0; c < npno; ++c) {
-          const auto idx = r * npno + c;
-          const auto elem = result_eig(r, c);
-          const auto abs_elem = std::abs(elem);
-          norm += abs_elem * abs_elem;
-          result_tile[idx] = elem;
-        }
-      }
-
-      return std::sqrt(norm);
-    };
-
-    auto result = TA::foreach (abij, tform);
-    result.world().gop.fence();
-    return result;
-  }
-
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> osv_transform_ai(
-      const TA::DistArray<Tile, Policy>& ai,
-      const std::vector<Eigen::MatrixXd>& osvs) {
-    auto tform = [osvs, this](Tile& result_tile, const Tile& arg_tile) {
-
-      // determine i index
-      const auto i = arg_tile.range().lobound()[1];
-
-      // Select appropriate matrix of OSVs
-      Eigen::MatrixXd osv_i = osvs[i];
-      const auto nuocc = osv_i.rows();
-      const auto nosv = osv_i.cols();
-
-      // Convert data in tile to Eigen::Map and transform to OSV basis
-      const Eigen::MatrixXd result_eig =
-          osv_i.transpose() * TA::eigen_map(arg_tile, nuocc, 1);
-
-      // Convert result_eig to tile and compute norm
-      result_tile = Tile(TA::Range{nosv, 1l});
-      typename Tile::scalar_type norm = 0.0;
-      for (auto r = 0; r < nosv; ++r) {
-        const auto elem = result_eig(r, 0);
-        const auto abs_elem = std::abs(elem);
-        norm += abs_elem * abs_elem;
-        result_tile[r] = elem;
-      }
-
-      return std::sqrt(norm);
-    };
-
-    auto result = TA::foreach (ai, tform);
-    result.world().gop.fence();
-    return result;
   }
 
   // squared norm of 1-body residual in OSV subspace
@@ -1421,8 +1361,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
  public:
   /// Overrides Solver<T,T>::error()
   virtual double error(const T& r1, const T& r2) override {
-    auto r1_reblock = reblock_r1(r1);
-    auto r2_reblock = reblock_r2(r2);
+    auto r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
+    auto r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
 
     //    // Print out the pmap for r1_reblock and r2_reblock
     //    ExEnv::out0() << "\nr1_reblock pmap:\n";
@@ -1442,30 +1382,28 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   Factory<T>& factory_;
   //  madness::World& world_;
   std::string pno_method_;     //!< the PNO construction method
-  std::string pno_canonical_;  //!< whether or not to canonicalize PNO/OSV
+  bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible
-                               //!< tiling PNO code
+                               //! tiling PNO code
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold
   int nocc_act_;               //!< the number of active occupied orbitals
   int nuocc_;                  //!< the number of unoccupied orbitals
-  Array T_;                    //!< the array of MP2 T amplitudes
-  Array D_;                    //!< the array of densities
-  Array D_prime_;
+  T T_;                        //!< the array of MP2 T amplitudes
 
-  Eigen::MatrixXd F_occ_act_;
+  T reblock_i_;
+  T reblock_a_;
 
-  // For storing D_ij matrices
-  std::vector<Eigen::MatrixXd> D_ij_;
+  Matrix F_occ_act_;
 
   // For storing PNOs and and the Fock matrix in the PNO basis
-  std::vector<Eigen::MatrixXd> pnos_;
-  std::vector<Eigen::VectorXd> F_pno_diag_;
+  std::vector<Matrix> pnos_;
+  std::vector<Vector> F_pno_diag_;
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis
-  std::vector<Eigen::MatrixXd> osvs_;
-  std::vector<Eigen::VectorXd> F_osv_diag_;
+  std::vector<Matrix> osvs_;
+  std::vector<Vector> F_osv_diag_;
 };  // class: PNO solver
 
 ////// SVO2 solver ////////
@@ -1574,7 +1512,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // zero out amplitudes
       if (!T_.is_initialized()) {
-        T_ = Array(world, K.trange(), K.shape());
+        T_ = T(world, K.trange(), K.shape());
         T_.fill(0.0);
       }
 
@@ -1801,13 +1739,10 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Determine number of tiles along each dim of K
       const auto ntiles_a = ktrange.dim(0).tile_extent();
-      const auto ntiles_b = ktrange.dim(1).tile_extent();
-      const auto ntiles_i = ktrange.dim(2).tile_extent();
-      const auto ntiles_j = ktrange.dim(3).tile_extent();
 
       // zero out amplitudes
       if (!T_.is_initialized()) {
-        T_ = Array(world, K.trange(), K.shape());
+        T_ = T(world, K.trange(), K.shape());
         T_.fill(0.0);
       }
 
@@ -2642,7 +2577,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   double tsvo1_;               //!< the truncation threshold for SVO1s
   int nocc_act_;               //!< the number of active occupied orbitals
   int nuocc_;                  //!< the number of unoccupied orbitals
-  Array T_;
+  T T_;
 
   Eigen::MatrixXd F_occ_act_;
 

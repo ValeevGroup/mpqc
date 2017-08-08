@@ -33,8 +33,25 @@ class PeriodicMARIJBuilder {
     auto t1_mm_init = mpqc::fenced_now(world);
     auto t_mm_init = mpqc::duration_in_s(t0_mm_init, t1_mm_init);
 
+    // test boost legendre polynomials
     double tmp1 = boost::math::legendre_p(0, 0.5);
     ExEnv::out0() << "\nLegendre P(0, 0.5) = " << tmp1 << std::endl;
+
+    const auto R_max = ao_factory_.R_max();
+    // test CNF and CFF
+    for (auto x = - R_max(0); x <= R_max(0); ++x) {
+      for (auto y = - R_max(1); y <= R_max(1); ++y) {
+        for (auto z = - R_max(2); z <= R_max(2); ++z) {
+          ExEnv::out0() << "\nUnit Cell (" << x << ", " << y << ", " << z << "):" << std::endl;
+          const auto uc_idx = Vector3i({x, y, z});
+          const auto uc_is_cff = mm_->is_uc_in_CFF(uc_idx);
+          const auto uc_val = uc_is_cff ? "Yes" : "No";
+          ExEnv::out0() << "Unit Cell (" << x << ", " << y << ", " << z << "): Is is in CFF ? " << uc_val << std::endl;
+        }
+      }
+    }
+
+
 
     ExEnv::out0() << "\nInit RI-J time:      " << t_j_init << " s" << std::endl;
     ExEnv::out0() << "\nInit MM time:      " << t_mm_init << " s\n"

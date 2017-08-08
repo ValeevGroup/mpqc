@@ -167,6 +167,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
    * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
+   * | pno_canonical | string | false | Whether or not to canonicalize the PNOs and OSVs. Valid values are: \c true , \c false . |
+   * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T>& factory)

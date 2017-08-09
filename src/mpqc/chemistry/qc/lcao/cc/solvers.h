@@ -760,10 +760,9 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 /// @warning This class assumes that the 1- and 2-body amplitudes/residuals
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
-template <typename T>
-// template <typename Tile, typename Policy>
+template <typename T, typename DT>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
-                  public madness::WorldObject<PNOSolver<T>> {
+                  public madness::WorldObject<PNOSolver<T,DT>> {
  public:
   using Tile = typename T::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -785,9 +784,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    */
   // clang-format on
-  PNOSolver(const KeyVal& kv, Factory<T>& factory)
+  PNOSolver(const KeyVal& kv, Factory<T,DT>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv),
-        madness::WorldObject<PNOSolver<T>>(factory.world()),
+        madness::WorldObject<PNOSolver<T,DT>>(factory.world()),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),

@@ -8,8 +8,8 @@
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 
 #include <memory>
-
 #include <madness/world/worldmem.h>
+
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
@@ -91,9 +91,10 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   } else if (density_builder_str_ == "eigen_solve") {
     std::string decompo_type =
         kv.value<std::string>("decompo_type", "conditioned");
+    double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
         S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, localize_,
-        localization_method_);
+        s_tolerance, localization_method_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {
@@ -168,7 +169,7 @@ void RHF<Tile, Policy>::solve(int64_t max_iters, double thresh) {
   const double volume = F_.trange().elements_range().volume();
 
   while (iter < max_iters &&
-         (target_energy_precision < (error / old_energy) ||
+         (target_energy_precision < error ||
           target_orbgrad_precision < (rms_error / volume))) {
     auto s0 = mpqc::fenced_now(world);
 
@@ -204,8 +205,7 @@ void RHF<Tile, Policy>::solve(int64_t max_iters, double thresh) {
     if (world.rank() == 0) {
       std::cout << "iteration: " << iter << "\n"
                 << "\tEnergy: " << old_energy << "\n"
-                << "\tabs(Energy Change)/energy: "
-                << (error / std::abs(old_energy)) << "\n"
+                << "\tabs(Energy Change): " << error << "\n"
                 << "\t(Gradient Norm)/n^2: " << (rms_error / volume) << "\n"
                 << "\tScf Time: " << rhf_times_.back() << "\n"
                 << "\t\tDensity Time: " << d_times_.back() << "\n"
@@ -377,7 +377,6 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   }
 
   secadf_ = kv.value<bool>("secadf", false);
-  aaab_ = kv.value<bool>("secadf_aaab", false);
 }
 
 template <typename Tile, typename Policy>
@@ -385,7 +384,7 @@ void CadfRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
   this->f_builder_ = std::make_unique<Builder>(
-      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_, aaab_);
+      this->ao_factory(), force_shape_threshold_, tcutc_, secadf_);
 }
 
 /**

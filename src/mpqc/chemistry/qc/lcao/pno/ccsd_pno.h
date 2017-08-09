@@ -84,11 +84,11 @@ namespace lcao {
    void evaluate(Energy* result) override;
   };
 
-//#if TA_DEFAULT_POLICY == 0
-//extern template class CCSD_PNO<TA::TensorD, TA::DensePolicy>;
-//#elif TA_DEFAULT_POLICY == 1
-//extern template class CCSD_PNO<TA::TensorD, TA::SparsePolicy>;
-//#endif
+#if TA_DEFAULT_POLICY == 0
+extern template class CCSD_PNO<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class CCSD_PNO<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

@@ -21,7 +21,7 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     typename ESolveDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
     int64_t nocc, int64_t ncore, int64_t nclusters, double TcutC,
-    std::string const &metric_decomp_type, bool localize, std::string localization_method)
+    std::string const &metric_decomp_type, double s_tolerance, bool localize, std::string localization_method)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
@@ -38,7 +38,7 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     M_inv_ = array_ops::inverse_sqrt(S_);
   } else if (metric_decomp_type_ == "conditioned") {
     M_inv_ = array_ops::conditioned_orthogonalizer(
-        S_, 1.0 / std::numeric_limits<double>::epsilon());
+        S_, s_tolerance);
   } else {
     throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";

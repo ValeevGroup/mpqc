@@ -124,6 +124,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
  * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
  * @param pnos vector of PNOs, only local i,j will be initialized
+ * @param shift  value of shift in the denominator
  * @return
  */
 template <typename Tile, typename Policy>
@@ -131,8 +132,9 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const TA::DistArray<Tile, Policy>& r2_abij,
     const EigenVector<typename Tile::numeric_type>& F_occ_act,
     const std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
-    const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
-  auto update2 = [&F_occ_act, &F_pno_diag, &pnos](Tile& result_tile,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
+    typename Tile::numeric_type shift = 0.0) {
+  auto update2 = [&F_occ_act, &F_pno_diag, &pnos, shift](Tile& result_tile,
                                                   const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
@@ -176,7 +178,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
       const auto e_a = ens_uocc[a];
       for (auto b = 0; b < npno; ++b) {
         const auto e_b = ens_uocc[b];
-        const auto e_abij = e_i + e_j - e_a - e_b;
+        const auto e_abij = e_i + e_j - e_a - e_b + shift;
         const auto r_abij = r2_pno(a, b);
         delta_t2_pno(a, b) = r_abij / e_abij;
       }
@@ -212,6 +214,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
  * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
  * @param osvs vector of OSVs, only local i will be initialized
+ * @param shift  value of shift in the denominator
  * @return
  */
 template <typename Tile, typename Policy>
@@ -219,8 +222,9 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     const TA::DistArray<Tile, Policy>& r1_ai,
     const EigenVector<typename Tile::numeric_type>& F_occ_act,
     const std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
-    const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs) {
-  auto update1 = [&F_occ_act, &F_osv_diag, &osvs](Tile& result_tile,
+    const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
+    typename Tile::numeric_type shift = 0.0) {
+  auto update1 = [&F_occ_act, &F_osv_diag, &osvs, shift](Tile& result_tile,
                                                   const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
@@ -259,7 +263,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
 
     for (auto a = 0; a < nosv; ++a) {
       const auto e_a = ens_uocc[a];
-      const auto e_ai = e_i - e_a;
+      const auto e_ai = e_i - e_a + shift;
       const auto r_ai = r1_osv(a);
       delta_t1_osv(a) = r_ai / e_ai;
     }

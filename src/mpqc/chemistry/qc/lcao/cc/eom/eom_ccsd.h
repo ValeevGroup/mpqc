@@ -7,7 +7,7 @@
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
-#include "mpqc/math/linalg/davidson_diag.h"
+#include "mpqc/chemistry/qc/lcao/cc/eom/eom_preconditioner.h"
 
 namespace mpqc {
 namespace lcao {
@@ -71,53 +71,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-  // preconditioner in DavidsonDiag, approximate the diagonal H_bar matrix
-  struct Preconditioner : public DavidsonDiagPreconditioner<GuessVector> {
-    /// diagonal of F_ij matrix
-    EigenVector<numeric_type> eps_o;
-    /// diagonal of F_ab matrix
-    EigenVector<numeric_type> eps_v;
-
-    Preconditioner(const EigenVector<numeric_type> &eps_O,
-                   const EigenVector<numeric_type> &eps_V)
-        : eps_o(eps_O), eps_v(eps_V) {}
-
-    // default constructor
-    Preconditioner() : eps_o(), eps_v() {}
-
-    virtual void compute(const numeric_type &e, GuessVector &guess) const {
-      const auto &eps_v = this->eps_v;
-      const auto &eps_o = this->eps_o;
-
-      auto task1 = [&eps_v, &eps_o, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result = result_tile[i] / (e + eps_o[i[1]] - eps_v[i[0]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result = result_tile[i] / (e - eps_v[i[0]] - eps_v[i[1]] +
-                                                eps_o[i[2]] + eps_o[i[3]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      TA::foreach_inplace(guess.t1, task1);
-      TA::foreach_inplace(guess.t2, task2);
-
-      guess.t1.world().gop.fence();
-    }
-  };
 
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector

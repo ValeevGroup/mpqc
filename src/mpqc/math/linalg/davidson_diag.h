@@ -17,17 +17,11 @@
 namespace mpqc {
 
 template <typename D>
-struct DavidsonDiagPreconditioner {
-  void operator()(const EigenVector<typename D::element_type>& e,
-                  std::vector<D>& guess) const {
-    std::size_t n_roots = e.size();
-    TA_ASSERT(n_roots == guess.size());
-    for (std::size_t i = 0; i < n_roots; i++) {
-      compute(e[i], guess[i]);
-    }
-  }
-
-  virtual void compute(const typename D::element_type& e, D& guess) const = 0;
+class DavidsonDiagPred {
+ public:
+  virtual void operator()(const EigenVector<typename D::element_type>& e,
+                          std::vector<D>& guess) const = 0;
+  virtual ~DavidsonDiagPred() = default;
 };
 
 // clang-format off

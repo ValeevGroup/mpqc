@@ -210,14 +210,14 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   double norm_r = 1.0;
 
   /// make preconditioner
-  Preconditioner pred;
+  std::shared_ptr<DavidsonDiagPred<GuessVector >> pred;
   {
     EigenVector<numeric_type> eps_o =
         array_ops::array_to_eigen(FIJ_).diagonal();
     EigenVector<numeric_type> eps_v =
         array_ops::array_to_eigen(FAB_).diagonal();
 
-    pred = Preconditioner(eps_o, eps_v);
+    pred = std::make_shared<cc::EEPred<TArray>>(eps_o, eps_v);
   }
 
   /// make davidson object
@@ -245,7 +245,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     }
 
     auto time1 = mpqc::fenced_now(world);
-    EigenVector<double> eig_new = dvd.extrapolate(HC, C_, pred);
+    EigenVector<double> eig_new = dvd.extrapolate(HC, C_, *pred);
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;

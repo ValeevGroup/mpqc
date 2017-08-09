@@ -30,7 +30,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
  private:
   /// precoditioner in DavidsonDiag, use F_aa - F_ii to
   /// approximate the diagonal of CIS H matrix
-  struct Preconditioner : public DavidsonDiagPreconditioner<TArray> {
+  struct Preconditioner : public DavidsonDiagPred<TArray> {
     /// diagonal of F_ij matrix
     EigenVector<numeric_type> eps_o;
     /// diagonal of F_ab matrix
@@ -40,10 +40,17 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
                    const EigenVector<numeric_type> &eps_V)
         : eps_o(eps_O), eps_v(eps_V) {}
 
-    using DavidsonDiagPreconditioner<TArray>::operator();
+    virtual void operator()(const EigenVector<numeric_type> &e,
+                            std::vector<TArray> &guess) const {
+      std::size_t n_roots = e.size();
+      TA_ASSERT(n_roots == guess.size());
+      for (std::size_t i = 0; i < n_roots; i++) {
+        compute(e[i], guess[i]);
+      }
+    }
 
-    virtual void compute(const numeric_type &e,
-                         TA::DistArray<Tile, Policy> &guess) const {
+    void compute(const numeric_type &e,
+                 TA::DistArray<Tile, Policy> &guess) const {
       const auto &eps_v = this->eps_v;
       const auto &eps_o = this->eps_o;
 

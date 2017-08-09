@@ -19,7 +19,7 @@ namespace cc {
 
 namespace detail {
 inline void print_local(TiledArray::World& world,
-                 const std::shared_ptr<TiledArray::Pmap>& pmap) {
+                        const std::shared_ptr<TiledArray::Pmap>& pmap) {
   for (ProcessID r = 0; r < world.size(); ++r) {
     world.gop.fence();
     if (r == world.rank()) {
@@ -626,7 +626,7 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
-//    std::cout << "pno: " <<  ij << std::endl << pnos[ij] << std::endl;
+    //    std::cout << "pno: " <<  ij << std::endl << pnos[ij] << std::endl;
 
     // truncate OSVs
 
@@ -676,10 +676,8 @@ void construct_pno(
         F_osv_diag[i] = es.eigenvalues();
       }  // pno_canonical
 
-//      std::cout << "osv: " << i << std::endl << osvs[i] << std::endl;
+      //      std::cout << "osv: " << i << std::endl << osvs[i] << std::endl;
     }  // if i == j
-
-
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -700,6 +698,28 @@ void construct_pno(
   //      std::cout << "D_prime_ trange:\n" << D_prime_.trange();
   world.gop.sum(npnos.data(), npnos.size());
   world.gop.sum(nosvs.data(), nosvs.size());
+
+  // TODO need to fix this roubustly by using fixed process map
+  /// \warning temporary fix issue by replicate osvs
+  // make process map
+  const auto osvs_size = osvs.size();
+  std::vector<int> process_map(osvs.size(), 0);
+  for (std::size_t i = 0; i < osvs_size; i++ ){
+    if (osvs[i].size() != 0) {
+      process_map[i] = world.rank();
+    }
+  }
+  // replicate process map on all nodes
+  world.gop.sum(process_map.data(), process_map.size());
+  // broadcast data
+  for (std::size_t i = 0; i < osvs.size(); i++) {
+    world.gop.broadcast_serializable(osvs[i], process_map[i]);
+  }
+
+  /// \warning temporary fix issue by replicate F_osv_diag
+  for (std::size_t i = 0; i < osvs.size(); i++) {
+    world.gop.broadcast_serializable(F_osv_diag[i], process_map[i]);
+  }
 
   // Compute and print average number of OSVs per pair
   if (D_prime.world().rank() == 0) {
@@ -767,7 +787,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 ///          respectively
 template <typename T, typename DT>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
-                  public madness::WorldObject<PNOSolver<T,DT>> {
+                  public madness::WorldObject<PNOSolver<T, DT>> {
  public:
   using Tile = typename T::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -789,9 +809,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    */
   // clang-format on
-  PNOSolver(const KeyVal& kv, Factory<T,DT>& factory)
+  PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv),
-        madness::WorldObject<PNOSolver<T,DT>>(factory.world()),
+        madness::WorldObject<PNOSolver<T, DT>>(factory.world()),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
@@ -1144,7 +1164,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const auto ktrange = K.trange();
 
       // Determine number of tiles along each dim of K
-//      const auto ntiles_a = ktrange.dim(0).tile_extent();
+      //      const auto ntiles_a = ktrange.dim(0).tile_extent();
 
       /// Step (1): Convert K to T
 
@@ -1336,7 +1356,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R2SquaredNormReductionOp(PNOSolver<T,DT>* solver) : solver_(solver) {}
+    R2SquaredNormReductionOp(PNOSolver<T, DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -1359,7 +1379,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_pno.squaredNorm();
     }
 
-    PNOSolver<T,DT>* solver_;
+    PNOSolver<T, DT>* solver_;
   };  // R2SquaredNormReductionOp
 
  public:
@@ -1383,7 +1403,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
  private:
-  Factory<T,DT>& factory_;
+  Factory<T, DT>& factory_;
   //  madness::World& world_;
   std::string pno_method_;     //!< the PNO construction method
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
@@ -1419,7 +1439,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 ///          respectively
 template <typename T, typename DT>
 class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
-                  public madness::WorldObject<SVOSolver<T,DT>> {
+                  public madness::WorldObject<SVOSolver<T, DT>> {
  public:
   typedef typename T::value_type Tile;
   // clang-format off
@@ -1436,9 +1456,9 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
-  SVOSolver(const KeyVal& kv, Factory<T,DT>& factory)
+  SVOSolver(const KeyVal& kv, Factory<T, DT>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv),
-        madness::WorldObject<SVOSolver<T,DT>>(factory.world()),
+        madness::WorldObject<SVOSolver<T, DT>>(factory.world()),
         factory_(factory),
         tiling_method_(kv.value<std::string>("tiling_method", "flexible")),
         tsvo2_(kv.value<double>("tsvo2", 1.e-5)),
@@ -1742,7 +1762,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const auto ktrange = K.trange();
 
       // Determine number of tiles along each dim of K
-//      const auto ntiles_a = ktrange.dim(0).tile_extent();
+      //      const auto ntiles_a = ktrange.dim(0).tile_extent();
 
       // zero out amplitudes
       if (!T_.is_initialized()) {
@@ -2504,7 +2524,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R1SquaredNormReductionOp(SVOSolver<T,DT>* solver) : solver_(solver) {}
+    R1SquaredNormReductionOp(SVOSolver<T, DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -2525,7 +2545,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_svo1.squaredNorm();
     }
 
-    SVOSolver<T,DT>* solver_;
+    SVOSolver<T, DT>* solver_;
   };  // R1SquaredNormReductionOp
 
   // squared norm of 2-body residual in SVO2 subspace
@@ -2534,7 +2554,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R2SquaredNormReductionOp(SVOSolver<T,DT>* solver) : solver_(solver) {}
+    R2SquaredNormReductionOp(SVOSolver<T, DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -2557,7 +2577,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_svo2.squaredNorm();
     }
 
-    SVOSolver<T,DT>* solver_;
+    SVOSolver<T, DT>* solver_;
   };  // R2SquaredNormReductionOp
 
  public:
@@ -2574,7 +2594,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
  private:
-  Factory<T,DT>& factory_;
+  Factory<T, DT>& factory_;
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible
                                //!< tiling SVO solver
   double tsvo2_;               //!< the truncation threshold for SVO2s

@@ -120,7 +120,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
  *
  * @param r2_abij  T2 like Array with dimention "a,b,i,j", it should blocked by
  * V in a,b and 1 in i,j
- * @param F_occ_act  active occupied Fock matrix in canonical basis
+ * @param F_occ_act  diagnal active occupied Fock matrix in canonical basis
  * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
  * @param pnos vector of PNOs, only local i,j will be initialized
@@ -129,7 +129,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const TA::DistArray<Tile, Policy>& r2_abij,
-    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
+    const EigenVector<typename Tile::numeric_type>& F_occ_act,
     const std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
     const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
   auto update2 = [&F_occ_act, &F_pno_diag, &pnos](Tile& result_tile,
@@ -169,8 +169,8 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const auto nuocc = pno_ij.rows();
 
     // Select e_i and e_j
-    const auto e_i = F_occ_act(i, i);
-    const auto e_j = F_occ_act(j, j);
+    const auto e_i = F_occ_act(i);
+    const auto e_j = F_occ_act(j);
 
     for (auto a = 0; a < npno; ++a) {
       const auto e_a = ens_uocc[a];
@@ -208,7 +208,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
  *
  * @param r1_ai  T1 like Array with dimention "a,i", it should blocked by V in
  * a,b and 1 in i,j
- * @param F_occ_act  active occupied Fock matrix in canonical basis
+ * @param F_occ_act  diagnal active occupied Fock matrix in canonical basis
  * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
  * @param osvs vector of OSVs, only local i will be initialized
@@ -217,7 +217,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     const TA::DistArray<Tile, Policy>& r1_ai,
-    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
+    const EigenVector<typename Tile::numeric_type>& F_occ_act,
     const std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
     const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs) {
   auto update1 = [&F_occ_act, &F_osv_diag, &osvs](Tile& result_tile,
@@ -255,7 +255,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     const auto nuocc = osv_i.rows();
 
     // Select e_i
-    const auto e_i = F_occ_act(i, i);
+    const auto e_i = F_occ_act(i);
 
     for (auto a = 0; a < nosv; ++a) {
       const auto e_a = ens_uocc[a];
@@ -884,7 +884,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       Eigen::MatrixXd F_all = array_ops::array_to_eigen(F);
 
       // Select just the occupied portion of the Fock matrix
-      F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
+      F_occ_act_diag_ = eps_o;
 
       // Select just the unoccupied portion of the Fock matrix
       Eigen::MatrixXd F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
@@ -1153,7 +1153,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto eps_v = eps_p.tail(nuocc);
 
       // Select just the occupied portion of the Fock matrix
-      F_occ_act_ = F_all.block(nfzc, nfzc, nocc_act, nocc_act);
+      F_occ_act_diag_ = eps_o;
 
       // Select just the unoccupied portion of the Fock matrix
       Matrix F_uocc = F_all.block(nocc, nocc, nuocc, nuocc);
@@ -1285,9 +1285,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
     auto delta_t1_ai =
-        detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+        detail::pno_jacobi_update_t1(r1, F_occ_act_diag_, F_osv_diag_, osvs_);
     auto delta_t2_abij =
-        detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+        detail::pno_jacobi_update_t2(r2, F_occ_act_diag_, F_pno_diag_, pnos_);
 
     // Reblock delta_t1_ai and delta_t2_abij to match original tiling
     auto delta_t1 = detail::unblock_t1(delta_t1_ai, reblock_i_, reblock_a_);
@@ -1418,7 +1418,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   T reblock_i_;
   T reblock_a_;
 
-  Matrix F_occ_act_;
+  Vector F_occ_act_diag_;
 
   // For storing PNOs and and the Fock matrix in the PNO basis
   std::vector<Matrix> pnos_;

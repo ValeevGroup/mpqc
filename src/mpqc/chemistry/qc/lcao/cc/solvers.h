@@ -1220,10 +1220,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const TA::TiledRange1 occ_row = ktrange.dim(3);
 
       // Create transition arrays
-      reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
 
-      reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
       // Reblock T2

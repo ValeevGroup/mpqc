@@ -7,8 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 
-#include <memory>
 #include <madness/world/worldmem.h>
+#include <memory>
 
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
@@ -50,7 +50,8 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
   density_builder_str_ =
       kv.value<std::string>("density_builder", "eigen_solve");
   localize_ = kv.value<bool>("localize", false);
-  localization_method_ = kv.value<std::string>("localization_method", "boys-foster");
+  localization_method_ =
+      kv.value<std::string>("localization_method", "boys-foster");
   t_cut_c_ = kv.value<double>("t_cut_c", 0.0);
 }
 
@@ -93,8 +94,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
         kv.value<std::string>("decompo_type", "conditioned");
     double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
-        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, localize_,
-        s_tolerance, localization_method_);
+        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, s_tolerance,
+        localize_, localization_method_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {

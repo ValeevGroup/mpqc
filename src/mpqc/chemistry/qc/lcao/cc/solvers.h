@@ -626,6 +626,8 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
+//    std::cout << "pno: " <<  ij << std::endl << pnos[ij] << std::endl;
+
     // truncate OSVs
 
     //        auto osvdrop = 0;
@@ -674,7 +676,10 @@ void construct_pno(
         F_osv_diag[i] = es.eigenvalues();
       }  // pno_canonical
 
+//      std::cout << "osv: " << i << std::endl << osvs[i] << std::endl;
     }  // if i == j
+
+
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -1139,7 +1144,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const auto ktrange = K.trange();
 
       // Determine number of tiles along each dim of K
-      const auto ntiles_a = ktrange.dim(0).tile_extent();
+//      const auto ntiles_a = ktrange.dim(0).tile_extent();
 
       /// Step (1): Convert K to T
 
@@ -1301,7 +1306,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R1SquaredNormReductionOp(PNOSolver<T>* solver) : solver_(solver) {}
+    R1SquaredNormReductionOp(PNOSolver<T, DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -1322,7 +1327,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_osv.squaredNorm();
     }
 
-    PNOSolver<T>* solver_;
+    PNOSolver<T, DT>* solver_;
   };  // R1SquaredNormReductionOp
 
   // squared norm of 2-body residual in PNO subspace
@@ -1331,7 +1336,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R2SquaredNormReductionOp(PNOSolver<T>* solver) : solver_(solver) {}
+    R2SquaredNormReductionOp(PNOSolver<T,DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -1354,7 +1359,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_pno.squaredNorm();
     }
 
-    PNOSolver<T>* solver_;
+    PNOSolver<T,DT>* solver_;
   };  // R2SquaredNormReductionOp
 
  public:
@@ -1378,7 +1383,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
  private:
-  Factory<T>& factory_;
+  Factory<T,DT>& factory_;
   //  madness::World& world_;
   std::string pno_method_;     //!< the PNO construction method
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
@@ -1412,9 +1417,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 /// @warning This class assumes that the 1- and 2-body amplitudes/residuals
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
-template <typename T>
+template <typename T, typename DT>
 class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
-                  public madness::WorldObject<SVOSolver<T>> {
+                  public madness::WorldObject<SVOSolver<T,DT>> {
  public:
   typedef typename T::value_type Tile;
   // clang-format off
@@ -1431,9 +1436,9 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
-  SVOSolver(const KeyVal& kv, Factory<T>& factory)
+  SVOSolver(const KeyVal& kv, Factory<T,DT>& factory)
       : ::mpqc::cc::DIISSolver<T, T>(kv),
-        madness::WorldObject<SVOSolver<T>>(factory.world()),
+        madness::WorldObject<SVOSolver<T,DT>>(factory.world()),
         factory_(factory),
         tiling_method_(kv.value<std::string>("tiling_method", "flexible")),
         tsvo2_(kv.value<double>("tsvo2", 1.e-5)),
@@ -1737,7 +1742,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const auto ktrange = K.trange();
 
       // Determine number of tiles along each dim of K
-      const auto ntiles_a = ktrange.dim(0).tile_extent();
+//      const auto ntiles_a = ktrange.dim(0).tile_extent();
 
       // zero out amplitudes
       if (!T_.is_initialized()) {
@@ -2499,7 +2504,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R1SquaredNormReductionOp(SVOSolver<T>* solver) : solver_(solver) {}
+    R1SquaredNormReductionOp(SVOSolver<T,DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -2520,7 +2525,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_svo1.squaredNorm();
     }
 
-    SVOSolver<T>* solver_;
+    SVOSolver<T,DT>* solver_;
   };  // R1SquaredNormReductionOp
 
   // squared norm of 2-body residual in SVO2 subspace
@@ -2529,7 +2534,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     typedef typename TA::detail::scalar_type<T>::type result_type;
     typedef typename T::value_type argument_type;
 
-    R2SquaredNormReductionOp(SVOSolver<T>* solver) : solver_(solver) {}
+    R2SquaredNormReductionOp(SVOSolver<T,DT>* solver) : solver_(solver) {}
 
     // Reduction functions
     // Make an empty result object
@@ -2552,7 +2557,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       result += arg_svo2.squaredNorm();
     }
 
-    SVOSolver<T>* solver_;
+    SVOSolver<T,DT>* solver_;
   };  // R2SquaredNormReductionOp
 
  public:
@@ -2569,7 +2574,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
  private:
-  Factory<T>& factory_;
+  Factory<T,DT>& factory_;
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible
                                //!< tiling SVO solver
   double tsvo2_;               //!< the truncation threshold for SVO2s

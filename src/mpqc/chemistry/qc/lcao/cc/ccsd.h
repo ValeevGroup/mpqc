@@ -284,6 +284,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     t1.fill(0.0);
+    TArray g_abij;
+    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
     t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
     t2.fill(0.0);
 
@@ -332,7 +334,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         assert(solver_);
         solver_->update(t1, t2, r1, r2);
 
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
@@ -341,7 +343,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
         }
 
@@ -635,6 +637,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     t1.fill(0.0);
+    TArray g_abij;
+    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
     t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
     t2.fill(0.0);
 
@@ -683,7 +687,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         assert(solver_);
         solver_->update(t1, t2, r1, r2);
 
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
@@ -692,7 +696,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
         }
 
@@ -986,6 +990,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     t1.fill(0.0);
+    TArray g_abij;
+    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
     t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
     t2.fill(0.0);
 
@@ -1033,7 +1039,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         assert(solver_);
         solver_->update(t1, t2, r1, r2);
 
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
         }
@@ -1042,7 +1048,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail_) {
+        if (verbose_) {
           mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
         }
 

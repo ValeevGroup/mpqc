@@ -34,7 +34,7 @@
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
-    "method" : "direct",
+    "method" : "direct_df",
     "solver" : "pno",
     "pno_canonical" : "true",
     "tpno" : "1.0e-07",

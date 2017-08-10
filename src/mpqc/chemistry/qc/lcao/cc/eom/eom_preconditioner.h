@@ -144,13 +144,11 @@ class StateSpecificPNOEEPred
       const EigenVector<typename Tile::numeric_type> &e,
       std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const {
     TA_ASSERT(e.size() == guess.size());
-    TA_ASSERT(e.size() % n_roots_ == 0);
+    TA_ASSERT(e.size() == n_roots_);
 
     // precondition for each root
-    for (std::size_t i = 0; i < e.size(); i += n_roots_) {
-      for (std::size_t j = 0; j < n_roots_; ++j) {
-        compute(j, e[i + j], guess[i + j]);
-      }
+    for (std::size_t j = 0; j < n_roots_; ++j) {
+      compute(j, e[j], guess[j]);
     }
   }
 

@@ -219,11 +219,11 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 
     // if simulate PNO, need to compute guess and initialize PNO, OSV
     if (eom_pno_) {
-      // make initial guess, by run one iteration of
+      // make initial guess, by run 2 iteration of
       DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
                                     vector_threshold_);
 
-      for (std::size_t i = 0; i < 2; i++){
+      for (std::size_t i = 0; i < 2; i++) {
         std::size_t dim = C_.size();
         std::vector<GuessVector> HC(dim);
         for (std::size_t i = 0; i < dim; ++i) {
@@ -239,7 +239,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
         EigenVector<double> eig_new = dvd.extrapolate(HC, C_, *pred);
       }
 
-
       C_ = dvd.eigen_vector().back();
 
       TA_ASSERT(C_.size() == n_roots);
@@ -248,7 +247,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
       for (std::size_t i = 0; i < guess.size(); i++) {
         guess[i] = C_[i].t2;
 
-//        std::cout << guess[i] << std::endl;
+        //        std::cout << guess[i] << std::endl;
       }
 
       pred = std::make_shared<cc::StateSpecificPNOEEPred<TArray>>(
@@ -310,6 +309,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 template <typename Tile, typename Policy>
 void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
+  if (vector_threshold_ == 0) {
+    vector_threshold_ = 10 * target_precision;
+  }
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 

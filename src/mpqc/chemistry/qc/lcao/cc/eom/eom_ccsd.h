@@ -29,7 +29,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | max_vector | int | 8 | max number of guess vector per root |
-   * | vector_threshold | double | 1.0e-5 | threshold for the norm of new guess vector |
+   * | vector_threshold | double | 10 * precision of property | threshold for the norm of new guess vector |
    * | eom_pno | bool | false | if to simulate pno or not |
    * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
    * | eom_tpno | double | 0 | PNO truncation threshold for eom |
@@ -40,7 +40,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   // clang-format on
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
-    vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+    // will be overwrited by precision of property if default set
+    vector_threshold_ = kv.value<double>("vector_threshold", 0);
     eom_pno_ = kv.value<bool>("eom_pno", false);
     eom_pno_canonical_ = kv.value<bool>("eom_pno_canonical", true);
     eom_tpno_ = kv.value<double>("eom_tpno", 0.0);

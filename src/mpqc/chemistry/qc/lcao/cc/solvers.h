@@ -144,7 +144,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const auto j = arg_tile.range().lobound()[3];
 
     // Select appropriate matrix of PNOs
-    auto ij = i * F_occ_act.cols() + j;
+    auto ij = i * F_occ_act.size() + j;
     Eigen::MatrixXd pno_ij = pnos[ij];
 
     // Extent data of tile

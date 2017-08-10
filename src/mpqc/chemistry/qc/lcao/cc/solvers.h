@@ -459,11 +459,15 @@ TA::DistArray<Tile, Policy> unblock_t1(
 
 /**
  *
- * @param t2
- * @param pnos
- * @param F_pno_diags
- * @param osvs
- * @param F_osv_diags
+ * @param t2 T2 like Array with dimention "a,b,i,j", it should blocked by V in a,b and 1 in i,j
+ * @param F_uocc  unoccupied block of Fock matrix
+ * @param tpno  threshold for PNO truncation
+ * @param tosv  threshold for OSV truncation
+ * @param pnos  output, formed PNOs
+ * @param F_pno_diag  output, formed diagnal of unoccuppied Fock matrix in PNO basis
+ * @param osvs  output, formed OSVs
+ * @param F_osv_diag output, formed diagnal of unoccuppied Fock matrix in OSV basis
+ * @param pno_canonical if make PNO and OSV canonical
  */
 template <typename Tile, typename Policy>
 void construct_pno(
@@ -532,8 +536,8 @@ void construct_pno(
   D.world().gop.fence();
 
   // Print out the pmap for D_
-  ExEnv::out0() << "\nD_ pmap:\n";
-  print_local(world, D.pmap());
+//  ExEnv::out0() << "\nD_ pmap:\n";
+//  print_local(world, D.pmap());
   //      std::cout << "Successfully transformed reblocked T to D" <<
   //      std::endl; std::cout << "D_ trange:\n" << D_.trange() <<
   //      std::endl; std::cout << "D_:\n" << D_ << std::endl;
@@ -636,8 +640,8 @@ void construct_pno(
 
     //        auto osvdrop = 0;
     if (i == j) {
-      std::cout << "World: " << TA::get_default_world().rank()
-                << " index: " << i << std::endl;
+//      std::cout << "World: " << TA::get_default_world().rank()
+//                << " index: " << i << std::endl;
 
       size_t osvdrop = 0;
       if (tosv != 0.0) {
@@ -1263,8 +1267,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       //      std::endl;
 
       // Print out the pmap for T_reblock
-      ExEnv::out0() << "\nT_reblock pmap:\n";
-      detail::print_local(T_reblock.world(), T_reblock.pmap());
+//      ExEnv::out0() << "\nT_reblock pmap:\n";
+//      detail::print_local(T_reblock.world(), T_reblock.pmap());
 
       detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
                             osvs_, F_osv_diag_, pno_canonical_);

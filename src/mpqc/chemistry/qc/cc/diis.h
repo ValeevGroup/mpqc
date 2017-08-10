@@ -36,6 +36,30 @@ struct T1T2 {
   }
 };
 
+/*template <typename T1, typename T2, typename T3>
+struct T1T2T3 {
+  typedef typename T1::element_type element_type;
+  typedef decltype(norm2(std::declval<T1>())) scalar_type;
+
+  // constructor
+  T1T2T3(T1 &_t1, T2 &_t2, T3 &_t3) : t1(_t1), t2(_t2), t3(_t3) {}
+
+  // default constructor
+  T1T2T3() : t1(), t2(), t3() {}
+
+  T1 t1;
+  T2 t2;
+  T3 t3;
+
+  auto norm() const{
+    auto t1_norm = norm2(t1);
+    auto t2_norm = norm2(t2);
+    auto t3_norm = norm2(t3);
+    return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm
+                  + t3_norm * t3_norm));
+  }
+};*/
+
 template <typename T1, typename T2>
 auto norm2(const T1T2<T1, T2> &a) -> decltype(norm2(std::declval<T1>())) {
   return a.norm();
@@ -68,6 +92,45 @@ inline void scale(T1T2<T1, T2> &y, Scalar a) {
   scale(y.t1, a);
   scale(y.t2, a);
 };
+
+/*
+template <typename T1, typename T2, typename T3>
+auto norm2(const T1T2T3<T1, T2, T3> &a) -> decltype(norm2(std::declval<T1>())) {
+  return a.norm();
+}
+
+template <typename T1, typename T2, typename T3>
+inline void zero(T1T2T3<T1, T2, T3> &a) {
+  zero(a.t1);
+  zero(a.t2);
+  zero(a.t3);
+}
+
+template <typename T1, typename T2, typename T3>
+inline auto dot_product(const T1T2T3<T1, T2, T3> &a, const T1T2T3<T1, T2,T3> &b) {
+  return dot_product(a.t1, b.t1) + dot_product(a.t2, b.t2) + dot_product(a.t3, b.t3);
+}
+
+template <typename T1, typename T2, typename T3, typename Scalar>
+inline void axpy(T1T2T3<T1, T2, T3> &y, Scalar a, const T1T2T3<T1, T2, T3> &x) {
+  axpy(y.t1, a, x.t1);
+  axpy(y.t2, a, x.t2);
+  axpy(y.t3, a, x.t3);
+
+};
+
+template <typename T1, typename T2, typename T3>
+inline T1T2T3<T1,T2, T3> copy(T1T2T3<T1, T2, T3> &a) {
+  return a;
+}
+
+template <typename T1, typename T2, typename T3,typename Scalar>
+inline void scale(T1T2T3<T1, T2, T3> &y, Scalar a) {
+  scale(y.t1, a);
+  scale(y.t2, a);
+  scale(y.t3, a);
+}; */
+
 
 }  // namespace cc
 }  // namespace mpqc

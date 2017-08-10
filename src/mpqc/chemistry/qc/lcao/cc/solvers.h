@@ -10,6 +10,66 @@ namespace cc {
 
 namespace detail {
 
+
+template <typename Tile, typename Policy,
+          typename EigenVectorX =
+              Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+TA::DistArray<Tile, Policy> jacobi_update_t3_abcijk(
+    const TA::DistArray<Tile, Policy>& r3_abcijk, const EigenVectorX& ens_occ,
+    const EigenVectorX& ens_uocc) {
+    auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto b0 = result_tile.range().lobound()[1];
+    const auto bn = result_tile.range().upbound()[1];
+    const auto c0 = result_tile.range().lobound()[2];
+    const auto cn = result_tile.range().upbound()[2];
+    const auto i0 = result_tile.range().lobound()[3];
+    const auto in = result_tile.range().upbound()[3];
+    const auto j0 = result_tile.range().lobound()[4];
+    const auto jn = result_tile.range().upbound()[4];
+    const auto k0 = result_tile.range().lobound()[5];
+    const auto kn = result_tile.range().upbound()[5];
+
+    auto tile_idx = 0;
+    typename Tile::scalar_type norm = 0.0;
+    for (auto a = a0; a < an; ++a) {
+      const auto e_a = ens_uocc[a];
+      for (auto b = b0; b < bn; ++b) {
+        const auto e_b = ens_uocc[b];
+        for (auto c = c0; c < cn; ++c) {
+          const auto e_c = ens_uocc[c];
+        for (auto i = i0; i < in; ++i) {
+          const auto e_i = ens_occ[i];
+          for (auto j = j0; j < jn; ++j) {
+            const auto e_j = ens_occ[j];
+            for (auto k = k0; k < kn; ++k, ++tile_idx) {
+              const auto e_k = ens_occ[k];
+            const auto e_iajbkc = e_i + e_j + e_k - e_a - e_b - e_c ;
+            const auto old = arg_tile[tile_idx];
+            const auto result_abcijk = old / (e_iajbkc);
+            const auto abs_result_abcijk = std::abs(result_abcijk);
+            norm += abs_result_abcijk * abs_result_abcijk;
+            result_tile[tile_idx] = result_abcijk;
+          }
+        }
+       }
+      }
+     }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto delta_t3_abcijk = TA::foreach (r3_abcijk, denom);
+  delta_t3_abcijk.world().gop.fence();
+  return delta_t3_abcijk;
+}
+
+
 template <typename Tile, typename Policy,
           typename EigenVectorX =
               Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
@@ -134,7 +194,18 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
     t1.truncate();
     t2.truncate();
   }
+
+  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) {
+    t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
+    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
+    t3("a,b,c,i,j,k") += detail::jacobi_update_t3_abcijk(r3, f_ii_, f_aa_)("a,b,c,i,j,k");
+    t1.truncate();
+    t2.truncate();
+    t3.truncate();
+  }
+
 };
+
 
 /// PNOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PNO
 /// space
@@ -197,6 +268,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   double tpno_;  //!< the PNO truncation threshold
   double tosv_;  //!< the OSV (diagonal PNO) truncation threshold
 };
+
 
 }  // namespace cc
 }  // namespace lcao

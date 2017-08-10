@@ -31,6 +31,7 @@ class Solver {
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
   virtual void update(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
+  //virtual void update(T1& t1, T2& t2, T1& t3, const T1& r1, const T2& r2, const T1& r3) = 0;
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS
@@ -83,6 +84,19 @@ class DIISSolver : public Solver<T1, T2> {
     t2 = t.t2;
   }
 
+ /* void update(T1& t1, T2& t2,  T1& t3, const T1& r1, const T2& r2, const T1& r3) {
+    update_only(t1, t2, t3, r1, r2, r3);
+    T1 r1_copy = r1;
+    T2 r2_copy = r2;
+    T1 r3_copy = r3;
+    T1T2T3<T1, T2, T1> r(r1_copy, r2_copy, r3_copy);
+    T1T2T3<T1, T2, T1> t(t1, t2, t3);
+    diis_.extrapolate(t, r);
+    t1 = t.t1;
+    t2 = t.t2;
+    t3 = t.t3;
+  }*/
+
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
   /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
@@ -94,11 +108,15 @@ class DIISSolver : public Solver<T1, T2> {
                            __FILE__, __LINE__);
   }
 
+
   TA::DIIS<T1T2<T1, T2>>& diis() { return diis_; }
 
  private:
   TA::DIIS<T1T2<T1, T2>> diis_;
-};
+
+
+
+ };
 
 }  // namespace cc
 }  // namespace mpqc

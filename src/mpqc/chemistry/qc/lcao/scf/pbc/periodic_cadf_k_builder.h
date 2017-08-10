@@ -28,7 +28,10 @@ class PeriodicCADFKBuilder
 
   PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory,
                        const double force_shape_threshold = 0.0)
-      : WorldObject_(world), ao_factory_(ao_factory) {
+      : WorldObject_(world),
+        ao_factory_(ao_factory),
+        trans_(madness::cblas::Trans),
+        notrans_(madness::cblas::NoTrans) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
@@ -239,6 +242,9 @@ class PeriodicCADFKBuilder
   madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
   std::atomic<size_t> num_ints_computed_{0};
 
+  const madness::cblas::CBLAS_TRANSPOSE trans_;
+  const madness::cblas::CBLAS_TRANSPOSE notrans_;
+
  private:
   array_type compute_K(const array_type &D, double target_precision) {
     auto &world = ao_factory_.world();
@@ -268,6 +274,8 @@ class PeriodicCADFKBuilder
       t1 = mpqc::fenced_now(world);
       t_Qket += mpqc::duration_in_s(t0, t1);
 
+      detail::print_size_info(Q_ket, "Q(Y,ν,ρ)");
+
       // compute F(Y, μ_0, ρ_Rj) = 2 * E(Y, μ_0, ρ_Rj) - C(X, μ_0, ρ_Rj) M(X, Y)
       t0 = mpqc::fenced_now(world);
       array_type F;
@@ -296,6 +304,8 @@ class PeriodicCADFKBuilder
       }
       t1 = mpqc::fenced_now(world);
       t_F = mpqc::duration_in_s(t0, t1);
+
+      detail::print_size_info(F, "F(Y,μ,ρ)");
 
       // permute basis indices
       t0 = mpqc::fenced_now(world);
@@ -562,35 +572,45 @@ class PeriodicCADFKBuilder
     const auto ext_D = D_tile.range().extent();
     assert(ext_C[2] == ext_D[1]);
 
-    RowMatrixXd C_eig = TA::eigen_map(C_tile, ext_C[0] * ext_C[1], ext_C[2]);
-    RowMatrixXd D_eig = TA::eigen_map(D_tile, ext_D[0], ext_D[1]);
-    RowMatrixXd result_eig = C_eig * D_eig.transpose();
+    if (C_tile.norm() * D_tile.norm() >= target_precision_) {
+      const auto tile_Y = tile_idx[0];
+      const auto tile_nu = tile_idx[1];
+      const auto tile_rho = tile_idx[2];
 
-    const auto tile_Y = tile_idx[0];
-    const auto tile_nu = tile_idx[1];
-    const auto tile_rho = tile_idx[2];
+      const auto &rng_Y = Q_trange_.dim(0).tile(tile_Y);
+      const auto &rng_nu = Q_trange_.dim(1).tile(tile_nu);
+      const auto &rng_rho = Q_trange_.dim(2).tile(tile_rho);
 
-    const auto &tr1_Y = Q_trange_.dim(0);
-    const auto &tr1_nu = Q_trange_.dim(1);
-    const auto &tr1_rho = Q_trange_.dim(2);
+      const auto rng_Y_size = rng_Y.second - rng_Y.first;
+      const auto rng_nu_size = rng_nu.second - rng_nu.first;
+      const auto rng_rho_size = rng_rho.second - rng_rho.first;
+      assert(rng_Y_size == ext_C[0]);
+      assert(rng_nu_size == ext_C[1]);
+      assert(rng_rho_size == ext_D[0]);
 
-    const auto &rng_Y = tr1_Y.tile(tile_Y);
-    const auto &rng_nu = tr1_nu.tile(tile_nu);
-    const auto &rng_rho = tr1_rho.tile(tile_rho);
+      const auto result_rng = TA::Range({rng_Y, rng_nu, rng_rho});
+      Tile result_tile(result_rng, 0.0);
 
-    const auto rng_Y_size = rng_Y.second - rng_Y.first;
-    assert(rng_Y_size == ext_C[0]);
+      TA::math::GemmHelper gh(notrans_, trans_, result_tile.range().rank(),
+                              C_tile.range().rank(), D_tile.range().rank());
 
-    const auto result_rng = TA::Range({rng_Y, rng_nu, rng_rho});
-    Tile result_tile(result_rng, 0.0);
-    TA::eigen_map(result_tile, ext_C[0] * ext_C[1], ext_D[0]) = result_eig;
+      int m, k, n;
+      gh.compute_matrix_sizes(m, n, k, C_tile.range(), D_tile.range());
+      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-    const auto ntiles_nu = Q_bs_nu_->nclusters();
-    const auto ntiles_rho = Q_bs_rho_->nclusters();
-    const auto ord =
-        tile_Y * ntiles_nu * ntiles_rho + tile_nu * ntiles_rho + tile_rho;
+      // Notice that we reversed notrans and trans. This is because Lapack
+      // expects col major matrices.
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, C_tile.data(),
+                     lda, D_tile.data(), ldb, 0.0, result_tile.data(), n);
 
-    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+      const auto ntiles_nu = Q_bs_nu_->nclusters();
+      const auto ntiles_rho = Q_bs_rho_->nclusters();
+      const auto ord =
+          tile_Y * ntiles_nu * ntiles_rho + tile_nu * ntiles_rho + tile_rho;
+
+      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+    }
   }
 
   /*!
@@ -709,27 +729,40 @@ class PeriodicCADFKBuilder
     assert(ext_F[0] == ext_Q[0]);
     assert(ext_F[1] == ext_Q[1]);
 
-    RowMatrixXd F_eig = TA::eigen_map(F_tile, ext_F[0] * ext_F[1], ext_F[2]);
-    RowMatrixXd Q_eig = TA::eigen_map(Q_tile, ext_Q[0] * ext_Q[1], ext_Q[2]);
-    RowMatrixXd result_eig = F_eig.transpose() * Q_eig;
+    if (F_tile.norm() * Q_tile.norm() >= target_precision_) {
+      const auto tile_mu = tile_idx[0];
+      const auto tile_nu = tile_idx[1];
 
-    const auto &tr0 = result_trange_.dim(0);
-    const auto &tr1 = result_trange_.dim(1);
+      const auto &rng_mu = result_trange_.dim(0).tile(tile_mu);
+      const auto &rng_nu = result_trange_.dim(1).tile(tile_nu);
 
-    const auto tile_mu = tile_idx[0];
-    const auto tile_nu = tile_idx[1];
+      const auto rng_mu_rng = rng_mu.second - rng_mu.first;
+      const auto rng_nu_rng = rng_nu.second - rng_nu.first;
 
-    const auto &rng_mu = tr0.tile(tile_mu);
-    const auto &rng_nu = tr1.tile(tile_nu);
-    const auto result_rng = TA::Range({rng_mu, rng_nu});
+      assert(rng_mu_rng == ext_F[2]);
+      assert(rng_nu_rng == ext_Q[2]);
 
-    Tile result_tile(result_rng, 0.0);
-    TA::eigen_map(result_tile, ext_F[2], ext_Q[2]) = result_eig;
+      const auto result_rng = TA::Range({rng_mu, rng_nu});
+      Tile result_tile(result_rng, 0.0);
 
-    const auto ntiles_nu = basisR_->nclusters();
-    const auto ord = tile_mu * ntiles_nu + tile_nu;
+      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
+                              F_tile.range().rank(), Q_tile.range().rank());
 
-    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+      int m, k, n;
+      gh.compute_matrix_sizes(m, n, k, F_tile.range(), Q_tile.range());
+      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
+
+      // Notice that we reversed notrans and trans. This is because Lapack
+      // expects col major matrices.
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, F_tile.data(),
+                     lda, Q_tile.data(), ldb, 0.0, result_tile.data(), n);
+
+      const auto ntiles_nu = basisR_->nclusters();
+      const auto ord = tile_mu * ntiles_nu + tile_nu;
+
+      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+    }
   }
 
   /*!
@@ -861,36 +894,48 @@ class PeriodicCADFKBuilder
                              std::array<size_t, 3> tile_idx) {
     const auto ext_C = C_tile.range().extent();
     const auto ext_M = M_tile.range().extent();
+    assert(ext_M[0] == ext_C[0]);
 
-    RowMatrixXd C_eig = TA::eigen_map(C_tile, ext_C[0], ext_C[1] * ext_C[2]);
-    RowMatrixXd M_eig = TA::eigen_map(M_tile, ext_M[0], ext_M[1]);
-    RowMatrixXd result_eig = M_eig.transpose() * C_eig;
+    if (C_tile.norm() * M_tile.norm() >= target_precision_) {
+      const auto tile_Y = tile_idx[0];
+      const auto tile_mu = tile_idx[1];
+      const auto tile_rho = tile_idx[2];
 
-    const auto tile_Y = tile_idx[0];
-    const auto tile_mu = tile_idx[1];
-    const auto tile_rho = tile_idx[2];
+      const auto &rng_Y = F_trange_.dim(0).tile(tile_Y);
+      const auto &rng_mu = F_trange_.dim(1).tile(tile_mu);
+      const auto &rng_rho = F_trange_.dim(2).tile(tile_rho);
 
-    const auto &tr1_Y = F_trange_.dim(0);
-    const auto &tr1_mu = F_trange_.dim(1);
-    const auto &tr1_rho = F_trange_.dim(2);
+      const auto rng_Y_size = rng_Y.second - rng_Y.first;
+      const auto rng_mu_size = rng_mu.second - rng_mu.first;
+      const auto rng_rho_size = rng_rho.second - rng_rho.first;
 
-    const auto &rng_Y = tr1_Y.tile(tile_Y);
-    const auto &rng_mu = tr1_mu.tile(tile_mu);
-    const auto &rng_rho = tr1_rho.tile(tile_rho);
+      assert(rng_Y_size == ext_M[1]);
+      assert(rng_mu_size == ext_C[1]);
+      assert(rng_rho_size == ext_C[2]);
 
-    const auto rng_Y_size = rng_Y.second - rng_Y.first;
-    assert(rng_Y_size == ext_M[1]);
+      const auto result_rng = TA::Range({rng_Y, rng_mu, rng_rho});
+      Tile result_tile(result_rng, 0.0);
 
-    const auto result_rng = TA::Range({rng_Y, rng_mu, rng_rho});
-    Tile result_tile(result_rng, 0.0);
-    TA::eigen_map(result_tile, ext_M[1], ext_C[1] * ext_C[2]) = result_eig;
+      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
+                              M_tile.range().rank(), C_tile.range().rank());
 
-    const auto ntiles_mu = obs_->nclusters();
-    const auto ntiles_rho = basisRJ_->nclusters();
-    const auto ord =
-        tile_Y * ntiles_mu * ntiles_rho + tile_mu * ntiles_rho + tile_rho;
+      int m, k, n;
+      gh.compute_matrix_sizes(m, n, k, M_tile.range(), C_tile.range());
+      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+      // Notice that we reversed notrans and trans. This is because Lapack
+      // expects col major matrices.
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M_tile.data(),
+                     lda, C_tile.data(), ldb, 0.0, result_tile.data(), n);
+
+      const auto ntiles_mu = obs_->nclusters();
+      const auto ntiles_rho = basisRJ_->nclusters();
+      const auto ord =
+          tile_Y * ntiles_mu * ntiles_rho + tile_mu * ntiles_rho + tile_rho;
+
+      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
+    }
   }
 
   void accumulate_global_task(Tile arg_tile, long tile_ord) {

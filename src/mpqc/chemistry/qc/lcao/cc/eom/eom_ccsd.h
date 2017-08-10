@@ -17,7 +17,7 @@ template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
+  using GuessVector = ::mpqc::cc::TPack<TArray>;
   using numeric_type = typename Tile::numeric_type;
 
 public:
@@ -114,10 +114,10 @@ private:
         return std::sqrt(norm);
       };
 
-      TA::foreach_inplace(guess.t1, task1);
-      TA::foreach_inplace(guess.t2, task2);
+      TA::foreach_inplace(guess[0], task1);
+      TA::foreach_inplace(guess[1], task2);
 
-      guess.t1.world().gop.fence();
+      guess[0].world().gop.fence();
     }
   };
 

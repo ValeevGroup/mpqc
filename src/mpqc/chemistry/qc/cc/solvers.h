@@ -10,9 +10,8 @@ namespace cc {
 
 /// Solver updates the CC T amplitudes given the current values
 /// and the amplitude equation residuals
-/// @tparam T1 the type representing the 1-body amplitude set
-/// @tparam T2 the type representing the 2-body amplitude set
-template <typename T1, typename T2>
+/// @tparam T the type representing the n-body amplitude set
+template <typename T>
 class Solver {
  public:
   virtual ~Solver() = default;
@@ -30,15 +29,14 @@ class Solver {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  virtual void update(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
-  //virtual void update(T1& t1, T2& t2, T1& t3, const T1& r1, const T2& r2, const T1& r3) = 0;
+  virtual void update(T& t1, T& t2, const T& r1, const T& r2) = 0;
+  virtual void update(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) = 0;
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS
-/// @tparam T1 the type representing the 1-body amplitude set
-/// @tparam T2 the type representing the 2-body amplitude set
-template <typename T1, typename T2>
-class DIISSolver : public Solver<T1, T2> {
+/// @tparam T the type representing the n-body amplitude set
+template <typename T>
+class DIISSolver : public Solver<T> {
  public:
   // clang-format off
   /**
@@ -73,29 +71,29 @@ class DIISSolver : public Solver<T1, T2> {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  void update(T1& t1, T2& t2, const T1& r1, const T2& r2) override {
+  void update(T& t1, T& t2, const T& r1, const T& r2) override {
     update_only(t1, t2, r1, r2);
-    T1 r1_copy = r1;
-    T1 r2_copy = r2;
-    T1T2<T1, T2> r(r1_copy, r2_copy);
-    T1T2<T1, T2> t(t1, t2);
+    T r1_copy = r1;
+    T r2_copy = r2;
+    TPack<T> r(r1_copy, r2_copy);
+    TPack<T> t(t1, t2);
     diis_.extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
+    t1 = t[0];
+    t2 = t[1];
   }
 
- /* void update(T1& t1, T2& t2,  T1& t3, const T1& r1, const T2& r2, const T1& r3) {
+  void update(T& t1, T& t2,  T& t3, const T& r1, const T& r2, const T& r3) override{
     update_only(t1, t2, t3, r1, r2, r3);
-    T1 r1_copy = r1;
-    T2 r2_copy = r2;
-    T1 r3_copy = r3;
-    T1T2T3<T1, T2, T1> r(r1_copy, r2_copy, r3_copy);
-    T1T2T3<T1, T2, T1> t(t1, t2, t3);
+    T r1_copy = r1;
+    T r2_copy = r2;
+    T r3_copy = r3;
+    TPack<T> r(r1_copy, r2_copy, r3_copy);
+    TPack<T> t(t1, t2, t3);
     diis_.extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
-    t3 = t.t3;
-  }*/
+    t1 = t[0];
+    t2 = t[1];
+    t3 = t[2];
+  }
 
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
@@ -103,16 +101,20 @@ class DIISSolver : public Solver<T1, T2> {
   ///          are congruent, but does not assume any particular structure.
   ///          Derived classes \em may impose additional assumptions on the
   ///          structure of the arguments.
-  virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) {
+  virtual void update_only(T& t1, T& t2, const T& r1, const T& r2) {
     throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
                            __FILE__, __LINE__);
   }
+  virtual void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) {
+        throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
+                               __FILE__, __LINE__);
+  }
 
 
-  TA::DIIS<T1T2<T1, T2>>& diis() { return diis_; }
+  TA::DIIS<TPack<T>>& diis() { return diis_; }
 
- private:
-  TA::DIIS<T1T2<T1, T2>> diis_;
+  private:
+  TA::DIIS<TPack<T>> diis_;
 
 
 

@@ -122,7 +122,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
   const KeyVal
       kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
-  std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;
+  std::shared_ptr<::mpqc::cc::Solver<TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
   typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
@@ -719,7 +719,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, t3, r1, r2, r3);
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");

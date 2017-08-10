@@ -163,7 +163,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T>
-class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
+class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T> {
  public:
   // clang-format off
   /**
@@ -175,7 +175,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   JacobiDIISSolver(const KeyVal& kv,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
-      : ::mpqc::cc::DIISSolver<T, T>(kv) {
+      : ::mpqc::cc::DIISSolver<T>(kv) {
     std::swap(f_ii_, f_ii);
     std::swap(f_aa_, f_aa);
   }
@@ -195,7 +195,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
     t2.truncate();
   }
 
-  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) {
+  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
     t3("a,b,c,i,j,k") += detail::jacobi_update_t3_abcijk(r3, f_ii_, f_aa_)("a,b,c,i,j,k");
@@ -213,7 +213,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T, typename DT>
-class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
+class PNOSolver : public ::mpqc::cc::DIISSolver<T> {
  public:
   // clang-format off
   /**
@@ -230,7 +230,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T,DT>& factory)
-      : ::mpqc::cc::DIISSolver<T, T>(kv), factory_(factory),
+      : ::mpqc::cc::DIISSolver<T>(kv), factory_(factory),
       pno_method_(kv.value<std::string>("pno_method", "standard")),
       tpno_(kv.value<double>("tpno", 1.e-8)) {
     // compute and store PNOs truncated with threshold tpno_
@@ -253,7 +253,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T> {
   /// Overrides DIISSolver::update() .
   /// @note not overriding DIISSolver::update_only() since the update must be
   ///      followed by backtransform updated amplitudes to the full space
-  void update(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update(T& t1, T& t2, const T& r1, const T& r2)  {
     // transform r1 and r2 to OSV and PNO basis, respectively
     assert(false && "not yet implemented");
     // apply jacobi update

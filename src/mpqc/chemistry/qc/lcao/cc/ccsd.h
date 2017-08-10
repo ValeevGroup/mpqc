@@ -121,7 +121,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   const KeyVal
       kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
-  std::shared_ptr<::mpqc::cc::Solver<TArray, TArray>> solver_;
+  std::shared_ptr<::mpqc::cc::Solver<TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
   typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;

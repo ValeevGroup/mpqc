@@ -365,7 +365,7 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
     FIJ = lcao_factory.compute(L"<i|F|j>" + postfix);
     auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
     FIJ("i,j") += t1("c,l") * (2.0 * g_ijka("i,l,j,c") - g_ijka("l,i,j,c")) +
-                  tau("c,d,j,l") * g_ijab_bar("i,l,c,d");
+                  tau("c,d,j,l") * g_ijab_bar("i,l,c,d") - f_ia("i,a")*t1("a,j");
   }
 
   TA::DistArray<Tile, Policy> FAB;

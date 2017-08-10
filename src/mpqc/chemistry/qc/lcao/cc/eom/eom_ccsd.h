@@ -30,6 +30,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
    * |---------|------|--------|-------------|
    * | max_vector | int | 8 | max number of guess vector per root |
    * | vector_threshold | double | 1.0e-5 | threshold for the norm of new guess vector |
+   * | eom_pno | bool | false | if to simulate pno or not |
+   * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
+   * | eom_tpno | double | 0 | PNO truncation threshold for eom |
+   * | eom_tosv | double | 0 | OSV truncation threshold for eom |
    *
    */
 
@@ -37,6 +41,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
     vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+    eom_pno_ = kv.value<bool>("eom_pno", false);
+    eom_pno_canonical_ = kv.value<bool>("eom_pno_canonical", true);
+    eom_tpno_ = kv.value<double>("eom_tpno", 0.0);
+    eom_tosv_ = kv.value<double>("eom_tosv", 0.0);
   }
 
   void obsolete() override {
@@ -74,6 +82,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector
+  bool eom_pno_;
+  bool eom_pno_canonical_;
+  double eom_tpno_;
+  double eom_tosv_;
 
   TArray g_ijab_;
 

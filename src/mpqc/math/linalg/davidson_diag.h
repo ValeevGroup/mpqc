@@ -268,6 +268,8 @@ class DavidsonDiag {
     }
     eigen_vector_.push_back(X);
 
+
+
     // compute residual
     // R(i) = (H - e(i)I)*B(i)*C(i)
     //      = (HB(i)*C(i) - e(i)*X(i)

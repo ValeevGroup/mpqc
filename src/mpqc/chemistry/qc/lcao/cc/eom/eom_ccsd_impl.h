@@ -25,7 +25,6 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
       this->lcao_factory(), this->ao_factory(), t1, Tau, df);
 
-
   // \cal{W}abef
   if (this->method_ != "direct" && this->method_ != "direct_df") {
     WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), t1, Tau, df);
@@ -114,15 +113,13 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         // + P(ab) Wbkdc C^c_k T^ad_ij
         // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
         // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
-        +
-        (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
-            t2("a,d,i,j")
+        + (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
+              t2("a,d,i,j")
         // - P(ij) Wlkjc C^c_k t^ab_il
         // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
         // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
-        -
-        (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
-            t2("a,b,i,l");
+        - (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
+              t2("a,b,i,l");
 
     //    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i");
   }
@@ -148,9 +145,9 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         // + P(ab) P(ij) Wbkjc C^ac_ik
         // + Wbkjc C^ac_ik - Wbkic C^ac_jk
         // - Wakjc C^bc_ik + Wakic C^bc_jk
-        + WIbAj_("k,b,c,j") * C("a,c,i,k")
-        + WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
-        + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
+        + WIbAj_("k,b,c,j") * C("a,c,i,k") +
+        WIbaJ_("k,b,c,j") * Cabij("a,c,i,k") +
+        WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
 
         // - 1/2 P(ab) g^lk_dc C^ca_kl t^db_ij
         // - 1/2 g^kl_dc C^ac_kl t^db_ij
@@ -210,14 +207,53 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   double norm_r = 1.0;
 
   /// make preconditioner
-  std::shared_ptr<DavidsonDiagPred<GuessVector >> pred;
+  std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
   {
     EigenVector<numeric_type> eps_o =
         array_ops::array_to_eigen(FIJ_).diagonal();
-    EigenVector<numeric_type> eps_v =
-        array_ops::array_to_eigen(FAB_).diagonal();
+
+    RowMatrix<numeric_type> FAB_eigen = array_ops::array_to_eigen(FAB_);
+    EigenVector<numeric_type> eps_v = FAB_eigen.diagonal();
 
     pred = std::make_shared<cc::EEPred<TArray>>(eps_o, eps_v);
+
+    // if simulate PNO, need to compute guess and initialize PNO, OSV
+    if (eom_pno_) {
+      // make initial guess, by run one iteration of
+      DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
+                                    vector_threshold_);
+
+      for (std::size_t i = 0; i < 2; i++){
+        std::size_t dim = C_.size();
+        std::vector<GuessVector> HC(dim);
+        for (std::size_t i = 0; i < dim; ++i) {
+          if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
+            HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
+            HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
+
+          } else {
+            throw ProgrammingError("Guess Vector not initialized", __FILE__,
+                                   __LINE__);
+          }
+        }
+        EigenVector<double> eig_new = dvd.extrapolate(HC, C_, *pred);
+      }
+
+
+      C_ = dvd.eigen_vector().back();
+
+      TA_ASSERT(C_.size() == n_roots);
+
+      std::vector<TArray> guess(C_.size());
+      for (std::size_t i = 0; i < guess.size(); i++) {
+        guess[i] = C_[i].t2;
+
+//        std::cout << guess[i] << std::endl;
+      }
+
+      pred = std::make_shared<cc::StateSpecificPNOEEPred<TArray>>(
+          guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
+    }
   }
 
   /// make davidson object
@@ -299,6 +335,15 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     ExEnv::out0() << indent
                   << "Threshold for norm of new vector: " << vector_threshold_
                   << "\n";
+    ExEnv::out0() << indent
+                  << "PNO Simulation: " << (eom_pno_ ? "true" : "false")
+                  << "\n";
+    if (eom_pno_) {
+      ExEnv::out0() << indent << "PNO Canonical: "
+                    << (eom_pno_canonical_ ? "true" : "false") << "\n";
+      ExEnv::out0() << indent << "TcutPNO : " << eom_tpno_ << "\n";
+      ExEnv::out0() << indent << "TcutOSV : " << eom_tosv_ << "\n";
+    }
 
     // initialize guest
     ExEnv::out0() << indent << "\nInitialize Guess Vector From CIS \n";
@@ -338,6 +383,6 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
                   << mpqc::duration_in_s(time0, time1) << " S\n";
   }
 }
-
 }  // namespace lcao
+
 }  // namespace mpqc

@@ -328,7 +328,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
@@ -681,7 +681,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
@@ -1033,7 +1033,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);

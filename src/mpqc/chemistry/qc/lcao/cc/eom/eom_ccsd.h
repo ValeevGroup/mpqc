@@ -5,9 +5,9 @@
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h"
+#include "mpqc/chemistry/qc/lcao/cc/eom/eom_preconditioner.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
-#include "mpqc/chemistry/qc/lcao/cc/eom/eom_preconditioner.h"
 
 namespace mpqc {
 namespace lcao {
@@ -30,7 +30,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
    * |---------|------|--------|-------------|
    * | max_vector | int | 8 | max number of guess vector per root |
    * | vector_threshold | double | 10 * precision of property | threshold for the norm of new guess vector |
-   * | eom_pno | bool | false | if to simulate pno or not |
+   * | eom_pno | string | none | if to simulate pno, avaialble \c default \c state-specific |
    * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
    * | eom_tpno | double | 0 | PNO truncation threshold for eom |
    * | eom_tosv | double | 0 | OSV truncation threshold for eom |
@@ -42,7 +42,12 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     max_vector_ = kv.value<int>("max_vector", 8);
     // will be overwrited by precision of property if default set
     vector_threshold_ = kv.value<double>("vector_threshold", 0);
-    eom_pno_ = kv.value<bool>("eom_pno", false);
+    eom_pno_ = kv.value<std::string>("eom_pno", "");
+    if (!eom_pno_.empty() &&
+        (eom_pno_ != "default" && eom_pno_ != "state-specific")) {
+      throw InputError("Invalid PNO Simulation method in EOM-CCSD! \n",
+                       __FILE__, __LINE__, "eom_pno");
+    }
     eom_pno_canonical_ = kv.value<bool>("eom_pno_canonical", true);
     eom_tpno_ = kv.value<double>("eom_tpno", 0.0);
     eom_tosv_ = kv.value<double>("eom_tosv", 0.0);
@@ -80,10 +85,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector
-  bool eom_pno_;
+  std::string eom_pno_;
   bool eom_pno_canonical_;
   double eom_tpno_;
   double eom_tosv_;

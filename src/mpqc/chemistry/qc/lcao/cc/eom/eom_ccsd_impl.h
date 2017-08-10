@@ -218,7 +218,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     pred = std::make_shared<cc::EEPred<TArray>>(eps_o, eps_v);
 
     // if simulate PNO, need to compute guess and initialize PNO, OSV
-    if (eom_pno_) {
+    if (!eom_pno_.empty()) {
       // make initial guess, by run 2 iteration of
       DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
                                     vector_threshold_);
@@ -247,11 +247,21 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
       for (std::size_t i = 0; i < guess.size(); i++) {
         guess[i] = C_[i].t2;
 
-        //        std::cout << guess[i] << std::endl;
+//                std::cout << guess[i] << std::endl;
       }
 
-      pred = std::make_shared<cc::StateSpecificPNOEEPred<TArray>>(
-          guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
+      if(eom_pno_=="default"){
+
+        pred = std::make_shared<cc::PNOEEPred<TArray>>(
+            guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
+      }
+      else if(eom_pno_=="state-specific"){
+
+        pred = std::make_shared<cc::StateSpecificPNOEEPred<TArray>>(
+            guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
+      }else{
+
+      }
     }
   }
 
@@ -338,9 +348,9 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
                   << "Threshold for norm of new vector: " << vector_threshold_
                   << "\n";
     ExEnv::out0() << indent
-                  << "PNO Simulation: " << (eom_pno_ ? "true" : "false")
+                  << "PNO Simulation: " << (eom_pno_.empty() ? "none" : eom_pno_)
                   << "\n";
-    if (eom_pno_) {
+    if (!eom_pno_.empty()) {
       ExEnv::out0() << indent << "PNO Canonical: "
                     << (eom_pno_canonical_ ? "true" : "false") << "\n";
       ExEnv::out0() << indent << "TcutPNO : " << eom_tpno_ << "\n";

@@ -78,8 +78,8 @@ int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z,
       std::abs(x) <= latt_max(0) && std::abs(y) <= latt_max(1) &&
       std::abs(z) <= latt_max(2)) {
     int64_t idx =
-        (x + latt_max(0)) * (2 * latt_max(0) + 1) * (2 * latt_max(1) + 1) +
-        (y + latt_max(1)) * (2 * latt_max(1) + 1) + (z + latt_max(2));
+        (x + latt_max(0)) * (2 * latt_max(1) + 1) * (2 * latt_max(2) + 1) +
+        (y + latt_max(1)) * (2 * latt_max(2) + 1) + (z + latt_max(2));
     return idx;
   } else {
     throw "invalid lattice sum index/boundaries";

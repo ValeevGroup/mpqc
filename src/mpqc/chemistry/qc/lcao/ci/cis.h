@@ -137,9 +137,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// this approach stores two electron integral and computes and stores H
   /// matrix
   /// @return excitation energy
-  std::vector<numeric_type> compute_cis(std::size_t n_roots,
-                                        std::vector<TArray> guess_vector,
-                                        double precision,
+  std::vector<numeric_type> compute_cis(std::size_t n_roots, double precision,
                                         bool triplets = false);
 
   /// this approach uses density-fitting, it stores three center integral,
@@ -147,7 +145,6 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// vector
   /// @return excitation energy
   std::vector<numeric_type> compute_cis_df(std::size_t n_roots,
-                                           std::vector<TArray> guess_vector,
                                            double precision,
                                            bool triplets = false);
 
@@ -156,7 +153,6 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// direct AO integral
   /// @return excitation energy
   std::vector<numeric_type> compute_cis_direct(std::size_t n_roots,
-                                               std::vector<TArray> guess_vector,
                                                double precision,
                                                bool triplets = false);
 
@@ -195,18 +191,15 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
     ExEnv::out0() << indent << "\nCIS Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
 
-    // get guess vector
-    auto guess = init_guess_vector(n_roots);
-
     std::vector<numeric_type> result;
 
     if (ex_energy->singlets()) {
       if (method_ == "standard") {
-        result = compute_cis(n_roots, guess, target_precision);
+        result = compute_cis(n_roots, target_precision);
       } else if (method_ == "df") {
-        result = compute_cis_df(n_roots, guess, target_precision);
+        result = compute_cis_df(n_roots, target_precision);
       } else if (method_ == "direct") {
-        result = compute_cis_direct(n_roots, guess, target_precision);
+        result = compute_cis_direct(n_roots, target_precision);
       }
     }
 
@@ -214,12 +207,11 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
     if (ex_energy->triplets()) {
       decltype(result) triplet_result;
       if (method_ == "standard") {
-        triplet_result = compute_cis(n_roots, guess, target_precision, true);
+        triplet_result = compute_cis(n_roots, target_precision, true);
       } else if (method_ == "df") {
-        triplet_result = compute_cis_df(n_roots, guess, target_precision, true);
+        triplet_result = compute_cis_df(n_roots, target_precision, true);
       } else if (method_ == "direct") {
-        triplet_result =
-            compute_cis_direct(n_roots, guess, target_precision, true);
+        triplet_result = compute_cis_direct(n_roots, target_precision, true);
       }
       result.insert(result.end(), triplet_result.begin(), triplet_result.end());
     }
@@ -235,9 +227,8 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
 
 template <typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis(
-    std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
-    double converge, bool triplets) {
+CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
+                               bool triplets) {
   ExEnv::out0() << "\n";
   ExEnv::out0() << indent
                 << "CIS standard: " << (triplets ? "Triplets" : "Singlets")
@@ -263,6 +254,9 @@ CIS<Tile, Policy>::compute_cis(
   if (eps_v_.size() == 0) {
     eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
   }
+
+  // get guess vector
+  auto guess = init_guess_vector(n_roots);
 
   // compute H
   TA::DistArray<Tile, Policy> H;
@@ -344,9 +338,8 @@ CIS<Tile, Policy>::compute_cis(
 
 template <typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis_df(
-    std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
-    double converge, bool triplets) {
+CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
+                                  bool triplets) {
   ExEnv::out0() << "\n";
   ExEnv::out0() << indent << "CIS Density-fitting: "
                 << (triplets ? "Triplets" : "Singlets") << "\n";
@@ -373,6 +366,9 @@ CIS<Tile, Policy>::compute_cis_df(
   if (eps_v_.size() == 0) {
     eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
   }
+
+  // get guess vector
+  auto guess = init_guess_vector(n_roots);
 
   // davidson object
   DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10);
@@ -447,9 +443,8 @@ CIS<Tile, Policy>::compute_cis_df(
 
 template <typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis_direct(
-    std::size_t n_roots, std::vector<typename CIS<Tile, Policy>::TArray> guess,
-    double converge, bool triplets) {
+CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
+                                      bool triplets) {
   ExEnv::out0() << "\n";
   ExEnv::out0() << indent
                 << "CIS Direct: " << (triplets ? "Triplets" : "Singlets")
@@ -477,6 +472,8 @@ CIS<Tile, Policy>::compute_cis_direct(
     eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
   }
 
+  // get guess vector
+  auto guess = init_guess_vector(n_roots);
   // davidson object
   DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10);
 
@@ -573,46 +570,34 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   // find the minimum n_roots of F_ii - F_aa
   std::vector<detail::IndexSort<numeric_type>> index(n_i * n_a);
   {
-    auto f_ij =
-        df_ ? factory.compute(L"<i|F|j>[df]") : factory.compute(L"<i|F|j>");
-    auto f_ab =
-        df_ ? factory.compute(L"<a|F|b>[df]") : factory.compute(L"<a|F|b>");
-
-    EigenVector<numeric_type> f_ij_diag =
-        array_ops::array_to_eigen(f_ij).diagonal();
-    EigenVector<numeric_type> f_ab_diag =
-        array_ops::array_to_eigen(f_ab).diagonal();
-
     // TODO might want to parallel this section
     for (std::size_t i = 0; i < n_i; ++i) {
       for (std::size_t a = 0; a < n_a; ++a) {
         index[i * n_a + a] = std::move(
-            detail::IndexSort<numeric_type>(i, a, f_ab_diag[a] - f_ij_diag[i]));
+            detail::IndexSort<numeric_type>(i, a, eps_v_[a] - eps_o_[i]));
       }
     }
 
     std::sort(index.begin(), index.end());
 
-//    for (std::size_t i = 0; i < n_roots; i++) {
-//      std::cout << "index: " << index[i].index.first << " "
-//                << index[i].index.second << " " << index[i].value << "\n";
-//    }
+    //    for (std::size_t i = 0; i < n_roots; i++) {
+    //      std::cout << "index: " << index[i].index.first << " "
+    //                << index[i].index.second << " " << index[i].value << "\n";
+    //    }
   }
-
 
   for (std::size_t i = 0; i < n_roots; i++) {
     TA::DistArray<Tile, Policy> guess(f_ia.world(), range, f_ia.shape());
 
     guess.fill(numeric_type(0.0));
 
-
     std::size_t idx_i = index[i].index.first;
     std::size_t idx_a = index[i].index.second;
-//    std::size_t idx_i = n_i - 1;
-//    std::size_t idx_a = i;
-//        std::cout << "element index" << std::endl;
-//        std::cout << idx_i << std::endl;
-//        std::cout << idx_a << std::endl;
+    //    std::size_t idx_i = n_i - 1;
+    //    std::size_t idx_a = i;
+    //        std::cout << "element index" << std::endl;
+    //        std::cout << idx_i << std::endl;
+    //        std::cout << idx_a << std::endl;
 
     // fill in with 1.0
     std::vector<std::size_t> element_idx{{idx_i, idx_a}};

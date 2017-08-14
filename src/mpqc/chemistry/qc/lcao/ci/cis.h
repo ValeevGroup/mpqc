@@ -14,7 +14,23 @@
 namespace mpqc {
 namespace lcao {
 
-namespace detail {}  // namespace detail
+namespace detail {
+
+template <typename T>
+struct IndexSort {
+  std::pair<std::size_t, std::size_t> index;
+  T value;
+
+  IndexSort(std::size_t i, std::size_t j, T v)
+      : index(std::make_pair(i, j)), value(v) {}
+
+  IndexSort() = default;
+  ~IndexSort() = default;
+
+  bool operator<(const IndexSort &other) const { return value < other.value; }
+};
+
+}  // namespace detail
 
 /**
  * CIS for closed shell system
@@ -547,28 +563,58 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   auto &factory = this->lcao_factory();
 
   std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
-  //  std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
+  std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
 
   // use f_ia for shape
   auto f_ia =
       df_ ? factory.compute(L"<i|F|a>[df]") : factory.compute(L"<i|F|a>");
   auto range = f_ia.trange();
 
+  // find the minimum n_roots of F_ii - F_aa
+  std::vector<detail::IndexSort<numeric_type>> index(n_i * n_a);
+  {
+    auto f_ij =
+        df_ ? factory.compute(L"<i|F|j>[df]") : factory.compute(L"<i|F|j>");
+    auto f_ab =
+        df_ ? factory.compute(L"<a|F|b>[df]") : factory.compute(L"<a|F|b>");
+
+    EigenVector<numeric_type> f_ij_diag =
+        array_ops::array_to_eigen(f_ij).diagonal();
+    EigenVector<numeric_type> f_ab_diag =
+        array_ops::array_to_eigen(f_ab).diagonal();
+
+    // TODO might want to parallel this section
+    for (std::size_t i = 0; i < n_i; ++i) {
+      for (std::size_t a = 0; a < n_a; ++a) {
+        index[i * n_a + a] = std::move(
+            detail::IndexSort<numeric_type>(i, a, f_ab_diag[a] - f_ij_diag[i]));
+      }
+    }
+
+    std::sort(index.begin(), index.end());
+
+//    for (std::size_t i = 0; i < n_roots; i++) {
+//      std::cout << "index: " << index[i].index.first << " "
+//                << index[i].index.second << " " << index[i].value << "\n";
+//    }
+  }
+
+
   for (std::size_t i = 0; i < n_roots; i++) {
     TA::DistArray<Tile, Policy> guess(f_ia.world(), range, f_ia.shape());
 
     guess.fill(numeric_type(0.0));
 
+
+    std::size_t idx_i = index[i].index.first;
+    std::size_t idx_a = index[i].index.second;
+//    std::size_t idx_i = n_i - 1;
+//    std::size_t idx_a = i;
+//        std::cout << "element index" << std::endl;
+//        std::cout << idx_i << std::endl;
+//        std::cout << idx_a << std::endl;
+
     // fill in with 1.0
-    //    std::size_t idx_i = i % n_a;
-    //    std::size_t idx_a = i / n_a;
-
-    std::size_t idx_i = n_i - 1;
-    std::size_t idx_a = i;
-    //    std::cout << "element index" << std::endl;
-    //    std::cout << idx_i << std::endl;
-    //    std::cout << idx_a << std::endl;
-
     std::vector<std::size_t> element_idx{{idx_i, idx_a}};
 
     auto tile_idx = range.element_to_tile(element_idx);

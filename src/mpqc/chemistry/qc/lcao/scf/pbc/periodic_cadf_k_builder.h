@@ -51,10 +51,10 @@ class PeriodicCADFKBuilder
 
     dcell_ = ao_factory_.unitcell().dcell();
     R_max_ = ao_factory_.R_max();
-    RJ_max_ = R_max_;  // replace RJ range with R range
+    RJ_max_ = ao_factory_.RJ_max();
     RD_max_ = ao_factory_.RD_max();
     R_size_ = ao_factory_.R_size();
-    RJ_size_ = R_size_;  // replace RJ range with R range
+    RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
     const Vector3i ref_latt_range = {0, 0, 0};
@@ -67,13 +67,59 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
-    X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
+    // determine max lattice range for product density |μ ρ_Rj)
+    t0 = mpqc::fenced_now(world);
+    {
+      // build a temp basisRJ using user-given RJ_max_
+      auto basisRJ =
+          shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+
+      // compute significant shell pair list
+      sig_shellpair_list_ = parallel_compute_shellpair_list(
+          *obs_, *basisRJ, shell_pair_threshold_);
+      // make a list of significant Rj's as in overlap between μ and ρ_Rj
+      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
+        const auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
+        const auto nshells = obs_->flattened_shells().size();
+        const auto shell1_min = nshells * RJ;
+        const auto shell1_max = shell1_min + nshells;
+
+        auto is_significant = false;
+        for (auto shell0 = 0; shell0 != nshells; ++shell0) {
+          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
+            if (shell1 >= shell1_min && shell1 < shell1_max) {
+              is_significant = true;
+              RJ_list_.emplace_back(RJ_3D);
+              break;
+            }
+          }
+          if (is_significant) break;
+        }
+      }
+
+      ExEnv::out0() << "\nUser specified RJ_max = " << RJ_max_.transpose()
+                    << std::endl;
+      // renew RJ_max_, RJ_size_, and basisRJ_
+      auto x = 0;
+      auto y = 0;
+      auto z = 0;
+      for (const auto &RJ_3D : RJ_list_) {
+        x = std::max(x, RJ_3D(0));
+        y = std::max(y, RJ_3D(1));
+        z = std::max(z, RJ_3D(2));
+      }
+      RJ_max_ = Vector3i({x, y, z});
+      RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
+      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+      ExEnv::out0() << "Updated RJ_max = " << RJ_max_.transpose() << std::endl;
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_update_rjmax = mpqc::duration_in_s(t0, t1);
 
     // compute C(X, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
     {
-      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
-
+      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
@@ -103,36 +149,40 @@ class PeriodicCADFKBuilder
       M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
     }
     t1 = mpqc::fenced_now(world);
-    double t_M = mpqc::duration_in_s(t0, t1);
+    auto t_M = mpqc::duration_in_s(t0, t1);
 
-    // make screener and engines for eri3
+    // make direct integral E_ket_
+    t0 = mpqc::fenced_now(world);
+    {
+      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisRJ_);
+      auto bs_vector =
+          lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisRJ_}};
+
+      auto oper_type = libint2::Operator::coulomb;
+      const auto screen_thresh = ao_factory_.screen_threshold();
+      auto screen_engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
+      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+          lcao::gaussian::create_schwarz_screener(world, screen_engine,
+                                                  bs_vector, screen_thresh));
+      auto engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+
+      E_ket_ = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
+                                                       std::move(screener));
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_direct_eri3 = mpqc::duration_in_s(t0, t1);
+
+    // misc:
+    // 1. determine tiled ranges and pmap of exchange term
+    // 2. determine translationally invariant basis, tiled ranges and pmap for
+    // Q(Y, nu, rho)
     t0 = mpqc::fenced_now(world);
     {
       basisR_ = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
 
-      // compute significant shell pair list
-      sig_shellpair_list_ = parallel_compute_shellpair_list(
-          *obs_, *basisRJ_, shell_pair_threshold_);
-      // make a list of significant Rj's as in overlap between μ and ρ_Rj
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        const auto nshells = obs_->flattened_shells().size();
-        const auto shell1_min = nshells * RJ;
-        const auto shell1_max = shell1_min + nshells;
-
-        auto is_significant = false;
-        for (auto shell0 = 0; shell0 != nshells; ++shell0) {
-          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
-            if (shell1 >= shell1_min && shell1 < shell1_max) {
-              is_significant = true;
-              RJ_list_.emplace_back(RJ);
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-
-      // make TiledRange of Exchange
+      // make TiledRange and Pmap of Exchange
       result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
           lcao::gaussian::BasisVector{{*obs_, *basisR_}});
       auto tvolume = result_trange_.tiles_range().volume();
@@ -153,36 +203,17 @@ class PeriodicCADFKBuilder
           lcao::gaussian::BasisVector{{*Q_bs_Y_, *Q_bs_nu_, *Q_bs_rho_}});
       auto Q_tvolume = Q_trange_.tiles_range().volume();
       Q_pmap_ = Policy::default_pmap(world, Q_tvolume);
-
-      // make direct integral E_ket_
-      {
-        auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisRJ_);
-        auto bs_vector =
-            lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisRJ_}};
-
-        auto oper_type = libint2::Operator::coulomb;
-        const auto screen_thresh = ao_factory_.screen_threshold();
-        auto screen_engine =
-            make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
-        auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-            lcao::gaussian::create_schwarz_screener(world, screen_engine,
-                                                    bs_vector, screen_thresh));
-
-        auto engine =
-            make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-
-        E_ket_ = lcao::gaussian::direct_sparse_integrals(
-            world, engine, bs_vector, std::move(screener));
-      }
     }
     t1 = mpqc::fenced_now(world);
     auto t_misc = mpqc::duration_in_s(t0, t1);
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
+                    << "\tupdate RJ_max:       " << t_update_rjmax << " s\n"
                     << "\tC(X, μ_0, ρ_Rj):     " << t_C_bra << " s\n"
                     << "\tM(X, Y):             " << t_M << " s\n"
-                    << "\tengine, screen ... : " << t_misc << " s" << std::endl;
+                    << "\tdirect ERI3:         " << t_direct_eri3 << " s\n"
+                    << "\tmisc:                " << t_misc << " s" << std::endl;
     }
   }
 
@@ -213,7 +244,7 @@ class PeriodicCADFKBuilder
   DirectTArray E_ket_;
 
   shellpair_list_t sig_shellpair_list_;
-  std::vector<int64_t> RJ_list_;
+  std::vector<Vector3i> RJ_list_;
 
   std::shared_ptr<Basis> obs_;
   std::shared_ptr<Basis> dfbs_;
@@ -472,6 +503,7 @@ class PeriodicCADFKBuilder
       const auto RYmR_ord = tile_Y / ntiles_per_uc_;
       const auto RYmR_3D = direct_3D_idx(RYmR_ord, RYmR_max_);
       if (!is_in_lattice_range(RYmR_3D, RJ_max_)) continue;
+
       const auto RY_ord_in_C = direct_ord_idx(RYmR_3D, RJ_max_);
       const auto Y_in_C =
           tile_Y % ntiles_per_uc_ + RY_ord_in_C * ntiles_per_uc_;
@@ -492,12 +524,12 @@ class PeriodicCADFKBuilder
                 continue;
 
               if (!is_in_lattice_range(RJmRpRD_3D, RJ_max_)) continue;
-              const auto RJmRpRD_ord = direct_ord_idx(RJmRpRD_3D, RJ_max_);
 
-              if (std::find(RJ_list_.begin(), RJ_list_.end(), RJmRpRD_ord) ==
+              if (std::find(RJ_list_.begin(), RJ_list_.end(), RJmRpRD_3D) ==
                   RJ_list_.end())
                 continue;
 
+              const auto RJmRpRD_ord = direct_ord_idx(RJmRpRD_3D, RJ_max_);
               const auto sig_in_C =
                   tile_sig % ntiles_per_uc_ + RJmRpRD_ord * ntiles_per_uc_;
 
@@ -820,7 +852,8 @@ class PeriodicCADFKBuilder
                ++tile_rho, ++task) {
             if (task % nproc == me) {
               const auto RJ_ord = tile_rho / ntiles_per_uc_;
-              if (std::find(RJ_list_.begin(), RJ_list_.end(), RJ_ord) ==
+              const auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
+              if (std::find(RJ_list_.begin(), RJ_list_.end(), RJ_3D) ==
                   RJ_list_.end())
                 continue;
 

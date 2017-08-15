@@ -711,58 +711,6 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
-
-//    // truncate OSVs
-
-//    //        auto osvdrop = 0;
-//    if (i == j) {
-////      std::cout << "World: " << TA::get_default_world().rank()
-////                << " index: " << j << std::endl;
-
-//      size_t osvdrop = 0;
-//      if (tosv != 0.0) {
-//        for (size_t k = 0; k != occ_ij.rows(); ++k) {
-//          if (!(occ_ij(k) >= tosv))
-//            ++osvdrop;
-//          else
-//            break;
-//        }
-//      }
-//      const auto nosv = nuocc - osvdrop;
-//      nosvs[i] = nosv;
-
-//      if (nosv == 0) {  // all OSV truncated indicates total nonsense
-//        throw LimitExceeded<size_t>("all OSVs truncated", __FILE__, __LINE__, 1,
-//                                    0);
-//      }
-
-//      // Store truncated OSVs
-//      Matrix osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-//      osvs[i] = osv_trunc;
-
-//      // Transform F to OSV space
-//      Matrix F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
-
-//      // Store just the diagonal elements of F_osv_i
-//      F_osv_diag[i] = F_osv_i.diagonal();
-
-//      /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-//      if (pno_canonical) {
-//        // Compute eigenvectors of F in OSV space
-//        es.compute(F_osv_i);
-//        Matrix osv_transform_i = es.eigenvectors();
-
-//        // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-//        Matrix can_osv_i = osv_trunc * osv_transform_i;
-
-//        // Replace standard with canonical OSVs
-//        osvs[i] = can_osv_i;
-//        F_osv_diag[i] = es.eigenvalues();
-//      }  // pno_canonical
-
-//      //      std::cout << "osv: " << i << std::endl << osvs[i] << std::endl;
-//    }  // if i == j
-
     // Transform D_ij into a tile
     auto norm = 0.0;
     for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
@@ -782,28 +730,6 @@ void construct_pno(
   // Sum together vectors of npnos and nosvs on each node
   world.gop.sum(npnos.data(), npnos.size());
   world.gop.sum(nosvs.data(), nosvs.size());
-
-//  // TODO need to fix this roubustly by using fixed process map
-//  /// \warning temporary fix issue by replicate osvs
-//  // make process map
-//  const auto osvs_size = osvs.size();
-//  std::vector<int> process_map(osvs.size(), 0);
-//  for (std::size_t i = 0; i < osvs_size; i++ ){
-//    if (osvs[i].size() != 0) {
-//      process_map[i] = world.rank();
-//    }
-//  }
-//  // replicate process map on all nodes
-//  world.gop.sum(process_map.data(), process_map.size());
-//  // broadcast data
-//  for (std::size_t i = 0; i < osvs.size(); i++) {
-//    world.gop.broadcast_serializable(osvs[i], process_map[i]);
-//  }
-
-//  /// \warning temporary fix issue by replicate F_osv_diag
-//  for (std::size_t i = 0; i < osvs.size(); i++) {
-//    world.gop.broadcast_serializable(F_osv_diag[i], process_map[i]);
-//  }
 
   // Compute and print average number of OSVs per pair
   if (D_prime.world().rank() == 0) {

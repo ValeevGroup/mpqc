@@ -4,6 +4,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 
 namespace mpqc {
 namespace scf {
@@ -59,19 +60,7 @@ class PeriodicRIJBuilder {
     auto t_a = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
-    auto A_eig = array_ops::array_to_eigen(A);
-    using MatType = decltype(A_eig);
-    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(A_eig).matrixL()).inverse();
-    auto tr0 = A.trange().data()[0];
-    auto tr1 = A.trange().data()[1];
-    assert(tr0 == tr1 && "Matrix A = LLT must be symmetric!");
-    array_type L_inv =
-        array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
-    t1 = mpqc::fenced_now(world);
-    auto t_l_inv = mpqc::duration_in_s(t0, t1);
-
-    t0 = mpqc::fenced_now(world);
-    inv_("X, Y") = L_inv("Z, X") * L_inv("Z, Y");
+    inv_ = array_ops::eigen_inverse(A);
     t1 = mpqc::fenced_now(world);
     auto t_a_inv = mpqc::duration_in_s(t0, t1);
 
@@ -109,7 +98,6 @@ class PeriodicRIJBuilder {
       ExEnv::out0() << "\nRI-J init time decomposition:\n"
                     << "\tV perp:              " << t_v_perp << " s\n"
                     << "\tA = V_perp + P_para: " << t_a << " s\n"
-                    << "\tL inv:               " << t_l_inv << " s\n"
                     << "\tA inv:               " << t_a_inv << " s\n"
                     << "\tIM:                  " << t_im << " s\n"
                     << "\t3-c builder ctor:    " << t_3c_ctor << " s"

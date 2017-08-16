@@ -295,6 +295,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
     //some more integrals  _VR
+    //TArray g_cjkl = this->get_aijk();
+    //TArray g_dabi = this->get_abci();
     TArray g_cjkl = this->get_aijk();
     TArray g_dabi = this->get_abci();
     TArray g_abij = this->get_abij();
@@ -329,13 +331,21 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     // T3
 
     // Initialize T3 and set all elements to be zero
-     //first assign it a size indirectly
+    //first assign it a size indirectly
     t3("a,b,c,i,j,k") = t2("a,b,i,j") * t1("c,k");
 
-    //denominator
-    //t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+    /*t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
+                              t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
 
-    //ExEnv::out0() << "Beginning of the iteration_Initial T3" << t3 << std::endl ;
+    //permute
+    t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
+                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
+                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
+
+    //denominator
+    t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
+
+    //ExEnv::out0() << "Beginning of the iteration _Initial T3" << t3 << std::endl ;
 
 
     /*t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
@@ -345,7 +355,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     double norm_t1 = t1("a,i").norm();
     double norm_t2 = t2("a,b,i,j").norm();
     double norm_t3 = t3("a,b,c,i,j,k").norm();
-    ExEnv::out0() << "Beginning of the iteration" <<std::endl ;
+    ExEnv::out0() << "Beginning of the iteration 0" <<std::endl ;
     ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
     ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
     ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
@@ -383,6 +393,15 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       // start timer
       auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
+
+
+      //  See the amplitudes after the call to the solver
+      ExEnv::out0() << "At the beginning of iter #" << iter << std::endl ;
+      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
+      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
+      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
+
+
 
       auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ki, h_ac;
@@ -445,9 +464,50 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       //Add T3 contribution to T1 _VR
       {
+      // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
+
+         // equation below are from spin-adapted CCSDT-1 implementation
+         // by Noga and Bartlett, JCP (1987)
+         // by Scuseria and Scheafer  (1988)
+         t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
+                                    t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
+
+          //permute
+          t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
+                                   t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
+                                   t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
+
+
+          // spin-adapted implementation as proposed by Noga, Bartlett & Urban, CPL (1987)
+          TArray t3_temp1;
+          TArray t3_temp2;
+          TArray g_dabi_AS;
+          TArray g_cjkl_AS;
+
+          /*g_dabi_AS("d,a,b,i") = (2.0 * g_dabi("d,a,b,i") ) - g_dabi("a,d,b,i");
+          g_cjkl_AS("c,j,k,l") = (2.0 * g_cjkl("c,j,k,l") ) - g_cjkl("c,j,l,k");
+
+          t3_temp1("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi_AS("b,c,d,k") ;
+
+          //permute : P(a/bc|k/ij)
+          t3("a,b,c,i,j,k")  =  t3_temp1("a,b,c,i,j,k") - t3_temp1("b,a,c,i,j,k") - t3_temp1("c,b,a,i,j,k")
+                              - t3_temp1("a,b,c,k,j,i") - t3_temp1("a,b,c,i,k,j") + t3_temp1("b,a,c,k,j,i")
+                              + t3_temp1("b,a,c,i,k,j") + t3_temp1("c,b,a,k,j,i") + t3_temp1("c,b,a,i,k,j") ;
+
+          t3_temp2("a,b,c,i,j,k") = - t2("a,b,i,l") * g_cjkl_AS("c,j,k,l") ;
+
+         //permute : P(c/ab|i/jk)
+          t3("a,b,c,i,j,k") +=  t3_temp2("a,b,c,i,j,k") - t3_temp2("c,b,a,i,j,k") - t3_temp2("a,c,b,i,j,k")
+                              - t3_temp2("a,b,c,j,i,k") - t3_temp2("a,b,c,k,j,i") + t3_temp2("c,b,a,j,i,k")
+                              + t3_temp2("c,b,a,k,j,i") + t3_temp2("a,c,b,j,i,k") + t3_temp2("a,c,b,k,j,i") ;*/
+
+         //denominator
+          t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+
+
         TArray g_jkbc_AS;
 
-        g_jkbc_AS("j,k,b,c") = 2 * g_jkbc("j,k,b,c") - g_jkbc("j,k,c,b");
+        g_jkbc_AS("j,k,b,c") = (2.0 * g_jkbc("j,k,b,c") ) - g_jkbc("j,k,c,b");
 
        // Initialize T3 and set all elements to be zero
         //first assign it a size indirectly
@@ -633,17 +693,19 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
          TArray g_klic_AS;
          TArray n2_abij;
 
-         g_akcd_AS("a,k,c,d") = 2 * g_akcd("a,k,c,d") - g_akcd("a,k,d,c");
+         g_akcd_AS("a,k,c,d") = (2 * g_akcd("a,k,c,d")) - g_akcd("a,k,d,c");
 
          n2_abij("a,b,i,j") = g_akcd_AS("a,k,c,d") * t3("c,b,d,i,j,k") -
                               g_akcd("a,k,c,d") * t3("c,d,b,i,j,k");
 
-         g_klic_AS("k,l,i,c") = 2 * g_klic("k,l,i,c") - g_klic("l,k,i,c");
+         g_klic_AS("k,l,i,c") = (2 * g_klic("k,l,i,c")) - g_klic("l,k,i,c");
 
          n2_abij("a,b,i,j") -= g_klic_AS("k,l,i,c") * t3("a,b,c,k,j,l") -
                               g_klic("k,l,i,c") * t3("a,c,b,k,j,l");
 
-         // Define f_ia .. Leave the zero fock matrix terms for now
+         // f_ai ..
+
+         n2_abij("a,b,i,j") += f_ai("c,k")*(t3("a,b,c,i,k,j")-t3("a,c,b,i,k,j"));
 
          // permute
          n2_abij("a,b,i,j") = n2_abij("a,b,i,j") + n2_abij("b,a,j,i");
@@ -661,33 +723,52 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       // Initialize t3 amplitudes  _VR
 
-
-
       // compute t3
 
-
       // compute the residual r3
+      TArray t3_temp;
 
       r3("a,b,c,i,j,k") = f_ab("a,e") * t3("e,b,c,i,j,k") -
-                          f_ij("i,l") * t3("a,b,c,l,j,k");
+                         f_ij("i,l") * t3("a,b,c,l,j,k");
       //permute P((ia,jb),kc)
       r3("a,b,c,i,j,k") = r3("a,b,c,i,j,k") + r3("b,a,c,j,i,k") +
                           r3("c,b,a,k,j,i");
+
+      /*double norm_r3 = r3("a,b,c,i,j,k").norm();
+      ExEnv::out0() << "R3 amplitudes at the beginning of t3 part" << std::endl ;
+      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;*/
       // T3
 
-      t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
-                          g_cjkl("c,j,k,l") * t2("a,b,i,l");
+      t3_temp("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
+                                t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
 
       //permute
-      t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                          t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                          t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-      //denominator
-      t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+      t3_temp("a,b,c,i,j,k") = t3_temp("a,b,c,i,j,k") + t3_temp("a,c,b,i,k,j") +
+                               t3_temp("c,a,b,k,i,j") + t3_temp("c,b,a,k,j,i") +
+                               t3_temp("b,c,a,j,k,i") + t3_temp("b,a,c,j,i,k");
 
       // add the computed t3
-      r3("a,b,c,i,j,k") += t3("a,b,c,i,j,k");
+      r3("a,b,c,i,j,k") += t3_temp("a,b,c,i,j,k");
+      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+      double norm_r1 = r1("a,i").norm();
+      double norm_r2 = r2("a,b,i,j").norm();
+      double norm_r3 = r3("a,b,c,i,j,k").norm();
+      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
+      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
+      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
+      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
+      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+
+
+      //denominator
+      //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
+
+      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
+      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
+      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
+      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
+
 
        // end of triples part  _VR
       double norm_t1 = t1("a,i").norm();
@@ -697,6 +778,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
       ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
       ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
+      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+
       // Just to check if we reached here
       std::cout << "Checkpoint at the end of T3 amplitude calculation" << std::endl;
 
@@ -719,7 +802,13 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        solver_->update(t1, t2, t3, r1, r2, r3);
+        solver_->update(t1, t2, r1, r2);
+        //solver_->update(t1, t2, t3, r1, r2, r3);
+
+        ExEnv::out0() << "After the call to the solver " << std::endl ;
+        ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
+        ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
+        ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -1615,19 +1704,40 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
   }
 
   /// <ai|jk>
-  virtual const TArray get_aijk() {
-    std::wstring postfix = df_ ? L"[df]" : L"";
-    return this->lcao_factory().compute(L"<a i|G|j k>" + postfix);
+  const TArray get_aijk() {
+    std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+    TArray result;
+    result = this->lcao_factory().compute(L"<i j|G|k a>" + post_fix);
+
+    result("a,i,j,k") = result("i,j,k,a");
+    return result;
   }
+
   /// <ab|ci>
-  virtual const TArray get_abci() {
-    std::wstring postfix = df_ ? L"[df]" : L"";
-    return this->lcao_factory().compute(L"<a b|G|c i>" + postfix);
+  const TArray get_abci() {
+    std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+    TArray result;
+     result = this->lcao_factory().compute(L"<i a|G|b c>" + post_fix);
+
+    result("a,b,c,i") = result("i,a,b,c");
+    return result;
   }
+
+
   /// <ab|ij>
   virtual const TArray get_abij() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a b|G|i j>" + postfix);
+  }
+  /// <ab|di>
+  virtual const TArray get_abdi() {
+    std::wstring postfix = df_ ? L"[df]" : L"";
+    return this->lcao_factory().compute(L"<a b|G|d i>" + postfix);
+  }
+  /// <am|ij>
+  virtual const TArray get_amij() {
+    std::wstring postfix = df_ ? L"[df]" : L"";
+    return this->lcao_factory().compute(L"<a m|G|i j>" + postfix);
   }
 
   /// <a|f|i>

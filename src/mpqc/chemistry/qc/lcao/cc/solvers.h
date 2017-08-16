@@ -429,9 +429,13 @@ TA::DistArray<Tile, Policy> reblock_t1(
     const TA::DistArray<Tile, Policy>& t1,
     const TA::DistArray<Tile, Policy>& i_block,
     const TA::DistArray<Tile, Policy>& a_block) {
+  // Create target_pmap to match OSVs pma
+  auto nocc_act = i_block.range().extent_data()[1];
+  auto target_pmap = Policy::default_pmap(t1.world(), nocc_act);
+
   // Reblock T1
   TA::DistArray<Tile, Policy> result;
-  result("an,in") = t1("a,i") * i_block("i,in") * a_block("a,an");
+  result("an,in") = (t1("a,i") * i_block("i,in") * a_block("a,an")).set_pmap(target_pmap);
   return result;
 }
 
@@ -488,6 +492,7 @@ void construct_pno(
   nosvs.resize(nocc_act, 0);
   osvs.resize(nocc_act);
   F_osv_diag.resize(nocc_act);
+
   /// Step (2): Transform T to D
 
   // lambda function to transform T to D; implement using a for_each
@@ -527,16 +532,96 @@ void construct_pno(
   auto D = TA::foreach (t2, form_D);
   D.world().gop.fence();
 
-  // Print out the pmap for D_
-  ExEnv::out0() << "\nD_ pmap:\n";
-  print_local(world, D.pmap());
-  //      std::cout << "Successfully transformed reblocked T to D" <<
-  //      std::endl; std::cout << "D_ trange:\n" << D_.trange() <<
-  //      std::endl; std::cout << "D_:\n" << D_ << std::endl;
+//  // Print out the pmap for D_
+//  ExEnv::out0() << "\nD_ pmap:\n";
+//  print_local(world, D.pmap());
 
   /// Step (3): Form PNO_ij from D_ij
   // Diagonalize each D_ij matrix to get the PNOs and occupation
   // numbers
+
+  // Lambda function to form osvs
+  auto form_OSV = [&D, &F_osv_diag,
+                   &F_uocc, &nosvs, tosv, nuocc, nocc_act,
+                   pno_canonical](TA::World& world){
+
+    Eigen::SelfAdjointEigenSolver<Matrix> es;
+
+    std::vector<Matrix> osvs_list(nocc_act);
+
+    auto reblock_r1_pmap = Policy::default_pmap(world, nocc_act);
+
+    for (ProcessID r = 0; r < world.size(); ++r) {
+      std::vector<int> local_tiles;
+      world.gop.fence();
+      if (r == world.rank()) {
+        for (TiledArray::Pmap::const_iterator it = reblock_r1_pmap->begin();
+             it != reblock_r1_pmap->end(); ++it){
+          local_tiles.push_back(*it);
+        }
+
+        for (int idx = 0; idx != local_tiles.size(); ++idx) {
+          auto i = local_tiles[idx];
+
+          Tile D_ii = D.find({0,0,i,i}).get();
+          Matrix D_ii_mat = TA::eigen_map(D_ii, nuocc, nuocc);
+
+
+          // Diagonalize D_ii_mat
+          es.compute(D_ii_mat);
+          Matrix osv_ii = es.eigenvectors();
+          auto occ_ii = es.eigenvalues();
+
+          // Truncate osvs_list
+          size_t osvdrop = 0;
+          if (tosv != 0.0) {
+            for (size_t k = 0; k != occ_ii.rows(); ++k) {
+              if (!(occ_ii(k) >= tosv))
+                ++osvdrop;
+              else
+                break;
+            }
+          }
+          const auto nosv = nuocc - osvdrop;
+          nosvs[i] = nosv;
+
+          if (nosv == 0) {  // all OSV truncated indicates total nonsense
+            throw LimitExceeded<size_t>("all osvs_list truncated", __FILE__, __LINE__, 1,
+                                        0);
+          }
+
+          // Store truncated OSV mat in osvs_list
+          Matrix osv_trunc = osv_ii.block(0, osvdrop, nuocc, nosv);
+          osvs_list[i] = osv_trunc;
+
+          // Transform F to OSV space
+          Matrix F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
+
+          // Store just the diagonal elements of F_osv_i
+          F_osv_diag[i] = F_osv_i.diagonal();
+
+          /////// Transform osvs_list to canonical osvs_list if pno_canonical_ == true
+          if (pno_canonical) {
+            // Compute eigenvectors of F in OSV space
+            es.compute(F_osv_i);
+            Matrix osv_transform_i = es.eigenvectors();
+
+            // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
+            Matrix can_osv_i = osv_trunc * osv_transform_i;
+
+            // Replace standard with canonical osvs_list
+            osvs_list[i] = can_osv_i;
+            F_osv_diag[i] = es.eigenvalues();
+          }  // pno_canonical
+        }
+      }
+    }
+    return osvs_list;
+    world.gop.fence();
+  };
+
+  osvs = form_OSV(world);
+  world.gop.fence();
 
   // Lambda function to form PNOs; implement using a for_each
   auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_uocc, &npnos,
@@ -626,59 +711,6 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
-    //    std::cout << "pno: " <<  ij << std::endl << pnos[ij] << std::endl;
-
-    // truncate OSVs
-
-    //        auto osvdrop = 0;
-    if (i == j) {
-      std::cout << "World: " << TA::get_default_world().rank()
-                << " index: " << i << std::endl;
-
-      size_t osvdrop = 0;
-      if (tosv != 0.0) {
-        for (size_t k = 0; k != occ_ij.rows(); ++k) {
-          if (!(occ_ij(k) >= tosv))
-            ++osvdrop;
-          else
-            break;
-        }
-      }
-      const auto nosv = nuocc - osvdrop;
-      nosvs[i] = nosv;
-
-      if (nosv == 0) {  // all OSV truncated indicates total nonsense
-        throw LimitExceeded<size_t>("all OSVs truncated", __FILE__, __LINE__, 1,
-                                    0);
-      }
-
-      // Store truncated OSVs
-      Matrix osv_trunc = pno_ij.block(0, osvdrop, nuocc, nosv);
-      osvs[i] = osv_trunc;
-
-      // Transform F to OSV space
-      Matrix F_osv_i = osv_trunc.transpose() * F_uocc * osv_trunc;
-
-      // Store just the diagonal elements of F_osv_i
-      F_osv_diag[i] = F_osv_i.diagonal();
-
-      /////// Transform OSVs to canonical OSVs if pno_canonical_ == true
-      if (pno_canonical) {
-        // Compute eigenvectors of F in OSV space
-        es.compute(F_osv_i);
-        Matrix osv_transform_i = es.eigenvectors();
-
-        // Transform osv_i to canonical OSV space: osv_i -> can_osv_i
-        Matrix can_osv_i = osv_trunc * osv_transform_i;
-
-        // Replace standard with canonical OSVs
-        osvs[i] = can_osv_i;
-        F_osv_diag[i] = es.eigenvalues();
-      }  // pno_canonical
-
-      //      std::cout << "osv: " << i << std::endl << osvs[i] << std::endl;
-    }  // if i == j
-
     // Transform D_ij into a tile
     auto norm = 0.0;
     for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
@@ -694,32 +726,10 @@ void construct_pno(
 
   auto D_prime = TA::foreach (D, form_PNO);
   world.gop.fence();
-  //      std::cout << "Successfully formed PNOs" << std::endl;
-  //      std::cout << "D_prime_ trange:\n" << D_prime_.trange();
+
+  // Sum together vectors of npnos and nosvs on each node
   world.gop.sum(npnos.data(), npnos.size());
   world.gop.sum(nosvs.data(), nosvs.size());
-
-  // TODO need to fix this roubustly by using fixed process map
-  /// \warning temporary fix issue by replicate osvs
-  // make process map
-  const auto osvs_size = osvs.size();
-  std::vector<int> process_map(osvs.size(), 0);
-  for (std::size_t i = 0; i < osvs_size; i++ ){
-    if (osvs[i].size() != 0) {
-      process_map[i] = world.rank();
-    }
-  }
-  // replicate process map on all nodes
-  world.gop.sum(process_map.data(), process_map.size());
-  // broadcast data
-  for (std::size_t i = 0; i < osvs.size(); i++) {
-    world.gop.broadcast_serializable(osvs[i], process_map[i]);
-  }
-
-  /// \warning temporary fix issue by replicate F_osv_diag
-  for (std::size_t i = 0; i < osvs.size(); i++) {
-    world.gop.broadcast_serializable(F_osv_diag[i], process_map[i]);
-  }
 
   // Compute and print average number of OSVs per pair
   if (D_prime.world().rank() == 0) {
@@ -1163,8 +1173,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto K = fac.compute(L"<a b|G|i j>[df]");
       const auto ktrange = K.trange();
 
-      // Determine number of tiles along each dim of K
-      //      const auto ntiles_a = ktrange.dim(0).tile_extent();
 
       /// Step (1): Convert K to T
 
@@ -1217,7 +1225,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         return std::sqrt(norm);
       };  // form_T
 
-      auto T2 = TA::foreach (K, form_T);
+      auto T2 = TA::foreach(K, form_T);
       world.gop.fence();
       //      std::cout << "Successfully transformed K to T" << std::endl;
 
@@ -1253,19 +1261,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Reblock T2
       T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
-      //      std::cout << "reblocking step worked" << std::endl;
-      //      std::cout << "T_trange:\n" << T_.trange() << std::endl;
-      //      std::cout << "Reblocked T_ trange:\n" << T_reblock.trange() <<
-      //      std::endl;
-
-      // Print out the pmap for T_reblock
-      ExEnv::out0() << "\nT_reblock pmap:\n";
-      detail::print_local(T_reblock.world(), T_reblock.pmap());
-
       detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
-                            osvs_, F_osv_diag_, pno_canonical_);
+                             osvs_, F_osv_diag_, pno_canonical_);
 
     }  // end if tiling_method_ != rigid
+
   }
 
   virtual ~PNOSolver() = default;
@@ -1299,17 +1299,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   }
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
-    // reblock r1 and r2
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
-
-    //    // Print out the pmap for r1_reblock and r2_reblock
-    //    ExEnv::out0() << "\nr1_reblock pmap:\n";
-    //    print_local(r1_reblock.world(), r1_reblock.pmap());
-
-    //    ExEnv::out0() << "\nr2_reblock pmap:\n";
-    //    print_local(r2_reblock.world(), r2_reblock.pmap());
-
     update_only(t1, t2, r1_reblock, r2_reblock);
     T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
     T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
@@ -1342,6 +1333,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     void operator()(result_type& result, const argument_type& arg) const {
       const auto i = arg.range().lobound()[1];
       const auto nuocc = arg.range().extent_data()[0];
+
       const Eigen::MatrixXd arg_osv =
           TA::eigen_map(arg, 1, nuocc) * solver_->osv(i);
       result += arg_osv.squaredNorm();
@@ -1373,6 +1365,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       const auto i = arg.range().lobound()[2];
       const auto j = arg.range().lobound()[3];
       const auto nuocc = arg.range().extent_data()[0];
+
       const Eigen::MatrixXd arg_pno = solver_->pno(i, j).transpose() *
                                       TA::eigen_map(arg, nuocc, nuocc) *
                                       solver_->pno(i, j);
@@ -1388,13 +1381,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
     auto r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
 
-    //    // Print out the pmap for r1_reblock and r2_reblock
-    //    ExEnv::out0() << "\nr1_reblock pmap:\n";
-    //    print_local(r1_reblock.world(), r1_reblock.pmap());
-
-    //    ExEnv::out0() << "\nr2_reblock pmap:\n";
-    //    print_local(r2_reblock.world(), r2_reblock.pmap());
-
     R1SquaredNormReductionOp op1(this);
     R2SquaredNormReductionOp op2(this);
     return sqrt(r1_reblock("a,i").reduce(op1).get() +
@@ -1404,7 +1390,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
  private:
   Factory<T, DT>& factory_;
-  //  madness::World& world_;
   std::string pno_method_;     //!< the PNO construction method
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible

@@ -91,16 +91,21 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   density_storages_.push_back(detail::array_storage(D));
 
   if (localize_) {
-    auto l0 = mpqc::fenced_now(world);
-    auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
-    C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
-    auto l1 = mpqc::fenced_now(world);
+    if((localization_method_ == "RRQR")|| (localization_method_ == "RRQR(valence)")){
+	  C_occ_ao = mpqc::scf::RRQRLocalization{}(C_occ_ao, S_, (localization_method_ == "RRQR(valence)" ? ncore_ : 0) );
+    }
+    else {
+      auto l0 = mpqc::fenced_now(world);
+      auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+      C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
+      auto l1 = mpqc::fenced_now(world);
 
-    auto obs_ntiles = C_occ_ao.trange().tiles_range().extent()[0];
-    scf::clustered_coeffs(r_xyz_ints_, C_occ_ao, obs_ntiles);
-    auto c1 = mpqc::fenced_now(world);
-    localization_times_.push_back(mpqc::duration_in_s(l0, l1));
-    clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
+      auto obs_ntiles = C_occ_ao.trange().tiles_range().extent()[0];
+      scf::clustered_coeffs(r_xyz_ints_, C_occ_ao, obs_ntiles);
+      auto c1 = mpqc::fenced_now(world);
+      localization_times_.push_back(mpqc::duration_in_s(l0, l1));
+      clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
+    }
   }
 
 #if TA_DEFAULT_POLICY == 1

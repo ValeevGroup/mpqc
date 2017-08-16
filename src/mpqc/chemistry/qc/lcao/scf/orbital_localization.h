@@ -57,6 +57,7 @@ class FosterBoysLocalization {
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
   /// @return transformation matrix U that converts C to localized LCAOs
+  /// U is a matrix such that: Cao("mu,i") = Cao("mu,k") * U("k,i");
   template <typename EigMat>
   EigMat operator()(EigMat &C, const EigMat &ao_x, const EigMat &ao_y,
                     const EigMat &ao_z, size_t ncols_of_C_to_skip = 0) const {
@@ -69,10 +70,50 @@ class FosterBoysLocalization {
     EigMat U = EigMat::Identity(C.cols(), C.cols());
     U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, U_loc.rows(),
             U_loc.cols()) = U_loc;
-
     return U;
   }
 };
+//==============================================================================
+class RRQRLocalization{
+public:
+  /// @param[in] C on input: LCAO coefficients
+  /// @param[in] S : Overlap matrix
+  /// @param[in] ncols_of_C_to_skip the number of columns of C to keep non-localized
+  /// @return  Localized orbitals
+
+    template <typename Tile, typename Policy>
+    TA::DistArray<Tile, Policy> operator()(
+            TA::DistArray<Tile, Policy> &C,
+            TA::DistArray<Tile, Policy> const &S,
+            size_t ncols_of_C_to_skip = 0) const {
+
+        auto c_eig = array_ops::array_to_eigen(C);
+        auto s_eig = array_ops::array_to_eigen(S);
+        auto trange = C.trange();
+        return array_ops::eigen_to_array<Tile, Policy>(
+                C.world(), (*this)(c_eig, s_eig, ncols_of_C_to_skip),
+                trange.data()[0], trange.data()[1]);
+    }
+
+    template <typename EigMat>
+	EigMat operator()(EigMat& C, const EigMat& S,
+                  size_t ncols_of_C_to_skip = 0) const {
+    EigMat C_loc =
+            C.block(0, ncols_of_C_to_skip, C.rows(), C.cols() - ncols_of_C_to_skip);
+
+    Eigen::SelfAdjointEigenSolver<EigMat> eig_solver(S);
+    EigMat X = eig_solver.operatorInverseSqrt();
+    EigMat Psi_tr = ((X.inverse())*C_loc).transpose();
+
+    Eigen::ColPivHouseholderQR<RowMatrixXd> qr(Psi_tr);
+    EigMat Q = qr.householderQ().setLength(qr.nonzeroPivots());
+
+    EigMat U = Eigen::MatrixXd::Identity(C.cols(),C.cols());
+    U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, Q.rows(), Q.cols()) = Q.transpose();
+	return C*U;
+  }
+};
+//==============================================================================
 
 }  // namespace scf
 }  // namespace mpqc

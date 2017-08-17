@@ -459,7 +459,6 @@ class KeyVal {
   /// \brief returns a shared_ptr to the (top) tree
   std::shared_ptr<ptree> top_tree() const { return top_tree_; }
   /// \brief returns a shared_ptr to this (sub)tree
-  /// @param path the path to the subtree
   /// @note the result is aliased against the top tree
   std::shared_ptr<ptree> tree() const;
 
@@ -992,8 +991,6 @@ class KeyVal {
         : std::runtime_error(_what + "(path=" + path + ")") {}
     virtual ~bad_input() noexcept {}
   };
-
- private:
 };  // KeyVal
 
 /// union of two KeyVal objects

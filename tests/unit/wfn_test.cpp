@@ -7,7 +7,7 @@
 
 using namespace mpqc;
 
-TEST_CASE("AOWfn", "[aowfn]") {
+SCENARIO("AOWfn is usable", "[aowfn]") {
   const char atoms_xyz_cstr[] =
       "2\n"
       "\n"
@@ -16,31 +16,38 @@ TEST_CASE("AOWfn", "[aowfn]") {
 
   libint2::initialize();
 
-  using AOWfn = lcao::AOWavefunction<TA::TensorD, TA::SparsePolicy>;
-  std::shared_ptr<AOWfn> aowfn;
+  GIVEN("an AOWavefunction") {
+    using AOWfn = lcao::AOWavefunction<TA::TensorD, TA::SparsePolicy>;
+    std::shared_ptr<AOWfn> aowfn;
 
-  SECTION("constructor") {
-    std::stringstream iss((std::string(atoms_xyz_cstr)));
-    std::shared_ptr<Molecule> mol;
-    REQUIRE_NOTHROW(mol = std::make_shared<Molecule>(iss));
+    {
+      std::stringstream iss((std::string(atoms_xyz_cstr)));
+      std::shared_ptr<Molecule> mol;
+      REQUIRE_NOTHROW(mol = std::make_shared<Molecule>(iss));
 
-    using AtomicBasis = lcao::gaussian::AtomicBasis;
-    std::shared_ptr<AtomicBasis> obs;
-    REQUIRE_NOTHROW(obs = std::make_shared<AtomicBasis>(
-                        KeyVal()
-                            .assign("atoms", mol)
-                            .assign("world", &TiledArray::get_default_world())
-                            .assign("name", "3-21G")));
+      using AtomicBasis = lcao::gaussian::AtomicBasis;
+      std::shared_ptr<AtomicBasis> obs;
+      REQUIRE_NOTHROW(obs = std::make_shared<AtomicBasis>(
+                          KeyVal()
+                              .assign("atoms", mol)
+                              .assign("world", &TiledArray::get_default_world())
+                              .assign("name", "3-21G")));
 
-    REQUIRE_NOTHROW(aowfn = std::make_shared<AOWfn>(
-                        KeyVal()
-                            .assign("world", &TiledArray::get_default_world())
-                            .assign("atoms", mol)
-                            .assign("basis", obs)));
-  }
+      REQUIRE_NOTHROW(aowfn = std::make_shared<AOWfn>(
+                          KeyVal()
+                              .assign("world", &TiledArray::get_default_world())
+                              .assign("atoms", mol)
+                              .assign("basis", obs)));
+    }
 
-  SECTION("compute ao integrals") {
-    REQUIRE_NOTHROW(auto S = aowfn->ao_factory().compute(L"<μ|ν>"));
+    WHEN("overlap ao integrals are computed") {
+      TA::TSpArrayD S;
+      REQUIRE_NOTHROW(S = aowfn->ao_factory().compute(L"<μ|ν>"));
+      THEN("element {0,0} is 1") {
+        auto s_tile_0_0 = S.find({0, 0}).get();
+        REQUIRE(s_tile_0_0(0) == Approx(1.0));
+      }
+    }
   }
 
   libint2::finalize();

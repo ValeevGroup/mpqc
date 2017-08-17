@@ -762,6 +762,11 @@ class KeyVal {
   }
   /// @}
 
+  /// @return the path from the root of top tree to this subtree
+  std::string path() const {
+    return path_;
+  }
+
  private:
   std::shared_ptr<ptree> top_tree_;
   // 'dc' = DescribedClass

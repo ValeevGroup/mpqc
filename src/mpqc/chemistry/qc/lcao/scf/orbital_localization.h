@@ -73,14 +73,15 @@ class FosterBoysLocalization {
     return U;
   }
 };
-//==============================================================================
+
+/// Performs Rank Revealing QR localization
 class RRQRLocalization{
 public:
   /// @param[in] C on input: LCAO coefficients
   /// @param[in] S : Overlap matrix
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep non-localized
-  /// @return  Localized orbitals
-
+  /// @return  transformation matrix U that converts C to localized LCAOs
+  /// U is a matrix such that: Cao("mu,i") = Cao("mu,k") * U("k,i");
     template <typename Tile, typename Policy>
     TA::DistArray<Tile, Policy> operator()(
             TA::DistArray<Tile, Policy> &C,
@@ -92,7 +93,7 @@ public:
         auto trange = C.trange();
         return array_ops::eigen_to_array<Tile, Policy>(
                 C.world(), (*this)(c_eig, s_eig, ncols_of_C_to_skip),
-                trange.data()[0], trange.data()[1]);
+	            trange.data()[1], trange.data()[1]);
     }
 
     template <typename EigMat>
@@ -109,11 +110,10 @@ public:
     EigMat Q = qr.householderQ().setLength(qr.nonzeroPivots());
 
     EigMat U = Eigen::MatrixXd::Identity(C.cols(),C.cols());
-    U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, Q.rows(), Q.cols()) = Q.transpose();
-	return C*U;
+    U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, Q.rows(), Q.cols()) = Q;
+	return U;
   }
 };
-//==============================================================================
 
 }  // namespace scf
 }  // namespace mpqc

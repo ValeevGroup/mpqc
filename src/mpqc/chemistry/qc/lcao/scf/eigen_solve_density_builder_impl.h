@@ -92,9 +92,9 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   if (localize_) {
     if((localization_method_ == "RRQR")|| (localization_method_ == "RRQR(valence)")){
-	  C_occ_ao = mpqc::scf::RRQRLocalization{}(C_occ_ao, S_, (localization_method_ == "RRQR(valence)" ? ncore_ : 0) );
-    }
-    else {
+	  auto U = mpqc::scf::RRQRLocalization{}(C_occ_ao, S_, (localization_method_ == "RRQR(valence)" ? ncore_ : 0) );
+	  C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
+    } else {
       auto l0 = mpqc::fenced_now(world);
       auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
       C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");

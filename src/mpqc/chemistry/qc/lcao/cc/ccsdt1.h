@@ -469,14 +469,14 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
          // equation below are from spin-adapted CCSDT-1 implementation
          // by Noga and Bartlett, JCP (1987)
          // by Scuseria and Scheafer  (1988)
-         t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                                    t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
+         // Eq. 9 in Scuseria + Schaefer, CPL 146, 23 (1988)
+         t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
+                             g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
 
           //permute
           t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                                   t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                                   t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
+                              t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
+                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
 
           // spin-adapted implementation as proposed by Noga, Bartlett & Urban, CPL (1987)
           TArray t3_temp1;
@@ -515,9 +515,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         for (auto ord : *t3.pmap())
             t3.set(ord, 0.0); */
 
-        TArray t3_p;
-        t3_p("b,a,c,j,k,i") = t3("b,a,c,j,k,i")-t3("b,c,a,j,k,i");
-        r1("a,i") += g_jkbc_AS("j,k,b,c")*t3_p("b,a,c,j,k,i");
+        r1("a,i") += g_jkbc_AS("j,k,b,c") * (t3("b,a,c,j,k,i") - t3("b,c,a,j,k,i"));
 
       }
 
@@ -696,16 +694,16 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
          g_akcd_AS("a,k,c,d") = (2 * g_akcd("a,k,c,d")) - g_akcd("a,k,d,c");
 
          n2_abij("a,b,i,j") = g_akcd_AS("a,k,c,d") * t3("c,b,d,i,j,k") -
-                              g_akcd("a,k,c,d") * t3("c,d,b,i,j,k");
+                              g_akcd   ("a,k,c,d") * t3("c,d,b,i,j,k");
 
          g_klic_AS("k,l,i,c") = (2 * g_klic("k,l,i,c")) - g_klic("l,k,i,c");
 
          n2_abij("a,b,i,j") -= g_klic_AS("k,l,i,c") * t3("a,b,c,k,j,l") -
-                              g_klic("k,l,i,c") * t3("a,c,b,k,j,l");
+                               g_klic   ("k,l,i,c") * t3("a,c,b,k,j,l");
 
          // f_ai ..
 
-         n2_abij("a,b,i,j") += f_ai("c,k")*(t3("a,b,c,i,k,j")-t3("a,c,b,i,k,j"));
+         n2_abij("a,b,i,j") -= f_ai("c,k") * (t3("a,b,c,i,k,j")-t3("a,c,b,i,k,j"));
 
          // permute
          n2_abij("a,b,i,j") = n2_abij("a,b,i,j") + n2_abij("b,a,j,i");

@@ -61,7 +61,7 @@ class AOWavefunction : public Wavefunction {
 
  private:
   /**
-    *  Default way of initialize factories
+    *  Default way of initializing factories
     *  use AOFactory
     */
   virtual void init_factory(const KeyVal &kv) {

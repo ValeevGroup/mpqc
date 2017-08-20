@@ -34,14 +34,15 @@ class WavefunctionWorld : virtual public DescribedClass {
   /**
    * \brief The KeyVal constructor
    *
-   * The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
+   * \param kv The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | molecule | Molecule | none | |
+   * | \c atoms | Molecule or UnitCell | none | |
+   * | \c molecule | Molecule | none | This will be queried only if \c atoms is not given. This keyword is deprecated and may be removed in the future |
    **/
-  WavefunctionWorld(KeyVal const &kv);
-  ~WavefunctionWorld();
+  explicit WavefunctionWorld(KeyVal const &kv);
+  ~WavefunctionWorld() override = default;
 
   /// Return a reference to the madness world
   madness::World &world() { return world_; }

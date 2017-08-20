@@ -216,6 +216,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       auto &world = this->wfn_world()->world();
       auto time0 = mpqc::fenced_now(world);
 
+
       this->init_sdref(ref_wfn_, target_ref_precision);
 
       f_pq_diagonal_ = make_diagonal_fpq(this->lcao_factory(),
@@ -304,6 +305,9 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     //_eVR
 
     this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
+    ExEnv::out0() << "\n Nuclear replusion in HF "
+                  <<   this->wfn_world()->atoms()->nuclear_repulsion_energy() ;
+
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -466,11 +470,11 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       {
       // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
 
-         // equation below are from spin-adapted CCSDT-1 implementation
+         // equations below are from spin-adapted CCSDT-1 implementation
          // by Noga and Bartlett, JCP (1987)
-         // by Scuseria and Scheafer  (1988)
+         // by Scuseria and Schaefer  (1988)
          // Eq. 9 in Scuseria + Schaefer, CPL 146, 23 (1988)
-         t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
+          t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
                              g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
 
           //permute
@@ -502,7 +506,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
                               + t3_temp2("c,b,a,k,j,i") + t3_temp2("a,c,b,j,i,k") + t3_temp2("a,c,b,k,j,i") ;*/
 
          //denominator
-          t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
 
 
         TArray g_jkbc_AS;
@@ -515,7 +519,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         for (auto ord : *t3.pmap())
             t3.set(ord, 0.0); */
 
-        r1("a,i") += g_jkbc_AS("j,k,b,c") * (t3("b,a,c,j,k,i") - t3("b,c,a,j,k,i"));
+        r1("a,i") -= g_jkbc_AS("j,k,b,c") * (t3("b,a,c,j,k,i") - t3("b,c,a,j,k,i"));
 
       }
 
@@ -727,7 +731,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       TArray t3_temp;
 
       r3("a,b,c,i,j,k") = f_ab("a,e") * t3("e,b,c,i,j,k") -
-                         f_ij("i,l") * t3("a,b,c,l,j,k");
+                          f_ij("i,l") * t3("a,b,c,l,j,k");
       //permute P((ia,jb),kc)
       r3("a,b,c,i,j,k") = r3("a,b,c,i,j,k") + r3("b,a,c,j,i,k") +
                           r3("c,b,a,k,j,i");
@@ -829,6 +833,34 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         }
 
         iter += 1ul;
+        std::cout << "Check if triples indeed reproduce (T) energy " << std::endl;
+
+        /*t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
+                            g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
+
+         //permute
+         t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
+                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
+                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
+
+         //denominator
+         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
+         /*TArray v3;
+        v3("a,b,c,i,j,k") = g_abij("a,b,i,j") * t1("c,k");
+        v3("a,b,c,i,j,k") =
+            v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
+
+        std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
+
+        double triple_energy =
+            ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
+             (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") + t3("a,b,c,j,k,i") -
+              2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") + t3("a,b,c,j,i,k"))));
+        triple_energy = triple_energy / 3.0;
+
+        std::cout << "Triples energy (T) at the end of this iteration" << triple_energy << std::endl;*/
+
+
       } else {
         auto time1 = mpqc::fenced_now(world);
         auto duration = mpqc::duration_in_s(time0, time1);
@@ -845,7 +877,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
                          "\n Warning!! Exceed Max Iteration! \n");
     }
     if (world.rank() == 0) {
-      std::cout << "CCSDT-1 Energy  " << E1 << std::endl;
+      std::cout << "CCSDT-1 Energy  " << E1 << std::endl;      
     }
     return E1;
   }

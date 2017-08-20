@@ -431,6 +431,11 @@ tests/validation/reference/inputs/h2o-ccsd_t-631g-pvdz.json
 tests/validation/reference/inputs/h2o-ccsd_t_lt-631g-pvdz.json
 tests/validation/reference/inputs/h2o-ccsdf12-631g-pvdz-apvdz.json
 tests/validation/reference/inputs/h2o-ccsdf12-direct-631g-pvdz-apvdz.json
+tests/validation/reference/inputs/h2o-ccsdt1_631g.json
+tests/validation/reference/inputs/h2o-ccsdt1_631g.out
+tests/validation/reference/inputs/h2o-ccsdt1_direct-631g-pvdz.json
+tests/validation/reference/inputs/h2o-ccsdt1_sto3g.json
+tests/validation/reference/inputs/h2o-ccsdt1_sto3g.out
 tests/validation/reference/inputs/h2o-cis-apvdz.json
 tests/validation/reference/inputs/h2o-df-zrhf-631g-pvdz.json
 tests/validation/reference/inputs/h2o-gf2f12-631g-pvdz-apvdz.json

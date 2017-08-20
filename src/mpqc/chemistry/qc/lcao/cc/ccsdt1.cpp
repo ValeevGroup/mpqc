@@ -1,4 +1,4 @@
-// Adapting to CCSDT-1 _VR_July18_17
+// Adapted to CCSDT-1 _VR_July18_17
 // Created by Chong Peng on 11/2/16.
 //
 

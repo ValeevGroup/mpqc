@@ -1,5 +1,5 @@
-//
-// Created by Chong Peng on 7/1/15.
+// CCSDT-1a by Varun Rishi, August 2017.
+// Adapted from CCSD code written by Chong Peng on 7/1/15.
 //
 
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT1_H_
@@ -473,7 +473,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
          // equations below are from spin-adapted CCSDT-1 implementation
          // by Noga and Bartlett, JCP (1987)
          // by Scuseria and Schaefer  (1988)
-         // Eq. 9 in Scuseria + Schaefer, CPL 146, 23 (1988)
+         // Eq. 9 in Scuseria and Schaefer, CPL 146, 23 (1988)
           t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
                              g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
 
@@ -482,30 +482,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
                               t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
                               t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
 
-          // spin-adapted implementation as proposed by Noga, Bartlett & Urban, CPL (1987)
-          TArray t3_temp1;
-          TArray t3_temp2;
-          TArray g_dabi_AS;
-          TArray g_cjkl_AS;
-
-          /*g_dabi_AS("d,a,b,i") = (2.0 * g_dabi("d,a,b,i") ) - g_dabi("a,d,b,i");
-          g_cjkl_AS("c,j,k,l") = (2.0 * g_cjkl("c,j,k,l") ) - g_cjkl("c,j,l,k");
-
-          t3_temp1("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi_AS("b,c,d,k") ;
-
-          //permute : P(a/bc|k/ij)
-          t3("a,b,c,i,j,k")  =  t3_temp1("a,b,c,i,j,k") - t3_temp1("b,a,c,i,j,k") - t3_temp1("c,b,a,i,j,k")
-                              - t3_temp1("a,b,c,k,j,i") - t3_temp1("a,b,c,i,k,j") + t3_temp1("b,a,c,k,j,i")
-                              + t3_temp1("b,a,c,i,k,j") + t3_temp1("c,b,a,k,j,i") + t3_temp1("c,b,a,i,k,j") ;
-
-          t3_temp2("a,b,c,i,j,k") = - t2("a,b,i,l") * g_cjkl_AS("c,j,k,l") ;
-
-         //permute : P(c/ab|i/jk)
-          t3("a,b,c,i,j,k") +=  t3_temp2("a,b,c,i,j,k") - t3_temp2("c,b,a,i,j,k") - t3_temp2("a,c,b,i,j,k")
-                              - t3_temp2("a,b,c,j,i,k") - t3_temp2("a,b,c,k,j,i") + t3_temp2("c,b,a,j,i,k")
-                              + t3_temp2("c,b,a,k,j,i") + t3_temp2("a,c,b,j,i,k") + t3_temp2("a,c,b,k,j,i") ;*/
-
-         //denominator
+         //divide by energy denominator
          t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
 
 
@@ -513,12 +490,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
         g_jkbc_AS("j,k,b,c") = (2.0 * g_jkbc("j,k,b,c") ) - g_jkbc("j,k,c,b");
 
-       // Initialize T3 and set all elements to be zero
-        //first assign it a size indirectly
-        /*  t3("a,b,c,i,j,k")= (t1("a,i") * t1("b,j")) * t1("c,k");
-        for (auto ord : *t3.pmap())
-            t3.set(ord, 0.0); */
-
+       // seems like a sign error in eqn 15, Scuseria & Schaefer, CPL (1988)
+       // Instead of '+', it should be '-'
         r1("a,i") -= g_jkbc_AS("j,k,b,c") * (t3("b,a,c,j,k,i") - t3("b,c,a,j,k,i"));
 
       }
@@ -804,8 +777,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
-        //solver_->update(t1, t2, t3, r1, r2, r3);
+        //solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, t3, r1, r2, r3);
 
         ExEnv::out0() << "After the call to the solver " << std::endl ;
         ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
@@ -833,7 +806,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         }
 
         iter += 1ul;
-        std::cout << "Check if triples indeed reproduce (T) energy " << std::endl;
+        //std::cout << "Check if triples (T3) indeed reproduce (T) energy " << std::endl;
 
         /*t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
                             g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
@@ -859,7 +832,6 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         triple_energy = triple_energy / 3.0;
 
         std::cout << "Triples energy (T) at the end of this iteration" << triple_energy << std::endl;*/
-
 
       } else {
         auto time1 = mpqc::fenced_now(world);

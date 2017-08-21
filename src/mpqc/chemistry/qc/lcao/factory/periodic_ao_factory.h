@@ -7,8 +7,8 @@
 #include <iosfwd>
 #include <vector>
 
-#include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
 #include "mpqc/chemistry/molecule/unit_cell.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -106,6 +106,12 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     ExEnv::out0() << indent << "Non-negligible shell-pair threshold = "
                   << shell_pair_threshold_ << "\n";
 
+    density_threshold_ = kv.value<double>(prefix + "density_threshold",
+                                          Policy::shape_type::threshold());
+    ExEnv::out0() << indent
+                  << "Density sparse threshold = " << density_threshold_
+                  << "\n";
+
     // This functor converts TensorD to TensorZ
     // Uncomment if \tparam Tile = TensorZ
     //    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
@@ -172,8 +178,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// This computes sparse complex array using integral direct
   DirectTArray compute_direct_integrals(
       madness::World &world, ShrPool<libint2::Engine> &engine,
-      BasisVector const &bases, std::shared_ptr<Screener> p_screen =
-                                    std::make_shared<Screener>(Screener{})) {
+      BasisVector const &bases,
+      std::shared_ptr<Screener> p_screen =
+          std::make_shared<Screener>(Screener{})) {
     auto result =
         direct_sparse_complex_integrals(world, engine, bases, p_screen, op_);
     return result;
@@ -191,6 +198,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   /// @return shell pair threshold
   double shell_pair_threshold() const { return shell_pair_threshold_; }
+
+  /// @return density sparsity threshold
+  double density_threshold() const { return density_threshold_; }
 
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }
@@ -333,6 +343,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   double precision_;
   double screen_threshold_;
   double shell_pair_threshold_;
+  double density_threshold_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;

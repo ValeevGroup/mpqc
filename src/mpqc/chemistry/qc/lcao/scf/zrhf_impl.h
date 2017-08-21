@@ -450,25 +450,8 @@ FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
 
 template <typename Tile, typename Policy>
 void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
-  auto& factory = this->ao_factory();
-  auto& world = factory.world();
-  auto screen = factory.screen();
-  auto screen_threshold = factory.screen_threshold();
-  auto basis =
-      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
-  auto dcell = factory.unitcell().dcell();
-  auto R_max = factory.R_max();
-  auto RJ_max = factory.RJ_max();
-  auto RD_max = factory.RD_max();
-  auto R_size = factory.R_size();
-  auto RJ_size = factory.RJ_size();
-  auto RD_size = factory.RD_size();
-  auto shell_pair_threshold = factory.shell_pair_threshold();
-
   using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(
-      world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-      RD_size, true, true, screen, screen_threshold, shell_pair_threshold);
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), true, true);
 }
 
 /**

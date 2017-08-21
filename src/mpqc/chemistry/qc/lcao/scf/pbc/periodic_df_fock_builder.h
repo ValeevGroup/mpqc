@@ -27,24 +27,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct exact perioic 4-center K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    {
-      // collect information to construct 4-center builders
-      auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-      auto dcell = ao_factory_.unitcell().dcell();
-      auto R_max = ao_factory_.R_max();
-      auto RJ_max = ao_factory_.RJ_max();
-      auto RD_max = ao_factory_.RD_max();
-      auto R_size = ao_factory_.R_size();
-      auto RJ_size = ao_factory_.RJ_size();
-      auto RD_size = ao_factory_.RD_size();
-      auto screen = ao_factory_.screen();
-      auto screen_threshold = ao_factory_.screen_threshold();
-
-      // construct PerioidcFourCenterFockBuilder for exchange term
-      k_builder_ = std::make_unique<K_Builder>(
-          world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-          RD_size, false, true, screen, screen_threshold);
-    }
+    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

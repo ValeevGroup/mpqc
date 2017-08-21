@@ -37,6 +37,7 @@ class PeriodicCADFKBuilder
 
     print_detail_ = ao_factory_.print_detail();
     shell_pair_threshold_ = ao_factory_.shell_pair_threshold();
+    density_threshold_ = ao_factory_.density_threshold();
     force_shape_threshold_ = force_shape_threshold;
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
                   << std::endl;
@@ -229,6 +230,7 @@ class PeriodicCADFKBuilder
   double force_shape_threshold_;
   double target_precision_ = std::numeric_limits<double>::epsilon();
   double shell_pair_threshold_;
+  double density_threshold_;
   Vector3d dcell_;
   Vector3i R_max_;
   Vector3i RJ_max_;
@@ -499,6 +501,7 @@ class PeriodicCADFKBuilder
     const auto ntiles_rho = Q_bs_rho_->nclusters();
     const auto ntiles_sig = basisRD_->nclusters();
 
+    const auto Dtile_norms = D_repl.shape().data();
     for (auto tile_Y = 0ul, task = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
       const auto RYmR_ord = tile_Y / ntiles_per_uc_;
       const auto RYmR_3D = direct_3D_idx(RYmR_ord, RYmR_max_);
@@ -537,6 +540,8 @@ class PeriodicCADFKBuilder
               std::array<size_t, 3> idx_C = {{Y_in_C, tile_nu, sig_in_C}};
               std::array<size_t, 2> idx_D = {{rho_in_D, tile_sig}};
               if (C_repl.is_zero(idx_C) || D_repl.is_zero(idx_D)) continue;
+              if (Dtile_norms(rho_in_D, tile_sig) <= density_threshold_)
+                continue;
 
               auto C_tile = C_repl.find(idx_C);
               auto D_tile = D_repl.find(idx_D);

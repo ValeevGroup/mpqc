@@ -123,6 +123,8 @@ src/mpqc/chemistry/qc/lcao/cc/ccsdt1/ccsdt1_global.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1_copy.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1b.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1b.h
+src/mpqc/chemistry/qc/lcao/cc/ccsdt3.cpp
+src/mpqc/chemistry/qc/lcao/cc/ccsdt3.h
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd.cpp
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd.h
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd_impl.h

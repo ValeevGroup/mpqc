@@ -1,9 +1,9 @@
-// CCSDT-3 by Varun Rishi, August 2017.
+// CCSDT-2 by Varun Rishi, August 2017.
 // Adapted from CCSD code written by Chong Peng on 7/1/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT3_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT3_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT2_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT2_H_
 
 #include <tiledarray.h>
 
@@ -22,7 +22,7 @@ namespace lcao {
 
 namespace detail {
 
-inline void print_CCSDT3(int iter, double dE, double error, double E1,
+inline void print_CCSDT2(int iter, double dE, double error, double E1,
                        double time) {
   if (iter == 0) {
     ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \n",
@@ -34,7 +34,7 @@ inline void print_CCSDT3(int iter, double dE, double error, double E1,
       time);
 }
 
-inline void print_CCSDT3_direct(int iter, double dE, double error, double E1,
+inline void print_CCSDT2_direct(int iter, double dE, double error, double E1,
                               double time1, double time2) {
   if (iter == 0) {
     ExEnv::out0() << mpqc::printf(
@@ -48,18 +48,18 @@ inline void print_CCSDT3_direct(int iter, double dE, double error, double E1,
 }
 
 /**
- * CCSDT-3 class that computes CCSDT-3 energy
+ * CCSDT-2 class that computes CCSDT-2 energy
  */
 
 template <typename Tile, typename Policy>
-class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
+class CCSDT2 : public LCAOWavefunction<Tile, Policy>,
              public Provides<Energy>,
-             public std::enable_shared_from_this<CCSDT3<Tile, Policy>> {
+             public std::enable_shared_from_this<CCSDT2<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactory = gaussian::AOFactory<Tile, Policy>;
 
-  CCSDT3() = default;
+  CCSDT2() = default;
 
   // clang-format off
 
@@ -80,7 +80,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
 
   // clang-format on
 
-  CCSDT3(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
+  CCSDT2(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
@@ -111,7 +111,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());
   }
 
-  virtual ~CCSDT3() {}
+  virtual ~CCSDT2() {}
 
   /// protected members
  protected:
@@ -132,7 +132,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
   double target_precision_;
   double computed_precision_ = std::numeric_limits<double>::max();
   bool verbose_;
-  double CCSDT3_corr_energy_;
+  double CCSDT2_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
   std::shared_ptr<const Eigen::VectorXd> f_pq_diagonal_;
 
@@ -147,7 +147,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
 
  public:
   void obsolete() override {
-    CCSDT3_corr_energy_ = 0.0;
+    CCSDT2_corr_energy_ = 0.0;
     f_pq_diagonal_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
@@ -158,7 +158,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     if (T1_.is_initialized()) {
       return T1_;
     } else {
-      throw std::runtime_error("CCSDT-3 T1 amplitudes have not been computed");
+      throw std::runtime_error("CCSDT-2 T1 amplitudes have not been computed");
     }
   }
   // get T2 amplitudes
@@ -166,7 +166,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     if (T2_.is_initialized()) {
       return T2_;
     } else {
-      throw std::runtime_error("CCSDT-3 T2 amplitudes have not been computed");
+      throw std::runtime_error("CCSDT-2 T2 amplitudes have not been computed");
     }
   }
 
@@ -175,7 +175,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     if (T3_.is_initialized()) {
       return T3_;
     } else {
-      throw std::runtime_error("CCSDT-3 T3 amplitudes have not been computed");
+      throw std::runtime_error("CCSDT-2 T3 amplitudes have not been computed");
     }
   }
 
@@ -246,14 +246,14 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
       TArray t3;
 
       if (method_ == "standard") {
-        CCSDT3_corr_energy_ = compute_CCSDT3_conventional(t1, t2, t3);
+        CCSDT2_corr_energy_ = compute_CCSDT2_conventional(t1, t2, t3);
       } /*else if (method_ == "df") {
-        CCSDT3_corr_energy_ = compute_ccsd_df(t1, t2);
+        CCSDT2_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
             this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
-        CCSDT3_corr_energy_ = compute_ccsd_direct(t1, t2);
+        CCSDT2_corr_energy_ = compute_ccsd_direct(t1, t2);
       }*/
 
       T1_ = t1;
@@ -261,18 +261,18 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
       T3_ = t3;
 
       this->computed_ = true;
-      this->set_value(energy, ref_energy->energy() + CCSDT3_corr_energy_);
+      this->set_value(energy, ref_energy->energy() + CCSDT2_corr_energy_);
 
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "CCSDT-3 Time in CCSDT-3: " << duration0 << " S" << std::endl;
+      ExEnv::out0() << "CCSDT-2 Time in CCSDT-2: " << duration0 << " S" << std::endl;
     }
   }
 
  protected:
   // store all the integrals in memory
   // used as reference for development
-  double compute_CCSDT3_conventional(TArray &t1, TArray &t2, TArray &t3) {
+  double compute_CCSDT2_conventional(TArray &t1, TArray &t2, TArray &t3) {
 
   //VR ... Initialize
     auto &world = this->wfn_world()->world();
@@ -282,7 +282,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     auto n_frozen = this->trange1_engine()->get_nfrozen();
 
     if (world.rank() == 0) {
-      std::cout << "Use Conventional CCSDT-3 Compute" << std::endl;
+      std::cout << "Use Conventional CCSDT-2 Compute" << std::endl;
     }
 
     auto tmp_time0 = mpqc::now(world, accurate_time);
@@ -467,10 +467,11 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
       {
       // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
 
-         // equations below are from spin-adapted CCSDT-3 implementation
+         // equations below are from spin-adapted CCSDT implementation
          // by Noga and Bartlett, JCP, 86, 7041 (1987)
          // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1
-         // Extension to CCSDT-3 requires contribution of T1T2, T2T2 and T2T1T1 terms to t3/r3 residual
+         // Extension to CCSDT-2 requires contribution of T2T2 terms to t3/r3 residual
+         // Further extension to CCSDT-3 requires contribution of T1T2 and T2T1T1 terms to t3/r3 residual
          // Let's construct intermediates as done by Noga and Bartlett
 
           TArray Chi_dabi;
@@ -888,7 +889,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3(iter, dE, error, E1, duration);
+          detail::print_CCSDT2(iter, dE, error, E1, duration);
         }
 
         iter += 1ul;
@@ -898,7 +899,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3(iter, dE, error, E1, duration);
+          detail::print_CCSDT2(iter, dE, error, E1, duration);
         }
 
         break;
@@ -909,7 +910,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
                          "\n Warning!! Exceed Max Iteration! \n");
     }
     if (world.rank() == 0) {
-      std::cout << "CCSDT-1b Energy  " << E1 << std::endl;
+      std::cout << "CCSDT-2 Energy  " << E1 << std::endl;
     }
     return E1;
   }
@@ -1236,7 +1237,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3(iter, dE, error, E1, duration);
+          detail::print_CCSDT2(iter, dE, error, E1, duration);
         }
 
         iter += 1ul;
@@ -1245,7 +1246,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3(iter, dE, error, E1, duration);
+          detail::print_CCSDT2(iter, dE, error, E1, duration);
         }
 
         break;
@@ -1642,7 +1643,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3_direct(iter, dE, error, E1, duration_u,
+          detail::print_CCSDT2_direct(iter, dE, error, E1, duration_u,
                                     duration_t);
         }
 
@@ -1652,7 +1653,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_CCSDT3_direct(iter, dE, error, E1, duration_u,
+          detail::print_CCSDT2_direct(iter, dE, error, E1, duration_u,
                                     duration_t);
         }
 
@@ -1854,14 +1855,14 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           __FILE__, __LINE__);
     }
   }
-};  // class CCSDT3
+};  // class CCSDT2
 
 #if TA_DEFAULT_POLICY == 0
-extern template class CCSDT3<TA::TensorD, TA::DensePolicy>;
+extern template class CCSDT2<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
-extern template class CCSDT3<TA::TensorD, TA::SparsePolicy>;
+extern template class CCSDT2<TA::TensorD, TA::SparsePolicy>;
 #endif
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT3_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSDT2_H_

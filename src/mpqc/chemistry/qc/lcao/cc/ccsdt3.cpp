@@ -1,7 +1,7 @@
 // CCSDT-3 by Varun Rishi, August 2017
 //
 
-#include "mpqc/chemistry/qc/lcao/cc/ccsdt1.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsdt3.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 #if TA_DEFAULT_POLICY == 0

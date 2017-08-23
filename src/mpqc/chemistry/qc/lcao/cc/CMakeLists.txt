@@ -15,6 +15,10 @@ set(sources
         solvers.h
         ccsdt1b.h
         ccsdt1b.cpp
+        ccsdt2.h
+        ccsdt2.cpp
+        ccsdt3.h
+        ccsdt3.cpp
         )
 
 add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc;MPQCmath_quadrature" "mpqc/chemistry/qc/lcao/cc")

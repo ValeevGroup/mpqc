@@ -617,11 +617,11 @@ void construct_pno(
       }
     }
     return osvs_list;
-    world.gop.fence();
   };
 
   osvs = form_OSV(world);
-  world.gop.fence();
+  // The following fence is unnecessary IF OSVs are only used locally
+  // world.gop.fence();
 
   // Lambda function to form PNOs; implement using a for_each
   auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_uocc, &npnos,

@@ -99,7 +99,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     force_threshold_ = force_threshold;
     LMO_chop_threshold_ = lmo_chop_threshold;
 
-    C_ = ao_factory.compute(L"( Κ | Cadf|κ λ)");
+    C_ = ao_factory.compute(L"( Κ | CADF|κ λ)");
     E_ = ao_factory.compute_direct(L"( Κ | G|κ λ)");
     M_ = ao_factory.compute(L"( Κ | G| Λ )");
 

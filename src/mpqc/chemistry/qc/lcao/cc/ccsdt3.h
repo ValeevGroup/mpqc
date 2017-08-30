@@ -500,42 +500,41 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           // first define the intermediates
 
           f_aijk("e,i,m,n")  = g_aijk("e,i,m,n") ;
-          //f_aijk("e,i,m,n")  += ( g_ijab("m,n,e,f") * t1("f,i")) ;
+          f_aijk("e,i,m,n") += ( g_ijab("m,n,e,f") * t1("f,i")) ;
 
           f_aibc("a,m,e,f")  = g_aibc("a,m,e,f") ;
-          //f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
+          f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
 
           f_aijb("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          //f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
+          f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
 
           f_aibj("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          //f_aibj("a,m,e,i")  += ( g_aibc("a,m,e,f") * t1("f,i")) ;
+          f_aibj("a,m,e,i") += ( g_aibc("a,m,e,f") * t1("f,i")) ;
 
           f_iabj("i,e,a,m")  = g_iabj("i,e,a,m");
-          //f_iabj("i,e,a,m")  -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
+          f_iabj("i,e,a,m") -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
 
           f_iajb("i,e,m,a")  = g_iajb("i,e,m,a")  ;
-          //f_iajb("i,e,m,a") -= ( g_ijka("i,n,m,e") * t1("a,n")) ;
+          f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
 
           f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
-        //f_int_me("m,e")   += f_ia("m,e") ;
+          //f_int_me("m,e")   += f_ia("m,e") ;
 
           // Now the super-intermediates,
-          // Trying to match CCSDT-2 results at this moment
-          // So, instead of tau, I am using just t2 in the first line in the construction of Chi_dabi and Chi_cjkl
 
 
           Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * tau("a,b,n,m"))
                                + ((2 * f_aibc("b,m,e,f")- f_aibc("b,m,f,e")) * t2("a,f,i,m")
-                               - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i")) ;
-                               /*- f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
-                               + g_abcd("a,b,f,e") * t1("f,i") ;*/
+                               - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i"))
+                               - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
+                               + g_abcd("a,b,f,e") * t1("f,i") ;
 
           Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * tau("e,f,i,j"))
-                               + (2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
-                               - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n") ;
-                               /*+ f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
-                               - g_ijkl("i,j,n,m") * t1("a,n") + f_int_me("m,e") * t2("a,e,i,j");*/
+                               + ((2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
+                               - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n"))
+                               + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
+                               - g_ijkl("i,j,n,m") * t1("a,n")
+                               + f_int_me("m,e") * t2("a,e,i,j");
 
           // calculate t3
 
@@ -909,7 +908,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
                          "\n Warning!! Exceed Max Iteration! \n");
     }
     if (world.rank() == 0) {
-      std::cout << "CCSDT-1b Energy  " << E1 << std::endl;
+      std::cout << "CCSDT-3 Energy  " << E1 << std::endl;
     }
     return E1;
   }

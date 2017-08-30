@@ -358,9 +358,8 @@ void DirectRIRHF<Tile, Policy>::init_fock_builder() {
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
-/**
- * CadfRHF member functions
- */
+/////////////// CADFRHF member functions
+
 template <typename Tile, typename Policy>
 CADFRHF<Tile, Policy>::CADFRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
@@ -384,9 +383,7 @@ void CADFRHF<Tile, Policy>::init_fock_builder() {
       this->ao_factory(), force_shape_threshold_, tcutc_, secadf_);
 }
 
-/**
- * DirectRHF member functions
- */
+///////////////  DirectRHF member functions
 template <typename Tile, typename Policy>
 DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
@@ -403,9 +400,8 @@ void DirectRHF<Tile, Policy>::init_fock_builder() {
       world, basis, basis, basis, true, true, screen, screen_threshold);
 }
 
-/**
- * DirectRIRHF member functions
- */
+///////////////  DirectRIRHF member functions
+
 template <typename Tile, typename Policy>
 RIJEXACTKRHF<Tile, Policy>::RIJEXACTKRHF(const KeyVal& kv)
     : RHF<Tile, Policy>(kv) {}

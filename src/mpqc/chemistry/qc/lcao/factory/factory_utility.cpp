@@ -31,7 +31,7 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
     case Operator::Type::Coulomb: {
       result = libint2::Operator::coulomb;
     } break;
-    case Operator::Type::Cadf: {
+    case Operator::Type::CADF: {
       result = libint2::Operator::coulomb;
     } break;
     case Operator::Type::cGTG: {

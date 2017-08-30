@@ -36,20 +36,21 @@ class PeriodicCADFKBuilder
     WorldObject_::process_pending();
 
     print_detail_ = ao_factory_.print_detail();
+    screen_threshold_ = ao_factory_.screen_threshold();
     shell_pair_threshold_ = ao_factory_.shell_pair_threshold();
     density_threshold_ = ao_factory_.density_threshold();
     force_shape_threshold_ = force_shape_threshold;
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
                   << std::endl;
     target_precision_ = std::numeric_limits<double>::epsilon();
-    mpqc::time_point t0, t1;
 
     // by-cluster orbital basis and df basis
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
     dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
     assert(obs_->nclusters() == dfbs_->nclusters());
-    ntiles_per_uc_ = obs_->nclusters();
 
+    ntiles_per_uc_ = obs_->nclusters();
+    natoms_per_uc_ = ao_factory_.unitcell().natoms();
     dcell_ = ao_factory_.unitcell().dcell();
     R_max_ = ao_factory_.R_max();
     RJ_max_ = ao_factory_.RJ_max();
@@ -58,8 +59,120 @@ class PeriodicCADFKBuilder
     RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
+    init();
+  }
+
+  PeriodicCADFKBuilder(
+      madness::World &world, Factory &ao_factory, std::shared_ptr<Basis> obs,
+      std::shared_ptr<Basis> dfbs, const Vector3d &dcell, const Vector3i &R_max,
+      const Vector3i &RJ_max, const Vector3i &RD_max, const int64_t R_size,
+      const int64_t RJ_size, const int64_t RD_size, const size_t ntiles_per_uc,
+      const size_t natoms_per_uc, const double shell_pair_threshold = 1.0e-12,
+      const double screen_threshold = 1.0e-20,
+      const double density_threshold = Policy::shape_type::threshold(),
+      const double target_precision = std::numeric_limits<double>::epsilon(),
+      const bool print_detail = false, const double force_shape_threshold = 0.0)
+      : WorldObject_(world),
+        ao_factory_(ao_factory),
+        obs_(obs),
+        dfbs_(dfbs),
+        dcell_(dcell),
+        R_max_(R_max),
+        RJ_max_(RJ_max),
+        RD_max_(RD_max),
+        R_size_(R_size),
+        RJ_size_(RJ_size),
+        RD_size_(RD_size),
+        ntiles_per_uc_(ntiles_per_uc),
+        natoms_per_uc_(natoms_per_uc),
+        print_detail_(print_detail),
+        screen_threshold_(screen_threshold),
+        shell_pair_threshold_(shell_pair_threshold),
+        density_threshold_(density_threshold),
+        force_shape_threshold_(force_shape_threshold),
+        target_precision_(target_precision),
+        trans_(madness::cblas::Trans),
+        notrans_(madness::cblas::NoTrans) {
+    // WorldObject mandates this is called from the ctor
+    WorldObject_::process_pending();
+
+    ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
+                  << std::endl;
+
+    // by-cluster orbital basis and df basis
+    assert(obs_->nclusters() == dfbs_->nclusters());
+
+    init();
+  }
+
+  ~PeriodicCADFKBuilder() {}
+
+  array_type operator()(array_type const &D, double target_precision) {
+    return compute_K(D, target_precision);
+  }
+
+ private:
+  Factory &ao_factory_;
+  bool print_detail_;
+  double force_shape_threshold_;
+  double target_precision_ = std::numeric_limits<double>::epsilon();
+  double shell_pair_threshold_;
+  double density_threshold_;
+  double screen_threshold_;
+  Vector3d dcell_;
+  Vector3i R_max_;
+  Vector3i RJ_max_;
+  Vector3i RD_max_;
+  Vector3i RY_max_;
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+  size_t ntiles_per_uc_;
+  size_t natoms_per_uc_;
+
+  array_type C_bra_;
+  array_type M_;
+  DirectTArray E_ket_;
+
+  shellpair_list_t sig_shellpair_list_;
+  std::vector<Vector3i> RJ_list_;
+
+  std::shared_ptr<Basis> obs_;
+  std::shared_ptr<Basis> dfbs_;
+  std::shared_ptr<Basis> X_dfbs_;
+  std::shared_ptr<Basis> Y_dfbs_;
+  std::shared_ptr<Basis> basisRJ_;
+  std::shared_ptr<Basis> basisR_;
+  std::shared_ptr<Basis> basisRD_;
+
+  std::shared_ptr<Basis> Q_bs_Y_;
+  std::shared_ptr<Basis> Q_bs_nu_;
+  std::shared_ptr<Basis> Q_bs_rho_;
+  TA::TiledRange Q_trange_;
+  std::shared_ptr<TA::Pmap> Q_pmap_;
+  Vector3i RYmR_max_;
+  Vector3i RJmR_max_;
+
+  TA::TiledRange F_trange_;
+  std::shared_ptr<TA::Pmap> F_pmap_;
+  Vector3i RYmRX_max_;
+
+  TA::TiledRange result_trange_;
+  std::shared_ptr<TA::Pmap> result_pmap_;
+
+  madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
+  madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
+  std::atomic<size_t> num_ints_computed_{0};
+
+  const madness::cblas::CBLAS_TRANSPOSE trans_;
+  const madness::cblas::CBLAS_TRANSPOSE notrans_;
+
+ private:
+  void init() {
+    auto &world = this->get_world();
+
+    mpqc::time_point t0, t1;
     const Vector3i ref_latt_range = {0, 0, 0};
-    const auto natoms_per_uc = ao_factory_.unitcell().natoms();
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
     using ::mpqc::lcao::detail::direct_3D_idx;
@@ -125,8 +238,8 @@ class PeriodicCADFKBuilder
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       C_bra_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc, ref_latt_range, RJ_max_,
-          RJ_max_);
+          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc_, ref_latt_range,
+          RJ_max_, RJ_max_);
     }
     t1 = mpqc::fenced_now(world);
     auto t_C_bra = mpqc::duration_in_s(t0, t1);
@@ -160,12 +273,11 @@ class PeriodicCADFKBuilder
           lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisRJ_}};
 
       auto oper_type = libint2::Operator::coulomb;
-      const auto screen_thresh = ao_factory_.screen_threshold();
       auto screen_engine =
           make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
       auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-          lcao::gaussian::create_schwarz_screener(world, screen_engine,
-                                                  bs_vector, screen_thresh));
+          lcao::gaussian::create_schwarz_screener(
+              world, screen_engine, bs_vector, screen_threshold_));
       auto engine =
           make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
 
@@ -218,69 +330,8 @@ class PeriodicCADFKBuilder
     }
   }
 
-  ~PeriodicCADFKBuilder() {}
-
-  array_type operator()(array_type const &D, double target_precision) {
-    return compute_K(D, target_precision);
-  }
-
- private:
-  Factory &ao_factory_;
-  bool print_detail_;
-  double force_shape_threshold_;
-  double target_precision_ = std::numeric_limits<double>::epsilon();
-  double shell_pair_threshold_;
-  double density_threshold_;
-  Vector3d dcell_;
-  Vector3i R_max_;
-  Vector3i RJ_max_;
-  Vector3i RD_max_;
-  Vector3i RY_max_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
-  size_t ntiles_per_uc_;
-
-  array_type C_bra_;
-  array_type M_;
-  DirectTArray E_ket_;
-
-  shellpair_list_t sig_shellpair_list_;
-  std::vector<Vector3i> RJ_list_;
-
-  std::shared_ptr<Basis> obs_;
-  std::shared_ptr<Basis> dfbs_;
-  std::shared_ptr<Basis> X_dfbs_;
-  std::shared_ptr<Basis> Y_dfbs_;
-  std::shared_ptr<Basis> basisRJ_;
-  std::shared_ptr<Basis> basisR_;
-  std::shared_ptr<Basis> basisRD_;
-
-  std::shared_ptr<Basis> Q_bs_Y_;
-  std::shared_ptr<Basis> Q_bs_nu_;
-  std::shared_ptr<Basis> Q_bs_rho_;
-  TA::TiledRange Q_trange_;
-  std::shared_ptr<TA::Pmap> Q_pmap_;
-  Vector3i RYmR_max_;
-  Vector3i RJmR_max_;
-
-  TA::TiledRange F_trange_;
-  std::shared_ptr<TA::Pmap> F_pmap_;
-  Vector3i RYmRX_max_;
-
-  TA::TiledRange result_trange_;
-  std::shared_ptr<TA::Pmap> result_pmap_;
-
-  madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
-  madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
-  std::atomic<size_t> num_ints_computed_{0};
-
-  const madness::cblas::CBLAS_TRANSPOSE trans_;
-  const madness::cblas::CBLAS_TRANSPOSE notrans_;
-
- private:
   array_type compute_K(const array_type &D, double target_precision) {
-    auto &world = ao_factory_.world();
+    auto &world = this->get_world();
 
     auto t0_k = mpqc::fenced_now(world);
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -1186,7 +1237,7 @@ class PeriodicCADFKBuilder
         libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
         libint2::BraKet::x_x);
 
-    auto &world = ao_factory_.world();
+    auto &world = this->get_world();
     std::mutex mx;
     shellpair_list_t result;
 

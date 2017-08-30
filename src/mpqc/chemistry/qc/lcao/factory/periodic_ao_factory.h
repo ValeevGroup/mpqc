@@ -112,6 +112,8 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
                   << "Density sparse threshold = " << density_threshold_
                   << "\n";
 
+    df_k_basis_ = kv.value<std::string>(prefix + "df_k_basis", "cc-pvdz-ri");
+
     // This functor converts TensorD to TensorZ
     // Uncomment if \tparam Tile = TensorZ
     //    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
@@ -192,6 +194,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   /// @return screen method
   const std::string &screen() const { return screen_; }
+
+  /// @return df_k_basis
+  const std::string &df_k_basis() const { return df_k_basis_; }
 
   /// @return screen threshold
   double screen_threshold() const { return screen_threshold_; }
@@ -347,6 +352,8 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
+
+  std::string df_k_basis_;
 };
 
 template <typename Tile, typename Policy>

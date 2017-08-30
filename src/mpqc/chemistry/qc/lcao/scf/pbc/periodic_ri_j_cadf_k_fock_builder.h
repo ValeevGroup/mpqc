@@ -28,8 +28,37 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct periodic CADF-K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ =
-        std::make_unique<K_Builder>(world, ao_factory_, force_shape_threshold);
+    {
+      auto obs = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
+      auto unitcell = ao_factory_.unitcell();
+      auto dfbs_str = ao_factory_.df_k_basis();
+      ExEnv::out0() << "\ndf_k_basis: " << dfbs_str << std::endl;
+      auto dfbs = std::make_shared<lcao::gaussian::Basis>(
+          lcao::gaussian::parallel_make_basis(
+              world, lcao::gaussian::Basis::Factory(dfbs_str), unitcell));
+      auto dcell = ao_factory_.unitcell().dcell();
+      auto R_max = ao_factory_.R_max();
+      auto RJ_max = ao_factory_.RJ_max();
+      auto RD_max = ao_factory_.RD_max();
+      auto R_size = ao_factory_.R_size();
+      auto RJ_size = ao_factory_.RJ_size();
+      auto RD_size = ao_factory_.RD_size();
+      auto screen_threshold = ao_factory_.screen_threshold();
+      auto shell_pair_threshold = ao_factory_.shell_pair_threshold();
+      auto density_threshold = ao_factory_.density_threshold();
+      auto target_precision = std::numeric_limits<double>::epsilon();
+      auto ntiles_per_uc = obs->nclusters();
+      auto natoms_per_uc = ao_factory_.unitcell().natoms();
+      auto print_detail = ao_factory_.print_detail();
+      k_builder_ = std::make_unique<K_Builder>(
+          world, ao_factory_, obs, dfbs, dcell, R_max, RJ_max, RD_max, R_size,
+          RJ_size, RD_size, ntiles_per_uc, natoms_per_uc, shell_pair_threshold,
+          screen_threshold, density_threshold, target_precision, print_detail,
+          force_shape_threshold);
+    }
+    //    k_builder_ =
+    //        std::make_unique<K_Builder>(world, ao_factory_,
+    //        force_shape_threshold);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

@@ -17,12 +17,12 @@ set(sources
         screening/schwarz_screen.cpp
         screening/cached_shell_info.cpp
         screening/cached_shell_info.h
-        screening/qqr_screening.cpp
-        screening/qqr_screening.h
-        screening/qvl_screening.cpp
-        screening/qvl_screening.h
-        screening/qvl_shell_info.cpp
-        screening/qvl_shell_info.h
+#        screening/qqr_screening.cpp
+#        screening/qqr_screening.h
+#        screening/qvl_screening.cpp
+#        screening/qvl_screening.h
+#        screening/qvl_shell_info.cpp
+#        screening/qvl_shell_info.h
         task_integrals_common.h
         task_integrals.h
 )

@@ -914,11 +914,6 @@ class PeriodicFourCenterFockBuilder
     const auto ncluster_bra_per_uc = bra_basis_->cluster_shells().size();
     const auto ncluster_ket_per_uc = ket_basis_->cluster_shells().size();
 
-    const auto R_stride = R * RJ_size_ * RD_size_;
-    const auto RJ_stride = RJ * RD_size_;
-    const auto old_uc_ord = R_stride + RJ_stride + RD;
-    const auto new_uc_ord = translation_map_[old_uc_ord];
-
     // compute Coulomb and/or Exchange contributions to all Fock matrices
     {
       // compute Coulomb contributions to all Fock matrices
@@ -1084,6 +1079,11 @@ class PeriodicFourCenterFockBuilder
       }
 
       if (compute_K_) {
+        const auto R_stride = R * RJ_size_ * RD_size_;
+        const auto RJ_stride = RJ * RD_size_;
+        const auto old_uc_ord = R_stride + RJ_stride + RD;
+        const auto new_uc_ord = translation_map_[old_uc_ord];
+
         // index of first shell in this cluster
         const auto sh0_offset = basis0_shell_offset_map_[tile0];
         const auto shRJ_offset =

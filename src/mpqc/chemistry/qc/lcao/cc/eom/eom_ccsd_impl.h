@@ -319,6 +319,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 template <typename Tile, typename Policy>
 void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
+  auto ccsd_precision = 0.1*target_precision;
   if (vector_threshold_ == 0) {
     vector_threshold_ = 10 * target_precision;
   }
@@ -333,7 +334,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     }
 
     auto ccsd_energy =
-        std::make_shared<Energy>(this->shared_from_this(), target_precision);
+        std::make_shared<Energy>(this->shared_from_this(), ccsd_precision);
     // do CCSD energy
     CCSD<Tile, Policy>::evaluate(ccsd_energy.get());
 
@@ -342,6 +343,7 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     ExEnv::out0() << indent << "\nEOM-CCSD Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
     ExEnv::out0() << indent << "Number of roots: " << n_roots << "\n";
+    ExEnv::out0() << indent << "Target Precision: " << target_precision << "\n";
     ExEnv::out0() << indent << "Max number of vector per root: " << max_vector_
                   << "\n";
     ExEnv::out0() << indent

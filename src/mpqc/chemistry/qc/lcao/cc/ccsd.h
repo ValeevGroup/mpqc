@@ -241,6 +241,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       T1_ = t1;
       T2_ = t2;
 
+      // delete current solver
+      solver_.reset();
+
       this->computed_ = true;
       this->set_value(energy, ref_energy->energy() + ccsd_corr_energy_);
 

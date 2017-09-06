@@ -307,7 +307,8 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
     time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm()/n_roots;
+    delta_e = delta_e.cwiseAbs();
+    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
     util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
@@ -411,7 +412,8 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm()/n_roots;
+    delta_e = delta_e.cwiseAbs();
+    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
     util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
@@ -522,7 +524,8 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm()/n_roots;
+    delta_e = delta_e.cwiseAbs();
+    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
     util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),

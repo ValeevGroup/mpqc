@@ -303,9 +303,10 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     std::tie(eig_new, norms) = dvd.extrapolate(HC, C_, *pred);
     auto time2 = mpqc::fenced_now(world);
 
-    EigenVector<numeric_type> delta_e = eig - eig_new;
-    norm_e = delta_e.norm() / n_roots;
-    norm_r = norms.norm() / n_roots;
+    EigenVector<numeric_type> delta_e = (eig - eig_new);
+    delta_e = delta_e.cwiseAbs();
+    norm_e = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
+    norm_r = *std::max_element(norms.data(), norms.data()+norms.size());
 
     util::print_excitation_energy_iteration(iter, delta_e, norms ,eig_new,
                                             mpqc::duration_in_s(time0, time1),

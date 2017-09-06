@@ -16,6 +16,20 @@
 
 namespace mpqc {
 
+template <typename D>
+struct DavidsonDiagPreconditioner {
+  void operator()(const EigenVector<typename D::element_type>& e,
+                  std::vector<D>& guess) const {
+    std::size_t n_roots = e.size();
+    TA_ASSERT(n_roots == guess.size());
+    for (std::size_t i = 0; i < n_roots; i++) {
+      compute(e[i], guess[i]);
+    }
+  }
+
+  virtual void compute(const typename D::element_type& e, D& guess) const = 0;
+};
+
 // clang-format off
 /**
  * \brief Davidson Algorithm
@@ -108,7 +122,7 @@ class DavidsonDiag {
   // clang-format off
   /**
    *
-   * @tparam Pred preconditioner object, which has void Pred(const element_type & e,D& residual) to update residual
+   * @tparam Pred preconditioner object, which has void Pred(const std::vector<element_type> & e, std::vector<D>& residual) to update residual
    *
    * @param HB product with A and guess vector
    * @param B  guess vector
@@ -278,9 +292,7 @@ class DavidsonDiag {
     // usually it is D(i) = (e(i) - H_D)^-1 R(i)
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
-    for (std::size_t i = 0; i < n_roots_; i++) {
-      pred(E[i], residual[i]);
-    }
+    pred(E, residual);
 
     // subspace collapse
     // restart with new vector and most recent eigen vector

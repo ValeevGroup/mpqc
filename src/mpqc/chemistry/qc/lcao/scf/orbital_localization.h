@@ -33,20 +33,44 @@ class FosterBoysLocalization {
  public:
   /// @param C input LCAOs
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
+  /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
+  ///            non-localized, presumably because they are already localized
   /// @return transformation matrix U that converts C to localized LCAOs
   template <typename Tile, typename Policy>
-  TA::DistArray<Tile,Policy> operator()(TA::DistArray<Tile,Policy> const &C, std::vector<TA::DistArray<Tile,Policy>> const &r_ao) const {
+  TA::DistArray<Tile, Policy> operator()(
+      TA::DistArray<Tile, Policy> const &C,
+      std::vector<TA::DistArray<Tile, Policy>> const &r_ao,
+      size_t ncols_of_C_to_skip = 0) const {
     auto ao_x = array_ops::array_to_eigen(r_ao[0]);
     auto ao_y = array_ops::array_to_eigen(r_ao[1]);
     auto ao_z = array_ops::array_to_eigen(r_ao[2]);
     auto c_eig = array_ops::array_to_eigen(C);
 
-    RowMatrixXd U = RowMatrixXd::Identity(c_eig.cols(), c_eig.cols());
-    jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
-
     auto trange = C.trange();
-    return array_ops::eigen_to_array<Tile,Policy>(
-        C.world(), U, trange.data()[1], trange.data()[1]);
+    return array_ops::eigen_to_array<Tile, Policy>(
+        C.world(), (*this)(c_eig, ao_x, ao_y, ao_z, ncols_of_C_to_skip),
+        trange.data()[1], trange.data()[1]);
+  }
+
+  /// @param[in,out] C on input: LCAO coeffcients, on output: localized LCAO coefficients
+  /// @param {x,y,z} electric dipole operator matrices, in AO basis
+  /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
+  ///            non-localized, presumably because they are already localized
+  /// @return transformation matrix U that converts C to localized LCAOs
+  template <typename EigMat>
+  EigMat operator()(EigMat &C, const EigMat &ao_x, const EigMat &ao_y,
+                    const EigMat &ao_z, size_t ncols_of_C_to_skip = 0) const {
+    EigMat C_loc =
+        C.block(0, ncols_of_C_to_skip, C.rows(), C.cols() - ncols_of_C_to_skip);
+
+    EigMat U_loc = EigMat::Identity(C_loc.cols(), C_loc.cols());
+    jacobi_sweeps(C_loc, U_loc, {ao_x, ao_y, ao_z});
+
+    EigMat U = EigMat::Identity(C.cols(), C.cols());
+    U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, U_loc.rows(),
+            U_loc.cols()) = U_loc;
+
+    return U;
   }
 };
 

@@ -32,6 +32,7 @@ struct ArchiveStoreImpl;
 template <class Archive, typename Data>
 struct ArchiveLoadImpl;
 
+
 template <class Archive, typename _T>
 struct ArchiveStoreImpl<Archive, mpqc::RowMatrix<_T>> {
   static inline void store(const Archive& ar, const mpqc::RowMatrix<_T>& t) {
@@ -46,6 +47,24 @@ struct ArchiveLoadImpl<Archive, mpqc::RowMatrix<_T>> {
     typename mpqc::RowMatrix<_T>::Index nrows(0), ncols(0);
     ar& nrows& ncols;
     t.resize(nrows, ncols);
+    if (t.size()) ar& madness::archive::wrap(t.data(), t.size());
+  }
+};
+
+template <class Archive, typename _T>
+struct ArchiveStoreImpl<Archive, mpqc::EigenVector <_T>> {
+  static inline void store(const Archive& ar, const mpqc::EigenVector<_T>& t) {
+    ar& t.size();
+    if (t.size()) ar& madness::archive::wrap(t.data(), t.size());
+  }
+};
+
+template <class Archive, typename _T>
+struct ArchiveLoadImpl<Archive, mpqc::EigenVector<_T>> {
+  static inline void load(const Archive& ar, mpqc::EigenVector<_T>& t) {
+    typename mpqc::EigenVector<_T>::Index size(0);
+    ar& size;
+    t.resize(size);
     if (t.size()) ar& madness::archive::wrap(t.data(), t.size());
   }
 };

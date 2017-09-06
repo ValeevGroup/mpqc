@@ -1,4 +1,4 @@
-// CCSDT-3 by Varun Rishi, August 2017.
+// CCSDT-3 by Varun Rishi, September 2017.
 // Adapted from CCSD code written by Chong Peng on 7/1/15.
 //
 
@@ -291,6 +291,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
     TArray g_iajb = this->get_iajb();
+    TArray g_iabj = this->get_iabj();
     TArray g_iabc = this->get_iabc();
     TArray g_aibc = this->get_aibc();
     TArray g_ijak = this->get_ijak();
@@ -469,8 +470,9 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
 
          // equations below are from spin-adapted CCSDT-3 implementation
          // by Noga and Bartlett, JCP, 86, 7041 (1987)
-         // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1
-         // Extension to CCSDT-3 requires contribution of T1T2, T2T2 and T2T1T1 terms to t3/r3 residual
+         // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1a
+         // Extension from CCSDT-1b to CCSDT-2 requires addition of T2T2 terms to t3/r3 residual
+         // Extension from CCSDT-2 to CCSDT-3 requires contribution of T1T2, T1T1T2, T1T2T2 and T1T1T1T2 terms to t3/r3 residual
          // Let's construct intermediates as done by Noga and Bartlett
 
           TArray Chi_dabi;
@@ -484,7 +486,6 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           TArray g_aijk;
           TArray g_aijb;
           TArray g_aibj;
-          TArray g_iabj;
           TArray g_iajk;
           TArray g_ijab_AS;
           TArray f_int_me;
@@ -492,10 +493,9 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           // some two-electron integrals
           g_aijk("a,i,j,k")  = g_ijka("i,j,k,a") ;
           g_iajk("i,a,j,k")  = g_ijka("i,j,k,a") ;
-          g_aijb("a,i,j,b")  = g_iajb("i,a,j,b") ;
+          g_aijb("a,i,j,b")  = g_iabj("i,a,b,j") ;
           g_aibj("a,i,b,j")  = g_iajb("i,a,j,b") ;
-          g_iabj("i,a,b,j")  = g_iajb("i,a,j,b") ;
-          g_ijab_AS("i,j,a,b") = (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a"));
+          g_ijab_AS("i,j,a,b") = (2 * g_ijab("i,j,a,b")) - g_ijab("i,j,b,a");
 
           // first define the intermediates
 
@@ -523,13 +523,13 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           // Now the super-intermediates,
 
 
-          Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * tau("a,b,n,m"))
+          Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * t2("a,b,n,m"))
                                + ((2 * f_aibc("b,m,e,f")- f_aibc("b,m,f,e")) * t2("a,f,i,m")
                                - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i"))
                                - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
                                + g_abcd("a,b,f,e") * t1("f,i") ;
 
-          Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * tau("e,f,i,j"))
+          Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * t2("e,f,i,j"))
                                + ((2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
                                - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n"))
                                + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
@@ -541,7 +541,69 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           t3("a,b,c,i,j,k") = Chi_dabi("b,a,e,i") * t2("c,e,k,j") -
                               Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
 
-          //permute
+
+          // To Debug, Avoid lumping everything into intermediates,
+          // Extension from CCSDT-2 to CCSDT-3 is attempted below by adding explicit terms
+
+          /*
+          // T1T2 terms
+          TArray t3_sd ;
+
+          t3_sd("a,b,c,i,j,k")  =  (g_abcd("a,b,f,e") * t1("f,i")) * t2("c,e,k,j")
+                                 + (g_ijkl("i,j,n,m") * t1("a,n")) * t2("b,c,m,k")
+                                 - (g_aijb("a,m,i,e") * t1("b,m")) * t2("c,e,k,j")
+                                 - (g_aibj("b,m,e,i") * t1("a,m")) * t2("c,e,k,j")
+                                 - (g_iabj("i,e,a,m") * t1("e,j")) * t2("b,c,m,k")
+                                 - (g_iajb("j,e,m,a") * t1("e,i")) * t2("b,c,m,k") ;
+
+
+
+          // T1T1T2 terms
+          TArray t3_ssd ;
+
+          t3_ssd("a,b,c,i,j,k") =   (( g_aijk("e,i,m,n") * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
+                                  - (( g_aibc("a,m,e,f") * t1("e,i")) * t1("f,j")) * t2("b,c,m,k")
+                                  + (( g_iajk("i,e,n,m") * t1("a,n")) * t1("e,j")) * t2("b,c,m,k")
+                                  + (( g_ijka("j,n,m,e") * t1("a,n")) * t1("e,i")) * t2("b,c,m,k")
+                                  - (( g_aibc("a,m,f,e") * t1("f,i")) * t1("b,m")) * t2("c,e,k,j")
+                                  - (( g_aibc("b,m,e,f") * t1("f,i")) * t1("a,m")) * t2("c,e,k,j");
+
+
+
+          // T1T1T1T2 terms
+          TArray t3_sssd ;
+
+          t3_sssd("a,b,c,i,j,k") =   (((g_ijab("m,n,e,f") * t1("f,i")) * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
+                                   + (((g_ijab("n,m,e,f") * t1("a,n")) * t1("e,i")) * t1("f,j")) * t2("b,c,m,k") ;
+
+
+
+
+          // T1T2T2 terms
+          TArray t3_sdd ;
+
+          t3_sdd("a,b,c,i,j,k") =   (( g_ijab("m,n,e,f") * t1("f,i")) * t2("a,b,n,m")) * t2("c,e,k,j")
+                                  - ((2 * ( g_ijab("n,m,e,f") * t1("b,n")))* t2("a,f,i,m")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,f,e") * t1("b,n")) * t2("a,f,i,m")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,e,f") * t1("b,n")) * t2("a,f,m,i")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,f,e") * t1("a,n")) * t2("b,f,m,i")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,e,f") * t1("a,n")) * t2("e,f,i,j")) * t2("b,c,m,k")
+                                  - ((2 * (g_ijab("m,n,e,f") * t1("f,j"))) * t2("a,e,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("n,m,e,f") * t1("f,j")) * t2("a,e,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("m,n,e,f") * t1("f,j")) * t2("e,a,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("m,n,e,f") * t1("f,i")) * t2("e,a,j,n")) * t2("b,c,m,k")
+                                  - ((g_ijab_AS("m,n,e,f") * t1("f,n")) * t2("a,e,i,j")) * t2("b,c,m,k") ;                                                                   ;
+
+
+
+        // Add the contributions to t3
+          t3("a,b,c,i,j,k")   +=   t3_sd("a,b,c,i,j,k") ;
+          t3("a,b,c,i,j,k")   +=   t3_ssd("a,b,c,i,j,k") ;
+          t3("a,b,c,i,j,k")   +=   t3_sssd("a,b,c,i,j,k");
+          t3("a,b,c,i,j,k")   +=   t3_sdd("a,b,c,i,j,k") ;*/
+
+
+         //permute
           t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
                               t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
                               t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
@@ -1756,6 +1818,12 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
   virtual const TArray get_iajb() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i a|G|j b>" + postfix);
+  }
+
+  /// <ia|bj>
+  virtual const TArray get_iabj() {
+    std::wstring postfix = df_ ? L"[df]" : L"";
+    return this->lcao_factory().compute(L"<i a|G|b j>" + postfix);
   }
 
   /// <ij|ka>

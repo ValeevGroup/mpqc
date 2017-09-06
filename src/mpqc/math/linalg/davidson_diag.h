@@ -123,12 +123,12 @@ class DavidsonDiag {
    * @param pred preconditioner
    *
    * @return B updated guess vector
-   * @return updated eigen values
+   * @return updated eigen values, norm of residual
    */
   // clang-format on
   template <typename Pred>
-  EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
-                                        const Pred& pred) {
+  std::tuple<EigenVector<element_type>, EigenVector<element_type>> extrapolate(
+      value_type& HB, value_type& B, const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of new vector
     const auto n_b = B.size();
@@ -268,12 +268,11 @@ class DavidsonDiag {
     }
     eigen_vector_.push_back(X);
 
-
-
     // compute residual
     // R(i) = (H - e(i)I)*B(i)*C(i)
     //      = (HB(i)*C(i) - e(i)*X(i)
     value_type residual(n_roots_);
+    EigenVector<element_type> norms(n_roots_);
     for (std::size_t i = 0; i < n_roots_; ++i) {
       residual[i] = copy(X[i]);
       const auto e_i = -E[i];
@@ -281,6 +280,7 @@ class DavidsonDiag {
       for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
+      norms[i] = norm2(residual[i])/size(residual[i]);
     }
 
     // precondition
@@ -343,7 +343,7 @@ class DavidsonDiag {
     }
 #endif
 
-    return E.segment(0, n_roots_);
+    return std::make_tuple(E.segment(0, n_roots_), norms);
   }
 
  private:

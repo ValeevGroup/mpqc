@@ -204,7 +204,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
       C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
   std::size_t iter = 0;
   std::size_t n_roots = C_.size();
-  double norm_r = 1.0;
 
   /// make preconditioner
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
@@ -236,7 +235,8 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
                                    __LINE__);
           }
         }
-        EigenVector<double> eig_new = dvd.extrapolate(HC, C_, *pred);
+        EigenVector<numeric_type> eig_new, norms;
+        std::tie(eig_new, norms) = dvd.extrapolate(HC, C_, *pred);
       }
 
       C_ = dvd.eigen_vector().back();
@@ -276,9 +276,11 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
                                 vector_threshold_);
 
-  EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
+  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
 
-  while (iter < max_iter && norm_r > convergence) {
+  double norm_e = 1.0;
+  double norm_r = 1.0;
+  while (iter < max_iter && (norm_r > convergence || norm_e > convergence) ) {
     auto time0 = mpqc::fenced_now(world);
     std::size_t dim = C_.size();
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
@@ -297,13 +299,15 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     }
 
     auto time1 = mpqc::fenced_now(world);
-    EigenVector<double> eig_new = dvd.extrapolate(HC, C_, *pred);
+    EigenVector<numeric_type> eig_new, norms;
+    std::tie(eig_new, norms) = dvd.extrapolate(HC, C_, *pred);
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    norm_r = delta_e.norm();
+    norm_e = delta_e.norm() / n_roots;
+    norm_r = norms.norm() / n_roots;
 
-    util::print_excitation_energy_iteration(iter, delta_e, eig_new,
+    util::print_excitation_energy_iteration(iter, delta_e, norms ,eig_new,
                                             mpqc::duration_in_s(time0, time1),
                                             mpqc::duration_in_s(time1, time2));
 

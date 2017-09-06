@@ -301,15 +301,15 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
     }
 
     time1 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
+    EigenVector<numeric_type> eig_new, norms;
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
 
     time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm();
+    auto norm = delta_e.norm()/n_roots;
 
-    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
                                             mpqc::duration_in_s(time1, time2));
 
@@ -405,15 +405,15 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
     }
 
     auto time1 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
+    EigenVector<numeric_type> eig_new, norms;
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
 
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm();
+    auto norm = delta_e.norm()/n_roots;
 
-    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
                                             mpqc::duration_in_s(time1, time2));
 
@@ -516,15 +516,15 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
     }
 
     auto time1 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> eig_new = dvd.extrapolate(HB, guess, pred);
+    EigenVector<numeric_type> eig_new, norms;
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
 
     auto time2 = mpqc::fenced_now(world);
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
-    auto norm = delta_e.norm();
+    auto norm = delta_e.norm()/n_roots;
 
-    util::print_excitation_energy_iteration(i, delta_e, eig_new,
+    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
                                             mpqc::duration_in_s(time1, time2));
 

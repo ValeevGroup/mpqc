@@ -80,7 +80,6 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   EigenVector<element_type> eps_v_;
 };
 
-
 /// PNO preconditioner for EE-EOM-CCSD
 template <typename Array>
 class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
@@ -89,18 +88,21 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
-  PNOEEPred(const std::vector<Array> &T2, const Vector &eps_o,
+  PNOEEPred(const Array &T2, std::size_t n_roots, const Vector &eps_o,
             const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical)
-      : eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical) {
-    auto &world = T2[0].world();
+      : tpno_(tpno),
+        tosv_(tosv),
+        pno_canonical_(pno_canonical),
+        n_roots_(n_roots),
+        eps_o_(eps_o) {
+    auto &world = T2.world();
 
-    n_roots_ = T2.size();
     // initialize reblock array
     {
-      std::size_t n_unocc = T2[0].trange().dim(0).extent();
-      std::size_t n_occ = T2[0].trange().dim(2).extent();
+      std::size_t n_unocc = T2.trange().dim(0).extent();
+      std::size_t n_occ = T2.trange().dim(2).extent();
 
-      const TA::TiledRange1 occ_row = T2[0].trange().dim(3);
+      const TA::TiledRange1 occ_row = T2.trange().dim(3);
 
       std::vector<std::size_t> occ_blocks;
       for (std::size_t i = 0; i <= n_occ; ++i) {
@@ -112,7 +114,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<Array>>(world, occ_row, occ_col, 1.0);
 
-      const TA::TiledRange1 uocc_row = T2[0].trange().dim(0);
+      const TA::TiledRange1 uocc_row = T2.trange().dim(0);
 
       std::vector<std::size_t> uocc_blocks{0, n_unocc};
       const TA::TiledRange1 uocc_col =
@@ -123,7 +125,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
     }
 
     // use first excited state amplitude to initialize PNOs
-    auto T_reblock = detail::reblock_t2(T2[0], reblock_i_, reblock_a_);
+    auto T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
     detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
                           osvs_, F_osv_diag_, pno_canonical_);
   }

@@ -30,7 +30,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
    * |---------|------|--------|-------------|
    * | max_vector | int | 8 | max number of guess vector per root |
    * | vector_threshold | double | 10 * precision of property | threshold for the norm of new guess vector |
-   * | eom_pno | string | none | if to simulate pno, avaialble \c default \c state-specific |
+   * | eom_pno | string | none | if to simulate pno, avaialble \c default, which uses first excited state to generate PNOs \c state-average, use average of states to generate PNOs |
    * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
    * | eom_tpno | double | 0 | PNO truncation threshold for eom |
    * | eom_tosv | double | 0 | OSV truncation threshold for eom |
@@ -44,7 +44,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     vector_threshold_ = kv.value<double>("vector_threshold", 0);
     eom_pno_ = kv.value<std::string>("eom_pno", "");
     if (!eom_pno_.empty() &&
-        (eom_pno_ != "default" && eom_pno_ != "state-specific")) {
+        (eom_pno_ != "default" && eom_pno_ != "state-average")) {
       throw InputError("Invalid PNO Simulation method in EOM-CCSD! \n",
                        __FILE__, __LINE__, "eom_pno");
     }

@@ -241,26 +241,33 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 
       C_ = dvd.eigen_vector().back();
 
-      TA_ASSERT(C_.size() == n_roots);
-
       std::vector<TArray> guess(C_.size());
       for (std::size_t i = 0; i < guess.size(); i++) {
         guess[i] = C_[i].t2;
-
-//                std::cout << guess[i] << std::endl;
+        //                std::cout << guess[i] << std::endl;
       }
 
-      if(eom_pno_=="default"){
+      if (eom_pno_ == "default") {
+        pred = std::make_shared<cc::PNOEEPred<TArray>>(
+            guess[0], n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
+            eom_pno_canonical_);
+      } else if (eom_pno_ == "state-average") {
+        TArray pno_guess;
+        pno_guess("a,b,i,j") = guess[0]("a,b,i,j");
+
+        for (std::size_t i = 1; i < n_roots; i++) {
+          pno_guess("a,b,i,j") += guess[i]("a,b,i,j");
+        }
+
+        pno_guess("a,b,i,j") =
+            numeric_type(1.0 / n_roots) * pno_guess("a,b,i,j");
 
         pred = std::make_shared<cc::PNOEEPred<TArray>>(
-            guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
-      }
-      else if(eom_pno_=="state-specific"){
-
-        pred = std::make_shared<cc::StateSpecificPNOEEPred<TArray>>(
-            guess, eps_o, FAB_eigen, eom_tpno_, eom_tosv_, eom_pno_canonical_);
-      }else{
-
+            pno_guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
+            eom_pno_canonical_);
+      } else {
+        throw InputError("Invalid option!", __FILE__, __LINE__, "eom_pno",
+                         eom_pno_.c_str());
       }
     }
   }
@@ -319,7 +326,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 template <typename Tile, typename Policy>
 void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
-  auto ccsd_precision = 0.1*target_precision;
+  auto ccsd_precision = 0.1 * target_precision;
   if (vector_threshold_ == 0) {
     vector_threshold_ = 10 * target_precision;
   }
@@ -349,9 +356,8 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     ExEnv::out0() << indent
                   << "Threshold for norm of new vector: " << vector_threshold_
                   << "\n";
-    ExEnv::out0() << indent
-                  << "PNO Simulation: " << (eom_pno_.empty() ? "none" : eom_pno_)
-                  << "\n";
+    ExEnv::out0() << indent << "PNO Simulation: "
+                  << (eom_pno_.empty() ? "none" : eom_pno_) << "\n";
     if (!eom_pno_.empty()) {
       ExEnv::out0() << indent << "PNO Canonical: "
                     << (eom_pno_canonical_ ? "true" : "false") << "\n";

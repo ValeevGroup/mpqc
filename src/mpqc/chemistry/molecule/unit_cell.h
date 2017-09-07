@@ -19,51 +19,25 @@ class UnitCell : public Molecule {
  public:
   UnitCell() = default;
 
-  /** \brief KeyVal constructor for Periodic System
+  // clang-format off
+  /** \brief KeyVal constructor for a unit cell of an orthohombic, tetragonal, or cubic lattice.
    *
-   *  <table border="1">
-   *
-   *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
-   *
-   *  <tr><td><tt>type</tt><td>int<td>0<td> the type of this molecule. If type
-   *    is UnitCell, periodic calculations can be performed
-   *
-   *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
-   *    the name of a XYZ file, from which the nuclear coordinates will be
-   *    read (the XYZ format is described
-   *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
-   *
-   *  <tr><td><tt>charge</tt><td>int<td>0<td> the charge of unitcell
-   *
-   *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
-   *    will be resorted based on their distance from the center of mass.
-   *
-   *  <tr><td><tt>sort_origin</tt><td>boolean<td>false<td>If true, sort atoms
-   *    from origin {0.0, 0.0, 0.0}
-   *
-   *  <tr><td><tt>n_cluster</tt><td>int<td>0<td> If nonzero, cluster moleucle by
-   *    n_cluster
-   *
-   *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use
-   *    attach_hydrogen_kmeans when clustering
-   *
-   *  <tr><td><tt>lattice_param</tt><td>int<td>0<td> This gives lattice
-   *    parameters (orthohombic, tetragonal, cubic lattice only)
-   *
-   *  </table>
+   * \param kv The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c lattice_param | int | 0 | This gives unit cell dimensions. |
    *
    *  example input:
-   *  \code
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "unitcell": {
-   *    "type": "UnitCell",
-   *    "charge": 0,
    *    "file_name": "water.xyz",
    *    "sort_input": true,
    *    "lattice_param": [0.0, 0.0, 2.672359],
    *  }
-   *  \endcode
-   *
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   UnitCell(const KeyVal &kv);
 
   /*!

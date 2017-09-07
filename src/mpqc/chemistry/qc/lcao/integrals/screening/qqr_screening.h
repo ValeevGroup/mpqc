@@ -57,7 +57,7 @@ struct init_qqr_screen {
     template <typename E>
     QQR operator()(madness::World &world, ShrPool<E> &engs,
                    Basis const &bs, double threshold = 1e-10) {
-        auto schwarz_screen = init_schwarz_screen{threshold}(world, engs, bs);
+        auto schwarz_screen = create_schwarz_screener(world, engs, {bs, bs, bs, bs}, threshold);
         return QQR(std::move(schwarz_screen), bs.flattened_shells());
     }
 };

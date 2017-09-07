@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # set to the release id of the required library
-export RELID=2.4.0-beta.2
+export RELID=2.4.0-beta.3
 
 # Exit on error
 set -ev
@@ -11,8 +11,8 @@ case "$CXX" in
         export CXX=/usr/bin/g++-$GCC_VERSION
         ;;
     clang++)
-        export CC=/usr/bin/clang-3.8
-        export CXX=/usr/bin/clang++-3.8
+        export CC=/usr/bin/clang-5.0
+        export CXX=/usr/bin/clang++-5.0
         ;;
     *)
         echo "Unknown C++ compiler:"

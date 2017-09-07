@@ -194,6 +194,9 @@ class AtomicBasis : public Basis, public utility::Observer {
   std::shared_ptr<const Factory> factory() const;
   std::shared_ptr<const Molecule> molecule() const;
 
+  /// @return the string identifier for this basis, i.e. factory()->name()
+  const std::string& name() const { return factory()->name(); }
+
  private:
   std::shared_ptr<Factory> factory_;
   std::shared_ptr<Molecule> molecule_;

@@ -1,0 +1,463 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 53ec6da8731d90e43a26f3e6e39dc396847e32f9
+
+  Machine:          Darwin-16.7.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Thu Sep  7 21:22:46 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "h2.xyz",
+        "sort_input": "false",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "3.7"
+        ]
+    },
+    "basis": {
+        "name": "6-31g",
+        "molecule": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz-ri",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "shell_pair_threshold": "1.0e-12",
+        "rmax": [
+            "0",
+            "0",
+            "5"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "5"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "5"
+        ]
+    },
+    "wfn": {
+        "type": "FourCenterJ-CADFK-zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "true",
+        "max_condition_num": "1e8",
+        "force_shape_threshold": "1.0e-8",
+        "k_points": [
+            "1",
+            "1",
+            "11"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9"
+    }
+}
+
+  Using fundamental constants system 2006CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 6-31g
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+DF Basis = cc-pvdz-ri
+( tiles = [ 0, 1 ), elements = [ 0, 28 ) )
+Min and Max block size: 28 28
+Average: 28
+
+  Precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 5]
+	Rj_max (range of Coulomb operation): [0 0 5]
+	Rd_max (Range of density representation): [0 0 5]
+
+Molecule info:
+	C.O.M: 0 0 0
+	Mass: 2.01565006446
+
+Elements:
+	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}}}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 6.99198669167688]
+
+zRHF computational parameters:
+  # of k points in each direction: [ 1  1 11]
+
+Computing Two Center Integral for Periodic System: < κ |T| λ >
+ Size: 8.34465026855469e-07 GB Time: 0.005317428 s
+
+Computing Two Center Integral for Periodic System: < κ |V| λ >
+ Time: 0.007658558 s
+
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 8.34465026855469e-07 GB Time: 0.000819146 s
+
+Building Fock Matrix from SOAD Guess ...
+
+Integrals per node:
+  Ints for J on node(0): 1496
+  Ints for K on node(0): 698
+
+Total PeriodicFourCenterFock builder time: 0.003844288
+
+SOAD Time: 0.02694437 s
+
+	overlap condition number = 21.408998240172 at k = 0
+	overlap condition number = 24.0238265678439 at k = 1
+	overlap condition number = 29.3128371845344 at k = 2
+	overlap condition number = 36.9307258152039 at k = 3
+	overlap condition number = 44.7900793554734 at k = 4
+	overlap condition number = 48.3750714301713 at k = 5
+	overlap condition number = 44.7900793554734 at k = 6
+	overlap condition number = 36.9307258152041 at k = 7
+	overlap condition number = 29.3128371845344 at k = 8
+	overlap condition number = 24.0238265678439 at k = 9
+	overlap condition number = 21.408998240172 at k = 10
+
+force shape threshold = 1e-08
+
+User specified RJ_max = 0 0 5
+Updated RJ_max = 0 0 2
+
+CADF-K init time decomposition:
+	update RJ_max:       0.001668956 s
+	C(X, μ_0, ρ_Rj):     0.013945975 s
+	M(X, Y):             0.007287062 s
+	direct ERI3:         0.002242149 s
+	misc:                0.004566982 s
+
+Init FourCenter-J time: 0.021466454 s
+
+Init CADF-K time:       0.031297073 s
+
+Periodic RHF Init Time: 0.112188655 s
+
+Nuclear Repulsion Energy: 2.03463240259795
+
+Iteration: 0
+
+Integrals per node:
+  Ints for J on node(0): 45408
+
+Total PeriodicFourCenterFock builder time: 0.035629515
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.004288295 s
+	F = 2 * E_ket - C M:      0.023184492 s
+	  Eval E_ket(Y, μ_0, ρ):  0.009095341 s
+	  Contract C M:           0.01400987 s
+	Permute F and Q_ket:      0.001227937 s
+	K = F Q_ket:              0.004593774 s
+
+Total K builder time:     0.034749601 s
+
+zRHF Energy: -3.16106220822395
+Total Energy: -1.126429805626
+Delta(E): -3.16106220822395
+RMS(D): 5.20566087916696e-05
+Fock Build Time: 0.074974518 s
+Transform Fock (Real->Recip) Time: 0.000791047 s
+Density Time: 0.005140951 s
+Iteration Time: 0.081567734 s
+
+Iteration: 1
+
+Integrals per node:
+  Ints for J on node(0): 45188
+
+Total PeriodicFourCenterFock builder time: 0.039577597
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.008612514 s
+	F = 2 * E_ket - C M:      0.023404526 s
+	  Eval E_ket(Y, μ_0, ρ):  0.020122061 s
+	  Contract C M:           0.00325933 s
+	Permute F and Q_ket:      0.00078496 s
+	K = F Q_ket:              0.004796518 s
+
+Total K builder time:     0.038542181 s
+
+zRHF Energy: -3.16122243886051
+Total Energy: -1.12659003626256
+Delta(E): -0.000160230636554459
+RMS(D): 8.3918967808317e-06
+Fock Build Time: 0.078805134 s
+Transform Fock (Real->Recip) Time: 0.000776553 s
+Density Time: 0.008320379 s
+Iteration Time: 0.088863337 s
+
+Iteration: 2
+
+Integrals per node:
+  Ints for J on node(0): 45188
+
+Total PeriodicFourCenterFock builder time: 0.054746075
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.003922484 s
+	F = 2 * E_ket - C M:      0.024551731 s
+	  Eval E_ket(Y, μ_0, ρ):  0.021867167 s
+	  Contract C M:           0.002662347 s
+	Permute F and Q_ket:      0.010802819 s
+	K = F Q_ket:              0.009898883 s
+
+Total K builder time:     0.053078643 s
+
+zRHF Energy: -3.16122616057391
+Total Energy: -1.12659375797596
+Delta(E): -3.72171340368155e-06
+RMS(D): 1.41893879278962e-06
+Fock Build Time: 0.109521618 s
+Transform Fock (Real->Recip) Time: 0.002427025 s
+Density Time: 0.008552807 s
+Iteration Time: 0.123419174 s
+
+Iteration: 3
+
+Integrals per node:
+  Ints for J on node(0): 45188
+
+Total PeriodicFourCenterFock builder time: 0.064029562
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.005306312 s
+	F = 2 * E_ket - C M:      0.009371159 s
+	  Eval E_ket(Y, μ_0, ρ):  0.00634859 s
+	  Contract C M:           0.003001883 s
+	Permute F and Q_ket:      0.010943673 s
+	K = F Q_ket:              0.004527542 s
+
+Total K builder time:     0.031250567 s
+
+zRHF Energy: -3.16122625115145
+Total Energy: -1.1265938485535
+Delta(E): -9.05775423554189e-08
+RMS(D): 2.51142659133345e-07
+Fock Build Time: 0.095933053 s
+Transform Fock (Real->Recip) Time: 0.000762292 s
+Density Time: 0.008862132 s
+Iteration Time: 0.106297005 s
+
+Iteration: 4
+
+Integrals per node:
+  Ints for J on node(0): 45188
+
+Total PeriodicFourCenterFock builder time: 0.028681439
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.003596944 s
+	F = 2 * E_ket - C M:      0.009865975 s
+	  Eval E_ket(Y, μ_0, ρ):  0.00677135 s
+	  Contract C M:           0.003073798 s
+	Permute F and Q_ket:      0.000703402 s
+	K = F Q_ket:              0.004513468 s
+
+Total K builder time:     0.019579491 s
+
+zRHF Energy: -3.16122625348131
+Total Energy: -1.12659385088336
+Delta(E): -2.32985719605949e-09
+RMS(D): 4.61305842152192e-08
+Fock Build Time: 0.04888353 s
+Transform Fock (Real->Recip) Time: 0.000787051 s
+Density Time: 0.00764707 s
+Iteration Time: 0.057997415 s
+
+Iteration: 5
+
+Integrals per node:
+  Ints for J on node(0): 45188
+
+Total PeriodicFourCenterFock builder time: 0.035000635
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 0.001344 GB
+    Sparse   = 0.000211456 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0002688 GB
+    Sparse   = 0.00012544 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q_ket(Y, ν_R, ρ_Rj) :     0.003336744 s
+	F = 2 * E_ket - C M:      0.012234092 s
+	  Eval E_ket(Y, μ_0, ρ):  0.006547335 s
+	  Contract C M:           0.005664943 s
+	Permute F and Q_ket:      0.000718221 s
+	K = F Q_ket:              0.004599871 s
+
+Total K builder time:     0.021770562 s
+
+zRHF Energy: -3.16122625354532
+Total Energy: -1.12659385094737
+Delta(E): -6.40105746185782e-11
+RMS(D): 8.69189817109689e-09
+Fock Build Time: 0.057338506 s
+Transform Fock (Real->Recip) Time: 0.001134488 s
+Density Time: 0.007898032 s
+Iteration Time: 0.067850817 s
+
+Periodic Hartree-Fock iterations have converged!
+
+Total Periodic Hartree-Fock energy = -1.12659385094737
+
+ k | orbital energies
+0 | -0.59082  0.16447  0.85241   1.3296
+1 | -0.59309  0.18443  0.83579   1.3596
+2 | -0.59682  0.22344   0.8054   1.4185
+3 | -0.60077   0.2773  0.76603   1.5003
+4 | -0.6037 0.33189 0.72717   1.583
+5 | -0.60478  0.35724  0.70899   1.6205
+6 | -0.6037 0.33189 0.72717   1.583
+7 | -0.60077   0.2773  0.76603   1.5003
+8 | -0.59682  0.22344   0.8054   1.4185
+9 | -0.59309  0.18443  0.83579   1.3596
+10 | -0.59082  0.16447  0.85241   1.3296
+
+Time(s):
+	Init:                               0.112
+	Coulomb term:                       0.000
+	Exchange term:                      0.000
+	Real->Recip trans:                  0.007
+	Diag + Density:                     0.046
+	Total:                              0.526
+
+  Output KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "h2.xyz",
+        "sort_input": "false",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "3.7"
+        ]
+    },
+    "basis": {
+        "name": "6-31g",
+        "molecule": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz-ri",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "shell_pair_threshold": "1.0e-12",
+        "rmax": [
+            "0",
+            "0",
+            "5"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "5"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "5"
+        ]
+    },
+    "wfn": {
+        "type": "FourCenterJ-CADFK-zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "true",
+        "max_condition_num": "1e8",
+        "force_shape_threshold": "1.0e-8",
+        "k_points": [
+            "1",
+            "1",
+            "11"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9",
+        "value": {
+            "value": "-1.1265938509473723"
+        }
+    }
+}
+

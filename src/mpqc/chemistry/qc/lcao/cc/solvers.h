@@ -1649,7 +1649,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   Factory<T, DT>& factory_;
   std::string pno_method_;     //!< the PNO construction method
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
-  bool update_pno_;              //!< whether or not to update PNOs with each CC iter
+  bool update_pno_;             //!< whether or not to update PNOs with each CC iter
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible
                                //! tiling PNO code
   double tpno_;                //!< the PNO truncation threshold

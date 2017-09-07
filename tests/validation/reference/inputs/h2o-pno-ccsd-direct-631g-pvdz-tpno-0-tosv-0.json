@@ -5,11 +5,12 @@
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
-    "n_cluster": 1
+    "n_cluster": 1,
+    "reblock" : 4
   },
   "obs": {
     "type": "Basis",
-    "name": "3-21g",
+    "name": "6-31G",
     "molecule": "$:molecule"
   },
   "dfbs": {
@@ -24,14 +25,27 @@
     "df_basis" :"$:dfbs",
     "screen": "schwarz"
   },
+  "scf":{
+    "type": "RI-RHF",
+    "wfn_world": "$:wfn_world"
+  },
   "wfn":{
-    "type": "CADF-RHF",
+    "type": "CCSD",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
-    "secadf" : true
+    "ref": "$:scf",
+    "method" : "direct_df",
+    "solver" : "pno",
+    "pno_canonical" : "true",
+    "tpno" : "0",
+    "tosv" : "0",
+    "tiling_method" : "flexible",
+    "occ_block_size" : 4,
+    "unocc_block_size" : 8
   },
   "property" : {
     "type" : "Energy",
+    "precision" : "1e-11",
     "wfn" : "$:wfn"
   }
 }

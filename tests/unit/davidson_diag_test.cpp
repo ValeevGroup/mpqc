@@ -56,21 +56,23 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
 
   EigenVector<double> diagonal = A.diagonal();
 
-  auto pred = [&diagonal](const double& e, Array& guess) {
+  auto pred = [&diagonal](EigenVector<double> & e, std::vector<Array>& guess) {
 
-    auto task = [&diagonal, &e](TA::TensorD& result_tile) {
-      const auto& range = result_tile.range();
-      double norm = 0.0;
-      for (const auto& i : range) {
-        const auto result = result_tile[i] / (e - diagonal[i[0]]);
-        result_tile[i] = result;
-        norm += result * result;
-      }
-      return std::sqrt(norm);
-    };
-
-    TA::foreach_inplace(guess, task);
-    guess.world().gop.fence();
+    for(std::size_t i = 0; i < guess.size(); i++){
+      auto ei = e[i];
+      auto task = [&diagonal, &ei](TA::TensorD& result_tile) {
+        const auto& range = result_tile.range();
+        double norm = 0.0;
+        for (const auto& i : range) {
+          const auto result = result_tile[i] / (ei - diagonal[i[0]]);
+          result_tile[i] = result;
+          norm += result * result;
+        }
+        return std::sqrt(norm);
+      };
+      TA::foreach_inplace(guess[i], task);
+      guess[i].world().gop.fence();
+    }
 
   };
 
@@ -150,21 +152,23 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
 
   EigenVector<double> diagonal = A.diagonal();
 
-  auto pred = [&diagonal](const double& e, Array& guess) {
+  auto pred = [&diagonal](EigenVector<double> & e, std::vector<Array>& guess) {
 
-    auto task = [&diagonal, &e](TA::TensorD& result_tile) {
-      const auto& range = result_tile.range();
-      double norm = 0.0;
-      for (const auto& i : range) {
-        const auto result = result_tile[i] / (e - diagonal[i[0]]);
-        result_tile[i] = result;
-        norm += result * result;
-      }
-      return std::sqrt(norm);
-    };
-
-    TA::foreach_inplace(guess, task);
-    guess.world().gop.fence();
+    for(std::size_t i = 0; i < guess.size(); i++){
+      auto ei = e[i];
+      auto task = [&diagonal, &ei](TA::TensorD& result_tile) {
+        const auto& range = result_tile.range();
+        double norm = 0.0;
+        for (const auto& i : range) {
+          const auto result = result_tile[i] / (ei - diagonal[i[0]]);
+          result_tile[i] = result;
+          norm += result * result;
+        }
+        return std::sqrt(norm);
+      };
+      TA::foreach_inplace(guess[i], task);
+      guess[i].world().gop.fence();
+    }
 
   };
 

@@ -169,7 +169,7 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> secadf_by_atom_correction(
     madness::World &world, gaussian::Basis const &by_cluster_obs,
     gaussian::Basis const &by_cluster_dfbs, bool aaab = false) {
-  ExEnv::out0() << indent << "Computing seCadf Correction" << std::endl;
+  ExEnv::out0() << indent << "Computing seCADF Correction" << std::endl;
   auto obs = detail::by_center_basis(by_cluster_obs);
   auto dfbs = detail::by_center_basis(by_cluster_dfbs);
 

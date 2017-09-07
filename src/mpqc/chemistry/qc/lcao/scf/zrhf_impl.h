@@ -7,10 +7,10 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {

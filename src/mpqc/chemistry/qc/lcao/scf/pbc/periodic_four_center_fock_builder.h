@@ -90,6 +90,8 @@ class PeriodicFourCenterFockBuilder
         compute_K_(compute_K),
         screen_(screen),
         screen_threshold_(screen_threshold),
+        shell_pair_threshold_(shell_pair_threshold),
+        density_threshold_(density_threshold),
         dcell_(dcell),
         R_max_(R_max),
         RJ_max_(RJ_max),
@@ -98,9 +100,7 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         bra_basis_(bra_basis),
-        ket_basis_(ket_basis),
-        shell_pair_threshold_(shell_pair_threshold),
-        density_threshold_(density_threshold) {
+        ket_basis_(ket_basis) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -111,13 +111,15 @@ class PeriodicFourCenterFockBuilder
     init();
   }
 
-  PeriodicFourCenterFockBuilder(Factory &ao_factory,
-                                bool compute_J, bool compute_K)
+  PeriodicFourCenterFockBuilder(Factory &ao_factory, bool compute_J,
+                                bool compute_K)
       : WorldObject_(ao_factory.world()),
         compute_J_(compute_J),
         compute_K_(compute_K),
         screen_(ao_factory.screen()),
         screen_threshold_(ao_factory.screen_threshold()),
+        shell_pair_threshold_(ao_factory.shell_pair_threshold()),
+        density_threshold_(ao_factory.density_threshold()),
         dcell_(ao_factory.unitcell().dcell()),
         R_max_(ao_factory.R_max()),
         RJ_max_(ao_factory.RJ_max()),
@@ -126,9 +128,7 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(ao_factory.RJ_size()),
         RD_size_(ao_factory.RD_size()),
         bra_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
-        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
-        shell_pair_threshold_(ao_factory.shell_pair_threshold()),
-        density_threshold_(ao_factory.density_threshold()) {
+        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -465,7 +465,6 @@ class PeriodicFourCenterFockBuilder
     k_engines_.reset();
 
     if (repl_pmap_D_->is_replicated() && compute_world.size() > 1) {
-
       for (const auto &local_tile : local_fock_tiles_) {
         const auto ij = local_tile.first;
         const auto proc01 = dist_pmap_fock_->owner(ij);

@@ -127,6 +127,8 @@ src/mpqc/chemistry/qc/lcao/cc/ccsdt2.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt2.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt3.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt3.h
+src/mpqc/chemistry/qc/lcao/cc/ccsdt4.cpp
+src/mpqc/chemistry/qc/lcao/cc/ccsdt4.h
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd.cpp
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd.h
 src/mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd_impl.h
@@ -490,6 +492,8 @@ tests/validation/reference/inputs/h2o-ccsdt1b_631g.json
 tests/validation/reference/inputs/h2o-ccsdt2_631g.json
 tests/validation/reference/inputs/h2o-ccsdt3_631g.json
 tests/validation/reference/inputs/h2o-ccsdt3_631g.json
+tests/validation/reference/inputs/h2o-ccsdt4_631g.json
+tests/validation/reference/inputs/h2o-ccsdt_631g.json
 tests/validation/reference/inputs/h2o-cis-apvdz.json
 tests/validation/reference/inputs/h2o-cis-apvdz.json
 tests/validation/reference/inputs/h2o-cis-apvdz.json

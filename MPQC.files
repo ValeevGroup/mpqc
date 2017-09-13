@@ -112,6 +112,8 @@ src/mpqc/chemistry/qc/lcao/cc/ccsd.h
 src/mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h
 src/mpqc/chemistry/qc/lcao/cc/ccsd_t.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsd_t.h
+src/mpqc/chemistry/qc/lcao/cc/ccsdt.cpp
+src/mpqc/chemistry/qc/lcao/cc/ccsdt.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1.h

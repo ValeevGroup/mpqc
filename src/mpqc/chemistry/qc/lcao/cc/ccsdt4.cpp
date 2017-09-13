@@ -1,4 +1,4 @@
-// CCSDT-4 by Varun Rishi, August 2017
+// CCSDT-4 by Varun Rishi, September 2017
 //
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsdt4.h"

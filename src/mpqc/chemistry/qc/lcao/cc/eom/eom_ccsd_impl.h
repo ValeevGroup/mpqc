@@ -22,6 +22,9 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   auto t1 = this->t1();
   Tau("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
 
+  Xia_ = this->lcao_factory().compute(L"( Λ |G|i a)[inv_sqr]");
+  Xab_ = this->lcao_factory().compute(L"( Λ |G|a b)[inv_sqr]");
+
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
       this->lcao_factory(), this->ao_factory(), t1, Tau, df);
 
@@ -30,24 +33,24 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
     WAbCd_ = cc::compute_cs_ccsd_W_AbCd(this->lcao_factory(), t1, Tau, df);
   }
 
+  // \cal{W}mnij
+  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), t1, Tau, df);
+
+  // \cal{W}mbij
+  WKaIj_ = cc::compute_cs_ccsd_W_KaIj(this->lcao_factory(), t1, t2, Tau, FIA_,
+                                      WKlIj_, df);
   // \cal{W}abei
   WAbCi_ = cc::compute_cs_ccsd_W_AbCi(this->lcao_factory(), this->ao_factory(),
                                       t1, t2, Tau, FIA_, WAbCd_, df);
-
-  // \cal{W}amef
-  WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), t1, df);
-
-  // \cal{W}mnij
-  WKlIj_ = cc::compute_cs_ccsd_W_KlIj(this->lcao_factory(), t1, Tau, df);
+  if (!df) {
+    // \cal{W}amef
+    WAkCd_ = cc::compute_cs_ccsd_W_AkCd(this->lcao_factory(), t1, df);
+  }
 
   // \cal{W}mbej
   WIbAj_ = cc::compute_cs_ccsd_W_IbAj(this->lcao_factory(), t1, t2, df);
 
   WIbaJ_ = cc::compute_cs_ccsd_W_IbaJ(this->lcao_factory(), t1, t2, df);
-
-  // \cal{W}mbij
-  WKaIj_ = cc::compute_cs_ccsd_W_KaIj(this->lcao_factory(), t1, t2, Tau, FIA_,
-                                      WKlIj_, df);
 
   // \cal{W}mnie
   WKlIc_ = cc::compute_cs_ccsd_W_KlIc(this->lcao_factory(), t1, df);
@@ -82,11 +85,21 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSS_HSD_C(
     C("a,c,i,k") = 2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k");
     HSS_HSD_C("a,i") +=  //   Fkc C^ac_ik
         FIA_("k,c") * C("a,c,i,k")
-        // + 1/2 Wakcd C^cd_ik
-
-        + WAkCd_("a,k,c,d") * C("c,d,i,k")
         // - 1/2 Wklic C^ac_kl
         - WKlIc_("k,l,i,c") * C("a,c,k,l");
+
+    if (this->df_) {
+
+      auto t1 = this->t1();
+      // + 1/2 Wakcd C^cd_ik
+
+      HSS_HSD_C("a,i") += Xia_("K,k,d") * C("c,d,i,k") *
+                          (Xab_("K,a,c") - t1("a,l") * Xia_("K,l,c"));
+
+    } else {
+      // + 1/2 Wakcd C^cd_ik
+      HSS_HSD_C("a,i") += WAkCd_("a,k,c,d") * C("c,d,i,k");
+    }
   }
 
   return HSS_HSD_C;
@@ -110,17 +123,29 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
         // - WkAjI C^b_k - WKbIj C^A_K
         - WKaIj_("k,b,i,j") * Cai("a,k")
 
-        // + P(ab) Wbkdc C^c_k T^ad_ij
-        // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
-        // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
-        + (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) * Cai("c,k") *
-              t2("a,d,i,j")
         // - P(ij) Wlkjc C^c_k t^ab_il
         // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
         // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
         - (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c")) * Cai("c,k") *
               t2("a,b,i,l");
 
+    if (this->df_) {
+
+
+      TArray tmp;
+      tmp("K,b,d") = Xab_("K,b,d") - t1("b,l") * Xia_("K,l,d");
+
+      HDS_HDD_C("a,b,i,j") += (2.0 * Xia_("K,k,c") * Cai("c,k") * tmp("K,b,d") -
+                               tmp("K,b,c") * Cai("c,k") * Xia_("K,k,d")) *
+                              t2("a,d,i,j");
+
+    } else {
+      // + P(ab) Wbkdc C^c_k T^ad_ij
+      // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
+      // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
+      HDS_HDD_C("a,b,i,j") += (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d")) *
+                              Cai("c,k") * t2("a,d,i,j");
+    }
     //    HDS_HDD_C("a,b,i,j") += HDS_HDD_C("b,a,j,i");
   }
 
@@ -280,7 +305,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 
   double norm_e = 1.0;
   double norm_r = 1.0;
-  while (iter < max_iter && (norm_r > convergence || norm_e > convergence) ) {
+  while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
     auto time0 = mpqc::fenced_now(world);
     std::size_t dim = C_.size();
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
@@ -305,10 +330,10 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
 
     EigenVector<numeric_type> delta_e = (eig - eig_new);
     delta_e = delta_e.cwiseAbs();
-    norm_e = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
-    norm_r = *std::max_element(norms.data(), norms.data()+norms.size());
+    norm_e = *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
+    norm_r = *std::max_element(norms.data(), norms.data() + norms.size());
 
-    util::print_excitation_energy_iteration(iter, delta_e, norms ,eig_new,
+    util::print_excitation_energy_iteration(iter, delta_e, norms, eig_new,
                                             mpqc::duration_in_s(time0, time1),
                                             mpqc::duration_in_s(time1, time2));
 

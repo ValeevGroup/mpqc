@@ -108,7 +108,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   TArray WKaIj_;
   TArray WAkCd_;
   TArray WKlIc_;
-  // TArray WKliC_;
+
+  // three center integral
+  TArray Xab_;
+  TArray Xia_;
 
   std::vector<GuessVector> C_;  // initial guess vector
 

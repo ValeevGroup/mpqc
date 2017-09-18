@@ -103,7 +103,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
 
     max_iter_ = kv.value<int>("max_iter", 30);
-    verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());
+    verbose_ = kv.value<bool>("verbose", false);
   }
 
   virtual ~CCSD() {}

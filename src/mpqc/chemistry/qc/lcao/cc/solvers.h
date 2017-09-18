@@ -32,6 +32,79 @@ inline void print_local(TiledArray::World& world,
   }
 }
 
+// squared norm of 1-body residual in OSV subspace
+template <typename T>
+struct R1SquaredNormReductionOp {
+  // typedefs
+  typedef typename TA::detail::scalar_type<T>::type result_type;
+  typedef typename T::value_type argument_type;
+  using Matrix = RowMatrix<result_type>;
+
+  R1SquaredNormReductionOp(const std::vector<Matrix>& r1_space)
+      : r1_space_(r1_space) {}
+
+  // Reduction functions
+  // Make an empty result object
+  result_type operator()() const { return 0; }
+  // Post process the result (no operation, passthrough)
+  const result_type& operator()(const result_type& result) const {
+    return result;
+  }
+  void operator()(result_type& result, const result_type& arg) const {
+    result += arg;
+  }
+  /// Reduce an argument pair
+  void operator()(result_type& result, const argument_type& arg) const {
+    const auto i = arg.range().lobound()[1];
+    const auto nuocc = arg.range().extent_data()[0];
+
+    const Eigen::MatrixXd arg_osv =
+        TA::eigen_map(arg, 1, nuocc) * r1_space_[i];
+    result += arg_osv.squaredNorm();
+  }
+
+  const std::vector<Matrix>& r1_space_;
+};  // R1SquaredNormReductionOp
+
+// squared norm of 2-body residual in PNO subspace
+template <typename T>
+struct R2SquaredNormReductionOp {
+  // typedefs
+  typedef typename TA::detail::scalar_type<T>::type result_type;
+  typedef typename T::value_type argument_type;
+  using Matrix = RowMatrix<result_type>;
+
+  R2SquaredNormReductionOp(const std::vector<Matrix>& r2_space)
+      : r2_space_(r2_space) {}
+
+  // Reduction functions
+  // Make an empty result object
+  result_type operator()() const { return 0; }
+  // Post process the result (no operation, passthrough)
+  const result_type& operator()(const result_type& result) const {
+    return result;
+  }
+  void operator()(result_type& result, const result_type& arg) const {
+    result += arg;
+  }
+  /// Reduce an argument pair
+  void operator()(result_type& result, const argument_type& arg) const {
+    const auto i = arg.range().lobound()[2];
+    const auto j = arg.range().lobound()[3];
+    const auto nuocc = arg.range().extent_data()[0];
+    const auto nocc_act = arg.range().extent_data()[2];
+
+    const auto r2_index = i * nocc_act + j;
+    const Eigen::MatrixXd arg_pno = r2_space_[r2_index].transpose() *
+                                    TA::eigen_map(arg, nuocc, nuocc) *
+                                    r2_space_[r2_index];
+    result += arg_pno.squaredNorm();
+  }
+
+  const std::vector<Matrix>& r2_space_;
+};  // R2SquaredNormReductionOp
+
+
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
     const TA::DistArray<Tile, Policy>& r2_abij,
@@ -119,7 +192,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 /**
  *
  * @param r2_abij  T2 like Array with dimention "a,b,i,j", it should blocked by
- * V in a,b and 1 in i,j
+V in a,b and 1 in i,j
  * @param F_occ_act  diagnal active occupied Fock matrix in canonical basis
  * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
@@ -135,7 +208,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
     typename Tile::numeric_type shift = 0.0) {
   auto update2 = [&F_occ_act, &F_pno_diag, &pnos, shift](Tile& result_tile,
-                                                  const Tile& arg_tile) {
+                                                         const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -225,7 +298,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
     typename Tile::numeric_type shift = 0.0) {
   auto update1 = [&F_occ_act, &F_osv_diag, &osvs, shift](Tile& result_tile,
-                                                  const Tile& arg_tile) {
+                                                         const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -439,7 +512,8 @@ TA::DistArray<Tile, Policy> reblock_t1(
 
   // Reblock T1
   TA::DistArray<Tile, Policy> result;
-  result("an,in") = (t1("a,i") * i_block("i,in") * a_block("a,an")).set_pmap(target_pmap);
+  result("an,in") =
+      (t1("a,i") * i_block("i,in") * a_block("a,an")).set_pmap(target_pmap);
   return result;
 }
 
@@ -461,49 +535,13 @@ TA::DistArray<Tile, Policy> unblock_t1(
   return result;
 }
 
-/**
- *
- * @param t2 T2 like Array with dimention "a,b,i,j", it should blocked by V in a,b and 1 in i,j
- * @param F_uocc  unoccupied block of Fock matrix
- * @param tpno  threshold for PNO truncation
- * @param tosv  threshold for OSV truncation
- * @param pnos  output, formed PNOs
- * @param F_pno_diag  output, formed diagnal of unoccuppied Fock matrix in PNO basis
- * @param osvs  output, formed OSVs
- * @param F_osv_diag output, formed diagnal of unoccuppied Fock matrix in OSV basis
- * @param pno_canonical if make PNO and OSV canonical
- */
 template <typename Tile, typename Policy>
-void construct_pno(
-    const TA::DistArray<Tile, Policy>& t2,
-    const RowMatrix<typename Tile::numeric_type>& F_uocc, double tpno,
-    double tosv, std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
-    std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
-    std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
-    std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
-    bool pno_canonical = false) {
+TA::DistArray<Tile, Policy> construct_density(
+    const TA::DistArray<Tile, Policy>& t2) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
-
-  auto& world = t2.world();
-  std::size_t nocc_act = t2.trange().dim(2).extent();
-  std::size_t nuocc = t2.trange().dim(0).extent();
-
-  // For storing PNOs and and the Fock matrix in the PNO basis
-  std::vector<int> npnos;
-  npnos.resize(nocc_act * nocc_act, 0);
-  pnos.resize(nocc_act * nocc_act);
-  F_pno_diag.resize(nocc_act * nocc_act);
-
-  // For storing OSVs (PNOs when i = j) and the Fock matrix in
-  // the OSV basis
-  std::vector<int> nosvs;
-  nosvs.resize(nocc_act, 0);
-  osvs.resize(nocc_act);
-  F_osv_diag.resize(nocc_act);
-
   /// Step (2): Transform T to D
-
   // lambda function to transform T to D; implement using a for_each
+  std::size_t nuocc = t2.trange().dim(0).extent();
   auto form_D = [nuocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
@@ -538,20 +576,65 @@ void construct_pno(
   };  // form_D
 
   auto D = TA::foreach (t2, form_D);
-  D.world().gop.fence();
+  t2.world().gop.fence();
 
-//  // Print out the pmap for D_
-//  ExEnv::out0() << "\nD_ pmap:\n";
-//  print_local(world, D.pmap());
+  return D;
+};
+
+/**
+ *
+ * @param D Density with dimension "a,b,i,j", it should blocked by V in a,b and
+ * 1 in i,j
+ * @param F_uocc  unoccupied block of Fock matrix
+ * @param tpno  threshold for PNO truncation
+ * @param tosv  threshold for OSV truncation
+ * @param pnos  output, formed PNOs
+ * @param F_pno_diag  output, formed diagnal of unoccuppied Fock matrix in PNO
+ * basis
+ * @param osvs  output, formed OSVs
+ * @param F_osv_diag output, formed diagnal of unoccuppied Fock matrix in OSV
+ * basis
+ * @param pno_canonical if make PNO and OSV canonical
+ */
+template <typename Tile, typename Policy>
+void construct_pno(
+    const TA::DistArray<Tile, Policy>& D,
+    const RowMatrix<typename Tile::numeric_type>& F_uocc, double tpno,
+    double tosv, std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
+    std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
+    std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
+    std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
+    bool pno_canonical = false) {
+  using Matrix = RowMatrix<typename Tile::numeric_type>;
+
+  auto& world = D.world();
+  std::size_t nocc_act = D.trange().dim(2).extent();
+  std::size_t nuocc = D.trange().dim(0).extent();
+
+  // For storing PNOs and and the Fock matrix in the PNO basis
+  std::vector<int> npnos;
+  npnos.resize(nocc_act * nocc_act, 0);
+  pnos.resize(nocc_act * nocc_act);
+  F_pno_diag.resize(nocc_act * nocc_act);
+
+  // For storing OSVs (PNOs when i = j) and the Fock matrix in
+  // the OSV basis
+  std::vector<int> nosvs;
+  nosvs.resize(nocc_act, 0);
+  osvs.resize(nocc_act);
+  F_osv_diag.resize(nocc_act);
+
+  //  // Print out the pmap for D_
+  //  ExEnv::out0() << "\nD_ pmap:\n";
+  //  print_local(world, D.pmap());
 
   /// Step (3): Form PNO_ij from D_ij
   // Diagonalize each D_ij matrix to get the PNOs and occupation
   // numbers
 
   // Lambda function to form osvs
-  auto form_OSV = [&D, &F_osv_diag,
-                   &F_uocc, &nosvs, tosv, nuocc, nocc_act,
-                   pno_canonical](TA::World& world){
+  auto form_OSV = [&D, &F_osv_diag, &F_uocc, &nosvs, tosv, nuocc, nocc_act,
+                   pno_canonical](TA::World& world) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -564,16 +647,15 @@ void construct_pno(
       world.gop.fence();
       if (r == world.rank()) {
         for (TiledArray::Pmap::const_iterator it = reblock_r1_pmap->begin();
-             it != reblock_r1_pmap->end(); ++it){
+             it != reblock_r1_pmap->end(); ++it) {
           local_tiles.push_back(*it);
         }
 
         for (int idx = 0; idx != local_tiles.size(); ++idx) {
           auto i = local_tiles[idx];
 
-          Tile D_ii = D.find({0,0,i,i}).get();
+          Tile D_ii = D.find({0, 0, i, i}).get();
           Matrix D_ii_mat = TA::eigen_map(D_ii, nuocc, nuocc);
-
 
           // Diagonalize D_ii_mat
           es.compute(D_ii_mat);
@@ -594,8 +676,8 @@ void construct_pno(
           nosvs[i] = nosv;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
-            throw LimitExceeded<size_t>("all osvs_list truncated", __FILE__, __LINE__, 1,
-                                        0);
+            throw LimitExceeded<size_t>("all osvs_list truncated", __FILE__,
+                                        __LINE__, 1, 0);
           }
 
           // Store truncated OSV mat in osvs_list
@@ -608,7 +690,8 @@ void construct_pno(
           // Store just the diagonal elements of F_osv_i
           F_osv_diag[i] = F_osv_i.diagonal();
 
-          /////// Transform osvs_list to canonical osvs_list if pno_canonical_ == true
+          /////// Transform osvs_list to canonical osvs_list if pno_canonical_
+          ///== true
           if (pno_canonical) {
             // Compute eigenvectors of F in OSV space
             es.compute(F_osv_i);
@@ -1181,7 +1264,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       auto K = fac.compute(L"<a b|G|i j>[df]");
       const auto ktrange = K.trange();
 
-
       /// Step (1): Convert K to T
 
       // lambda function to convert K to T; implement using a for_each
@@ -1233,7 +1315,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         return std::sqrt(norm);
       };  // form_T
 
-      auto T2 = TA::foreach(K, form_T);
+      auto T2 = TA::foreach (K, form_T);
       world.gop.fence();
       //      std::cout << "Successfully transformed K to T" << std::endl;
 
@@ -1269,11 +1351,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Reblock T2
       T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
-      detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
-                             osvs_, F_osv_diag_, pno_canonical_);
+      // compute density
+
+      T D = detail::construct_density(T_reblock);
+
+      detail::construct_pno(D, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_, osvs_,
+                            F_osv_diag_, pno_canonical_);
 
     }  // end if tiling_method_ != rigid
-
   }
 
   virtual ~PNOSolver() = default;
@@ -1319,78 +1404,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     t2 = t.t2;
   }
 
-  // squared norm of 1-body residual in OSV subspace
-  struct R1SquaredNormReductionOp {
-    // typedefs
-    typedef typename TA::detail::scalar_type<T>::type result_type;
-    typedef typename T::value_type argument_type;
-
-    R1SquaredNormReductionOp(PNOSolver<T, DT>* solver) : solver_(solver) {}
-
-    // Reduction functions
-    // Make an empty result object
-    result_type operator()() const { return 0; }
-    // Post process the result (no operation, passthrough)
-    const result_type& operator()(const result_type& result) const {
-      return result;
-    }
-    void operator()(result_type& result, const result_type& arg) const {
-      result += arg;
-    }
-    /// Reduce an argument pair
-    void operator()(result_type& result, const argument_type& arg) const {
-      const auto i = arg.range().lobound()[1];
-      const auto nuocc = arg.range().extent_data()[0];
-
-      const Eigen::MatrixXd arg_osv =
-          TA::eigen_map(arg, 1, nuocc) * solver_->osv(i);
-      result += arg_osv.squaredNorm();
-    }
-
-    PNOSolver<T, DT>* solver_;
-  };  // R1SquaredNormReductionOp
-
-  // squared norm of 2-body residual in PNO subspace
-  struct R2SquaredNormReductionOp {
-    // typedefs
-    typedef typename TA::detail::scalar_type<T>::type result_type;
-    typedef typename T::value_type argument_type;
-
-    R2SquaredNormReductionOp(PNOSolver<T, DT>* solver) : solver_(solver) {}
-
-    // Reduction functions
-    // Make an empty result object
-    result_type operator()() const { return 0; }
-    // Post process the result (no operation, passthrough)
-    const result_type& operator()(const result_type& result) const {
-      return result;
-    }
-    void operator()(result_type& result, const result_type& arg) const {
-      result += arg;
-    }
-    /// Reduce an argument pair
-    void operator()(result_type& result, const argument_type& arg) const {
-      const auto i = arg.range().lobound()[2];
-      const auto j = arg.range().lobound()[3];
-      const auto nuocc = arg.range().extent_data()[0];
-
-      const Eigen::MatrixXd arg_pno = solver_->pno(i, j).transpose() *
-                                      TA::eigen_map(arg, nuocc, nuocc) *
-                                      solver_->pno(i, j);
-      result += arg_pno.squaredNorm();
-    }
-
-    PNOSolver<T, DT>* solver_;
-  };  // R2SquaredNormReductionOp
-
  public:
   /// Overrides Solver<T,T>::error()
   virtual double error(const T& r1, const T& r2) override {
     auto r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
     auto r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
 
-    R1SquaredNormReductionOp op1(this);
-    R2SquaredNormReductionOp op2(this);
+    detail::R1SquaredNormReductionOp<T> op1(osvs_);
+    detail::R2SquaredNormReductionOp<T> op2(pnos_);
     return sqrt(r1_reblock("a,i").reduce(op1).get() +
                 r2_reblock("a,b,i,j").reduce(op2).get()) /
            (size(r1_reblock) + size(r2_reblock));

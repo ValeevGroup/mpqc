@@ -21,6 +21,11 @@ class DavidsonDiagPred {
  public:
   virtual void operator()(const EigenVector<typename D::element_type>& e,
                           std::vector<D>& guess) const = 0;
+
+  virtual typename D::element_type norm(const D& d) const {
+    return norm2(d)/size(d);
+  }
+
   virtual ~DavidsonDiagPred() = default;
 };
 
@@ -42,6 +47,7 @@ class DavidsonDiagPred {
  * - `void scale(D& y , element_type a)`
  * - `void axpy(D&y , element_tye a, const D& z)`
  * - `void zero(D& x)`
+ * - `std::size_t size(D& x)`
  *
  */
 // clang-format on
@@ -280,7 +286,7 @@ class DavidsonDiag {
       for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
-      norms[i] = norm2(residual[i])/size(residual[i]);
+      norms[i] = pred.norm(residual[i]);
     }
 
     // precondition

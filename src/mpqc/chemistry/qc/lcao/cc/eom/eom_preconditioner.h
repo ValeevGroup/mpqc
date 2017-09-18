@@ -29,9 +29,10 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
 
   ~EEPred() = default;
 
+  /// override the abstract virtual function
   virtual void operator()(
       const EigenVector<element_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const {
+      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
     std::size_t n_roots = e.size();
     TA_ASSERT(n_roots == guess.size());
     for (std::size_t i = 0; i < n_roots; i++) {
@@ -88,6 +89,8 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
+  PNOEEPred() = default;
+
   PNOEEPred(const Array &T2, std::size_t n_roots, const Vector &eps_o,
             const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical)
       : tpno_(tpno),
@@ -97,44 +100,20 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
         eps_o_(eps_o) {
     auto &world = T2.world();
 
-    // initialize reblock array
-    {
-      std::size_t n_unocc = T2.trange().dim(0).extent();
-      std::size_t n_occ = T2.trange().dim(2).extent();
-
-      const TA::TiledRange1 occ_row = T2.trange().dim(3);
-
-      std::vector<std::size_t> occ_blocks;
-      for (std::size_t i = 0; i <= n_occ; ++i) {
-        occ_blocks.push_back(i);
-      }
-      const TA::TiledRange1 occ_col =
-          TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-
-      reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<Array>>(world, occ_row, occ_col, 1.0);
-
-      const TA::TiledRange1 uocc_row = T2.trange().dim(0);
-
-      std::vector<std::size_t> uocc_blocks{0, n_unocc};
-      const TA::TiledRange1 uocc_col =
-          TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-
-      reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
-          Tile, TA::detail::policy_t<Array>>(world, uocc_row, uocc_col, 1.0);
-    }
+    init_reblock(T2);
 
     // use first excited state amplitude to initialize PNOs
     auto T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
-    detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_,
-                          osvs_, F_osv_diag_, pno_canonical_);
+    auto D = detail::construct_density(T_reblock);
+    detail::construct_pno(D, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_, osvs_,
+                          F_osv_diag_, pno_canonical_);
   }
 
   ~PNOEEPred() = default;
 
   virtual void operator()(
       const EigenVector<typename Tile::numeric_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const {
+      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
     TA_ASSERT(e.size() == guess.size());
     TA_ASSERT(e.size() == n_roots_);
 
@@ -143,6 +122,26 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       compute(e[j], guess[j]);
     }
   }
+
+  /// override the default norm function
+  virtual typename Tile::numeric_type norm(
+      const ::mpqc::cc::T1T2<Array, Array> &t1t2) const override {
+    auto r1_reblock = detail::reblock_t1(t1t2.t1, reblock_i_, reblock_a_);
+    auto r2_reblock = detail::reblock_t2(t1t2.t2, reblock_i_, reblock_a_);
+
+    detail::R1SquaredNormReductionOp<Array> op1(osvs_);
+    detail::R2SquaredNormReductionOp<Array> op2(pnos_);
+
+    return sqrt(r1_reblock("a,i").reduce(op1).get() +
+                r2_reblock("a,b,i,j").reduce(op2).get()) /
+           (size(r1_reblock) + size(r2_reblock));
+  }
+
+  /// return pno truncation threshold
+  double tpno() const { return tpno_; }
+
+  /// return osv truncation threshold
+  double tosv() const { return tosv_; }
 
   void compute(const typename Tile::numeric_type &e,
                ::mpqc::cc::T1T2<Array, Array> &guess) const {
@@ -165,23 +164,44 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
     guess.t2("a,b,i,j") = -guess.t2("a,b,i,j");
   }
 
-  /// return pno truncation threshold
-  double tpno() const { return tpno_; }
+  void init_reblock(const Array &T2) {
+    // initialize reblock array
+    std::size_t n_unocc = T2.trange().dim(0).extent();
+    std::size_t n_occ = T2.trange().dim(2).extent();
+    auto &world = T2.world();
 
-  /// return osv truncation threshold
-  double tosv() const { return tosv_; }
+    const TA::TiledRange1 occ_row = T2.trange().dim(3);
 
- private:
+    std::vector<std::size_t> occ_blocks;
+    for (std::size_t i = 0; i <= n_occ; ++i) {
+      occ_blocks.push_back(i);
+    }
+    const TA::TiledRange1 occ_col =
+        TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
+
+    reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+        Tile, TA::detail::policy_t<Array>>(world, occ_row, occ_col, 1.0);
+
+    const TA::TiledRange1 uocc_row = T2.trange().dim(0);
+
+    std::vector<std::size_t> uocc_blocks{0, n_unocc};
+    const TA::TiledRange1 uocc_col =
+        TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
+
+    reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+        Tile, TA::detail::policy_t<Array>>(world, uocc_row, uocc_col, 1.0);
+  }
+
+ protected:
   double tpno_;
   double tosv_;
   bool pno_canonical_;
   std::size_t n_roots_;
+  // diagonal of F_ij matrix
+  Vector eps_o_;
 
   Array reblock_i_;
   Array reblock_a_;
-
-  // diagonal of F_ij matrix
-  Vector eps_o_;
 
   /// pnos for excited states
   std::vector<Matrix> pnos_;
@@ -191,6 +211,54 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   std::vector<Matrix> osvs_;
   /// diagonal of F_ab in osv basis for excited states
   std::vector<Vector> F_osv_diag_;
+};
+
+/// state average PNO preconditioner for EOM-CCSD, the only difference is the
+/// constructor
+
+template <typename Array>
+class StateAveragePNOEEPred : public PNOEEPred<Array> {
+ public:
+  using typename PNOEEPred<Array>::Matrix;
+  using typename PNOEEPred<Array>::Vector;
+  StateAveragePNOEEPred() = default;
+
+  StateAveragePNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
+                        const Vector &eps_o, const Matrix &F_uocc, double tpno,
+                        double tosv, bool pno_canonical)
+      : PNOEEPred<Array>() {
+    this->tpno_ = tpno;
+    this->tosv_ = tosv;
+    this->pno_canonical_ = pno_canonical;
+    this->n_roots_ = n_roots;
+    this->eps_o_ = eps_o;
+
+    init_reblock(T2[0]);
+
+    // compute average of D
+    Array D;
+    {
+      std::vector<Array> Ds(n_roots);
+
+      for (std::size_t i = 0; i < n_roots; i++) {
+        auto T_reblock =
+            detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        Ds[i] = detail::construct_density(T_reblock);
+      }
+
+      D("a,b,i,j") = Ds[0]("a,b,i,j");
+
+      for (std::size_t i = 1; i < n_roots; i++) {
+        D("a,b,i,j") += Ds[i]("a,b,i,j");
+      }
+
+      D("a,b,i,j") = typename Array::element_type(1.0 / n_roots) * D("a,b,i,j");
+    }
+
+    detail::construct_pno(D, F_uocc, this->tpno_, this->tosv_, this->pnos_,
+                          this->F_pno_diag_, this->osvs_, this->F_osv_diag_,
+                          this->pno_canonical_);
+  }
 };
 
 /// State Specific PNO preconditioner for EOM-CCSD
@@ -245,9 +313,9 @@ class StateSpecificPNOEEPred
 
     for (std::size_t i = 0; i < n_roots_; i++) {
       auto T_reblock = detail::reblock_t2(T2[i], reblock_i_, reblock_a_);
-      detail::construct_pno(T_reblock, F_uocc, tpno_, tosv_, pnos_[i],
-                            F_pno_diag_[i], osvs_[i], F_osv_diag_[i],
-                            pno_canonical_);
+      auto D = detail::construct_density(T_reblock);
+      detail::construct_pno(D, F_uocc, tpno_, tosv_, pnos_[i], F_pno_diag_[i],
+                            osvs_[i], F_osv_diag_[i], pno_canonical_);
     }
   }
 

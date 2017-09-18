@@ -58,8 +58,7 @@ struct R1SquaredNormReductionOp {
     const auto i = arg.range().lobound()[1];
     const auto nuocc = arg.range().extent_data()[0];
 
-    const Eigen::MatrixXd arg_osv =
-        TA::eigen_map(arg, 1, nuocc) * r1_space_[i];
+    const Eigen::MatrixXd arg_osv = TA::eigen_map(arg, 1, nuocc) * r1_space_[i];
     result += arg_osv.squaredNorm();
   }
 
@@ -75,7 +74,7 @@ struct R2SquaredNormReductionOp {
   using Matrix = RowMatrix<result_type>;
 
   R2SquaredNormReductionOp(const std::vector<Matrix>& r2_space)
-      : r2_space_(r2_space) {}
+      : r2_space_(r2_space), nocc_act_(std::sqrt(r2_space.size())) {}
 
   // Reduction functions
   // Make an empty result object
@@ -92,9 +91,8 @@ struct R2SquaredNormReductionOp {
     const auto i = arg.range().lobound()[2];
     const auto j = arg.range().lobound()[3];
     const auto nuocc = arg.range().extent_data()[0];
-    const auto nocc_act = arg.range().extent_data()[2];
 
-    const auto r2_index = i * nocc_act + j;
+    const auto r2_index = i * nocc_act_ + j;
     const Eigen::MatrixXd arg_pno = r2_space_[r2_index].transpose() *
                                     TA::eigen_map(arg, nuocc, nuocc) *
                                     r2_space_[r2_index];
@@ -102,8 +100,8 @@ struct R2SquaredNormReductionOp {
   }
 
   const std::vector<Matrix>& r2_space_;
+  std::size_t nocc_act_;
 };  // R2SquaredNormReductionOp
-
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> jacobi_update_t2_abij(

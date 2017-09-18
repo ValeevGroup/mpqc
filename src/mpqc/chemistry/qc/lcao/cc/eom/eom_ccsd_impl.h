@@ -22,8 +22,10 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   auto t1 = this->t1();
   Tau("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
 
-  Xia_ = this->lcao_factory().compute(L"( Λ |G|i a)[inv_sqr]");
-  Xab_ = this->lcao_factory().compute(L"( Λ |G|a b)[inv_sqr]");
+  if(this->df_){
+    Xia_ = this->lcao_factory().compute(L"( Λ |G|i a)[inv_sqr]");
+    Xab_ = this->lcao_factory().compute(L"( Λ |G|a b)[inv_sqr]");
+  }
 
   std::tie(FAB_, FIA_, FIJ_) = cc::compute_cs_ccsd_F(
       this->lcao_factory(), this->ao_factory(), t1, Tau, df);

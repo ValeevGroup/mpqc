@@ -294,28 +294,29 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
   if (W_AbCd.is_initialized()) {
     W_AbCi("a,b,c,i") += t1("d,i") * W_AbCd("a,b,c,d");
   } else {
-
-    if(df) {
+    if (df) {
       auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
       auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
 
-//      TArray Xt;
-//      Xt("K,i,b") =
+      TA::DistArray<Tile, Policy> Xt;
+      Xt("K,b,i") = (0.5 * Xab("K,b,d") - t1("b,k") * Xia("K,k,d")) * t1("d,i");
 
-      TA_ASSERT(false);
+      W_AbCi("a,b,c,i") += Xab("K,a,c") * Xt("K,b,i") +
+                           Xab("K,b,c") * Xt("K,a,i") +
+                           t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
 
-    }else{
-
+    } else {
       W_AbCi("a,b,c,i") += -t1("d,i") * g_iabc("k,a,d,c") * t1("b,k") -
-          t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
-          t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+                           t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
+                           t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
 
       // integral direct term
       auto direct_integral = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
       auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
 
-      W_AbCi("a,b,c,i") += (t1("d,i") * Ca("s,d") * direct_integral("p,q,r,s")) *
-          Ca("r,b") * Ca("q,c") * Ca("p,a");
+      W_AbCi("a,b,c,i") +=
+          (t1("d,i") * Ca("s,d") * direct_integral("p,q,r,s")) * Ca("r,b") *
+          Ca("q,c") * Ca("p,a");
     }
   }
 

@@ -36,7 +36,7 @@
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "method" : "direct_df",
-    "occ_block_size" : 1,
+    "occ_block_size" : 4,
     "unocc_block_size" : 4
   },
   "property" : {

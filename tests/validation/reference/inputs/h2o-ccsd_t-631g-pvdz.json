@@ -36,9 +36,9 @@
     "ref": "$:scf",
     "method" : "df",
     "occ_block_size" : 4,
-    "unocc_block_size" : 8,
+    "unocc_block_size" : 4,
     "reblock_occ" : 4,
-    "reblock_unocc" : 8
+    "reblock_unocc" : 4
   },
   "property" : {
     "type" : "Energy",

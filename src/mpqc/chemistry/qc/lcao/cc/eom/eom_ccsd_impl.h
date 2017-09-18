@@ -279,18 +279,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
             guess[0], n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
       } else if (eom_pno_ == "state-average") {
-        TArray pno_guess;
-        pno_guess("a,b,i,j") = guess[0]("a,b,i,j");
 
-        for (std::size_t i = 1; i < n_roots; i++) {
-          pno_guess("a,b,i,j") += guess[i]("a,b,i,j");
-        }
-
-        pno_guess("a,b,i,j") =
-            numeric_type(1.0 / n_roots) * pno_guess("a,b,i,j");
-
-        pred = std::make_shared<cc::PNOEEPred<TArray>>(
-            pno_guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
+        pred = std::make_shared<cc::StateAveragePNOEEPred<TArray>>(
+            guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
       } else {
         throw InputError("Invalid option!", __FILE__, __LINE__, "eom_pno",

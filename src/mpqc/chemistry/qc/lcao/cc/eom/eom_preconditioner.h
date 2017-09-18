@@ -233,7 +233,7 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
     this->n_roots_ = n_roots;
     this->eps_o_ = eps_o;
 
-    init_reblock(T2[0]);
+    this->init_reblock(T2[0]);
 
     // compute average of D
     Array D;

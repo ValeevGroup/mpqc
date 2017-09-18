@@ -9,7 +9,9 @@ set(sources
         eom/eom_ccsd.cpp
         gamma_point_ccsd.h
         gamma_point_ccsd.cpp
+        laplace_transform.h
         linkage.h
+        solvers.h
         )
 
 add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc;MPQCmath_quadrature" "mpqc/chemistry/qc/lcao/cc")

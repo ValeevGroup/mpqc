@@ -518,7 +518,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
-  if (formula.oper().type() == Operator::Type::Cadf) {
+  if (formula.oper().type() == Operator::Type::CADF) {
     return compute_cadf_coeffs(formula);
   }
 

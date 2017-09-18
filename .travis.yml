@@ -32,11 +32,10 @@ matrix:
 addons:
   apt:
     sources:
-    - george-edison55-precise-backports
+    - llvm-toolchain-trusty-5.0
     - ubuntu-toolchain-r-test
     - boost-latest
     - kubuntu-backports
-    - llvm-toolchain-precise-3.8
     packages:
     - g++-4.9
     - g++-5
@@ -46,7 +45,7 @@ addons:
     - libblas-dev
     - liblapack-dev
     - libtbb-dev
-    - clang-3.8
+    - clang-5.0
     - cmake
     - cmake-data
 before_install:

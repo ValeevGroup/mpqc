@@ -3,7 +3,7 @@
 # this script builds an MPQC4 docker image
 
 # update these before rebuilding
-LIBINT_VERSION=2.3.0-beta.6
+LIBINT_VERSION=2.4.0-beta.3
 
 disable_aslr=disable_aslr.sh
 
@@ -23,7 +23,7 @@ cat > Dockerfile << END
 # to 'latest'! See
 # https://github.com/phusion/baseimage-docker/blob/master/Changelog.md
 # for a list of version numbers.
-FROM phusion/baseimage:0.9.19
+FROM phusion/baseimage:0.9.22
 
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]

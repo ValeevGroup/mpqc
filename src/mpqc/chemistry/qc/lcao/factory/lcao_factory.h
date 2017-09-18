@@ -74,8 +74,8 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
    * @param KeyVal
    *
    * KeyVal options
-   * @param accurate_time, if do fence when timing, default false
-   * @param keep_partial_transform, if use strength reduction, default false
+   * @param accurate_time if true, do fence when timing (default=false)
+   * @param keep_partial_transform if true, use strength reduction (default=false)
    *
    */
   LCAOFactory(const KeyVal& kv)

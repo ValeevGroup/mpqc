@@ -49,9 +49,9 @@ addons:
     - cmake
     - cmake-data
 before_install:
-- "./bin/build-mpich-$TRAVIS_OS_NAME.sh > build-mpich-$TRAVIS_OS_NAME.output"
-- "./bin/build-libint-$TRAVIS_OS_NAME.sh > build-libint-$TRAVIS_OS_NAME.output"
-- "./bin/build-TA-$TRAVIS_OS_NAME.sh > build-TA-$TRAVIS_OS_NAME.output"
+- "travis_wait ./bin/build-mpich-$TRAVIS_OS_NAME.sh > build-mpich-$TRAVIS_OS_NAME.output"
+- "travis_wait ./bin/build-libint-$TRAVIS_OS_NAME.sh > build-libint-$TRAVIS_OS_NAME.output"
+- "travis_wait ./bin/build-TA-$TRAVIS_OS_NAME.sh > build-TA-$TRAVIS_OS_NAME.output"
 script: "travis_wait 50 ./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
 - cat ./mpqc4_build/CMakeFiles/CMakeOutput.log

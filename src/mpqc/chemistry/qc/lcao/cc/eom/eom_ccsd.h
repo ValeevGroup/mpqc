@@ -113,8 +113,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   TArray Xab_;
   TArray Xia_;
 
-  std::vector<GuessVector> C_;  // initial guess vector
-
   // compute F and W intermediates
   void compute_FWintermediates();
 
@@ -136,8 +134,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     this->lcao_factory().registry().purge_if(remove_integral);
   }
 
-  EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter,
-                                                     double convergence);
+  EigenVector<numeric_type> eom_ccsd_davidson_solver(
+      std::vector<GuessVector> &C, std::size_t max_iter, double convergence);
 };
 
 #if TA_DEFAULT_POLICY == 0

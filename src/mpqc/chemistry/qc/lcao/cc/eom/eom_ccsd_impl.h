@@ -22,7 +22,7 @@ void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   auto t1 = this->t1();
   Tau("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
 
-  if(this->df_){
+  if (this->df_) {
     Xia_ = this->lcao_factory().compute(L"( Λ |G|i a)[inv_sqr]");
     Xab_ = this->lcao_factory().compute(L"( Λ |G|a b)[inv_sqr]");
   }
@@ -91,7 +91,6 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HSS_HSD_C(
         - WKlIc_("k,l,i,c") * C("a,c,k,l");
 
     if (this->df_) {
-
       auto t1 = this->t1();
       // + 1/2 Wakcd C^cd_ik
 
@@ -132,8 +131,6 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
               t2("a,b,i,l");
 
     if (this->df_) {
-
-
       TArray tmp;
       tmp("K,b,d") = Xab_("K,b,d") - t1("b,l") * Xia_("K,l,d");
 
@@ -225,12 +222,12 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
 
 template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
-EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
+EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::vector<GuessVector>& C,
+                                                 std::size_t max_iter,
                                                  double convergence) {
   madness::World& world =
-      C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
-  std::size_t iter = 0;
-  std::size_t n_roots = C_.size();
+      C[0].t1.is_initialized() ? C[0].t1.world() : C[0].t2.world();
+  std::size_t n_roots = C.size();
 
   /// make preconditioner
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
@@ -250,12 +247,12 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
                                     vector_threshold_);
 
       for (std::size_t i = 0; i < 2; i++) {
-        std::size_t dim = C_.size();
+        std::size_t dim = C.size();
         std::vector<GuessVector> HC(dim);
         for (std::size_t i = 0; i < dim; ++i) {
-          if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
-            HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
-            HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
+          if (C[i].t1.is_initialized() && C[i].t2.is_initialized()) {
+            HC[i].t1 = compute_HSS_HSD_C(C[i].t1, C[i].t2);
+            HC[i].t2 = compute_HDS_HDD_C(C[i].t1, C[i].t2);
 
           } else {
             throw ProgrammingError("Guess Vector not initialized", __FILE__,
@@ -263,14 +260,14 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
           }
         }
         EigenVector<numeric_type> eig_new, norms;
-        std::tie(eig_new, norms) = dvd.extrapolate(HC, C_, *pred);
+        std::tie(eig_new, norms) = dvd.extrapolate(HC, C, pred.get());
       }
 
-      C_ = dvd.eigen_vector().back();
+      C = dvd.eigen_vector();
 
-      std::vector<TArray> guess(C_.size());
+      std::vector<TArray> guess(C.size());
       for (std::size_t i = 0; i < guess.size(); i++) {
-        guess[i] = C_[i].t2;
+        guess[i] = C[i].t2;
         //                std::cout << guess[i] << std::endl;
       }
 
@@ -279,7 +276,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
             guess[0], n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
       } else if (eom_pno_ == "state-average") {
-
         pred = std::make_shared<cc::StateAveragePNOEEPred<TArray>>(
             guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
@@ -294,21 +290,15 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
   DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
                                 vector_threshold_);
 
-  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-
-  double norm_e = 1.0;
-  double norm_r = 1.0;
-  while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
-    auto time0 = mpqc::fenced_now(world);
-    std::size_t dim = C_.size();
-    //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
+  auto op = [this](const std::vector<GuessVector>& vec) {
+    std::size_t dim = vec.size();
 
     // compute product of H with guess vector
     std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
-      if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
-        HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
-        HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
+      if (vec[i].t1.is_initialized() && vec[i].t2.is_initialized()) {
+        HC[i].t1 = compute_HSS_HSD_C(vec[i].t1, vec[i].t2);
+        HC[i].t2 = compute_HDS_HDD_C(vec[i].t1, vec[i].t2);
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,
@@ -316,29 +306,10 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
       }
     }
 
-    auto time1 = mpqc::fenced_now(world);
-    EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HC, C_, *pred);
-    auto time2 = mpqc::fenced_now(world);
+    return HC;
+  };
 
-    EigenVector<numeric_type> delta_e = (eig - eig_new);
-    delta_e = delta_e.cwiseAbs();
-    norm_e = *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
-    norm_r = *std::max_element(norms.data(), norms.data() + norms.size());
-
-    util::print_excitation_energy_iteration(iter, delta_e, norms, eig_new,
-                                            mpqc::duration_in_s(time0, time1),
-                                            mpqc::duration_in_s(time1, time2));
-
-    eig = eig_new;
-    iter++;
-
-  }  // end of while loop
-
-  if (iter == max_iter) {
-    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
-                          __FILE__, __LINE__, max_iter, "EOM-CCSD");
-  }
+  auto eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
 
   ExEnv::out0() << "\n";
   util::print_excitation_energy(eig, false);
@@ -405,16 +376,16 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     this->init();
 
-    C_ = std::vector<GuessVector>(n_roots);
+    std::vector<GuessVector> C(n_roots);
     auto t2 = this->t2();
     for (std::size_t i = 0; i < n_roots; i++) {
-      C_[i].t1("a,i") = guess[i]("i,a");
-      C_[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
-      C_[i].t2.fill(0.0);
+      C[i].t1("a,i") = guess[i]("i,a");
+      C[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
+      C[i].t2.fill(0.0);
     }
 
     auto max_iter = this->max_iter_;
-    auto result = eom_ccsd_davidson_solver(max_iter, target_precision);
+    auto result = eom_ccsd_davidson_solver(C, max_iter, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(

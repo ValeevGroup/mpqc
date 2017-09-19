@@ -302,7 +302,7 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
 
     time1 = mpqc::fenced_now(world);
     EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
 
     time2 = mpqc::fenced_now(world);
 
@@ -330,7 +330,7 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   }
 
   // get the latest eigen vector
-  auto &eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector();
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
 
@@ -407,7 +407,7 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
 
     auto time1 = mpqc::fenced_now(world);
     EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
 
     auto time2 = mpqc::fenced_now(world);
 
@@ -435,7 +435,7 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   }
 
   // get the latest eigen vector
-  auto &eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector();
 
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
@@ -519,7 +519,7 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
 
     auto time1 = mpqc::fenced_now(world);
     EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, pred);
+    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
 
     auto time2 = mpqc::fenced_now(world);
 
@@ -547,7 +547,7 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
   }
 
   // get the latest eigen vector
-  auto &eigen_vector = dvd.eigen_vector().back();
+  auto &eigen_vector = dvd.eigen_vector();
 
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());

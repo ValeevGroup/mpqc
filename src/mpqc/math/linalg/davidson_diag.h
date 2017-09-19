@@ -13,6 +13,8 @@
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/misc/print.h"
+#include "mpqc/util/misc/time.h"
 
 namespace mpqc {
 
@@ -23,7 +25,7 @@ class DavidsonDiagPred {
                           std::vector<D>& guess) const = 0;
 
   virtual typename D::element_type norm(const D& d) const {
-    return norm2(d)/size(d);
+    return norm2(d) / size(d);
   }
 
   virtual ~DavidsonDiagPred() = default;
@@ -47,7 +49,8 @@ class DavidsonDiagPred {
  * - `void scale(D& y , element_type a)`
  * - `void axpy(D&y , element_tye a, const D& z)`
  * - `void zero(D& x)`
- * - `std::size_t size(D& x)`
+ * - `std::size_t size(const D& x)`
+ * - `element_type norm2(const D& x)`
  *
  */
 // clang-format on
@@ -114,27 +117,82 @@ class DavidsonDiag {
     subspace_.resize(0, 0);
   }
 
-  /// @return all stored eigen vector in Davidson
-  std::deque<value_type, std::allocator<value_type>>& eigen_vector() {
-    return eigen_vector_;
-  }
+
+  /**
+   *
+   * @tparam Operator  operator that computes the product of H*B
+   *
+   * @param guess initial guess vector
+   * @param op    op(B) should compute HB
+   * @param pred  preconditioner, which inherit from DavidsonDiagPred
+   * @param convergence   convergence threshold
+   * @param max_iter  max number of iteration allowd
+   * @return
+   */
+  template <typename Operator>
+  EigenVector<element_type> solve(value_type& guess, const Operator& op,
+                                  const DavidsonDiagPred<D>* const pred,
+                                  double convergence, std::size_t max_iter) {
+    double norm_e = 1.0;
+    double norm_r = 1.0;
+    std::size_t iter = 0;
+    auto& world = TA::get_default_world();
+
+    EigenVector<element_type> eig = EigenVector<element_type>::Zero(n_roots_);
+
+    while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
+      auto time0 = mpqc::fenced_now(world);
+
+      std::size_t dim = guess.size();
+      //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
+
+      // compute product of H with guess vector
+      value_type HC = op(guess);
+
+      auto time1 = mpqc::fenced_now(world);
+      EigenVector<element_type> eig_new, norms;
+      std::tie(eig_new, norms) = extrapolate(HC, guess, pred);
+      auto time2 = mpqc::fenced_now(world);
+
+      EigenVector<element_type> delta_e = (eig - eig_new);
+      delta_e = delta_e.cwiseAbs();
+      norm_e =
+          *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
+      norm_r = *std::max_element(norms.data(), norms.data() + norms.size());
+
+      util::print_excitation_energy_iteration(
+          iter, delta_e, norms, eig_new, mpqc::duration_in_s(time0, time1),
+          mpqc::duration_in_s(time1, time2));
+
+      eig = eig_new;
+      iter++;
+
+    }  // end of while loop
+
+    if (iter == max_iter) {
+      throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
+                            __FILE__, __LINE__, max_iter, "DavidsonDiag");
+    }
+
+    return eig;
+  };
+
+  /// @return return current eigen vector in Davidson
+  virtual value_type& eigen_vector() { return eigen_vector_.back(); }
 
   // clang-format off
   /**
    *
-   * @tparam Pred preconditioner object, which has void Pred(const std::vector<element_type> & e, std::vector<D>& residual) to update residual
-   *
    * @param HB product with A and guess vector
    * @param B  guess vector
-   * @param pred preconditioner
+   * @param pred preconditioner, which inherit from DavidsonDiagPred
    *
    * @return B updated guess vector
    * @return updated eigen values, norm of residual
    */
   // clang-format on
-  template <typename Pred>
   std::tuple<EigenVector<element_type>, EigenVector<element_type>> extrapolate(
-      value_type& HB, value_type& B, const Pred& pred) {
+      value_type& HB, value_type& B, const DavidsonDiagPred<D>* const pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of new vector
     const auto n_b = B.size();
@@ -286,7 +344,7 @@ class DavidsonDiag {
       for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
-      norms[i] = pred.norm(residual[i]);
+      norms[i] = pred->norm(residual[i]);
     }
 
     // precondition
@@ -294,7 +352,7 @@ class DavidsonDiag {
     // usually it is D(i) = (e(i) - H_D)^-1 R(i)
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
-    pred(E, residual);
+    pred->operator()(E, residual);
 
     // subspace collapse
     // restart with new vector and most recent eigen vector

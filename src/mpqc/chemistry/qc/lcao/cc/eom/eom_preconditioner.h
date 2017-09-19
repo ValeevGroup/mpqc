@@ -98,8 +98,6 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
         pno_canonical_(pno_canonical),
         n_roots_(n_roots),
         eps_o_(eps_o) {
-    auto &world = T2.world();
-
     init_reblock(T2);
 
     // use first excited state amplitude to initialize PNOs

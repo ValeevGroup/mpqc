@@ -50,7 +50,7 @@ addons:
     - cmake-data
 before_install:
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh > build-mpich-$TRAVIS_OS_NAME.output"
-- "travis_wait 20 ./bin/build-libint-$TRAVIS_OS_NAME.sh > build-libint-$TRAVIS_OS_NAME.output"
+- "./bin/build-libint-$TRAVIS_OS_NAME.sh"
 - "./bin/build-TA-$TRAVIS_OS_NAME.sh > build-TA-$TRAVIS_OS_NAME.output"
 script: "travis_wait 50 ./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:

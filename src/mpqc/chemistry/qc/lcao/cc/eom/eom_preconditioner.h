@@ -113,10 +113,11 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       const EigenVector<typename Tile::numeric_type> &e,
       std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
     TA_ASSERT(e.size() == guess.size());
-    TA_ASSERT(e.size() == n_roots_);
+//    TA_ASSERT(e.size() == n_roots_);
 
-    // precondition for each root
-    for (std::size_t j = 0; j < n_roots_; ++j) {
+    // precondition
+    const auto n = guess.size();
+    for (std::size_t j = 0; j < n; ++j) {
       compute(e[j], guess[j]);
     }
   }

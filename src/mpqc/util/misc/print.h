@@ -19,15 +19,15 @@ namespace util {
 
 // print progress
 void print_progress(std::size_t lowprogress, std::size_t upprogress,
-                    std::vector<std::size_t>& progress_points);
+                    std::vector<std::size_t> &progress_points);
 
 // print excitation energy at each iteration
 template <typename T>
-inline void print_excitation_energy_iteration(std::size_t iter,
-                                              const EigenVector<T>& delta_e,
-                                              const EigenVector<T>& error,
-                                              const EigenVector<T>& eig,
-                                              double time1, double time2) {
+inline void print_davidson_energy_iteration(std::size_t iter,
+                                            const EigenVector<T> &delta_e,
+                                            const EigenVector<T> &error,
+                                            const EigenVector<T> &eig,
+                                            double time1, double time2) {
   ExEnv::out0() << mpqc::printf("%4s %3i \t %s %10.1f \t %s %10.1f\n",
                                 "iter=", iter, "total time/s=", time1 + time2,
                                 "davidson time/s=", time2);
@@ -43,10 +43,25 @@ inline void print_excitation_energy_iteration(std::size_t iter,
   ExEnv::out0() << "\n";
 }
 
+// print excitation energy at each iteration
+template <typename T>
+inline void print_single_state_davidson_energy_iteration(
+    std::size_t iter, const T &delta_e, const T &error, const T &eig,
+    double time1, double time2) {
+  if (iter == 0) {
+    ExEnv::out0() << mpqc::printf(
+        "%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter", "deltaE",
+        "residual", "energy", "total time/s", "davidson time/s");
+  }
+  ExEnv::out0() << mpqc::printf(
+      "%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
+      delta_e, error, eig, time1, time2);
+}
+
 /// print excitation energy with different unit
 template <typename T>
-inline void print_excitation_energy(const EigenVector<T>& eig, bool triplets) {
-  const auto& unit_factory = UnitFactory::get_default();
+inline void print_excitation_energy(const EigenVector<T> &eig, bool triplets) {
+  const auto &unit_factory = UnitFactory::get_default();
   const auto Hartree_to_eV = unit_factory->make_unit("eV").from_atomic_units();
   const auto Hartree_to_wavenumber =
       unit_factory->make_unit("energy_wavenumber[cm]").from_atomic_units();
@@ -66,7 +81,7 @@ inline void print_excitation_energy(const EigenVector<T>& eig, bool triplets) {
   }
   ExEnv::out0() << "\n";
 }
-}  // namespace util
+}  // namespace  util
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_UTIL_MISC_PRINT_H_

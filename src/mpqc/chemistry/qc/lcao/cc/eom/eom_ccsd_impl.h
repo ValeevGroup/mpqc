@@ -5,6 +5,7 @@
  *      Author: jinmei
  */
 
+#include <mpqc/math/external/eigen/eigen.h>
 namespace mpqc {
 namespace lcao {
 
@@ -222,12 +223,20 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
 
 template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
-EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::vector<GuessVector>& C,
-                                                 std::size_t max_iter,
-                                                 double convergence) {
-  madness::World& world =
-      C[0].t1.is_initialized() ? C[0].t1.world() : C[0].t2.world();
-  std::size_t n_roots = C.size();
+EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
+    const std::vector<TArray>& cis_vector,
+    const std::vector<numeric_type>& cis_eigs, std::size_t max_iter,
+    double convergence) {
+
+  std::size_t n_roots = cis_vector.size();
+
+  std::vector<GuessVector> C(n_roots);
+  auto t2 = this->t2();
+  for (std::size_t i = 0; i < n_roots; i++) {
+    C[i].t1("a,i") = cis_vector[i]("i,a");
+    C[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
+    C[i].t2.fill(0.0);
+  }
 
   /// make preconditioner
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
@@ -286,10 +295,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::vector<GuessVector>& C,
     }
   }
 
-  /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
-                                vector_threshold_);
-
   auto op = [this](const std::vector<GuessVector>& vec) {
     std::size_t dim = vec.size();
 
@@ -309,7 +314,27 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::vector<GuessVector>& C,
     return HC;
   };
 
-  auto eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
+  EigenVector<numeric_type> eig;
+  if (davidson_solver_ == "multi-state") {
+    /// make davidson object
+    DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
+                                  vector_threshold_);
+    eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
+  }
+  // single-state
+  else {
+
+    // choose the shift according to the following paper
+
+    /// Helmich, B. and Hättig, C. (2013) The Journal of Chemical Physics.
+    /// 139(8), p. 84114. doi: 10.1063/1.4819071.
+    double shift = 1.5 * cis_eigs[n_roots - 1];
+
+    /// make davidson object
+    SingleStateDavidsonDiag<GuessVector> dvd(n_roots, shift, false, 2,
+                                             max_vector_, vector_threshold_);
+    eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
+  }
 
   ExEnv::out0() << "\n";
   util::print_excitation_energy(eig, false);
@@ -350,8 +375,10 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     ExEnv::out0() << indent
                   << "Threshold for norm of new vector: " << vector_threshold_
                   << "\n";
+    ExEnv::out0() << indent << "Davidson Solver: " << davidson_solver_ << "\n";
     ExEnv::out0() << indent << "PNO Simulation: "
                   << (eom_pno_.empty() ? "none" : eom_pno_) << "\n";
+
     if (!eom_pno_.empty()) {
       ExEnv::out0() << indent << "PNO Canonical: "
                     << (eom_pno_canonical_ ? "true" : "false") << "\n";
@@ -362,30 +389,30 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     // initialize guest
     ExEnv::out0() << indent << "\nInitialize Guess Vector From CIS \n";
 
-    std::vector<TArray> guess;
+    std::vector<TArray> cis_vector;
+    std::vector<numeric_type> cis_eig;
     {
       // do not use cis direct method, not efficient
       KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
       std::string cis_method = (this->df_ ? "df" : "standard");
       kv_nonconst.assign("method", cis_method);
+
+      // create CIS class and evaluate
       auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
       ::mpqc::evaluate(*ex_energy, cis);
-      guess = cis->eigen_vector();
+
+      cis_vector = cis->eigen_vector();
+      cis_eig = cis->eigen_value();
+
+      // change the method back
       kv_nonconst.assign("method", this->method_);
     }
 
     this->init();
 
-    std::vector<GuessVector> C(n_roots);
-    auto t2 = this->t2();
-    for (std::size_t i = 0; i < n_roots; i++) {
-      C[i].t1("a,i") = guess[i]("i,a");
-      C[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
-      C[i].t2.fill(0.0);
-    }
-
     auto max_iter = this->max_iter_;
-    auto result = eom_ccsd_davidson_solver(C, max_iter, target_precision);
+    auto result = eom_ccsd_davidson_solver(cis_vector, cis_eig, max_iter,
+                                           target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(

@@ -142,9 +142,6 @@ class DavidsonDiag {
     while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
       auto time0 = mpqc::fenced_now(world);
 
-      std::size_t dim = guess.size();
-      //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
-
       // compute product of H with guess vector
       value_type HC = op(guess);
 
@@ -159,9 +156,9 @@ class DavidsonDiag {
           *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
       norm_r = *std::max_element(norms.data(), norms.data() + norms.size());
 
-      util::print_excitation_energy_iteration(
-          iter, delta_e, norms, eig_new, mpqc::duration_in_s(time0, time1),
-          mpqc::duration_in_s(time1, time2));
+      util::print_davidson_energy_iteration(iter, delta_e, norms, eig_new,
+                                            mpqc::duration_in_s(time0, time1),
+                                            mpqc::duration_in_s(time1, time2));
 
       eig = eig_new;
       iter++;
@@ -197,6 +194,8 @@ class DavidsonDiag {
     const auto n_b = B.size();
     // size of original subspace
     const auto n_s = subspace_.cols();
+
+    deflation(HB, B);
 
     B_.insert(B_.end(), B.begin(), B.end());
     B.clear();
@@ -239,8 +238,6 @@ class DavidsonDiag {
 
     //    std::cout << "G: " << std::endl;
     //    std::cout << G << std::endl;
-
-    deflation(subspace_);
 
     // do eigen solve locally
     result_type E(n_roots_);
@@ -412,8 +409,10 @@ class DavidsonDiag {
   }
 
  private:
-  virtual void deflation(RowMatrix<element_type>& A) const {
-    // do nothing
+
+  /// this is a interface for SingleStateDavidsonDiag class
+  virtual void deflation(value_type& HB, const value_type& B) const {
+    // do nothing here
   }
 
  protected:
@@ -440,7 +439,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
                           unsigned int max_n_guess = 4,
                           double vector_threshold = 1.0e-5)
       : DavidsonDiag<D>(n_roots, symmetric, n_guess, max_n_guess,
-                     vector_threshold),
+                        vector_threshold),
         total_roots_(n_roots),
         shift_(shift) {}
 
@@ -469,7 +468,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
     TA_ASSERT(guess.size() == total_roots_);
 
     for (std::size_t i = 0; i < total_roots_; i++) {
-      ExEnv::out0() << "Start solved root: " << i << "\n";
+      ExEnv::out0() << "Start solving root " << i + 1 << "\n";
       std::vector<D> guess_i = {guess[i]};
 
       double norm_e = 1.0;
@@ -491,13 +490,16 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
         std::tie(eig_new, norms) = this->extrapolate(HC, guess_i, pred);
         auto time2 = mpqc::fenced_now(world);
 
+        TA_ASSERT(eig_new.size() == 1);
+        TA_ASSERT(norms.size() == 1);
+
         EigenVector<element_type> delta_e = (eig - eig_new);
         delta_e = delta_e.cwiseAbs();
         norm_e = delta_e[0];
         norm_r = norms[0];
 
-        util::print_excitation_energy_iteration(
-            iter, delta_e, norms, eig_new, mpqc::duration_in_s(time0, time1),
+        util::print_single_state_davidson_energy_iteration(
+            iter, norm_e, norm_r, eig_new[0], mpqc::duration_in_s(time0, time1),
             mpqc::duration_in_s(time1, time2));
 
         eig = eig_new;
@@ -516,12 +518,14 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
       reset();
 
       total_eig[i] = eig[0];
-      ExEnv::out0() << "\n";
-      ExEnv::out0() << "Solved root: " << i << " value:" << eig[0] << "\n";
+      ExEnv::out0() << "Solved root " << i + 1 << " : " << eig[0] << "\n\n";
     }
+
+    return total_eig;
   }
 
  private:
+
   void reset() {
     this->eigen_vector_.clear();
     this->HB_.clear();
@@ -529,19 +533,34 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
     this->subspace_.resize(0, 0);
   }
 
-  void deflation(RowMatrix<element_type>& A) const override {
-//    std::size_t n = converged_eigen_vector_.size();
+  void deflation(value_type& HB, const value_type& B) const override {
 
-//    element_type shift = 0.0;
+    // size of new vector
+    const auto n_b = B.size();
+    const auto n = converged_eigen_vector_.size();
 
-//    for (std::size_t i = 0; i < n; i++) {
-//      shift +=
-//          dot_product(converged_eigen_vector_[i], converged_eigen_vector_[i]);
-//    }
+    RowMatrix<element_type> QB = RowMatrix<element_type>::Zero(n, n_b);
 
-//    std::cout << "shift: " << shift << "\n";
+    for (std::size_t i = 0; i < n; i++){
+      for (std::size_t j = 0; j < n_b; j++){
 
-//    A = A.array() + shift_ * shift;
+        QB(i,j) = dot_product(converged_eigen_vector_[i], B[j]);
+
+      }
+    }
+
+    for(std::size_t i = 0; i < n_b; i++){
+      D tmp = copy(HB[i]);
+      zero(tmp);
+
+      for (std::size_t j = 0; j < n; j++){
+        axpy(tmp, QB(j,i),converged_eigen_vector_[j]);
+      }
+
+      axpy(HB[i], shift_, tmp);
+
+    }
+
   }
 
   std::size_t total_roots_;

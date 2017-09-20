@@ -118,12 +118,21 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
 
   ~CIS() = default;
 
-  std::vector<TArray> eigen_vector() const {
+  const std::vector<TArray>& eigen_vector() const {
     if (eigen_vector_.empty()) {
       throw ProgrammingError("Eigenvector in CIS is not initialized!", __FILE__,
                              __LINE__);
     } else {
       return eigen_vector_;
+    }
+  }
+
+  const std::vector<numeric_type> eigen_value() const {
+    if (eigen_value_.empty()) {
+      throw ProgrammingError("Eigenvalue in CIS is not initialized!", __FILE__,
+                             __LINE__);
+    } else {
+      return eigen_value_;
     }
   }
 
@@ -170,6 +179,8 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   std::shared_ptr<Wavefunction> ref_wfn_;
   /// eigen vector
   std::vector<TA::DistArray<Tile, Policy>> eigen_vector_;
+  /// eigen value
+  std::vector<numeric_type> eigen_value_;
   /// diagonal of f_ij
   EigenVector<numeric_type> eps_o_;
   /// diagonal of f_ab
@@ -217,6 +228,7 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
     }
 
     this->computed_ = true;
+    eigen_value_ = result;
     this->set_value(ex_energy, result);
 
     auto time1 = mpqc::fenced_now(world);
@@ -310,9 +322,9 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
     delta_e = delta_e.cwiseAbs();
     auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
-    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
-                                            mpqc::duration_in_s(time0, time1),
-                                            mpqc::duration_in_s(time1, time2));
+    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
+                                          mpqc::duration_in_s(time0, time1),
+                                          mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -415,9 +427,9 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
     delta_e = delta_e.cwiseAbs();
     auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
-    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
-                                            mpqc::duration_in_s(time0, time1),
-                                            mpqc::duration_in_s(time1, time2));
+    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
+                                          mpqc::duration_in_s(time0, time1),
+                                          mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;
@@ -527,9 +539,9 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
     delta_e = delta_e.cwiseAbs();
     auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
 
-    util::print_excitation_energy_iteration(i, delta_e, norms, eig_new,
-                                            mpqc::duration_in_s(time0, time1),
-                                            mpqc::duration_in_s(time1, time2));
+    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
+                                          mpqc::duration_in_s(time0, time1),
+                                          mpqc::duration_in_s(time1, time2));
 
     if (norm < converge) {
       break;

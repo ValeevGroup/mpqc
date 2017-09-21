@@ -97,7 +97,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
     auto l1 = mpqc::fenced_now(world);
 
     auto obs_ntiles = C_occ_ao.trange().tiles_range().extent()[0];
-    scf::clustered_coeffs(r_xyz_ints_, C_occ_ao, obs_ntiles);
+//    scf::clustered_coeffs(r_xyz_ints_, C_occ_ao, obs_ntiles);
     auto c1 = mpqc::fenced_now(world);
     localization_times_.push_back(mpqc::duration_in_s(l0, l1));
     clustering_times_.push_back(mpqc::duration_in_s(l1, c1));

@@ -466,13 +466,14 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       //Add T3 contribution to T1 _VR
       {
       // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
-
+      // Commenting this part and building the r3 residual later
+         /*
          // equations below are from spin-adapted CCSDT-1 implementation
          // by Noga and Bartlett, JCP (1987)
          // by Scuseria and Schaefer  (1988)
          // Eq. 9 in Scuseria and Schaefer, CPL 146, 23 (1988)
           t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
-                             g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
+                              g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
 
           //permute
           t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
@@ -480,7 +481,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
                               t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
 
          //divide by energy denominator
-         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen); */
 
 
         TArray g_jkbc_AS;
@@ -693,35 +694,43 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
 
-      // Initialize t3 amplitudes  _VR
+      // compute the r3 residual
+      {
+      // equations below are from spin-adapted CCSDT-1 implementation
+      // by Noga and Bartlett, JCP (1987)
+      // by Scuseria and Schaefer  (1988)
+      // Eq. 9 in Scuseria and Schaefer, CPL 146, 23 (1988)
 
-      // compute t3
 
-      // compute the residual r3
-      TArray t3_temp;
+        TArray r3_1;
+        TArray r3_2;
 
-      r3("a,b,c,i,j,k") = f_ab("a,e") * t3("e,b,c,i,j,k") -
-                          f_ij("i,l") * t3("a,b,c,l,j,k");
-      //permute P((ia,jb),kc)
-      r3("a,b,c,i,j,k") = r3("a,b,c,i,j,k") + r3("b,a,c,j,i,k") +
-                          r3("c,b,a,k,j,i");
+        r3_1("a,b,c,i,j,k")  =   f_ab("a,e") * t3("e,b,c,i,j,k")
+                               - f_ij("i,l") * t3("a,b,c,l,j,k");
 
-      /*double norm_r3 = r3("a,b,c,i,j,k").norm();
-      ExEnv::out0() << "R3 amplitudes at the beginning of t3 part" << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;*/
-      // T3
 
-      t3_temp("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                                t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
+       // permute [(i,a) with (j,b) and (i,a) with (k,c)]
 
-      //permute
-      t3_temp("a,b,c,i,j,k") = t3_temp("a,b,c,i,j,k") + t3_temp("a,c,b,i,k,j") +
-                               t3_temp("c,a,b,k,i,j") + t3_temp("c,b,a,k,j,i") +
-                               t3_temp("b,c,a,j,k,i") + t3_temp("b,a,c,j,i,k");
+        r3_1("a,b,c,i,j,k") = r3_1("a,b,c,i,j,k") + r3_1("b,a,c,j,i,k") + r3_1("c,b,a,k,j,i") ;
 
-      // add the computed t3
-      r3("a,b,c,i,j,k") += t3_temp("a,b,c,i,j,k");
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+
+       //  the T1 and T2 dependent terms in the t3/r3 equation
+
+        r3_2("a,b,c,i,j,k") =    g_dabi("b,a,e,i") * t2("c,e,k,j")
+                               - g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
+
+       //permute
+         r3_2("a,b,c,i,j,k") = r3_2("a,b,c,i,j,k") + r3_2("a,c,b,i,k,j") +
+                               r3_2("c,a,b,k,i,j") + r3_2("c,b,a,k,j,i") +
+                               r3_2("b,c,a,j,k,i") + r3_2("b,a,c,j,i,k");
+
+
+     // Add to the r3 residual
+
+        r3("a,b,c,i,j,k")  = r3_1("a,b,c,i,j,k") ;
+        r3("a,b,c,i,j,k") += r3_2("a,b,c,i,j,k") ;
+
+        ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
       double norm_r1 = r1("a,i").norm();
       double norm_r2 = r2("a,b,i,j").norm();
       double norm_r3 = r3("a,b,c,i,j,k").norm();
@@ -741,7 +750,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
       ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
 
-
+      }
        // end of triples part  _VR
       double norm_t1 = t1("a,i").norm();
       double norm_t2 = t2("a,b,i,j").norm();

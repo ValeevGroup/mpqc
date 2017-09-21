@@ -474,7 +474,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
          // Extension from CCSDT-1b to CCSDT-2 requires addition of T2T2 terms to t3/r3 residual
          // Extension from CCSDT-2 to CCSDT-3 requires contribution of T1T2, T1T1T2, T1T2T2 and T1T1T1T2 terms to t3/r3 residual
          // Let's construct intermediates as done by Noga and Bartlett
-
+          /*
           TArray Chi_dabi;
           TArray Chi_cjkl;
           TArray f_aijk;
@@ -539,7 +539,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           // calculate t3
 
           t3("a,b,c,i,j,k") = Chi_dabi("b,a,e,i") * t2("c,e,k,j") -
-                              Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
+                              Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ; */
 
 
           // To Debug, Avoid lumping everything into intermediates,
@@ -600,17 +600,17 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
           t3("a,b,c,i,j,k")   +=   t3_sd("a,b,c,i,j,k") ;
           t3("a,b,c,i,j,k")   +=   t3_ssd("a,b,c,i,j,k") ;
           t3("a,b,c,i,j,k")   +=   t3_sssd("a,b,c,i,j,k");
-          t3("a,b,c,i,j,k")   +=   t3_sdd("a,b,c,i,j,k") ;*/
+          t3("a,b,c,i,j,k")   +=   t3_sdd("a,b,c,i,j,k") ;
 
 
          //permute
           t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
                               t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
+                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k"); */
 
 
          //divide by energy denominator
-         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
+         //t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
 
 
         TArray g_jkbc_AS;
@@ -844,33 +844,111 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
       }
 
       // Initialize t3 amplitudes  _VR
+      {
+          // equations below are from spin-adapted CCSDT-3 implementation
+          // by Noga and Bartlett, JCP, 86, 7041 (1987)
+          // Some typographical errors were corrected in the erratum to the paper
+          // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1a
+          // Extension from CCSDT-1b to CCSDT-2 requires addition of T2T2 terms to t3/r3 residual
+          // Extension from CCSDT-2 to CCSDT-3 requires contribution of T1T2, T1T1T2, T1T2T2 and T1T1T1T2 terms to t3/r3 residual
+          // Let's construct intermediates as done by Noga and Bartlett
 
-      // compute t3
+           TArray Chi_dabi;
+           TArray Chi_cjkl;
+           TArray f_aijk;
+           TArray f_aibc;
+           TArray f_aijb;
+           TArray f_aibj;
+           TArray f_iabj;
+           TArray f_iajb;
+           TArray g_aijk;
+           TArray g_aijb;
+           TArray g_aibj;
+           TArray g_iajk;
+           TArray g_ijab_AS;
+           TArray f_int_me;
+
+           // some two-electron integrals
+           g_aijk("a,i,j,k")  = g_ijka("i,j,k,a") ;
+           g_iajk("i,a,j,k")  = g_ijka("i,j,k,a") ;
+           g_aijb("a,i,j,b")  = g_iabj("i,a,b,j") ;
+           g_aibj("a,i,b,j")  = g_iajb("i,a,j,b") ;
+           g_ijab_AS("i,j,a,b") = (2 * g_ijab("i,j,a,b")) - g_ijab("i,j,b,a");
+
+           // first define the intermediates
+
+           f_aijk("e,i,m,n")  = g_aijk("e,i,m,n") ;
+           f_aijk("e,i,m,n") += ( g_ijab("m,n,e,f") * t1("f,i")) ;
+
+           f_aibc("a,m,e,f")  = g_aibc("a,m,e,f") ;
+           f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
+
+           f_aijb("a,m,i,e")  = g_aijb("a,m,i,e") ;
+           f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
+
+           f_aibj("a,m,e,i")  = g_aibj("a,m,e,i") ;
+           f_aibj("a,m,e,i") += ( g_aibc("a,m,e,f") * t1("f,i")) ;
+
+           f_iabj("i,e,a,m")  = g_iabj("i,e,a,m");
+           f_iabj("i,e,a,m") -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
+
+           f_iajb("i,e,m,a")  = g_iajb("i,e,m,a")  ;
+           f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
+
+           f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
+           //f_int_me("m,e")   += f_ia("m,e") ;
+
+           // Now the super-intermediates,
+
+
+           Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * tau("a,b,n,m"))
+                                + ((2 * f_aibc("b,m,e,f")- f_aibc("b,m,f,e")) * t2("a,f,i,m")
+                                - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i"))
+                                - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
+                                + g_abcd("a,b,f,e") * t1("f,i") ;
+
+           Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * tau("e,f,i,j"))
+                                + ((2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
+                                - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n"))
+                                + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
+                                - g_ijkl("i,j,n,m") * t1("a,n")
+                                + f_int_me("m,e") * t2("a,e,i,j");
+
 
       // compute the residual r3
-      TArray t3_temp;
+           TArray r3_1;
+           TArray r3_2;
 
-      r3("a,b,c,i,j,k") = f_ab("a,e") * t3("e,b,c,i,j,k") -
-                          f_ij("i,l") * t3("a,b,c,l,j,k");
-      //permute P((ia,jb),kc)
-      r3("a,b,c,i,j,k") = r3("a,b,c,i,j,k") + r3("b,a,c,j,i,k") +
-                          r3("c,b,a,k,j,i");
+
+           r3_1("a,b,c,i,j,k")  =   f_ab("a,e") * t3("e,b,c,i,j,k")
+                                  - f_ij("i,l") * t3("a,b,c,l,j,k");
+
+
+           // permute [(i,a) with (j,b) and (i,a) with (k,c)]
+
+           r3_1("a,b,c,i,j,k") = r3_1("a,b,c,i,j,k") + r3_1("b,a,c,j,i,k") + r3_1("c,b,a,k,j,i") ;
+
+
+           //  the T1 and T2 dependent terms in the t3/r3 equation
+
+           r3_2("a,b,c,i,j,k") =    Chi_dabi("b,a,e,i") * t2("c,e,k,j")
+                                  - Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
+
+           //permute
+           r3_2("a,b,c,i,j,k") = r3_2("a,b,c,i,j,k") + r3_2("a,c,b,i,k,j") +
+                                 r3_2("c,a,b,k,i,j") + r3_2("c,b,a,k,j,i") +
+                                 r3_2("b,c,a,j,k,i") + r3_2("b,a,c,j,i,k");
+
+
+           // Add the contribution of T3 dependent terms
+
+           r3("a,b,c,i,j,k")  = r3_1("a,b,c,i,j,k") ;
+           r3("a,b,c,i,j,k") += r3_2("a,b,c,i,j,k") ;
 
       /*double norm_r3 = r3("a,b,c,i,j,k").norm();
       ExEnv::out0() << "R3 amplitudes at the beginning of t3 part" << std::endl ;
       ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;*/
-      // T3
 
-      t3_temp("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                                t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
-
-      //permute
-      t3_temp("a,b,c,i,j,k") = t3_temp("a,b,c,i,j,k") + t3_temp("a,c,b,i,k,j") +
-                               t3_temp("c,a,b,k,i,j") + t3_temp("c,b,a,k,j,i") +
-                               t3_temp("b,c,a,j,k,i") + t3_temp("b,a,c,j,i,k");
-
-      // add the computed t3
-      r3("a,b,c,i,j,k") += t3_temp("a,b,c,i,j,k");
       ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
       double norm_r1 = r1("a,i").norm();
       double norm_r2 = r2("a,b,i,j").norm();
@@ -891,7 +969,7 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
       ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
       ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
 
-
+      }
        // end of triples part  _VR
       double norm_t1 = t1("a,i").norm();
       double norm_t2 = t2("a,b,i,j").norm();
@@ -924,8 +1002,8 @@ class CCSDT3 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
-        //solver_->update(t1, t2, t3, r1, r2, r3);
+        //solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, t3, r1, r2, r3);
 
         ExEnv::out0() << "After the call to the solver " << std::endl ;
         ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;

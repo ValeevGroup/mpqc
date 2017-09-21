@@ -12,7 +12,7 @@
     "molecule": "$:unitcell"
   },
   "dfbs": {
-    "name": "cc-pvdz-ri",
+    "name": "cc-pvdz",
     "molecule": "$:unitcell"
   },
    "wfn_world":{

@@ -277,6 +277,8 @@ class DavidsonDiag {
                                    __LINE__);
         }
 
+//        std::cout << e << std::endl;
+
         for (std::size_t i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
         }
@@ -408,6 +410,14 @@ class DavidsonDiag {
     return std::make_tuple(E.segment(0, n_roots_), norms);
   }
 
+  /// clean the cached values
+  void reset() {
+    eigen_vector_.clear();
+    HB_.clear();
+    B_.clear();
+    subspace_.resize(0, 0);
+  }
+
  private:
 
   /// this is a interface for SingleStateDavidsonDiag class
@@ -515,7 +525,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
 
       // converged
       converged_eigen_vector_.push_back(this->eigen_vector()[0]);
-      reset();
+      this->reset();
 
       total_eig[i] = eig[0];
       ExEnv::out0() << "Solved root " << i + 1 << " : " << eig[0] << "\n\n";
@@ -525,13 +535,6 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
   }
 
  private:
-
-  void reset() {
-    this->eigen_vector_.clear();
-    this->HB_.clear();
-    this->B_.clear();
-    this->subspace_.resize(0, 0);
-  }
 
   void deflation(value_type& HB, const value_type& B) const override {
 

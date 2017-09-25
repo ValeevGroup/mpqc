@@ -1077,7 +1077,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                                             // employed
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
-        interval_(kv.value<double>("interval", 10)) {
+        interval_(kv.value<int>("interval", 10)),
+        residual_thresh_(kv.value<double>("residual_thresh", 1e-10)){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1540,7 +1541,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T delta_t1_ai;
     T delta_t2_abij;
 
-    // Perform Jacobi update in full space on even iterations
+    // Perform Jacobi update in full space when PNOs being recomputed
     if ((update_pno_ == true) && (iter_count_ % interval_ == 0)) {
       Vector ens_occ_act = F_occ_act_.diagonal();
       Vector ens_uocc = F_uocc_.diagonal();
@@ -1576,12 +1577,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
     // Whether or not Jacobi update is performed in PNO subspace
-    // or full space will be determined within update_onlu
+    // or full space will be determined within update_only
     update_only(t1, t2, r1_reblock, r2_reblock);
 
-    // Recompute PNOs as appropriate (right now, every other iteration)
-    // on even iterations, PNOs are computed from T2 that was updated
-    // after r2 was updated in full space
+    // Recompute PNOs as appropriate
     if ((update_pno_ == true) && (iter_count_ % interval_ == 0)) {
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::reconstruct_pno(T_reblock, F_uocc_, npnos_, nosvs_,
@@ -1676,9 +1675,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     R1SquaredNormReductionOp op1(this);
     R2SquaredNormReductionOp op2(this);
-    return sqrt(r1_reblock("a,i").reduce(op1).get() +
-                r2_reblock("a,b,i,j").reduce(op2).get()) /
-           (size(r1_reblock) + size(r2_reblock));
+//    return sqrt(r1_reblock("a,i").reduce(op1).get() +
+//                r2_reblock("a,b,i,j").reduce(op2).get()) /
+//           (size(r1_reblock) + size(r2_reblock));
+
+    auto residual = sqrt(r1_reblock("a,i").reduce(op1).get() +
+                         r2_reblock("a,b,i,j").reduce(op2).get()) /
+                         (size(r1_reblock) + size(r2_reblock));
+    if (residual < residual_thresh_) {
+      update_pno_ = false;
+    }
+
+    return residual;
+
   }
 
 
@@ -1696,8 +1705,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   int nuocc_;                  //!< the number of unoccupied orbitals
   T T_;                        //!< the array of MP2 T amplitudes
 
-  int iter_count_;
-  int interval_;
+  int iter_count_;             //!< the CCSD iteration
+  int interval_;               //!< the interval at which to update PNOs
+
+  double residual_thresh_;     //!< if residual becomes smaller than this
+                               // threshold, stop updating PNOs
 
   T reblock_i_;
   T reblock_a_;

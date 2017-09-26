@@ -23,6 +23,8 @@ set(sources
         ccsdt4.cpp
         ccsdt.h
         ccsdt.cpp
+        cc3.h
+        cc3.cpp
         )
 
 add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc;MPQCmath_quadrature" "mpqc/chemistry/qc/lcao/cc")

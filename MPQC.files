@@ -107,6 +107,8 @@ src/mpqc/chemistry/qc/lcao/basis/shell_vec_functions.cpp
 src/mpqc/chemistry/qc/lcao/basis/shell_vec_functions.h
 src/mpqc/chemistry/qc/lcao/cc/CMakeLists.txt
 src/mpqc/chemistry/qc/lcao/cc/cc2.h
+src/mpqc/chemistry/qc/lcao/cc/cc3.cpp
+src/mpqc/chemistry/qc/lcao/cc/cc3.h
 src/mpqc/chemistry/qc/lcao/cc/ccsd.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsd.h
 src/mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h
@@ -445,6 +447,7 @@ tests/validation/reference/inputs/h2.xyz
 tests/validation/reference/inputs/h2o-cadf-hf-cc-pvdz.json
 tests/validation/reference/inputs/h2o-cadf-hf-cc-pvdz.json
 tests/validation/reference/inputs/h2o-cadf-hf-cc-pvdz.json
+tests/validation/reference/inputs/h2o-cc3_631g.json
 tests/validation/reference/inputs/h2o-ccsd_631g.json
 tests/validation/reference/inputs/h2o-ccsd_631g.json
 tests/validation/reference/inputs/h2o-ccsd_631g.out

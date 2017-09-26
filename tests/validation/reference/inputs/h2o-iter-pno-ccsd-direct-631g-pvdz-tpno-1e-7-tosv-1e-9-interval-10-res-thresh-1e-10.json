@@ -1,0 +1,56 @@
+{
+  "units": "2010CODATA",
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 1,
+    "reblock" : 4
+  },
+  "obs": {
+    "type": "Basis",
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  },
+  "dfbs": {
+    "type": "Basis",
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "screen": "schwarz"
+  },
+  "scf":{
+    "type": "RI-RHF",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "CCSD",
+    "max_iter": 45,
+    "diis_start": 1000000,
+    "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
+    "ref": "$:scf",
+    "method" : "direct_df",
+    "solver" : "pno",
+    "pno_canonical" : "true",
+    "tpno" : "1.0e-07",
+    "tosv" : "1.0e-09",
+    "tiling_method" : "flexible",
+    "update_pno": true,
+    "interval": 10,
+    "residual_thresh": 1.0e-10,
+    "occ_block_size" : 4,
+    "unocc_block_size" : 8
+  },
+  "property" : {
+    "type" : "Energy",
+    "precision" : "1e-11",
+    "wfn" : "$:wfn"
+  }
+}

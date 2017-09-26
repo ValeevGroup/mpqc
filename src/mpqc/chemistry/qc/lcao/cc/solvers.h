@@ -1062,6 +1062,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
+   * | interval | int | 10 | Every nth iteration, PNOs are recomputed |
+   * | residual_thresh | double | 1e-10 | Once the residual value is less than the threshold value, update_pno set to false |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
@@ -1572,7 +1574,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2) override {
 
-  // Reblock r1 and r2
+    // Reblock r1 and r2
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
@@ -1591,7 +1593,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
 
     // transform residuals to the PNO space for the sake of extrapolation
-    // On even iterations, the PNO space was just recomputed
     T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
     T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
     mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
@@ -1675,9 +1676,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     R1SquaredNormReductionOp op1(this);
     R2SquaredNormReductionOp op2(this);
-//    return sqrt(r1_reblock("a,i").reduce(op1).get() +
-//                r2_reblock("a,b,i,j").reduce(op2).get()) /
-//           (size(r1_reblock) + size(r2_reblock));
 
     auto residual = sqrt(r1_reblock("a,i").reduce(op1).get() +
                          r2_reblock("a,b,i,j").reduce(op2).get()) /
@@ -1729,11 +1727,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
 
-  // For storing the D_ij matrices
-//  std::vector<Matrix> D_mats_;
-
-  // For storing the occupation numbers
-//  std::vector<Vector> occ_num_;
 
 
 };  // class: PNO solver

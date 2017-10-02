@@ -214,7 +214,7 @@ void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
   this->f_pq_diagonal_ =
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(),false);
 
   // create shape
   auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();

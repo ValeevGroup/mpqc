@@ -35,6 +35,9 @@ struct IndexSort {
 /**
  * CIS for closed shell system
  *
+ * @warning This is not a efficient integral direct implementation of CIS, only used to generate
+ * guess eigen vectors for EOM-CCSD
+ *
  */
 template <typename Tile, typename Policy>
 class CIS : public LCAOWavefunction<Tile, Policy>,

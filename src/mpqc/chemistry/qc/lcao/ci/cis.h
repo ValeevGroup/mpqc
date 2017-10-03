@@ -35,8 +35,8 @@ struct IndexSort {
 /**
  * CIS for closed shell system
  *
- * @warning This is not a efficient integral direct implementation of CIS, only used to generate
- * guess eigen vectors for EOM-CCSD
+ * @warning This is not a efficient integral direct implementation of CIS, only
+ * used to generate guess eigen vectors for EOM-CCSD
  *
  */
 template <typename Tile, typename Policy>
@@ -121,7 +121,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
 
   ~CIS() = default;
 
-  const std::vector<TArray>& eigen_vector() const {
+  const std::vector<TArray> &eigen_vector() const {
     if (eigen_vector_.empty()) {
       throw ProgrammingError("Eigenvector in CIS is not initialized!", __FILE__,
                              __LINE__);
@@ -194,11 +194,16 @@ template <typename Tile, typename Policy>
 void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
   if (!this->computed()) {
     auto &world = this->wfn_world()->world();
-
     auto target_precision = ex_energy->target_precision(0);
-    auto target_ref_precision = target_precision / 100.0;
 
-    this->init_sdref(ref_wfn_, target_ref_precision);
+    const auto &orbital_registry = this->ao_factory().orbital_registry();
+    // if required orbitals not initialized, then initialize
+    if (!orbital_registry.have(OrbitalIndex(L"i")) ||
+        !orbital_registry.have(OrbitalIndex(L"a"))) {
+      auto target_ref_precision = target_precision / 100.0;
+
+      this->init_sdref(ref_wfn_, target_ref_precision);
+    }
 
     auto time0 = mpqc::fenced_now(world);
 
@@ -323,7 +328,8 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
     delta_e = delta_e.cwiseAbs();
-    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
+    auto norm =
+        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
 
     util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
                                           mpqc::duration_in_s(time0, time1),
@@ -428,7 +434,8 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
     delta_e = delta_e.cwiseAbs();
-    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
+    auto norm =
+        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
 
     util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
                                           mpqc::duration_in_s(time0, time1),
@@ -540,7 +547,8 @@ CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
 
     EigenVector<numeric_type> delta_e = eig - eig_new;
     delta_e = delta_e.cwiseAbs();
-    auto norm = *std::max_element(delta_e.data(), delta_e.data()+delta_e.size());
+    auto norm =
+        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
 
     util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
                                           mpqc::duration_in_s(time0, time1),

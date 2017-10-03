@@ -27,7 +27,9 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:wfn_world"
+    "wfn_world": "$:wfn_world",
+    "localize" : true,
+    "localization_method" : "boys-foster(valence)"
   },
   "wfn":{
     "type": "CCSD",

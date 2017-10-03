@@ -19,8 +19,7 @@ namespace lcao {
 template <typename Tile, typename Policy>
 std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
     LCAOFactoryBase<Tile, Policy> &lcao_factory,
-    gaussian::AOFactoryBase<Tile, Policy> &ao_factory,
-    bool df ) {
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory, bool df) {
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
   return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
@@ -164,59 +163,108 @@ void make_closed_shell_sdref_subspaces(
 
     //////////////////////////////////////////////////////////////////////////////////
     // rebuild occupied orbital space (in case block size differs)
-    RowMatrixXd C_m_eig = array_ops::array_to_eigen(input_space->coefs());
-    auto C_m = array_ops::eigen_to_array<Tile, Policy>(
-        world, C_m_eig, tr_ao,
-        utility::compute_trange1(C_m_eig.cols(), occ_blksize));
-    auto m_space =
-        POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m, occ_m);
-    orbital_registry.add(m_space);
+    RowMatrixXd C_m_eig;
+    TA::DistArray<Tile,Policy> C_m;
+    TA::TiledRange1 tr_m;
+    {
+      C_m_eig = array_ops::array_to_eigen(input_space->coefs());
+      tr_m = utility::compute_trange1(C_m_eig.cols(), occ_blksize);
+      C_m =
+          array_ops::eigen_to_array<Tile, Policy>(world, C_m_eig, tr_ao, tr_m);
+      auto m_space =
+          POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m, occ_m);
+      orbital_registry.add(m_space);
+      mpqc::detail::parallel_print_range_info(world, tr_m, "Occ Range");
+    }
+
 
     //////////////////////////////////////////////////////////////////////////////////
     // build active occupied space
-    RowMatrixXd C_i_eig =
-        C_m_eig.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
-    auto C_i = array_ops::eigen_to_array<Tile, Policy>(
-        world, C_i_eig, tr_ao,
-        utility::compute_trange1(C_i_eig.cols(), occ_blksize));
-    std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
-    auto i_space =
-        POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i, occ_i);
-    orbital_registry.add(i_space);
+    {
+      RowMatrixXd C_i_eig =
+          C_m_eig.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
+      auto tr_i = utility::compute_trange1(C_i_eig.cols(), occ_blksize);
+      auto C_i =
+          array_ops::eigen_to_array<Tile, Policy>(world, C_i_eig, tr_ao, tr_i);
+      std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
+      auto i_space =
+          POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i, occ_i);
+      orbital_registry.add(i_space);
+      mpqc::detail::parallel_print_range_info(world, tr_i, "ActiveOcc Range");
+    }
 
     //////////////////////////////////////////////////////////////////////////////////
     // obtain unoccupieds by projecting occupieds from OBS
     // should really make PAOs here, but these should be close, although much
     // more expensive
-    auto obs_basis = ao_factory->basis_registry()->retrieve(OrbitalIndex(L"κ"));
+    TA::DistArray<Tile, Policy> C_a;
+    TA::TiledRange1 tr_a;
+    std::size_t n_unocc = 0;
+    {
+      // need some integrals
+      auto S_obs = ao_factory->compute(L"<κ|λ>");
+      decltype(C_a) S_m_obs;
+      S_m_obs("m,lambda") = C_m("kappa,m") * S_obs("kappa,lambda");
+      auto S_obs_inv = ao_factory->compute(L"<κ|λ>[inv_sqr]");
 
-    // need some integrals
-    auto S_obs = ao_factory->compute(L"<κ|λ>");
-    decltype(C_m) S_m_obs;
-    S_m_obs("m,lambda") = C_m("kappa,m") * S_obs("kappa,lambda");
-    auto S_obs_inv = ao_factory->compute(L"<κ|λ>[inv_sqr]");
+      decltype(S_m_obs) S_m_obs_ortho;
+      S_m_obs_ortho("i,k") = S_m_obs("i,l") * S_obs_inv("l,k");
+      RowMatrixXd S_m_obs_ortho_eig = array_ops::array_to_eigen(S_m_obs_ortho);
 
-    decltype(S_m_obs) S_m_obs_ortho;
-    S_m_obs_ortho("i,k") = S_m_obs("i,l") * S_obs_inv("l,k");
-    RowMatrixXd S_m_obs_ortho_eig = array_ops::array_to_eigen(S_m_obs_ortho);
+      // SVD to obtain the null-space basis of <m|kappa>, i.e. the unoccupied
+      // orbitals
+      Eigen::JacobiSVD<RowMatrixXd> svd(S_m_obs_ortho_eig, Eigen::ComputeFullV);
+      RowMatrixXd V_eig = svd.matrixV();
+      size_t nbf = S_m_obs_ortho_eig.cols();
+      n_unocc = nbf - svd.nonzeroSingularValues();
+      RowMatrixXd Vnull(nbf, n_unocc);
+      Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
+      tr_a = utility::compute_trange1(n_unocc, unocc_blksize);
+      C_a = array_ops::eigen_to_array<Tile, Policy>(world, Vnull, tr_ao, tr_a);
+      C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
+    }
 
-    // SVD to obtain the null-space basis of <m|kappa>, i.e. the unoccupied
-    // orbitals
-    Eigen::JacobiSVD<RowMatrixXd> svd(S_m_obs_ortho_eig, Eigen::ComputeFullV);
-    RowMatrixXd V_eig = svd.matrixV();
-    size_t nbf = S_m_obs_ortho_eig.cols();
-    auto n_unocc = nbf - svd.nonzeroSingularValues();
-    RowMatrixXd Vnull(nbf, n_unocc);
-    Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
+    /// semi-canonical unoccupied orbitals
+    {
+      // get the fock matrix
+      TA::DistArray<Tile, Policy> fock;
 
-    auto C_a = array_ops::eigen_to_array<Tile, Policy>(
-        world, Vnull, obs_basis->create_trange1(),
-        utility::compute_trange1(n_unocc, unocc_blksize));
-    C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
+      auto &ao_registry = ao_factory->registry();
+      bool have_fock = ao_registry.have(Formula(L"<κ|F|λ>"));
+      bool have_fock_df = ao_registry.have(Formula(L"<κ|F|λ>[df]"));
+
+      if (have_fock && have_fock_df) {
+        throw ProgrammingError(
+            "Two Fock Matrix Exsist! Confused on which to use!\n", __FILE__,
+            __LINE__);
+      } else if (have_fock && !have_fock_df) {
+        fock = ao_factory->compute(L"<κ|F|λ>");
+      } else if (!have_fock && have_fock_df) {
+        fock = ao_factory->compute(L"<κ|F|λ>[df]");
+      } else {
+        throw ProgrammingError("No Fock Matrix Found\n", __FILE__, __LINE__);
+      }
+
+      // convert fock to local basis
+      fock("a,b") = fock("k,l") * C_a("k,a") * C_a("l,b");
+
+      // diagnolize fock
+      auto fock_eigen = array_ops::array_to_eigen(fock);
+      Eigen::SelfAdjointEigenSolver<decltype(fock_eigen)> es;
+      es.compute(fock_eigen);
+      auto trans_eigen = es.eigenvectors();
+      auto trans = array_ops::eigen_to_array<Tile, Policy>(world, trans_eigen,
+                                                           tr_a, tr_a);
+
+      // transform unoccupied to semi-canonical
+      C_a("k,a") = C_a("k,b") * trans("b,a");
+    }
+
     std::vector<double> occ_a(n_unocc, 0);
     auto a_space =
         POrbSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_a, occ_a);
     orbital_registry.add(a_space);
+    mpqc::detail::parallel_print_range_info(world, tr_a, "Unocc Range");
 
     //////////////////////////////////////////////////////////////////////////////////
     // make a union of occupied and unoccupied orbs
@@ -227,15 +275,16 @@ void make_closed_shell_sdref_subspaces(
       C_p_eig.block(0, 0, nao, ndocc) << C_m_eig;
       C_p_eig.block(0, ndocc, nao, n_unocc) << C_a_eig;
 
-      auto tr_all = utility::join_trange1(m_space.trange(), a_space.trange());
+      auto tr_all = utility::join_trange1(tr_m, tr_a);
       C_p = array_ops::eigen_to_array<Tile, Policy>(
-          world, C_p_eig, obs_basis->create_trange1(), tr_all);
+          world, C_p_eig, tr_ao, tr_all);
 
       std::vector<double> occ_p(C_p_eig.cols(), 0);
       std::fill(occ_p.begin(), occ_p.begin() + ndocc, 2.0);
       auto p_space =
           POrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p, occ_p);
       orbital_registry.add(p_space);
+      mpqc::detail::parallel_print_range_info(world, tr_all, "Obs Range");
     }
   } else {  // received the full space
     const auto &p_space = *input_space;
@@ -717,8 +766,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
   auto mo_time1 = mpqc::fenced_now(world);
   auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
-  utility::print_par(world, "ClosedShell Dual Basis CABS MO Build Time: ",
-                     mo_time, " S\n");
+  utility::print_par(
+      world, "ClosedShell Dual Basis CABS MO Build Time: ", mo_time, " S\n");
 }
 
 /*!

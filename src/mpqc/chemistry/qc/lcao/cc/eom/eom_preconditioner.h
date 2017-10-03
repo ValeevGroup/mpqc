@@ -237,18 +237,18 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
     // compute average of D
     Array D;
     {
-      std::vector<Array> Ds(n_roots);
-
+      Array Ds;
       for (std::size_t i = 0; i < n_roots; i++) {
         auto T_reblock =
             detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
-        Ds[i] = detail::construct_density(T_reblock);
-      }
+        Ds = detail::construct_density(T_reblock);
 
-      D("a,b,i,j") = Ds[0]("a,b,i,j");
-
-      for (std::size_t i = 1; i < n_roots; i++) {
-        D("a,b,i,j") += Ds[i]("a,b,i,j");
+        if(i==0){
+          D("a,b,i,j") = Ds("a,b,i,j");
+        }
+        else{
+          D("a,b,i,j") += Ds("a,b,i,j");
+        }
       }
 
       D("a,b,i,j") = typename Array::element_type(1.0 / n_roots) * D("a,b,i,j");

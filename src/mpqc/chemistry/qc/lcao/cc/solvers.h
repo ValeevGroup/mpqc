@@ -526,7 +526,7 @@ void construct_pno(
       for (int b = 0; b != nuocc; ++b, ++tile_idx) {
         const auto elem = D_ij(a, b);
         const auto abs_result = std::abs(elem);
-        norm += abs_result;
+        norm += (abs_result * abs_result);
         result_tile[tile_idx] = elem;
       }
     }
@@ -815,7 +815,7 @@ void reconstruct_pno(
       for (int b = 0; b != nuocc; ++b, ++tile_idx) {
         const auto elem = D_ij(a, b);
         const auto abs_result = std::abs(elem);
-        norm += abs_result;
+        norm += (abs_result * abs_result);
         result_tile[tile_idx] = elem;
       }
     }

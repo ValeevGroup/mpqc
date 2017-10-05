@@ -97,7 +97,7 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   * | Keyword | Type | Default| Description |
   * |---------|------|--------|-------------|
   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-  * | method | df | standard or df | method to compute CIS, standard, df or direct |
+  * | method | df | standard or df | method to compute CIS, standard, df |
   * | max_iter| int | 30 | max number of iteration in davidson diagonalization|
   */
   // clang-format on
@@ -160,13 +160,6 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
                                            double precision,
                                            bool triplets = false);
 
-  /// this approach is integral direct, it does not stores the H matrix and two
-  /// electron integral, it compute the product of H with eigen vector using
-  /// direct AO integral
-  /// @return excitation energy
-  std::vector<numeric_type> compute_cis_direct(std::size_t n_roots,
-                                               double precision,
-                                               bool triplets = false);
 
   /// @return guess vector of size n_roots as unit vector
   std::vector<TArray> init_guess_vector(std::size_t n_roots);
@@ -217,8 +210,6 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
         result = compute_cis(n_roots, target_precision);
       } else if (method_ == "df") {
         result = compute_cis_df(n_roots, target_precision);
-      } else if (method_ == "direct") {
-        result = compute_cis_direct(n_roots, target_precision);
       }
     }
 
@@ -229,8 +220,6 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
         triplet_result = compute_cis(n_roots, target_precision, true);
       } else if (method_ == "df") {
         triplet_result = compute_cis_df(n_roots, target_precision, true);
-      } else if (method_ == "direct") {
-        triplet_result = compute_cis_direct(n_roots, target_precision, true);
       }
       result.insert(result.end(), triplet_result.begin(), triplet_result.end());
     }
@@ -301,54 +290,23 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10,
+                                                10 * converge);
 
-  auto pred = Preconditioner(eps_o_, eps_v_);
+  auto pred = std::make_unique<Preconditioner>(eps_o_, eps_v_);
 
-  // solve the lowest n_roots eigenvalues
-  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  std::size_t i = 0;
-  for (; i < max_iter_; i++) {
-    time0 = mpqc::fenced_now(world);
-
+  auto oper = [&H](std::vector<TArray> &guess) {
     const auto n_v = guess.size();
-
     std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
     // product of H with guess vector
     for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       HB[i]("i,a") = H("i,j,a,b") * guess[i]("j,b");
     }
-
-    time1 = mpqc::fenced_now(world);
-    EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
-
-    time2 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> delta_e = eig - eig_new;
-    delta_e = delta_e.cwiseAbs();
-    auto norm =
-        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
-
-    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
-                                          mpqc::duration_in_s(time0, time1),
-                                          mpqc::duration_in_s(time1, time2));
-
-    if (norm < converge) {
-      break;
-    }
-
-    eig = eig_new;
-  }
-
-  ExEnv::out0() << "\n";
-  util::print_excitation_energy(eig, triplets);
-
-  if (i == max_iter_) {
-    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
-                          __FILE__, __LINE__, max_iter_, "CIS");
-  }
+    return HB;
+  };
+  // solve the lowest n_roots eigenvalues
+  auto eig = dvd.solve(guess, oper, pred.get(), converge, max_iter_);
 
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();
@@ -376,10 +334,9 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   auto F_ij = factory.compute(L"<i|F|j>[df]");
   auto I_ab = factory.compute(L"<a|I|b>");
   auto I_ij = factory.compute(L"<i|I|j>");
-  auto X_ab = factory.compute(L"(Κ|G|a b)");
-  auto X_ij = factory.compute(L"(Κ|G|i j)");
-  auto X_ia = factory.compute(L"(Κ|G|i a)");
-  auto X = ao_factory.compute(L"(Κ|G|Λ)[inv]");
+  auto X_ab = factory.compute(L"(Κ|G|a b)[inv_sqr]");
+  auto X_ij = factory.compute(L"(Κ|G|i j)[inv_sqr]");
+  auto X_ia = factory.compute(L"(Κ|G|i a)[inv_sqr]");
 
   // initialize diagonal
   if (eps_o_.size() == 0) {
@@ -393,181 +350,36 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   auto guess = init_guess_vector(n_roots);
 
   // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10);
+  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10,
+                                                10 * converge);
 
-  auto pred = Preconditioner(eps_o_, eps_v_);
+  auto pred = std::make_unique<Preconditioner>(eps_o_, eps_v_);
 
-  // solve the lowest n_roots eigenvalues
-  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  std::size_t i = 0;
-  for (; i < max_iter_; i++) {
-    auto time0 = mpqc::fenced_now(world);
-
+  auto oper = [&F_ab, &F_ij, &I_ab, &I_ij, &X_ab, &X_ij, &X_ia,
+               triplets](std::vector<TArray> &guess) {
     const auto n_v = guess.size();
-
     std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
-    // product of H with guess vector
     for (std::size_t i = 0; i < n_v; i++) {
       //    std::cout << guess[i] << std::endl;
       const auto &vec = guess[i];
       // singlets
       if (!triplets) {
-        HB[i]("j,b") =
-            vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-            2.0 * vec("i,a") * X_ia("x,i,a") * X("x,y") * X_ia("y,j,b") -
-            X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
+        HB[i]("j,b") = vec("i,a") * I_ij("i,j") * F_ab("a,b") -
+                       F_ij("i,j") * vec("i,a") * I_ab("a,b") +
+                       2.0 * vec("i,a") * X_ia("x,i,a") * X_ia("x,j,b") -
+                       X_ab("x,a,b") * vec("i,a") * X_ij("x,i,j");
       }
       // triplets
       else {
         HB[i]("j,b") = vec("i,a") * I_ij("i,j") * F_ab("a,b") -
                        F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-                       -X_ab("x,a,b") * vec("i,a") * X("x,y") * X_ij("y,i,j");
+                       -X_ab("x,a,b") * vec("i,a") * X_ij("x,i,j");
       }
     }
-
-    auto time1 = mpqc::fenced_now(world);
-    EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
-
-    auto time2 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> delta_e = eig - eig_new;
-    delta_e = delta_e.cwiseAbs();
-    auto norm =
-        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
-
-    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
-                                          mpqc::duration_in_s(time0, time1),
-                                          mpqc::duration_in_s(time1, time2));
-
-    if (norm < converge) {
-      break;
-    }
-
-    eig = eig_new;
-  }
-
-  ExEnv::out0() << "\n";
-  util::print_excitation_energy(eig, triplets);
-
-  if (i == max_iter_) {
-    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
-                          __FILE__, __LINE__, max_iter_, "CIS");
-  }
-
-  // get the latest eigen vector
-  auto &eigen_vector = dvd.eigen_vector();
-
-  eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
-                       eigen_vector.end());
-
-  return std::vector<numeric_type>(eig.data(), eig.data() + eig.size());
-}
-
-template <typename Tile, typename Policy>
-std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis_direct(std::size_t n_roots, double converge,
-                                      bool triplets) {
-  ExEnv::out0() << "\n";
-  ExEnv::out0() << indent
-                << "CIS Direct: " << (triplets ? "Triplets" : "Singlets")
-                << "\n";
-  ExEnv::out0() << "\n";
-
-  auto &world = this->wfn_world()->world();
-  auto &factory = this->lcao_factory();
-  auto &ao_factory = this->ao_factory();
-
-  // compute required integrals
-  auto F_ab = factory.compute(L"<a|F|b>");
-  auto F_ij = factory.compute(L"<i|F|j>");
-  auto I_ab = factory.compute(L"<a|I|b>");
-  auto I_ij = factory.compute(L"<i|I|j>");
-  auto G = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
-  auto C_a = factory.orbital_registry().retrieve(L"a");
-  auto C_i = factory.orbital_registry().retrieve(L"i");
-
-  // initialize diagonal
-  if (eps_o_.size() == 0) {
-    eps_o_ = array_ops::array_to_eigen(F_ij).diagonal();
-  }
-  if (eps_v_.size() == 0) {
-    eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
-  }
-
-  // get guess vector
-  auto guess = init_guess_vector(n_roots);
-  // davidson object
-  DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10);
-
-  auto pred = Preconditioner(eps_o_, eps_v_);
-
+    return HB;
+  };
   // solve the lowest n_roots eigenvalues
-  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-  std::size_t i = 0;
-  for (; i < max_iter_; i++) {
-    auto time0 = mpqc::fenced_now(world);
-
-    const auto n_v = guess.size();
-
-    std::vector<TA::DistArray<Tile, Policy>> HB(n_v);
-    // TODO need to avoid compute all four center at each iteration
-    // product of H with guess vector
-    for (std::size_t i = 0; i < n_v; i++) {
-      //    std::cout << guess[i] << std::endl;
-      const auto &vec = guess[i];
-      // singlets
-      if (!triplets) {
-        HB[i]("j,b") =
-            vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-            F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-            2.0 *
-                ((vec("i,a") * C_a("nu,a") * C_i("mu,i")) *
-                 G("mu,nu,rho,sigma")) *
-                C_i("rho,j") * C_a("sigma,b") -
-            ((vec("i,a") * C_a("rho,a") * C_i("mu,i")) * G("mu,nu,rho,sigma")) *
-                C_i("nu,j") * C_a("sigma,b");
-      }
-      // triplets
-      else {
-        HB[i]("j,b") = vec("i,a") * I_ij("i,j") * F_ab("a,b") -
-                       F_ij("i,j") * vec("i,a") * I_ab("a,b") +
-                       -((vec("i,a") * C_a("rho,a") * C_i("mu,i")) *
-                         G("mu,nu,rho,sigma")) *
-                           C_i("nu,j") * C_a("sigma,b");
-      }
-    }
-
-    auto time1 = mpqc::fenced_now(world);
-    EigenVector<numeric_type> eig_new, norms;
-    std::tie(eig_new, norms) = dvd.extrapolate(HB, guess, &pred);
-
-    auto time2 = mpqc::fenced_now(world);
-
-    EigenVector<numeric_type> delta_e = eig - eig_new;
-    delta_e = delta_e.cwiseAbs();
-    auto norm =
-        *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
-
-    util::print_davidson_energy_iteration(i, delta_e, norms, eig_new,
-                                          mpqc::duration_in_s(time0, time1),
-                                          mpqc::duration_in_s(time1, time2));
-
-    if (norm < converge) {
-      break;
-    }
-
-    eig = eig_new;
-  }
-
-  ExEnv::out0() << "\n";
-  util::print_excitation_energy(eig, triplets);
-
-  if (i == max_iter_) {
-    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
-                          __FILE__, __LINE__, max_iter_, "CIS");
-  }
+  auto eig = dvd.solve(guess, oper, pred.get(), converge, max_iter_);
 
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();

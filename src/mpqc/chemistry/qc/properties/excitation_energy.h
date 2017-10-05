@@ -47,6 +47,9 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
   /// @return number of roots
   unsigned int n_roots() const;
 
+  /// set the number of roots
+  void set_n_roots(unsigned int n_roots_);
+
   /// @return if do singlets
   bool singlets() const;
 

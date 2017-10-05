@@ -22,6 +22,10 @@ ExcitationEnergy::ExcitationEnergy(const KeyVal &kv)
 
 unsigned int ExcitationEnergy::n_roots() const { return n_roots_; }
 
+void ExcitationEnergy::set_n_roots(unsigned int n_roots) {
+  n_roots_ = n_roots;
+}
+
 bool ExcitationEnergy::singlets() const { return singlets_; }
 
 bool ExcitationEnergy::triplets() const { return triplets_; }
@@ -36,5 +40,6 @@ void ExcitationEnergy::do_evaluate() {
   }
   evaluator->evaluate(this);
 }
+
 
 }  // namespace mpqc

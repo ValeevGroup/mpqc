@@ -209,7 +209,7 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
       TArray U;
       U("p,r,i,j") =
           Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") * direct_integral("p,q,r,s");
-//      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
+      //      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
       HDS_HDD_C("a,b,i,j") +=
           U("p,r,i,j") * Ca("p,a") * Ca("r,b") -
           U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k") -
@@ -224,15 +224,13 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
 template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
 EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
-    const std::vector<TArray>& cis_vector,
+    std::size_t n_roots, const std::vector<TArray>& cis_vector,
     const std::vector<numeric_type>& cis_eigs, std::size_t max_iter,
     double convergence) {
-
-  std::size_t n_roots = cis_vector.size();
-
-  std::vector<GuessVector> C(n_roots);
+  std::size_t n_guess = cis_vector.size();
+  std::vector<GuessVector> C(n_guess);
   auto t2 = this->t2();
-  for (std::size_t i = 0; i < n_roots; i++) {
+  for (std::size_t i = 0; i < n_guess; i++) {
     C[i].t1("a,i") = cis_vector[i]("i,a");
     C[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
     C[i].t2.fill(0.0);
@@ -274,8 +272,8 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
 
       C = dvd.eigen_vector();
 
-      std::vector<TArray> guess(C.size());
-      for (std::size_t i = 0; i < guess.size(); i++) {
+      std::vector<TArray> guess(n_roots);
+      for (std::size_t i = 0; i < n_roots; i++) {
         guess[i] = C[i].t2;
         //                std::cout << guess[i] << std::endl;
       }
@@ -323,7 +321,6 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
   }
   // single-state
   else {
-
     // choose the shift according to the following paper
 
     /// Helmich, B. and Hättig, C. (2013) The Journal of Chemical Physics.
@@ -399,7 +396,15 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
       // create CIS class and evaluate
       auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
+
+      // compute twice number of roots as guess
+      if (davidson_solver_ == "multi-state") {
+        ex_energy->set_n_roots(2 * n_roots);
+      }
+
       ::mpqc::evaluate(*ex_energy, cis);
+
+      ex_energy->set_n_roots(n_roots);
 
       cis_vector = cis->eigen_vector();
       cis_eig = cis->eigen_value();
@@ -411,8 +416,8 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     this->init();
 
     auto max_iter = this->max_iter_;
-    auto result = eom_ccsd_davidson_solver(cis_vector, cis_eig, max_iter,
-                                           target_precision);
+    auto result = eom_ccsd_davidson_solver(n_roots, cis_vector, cis_eig,
+                                           max_iter, target_precision);
 
     this->computed_ = true;
     ExcitationEnergy::Provider::set_value(

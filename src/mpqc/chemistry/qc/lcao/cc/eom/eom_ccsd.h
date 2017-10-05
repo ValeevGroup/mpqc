@@ -99,8 +99,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
  private:
   EigenVector<numeric_type> eom_ccsd_davidson_solver(
-      const std::vector<TArray> &cis_vector, const std::vector<numeric_type> &cis_eigs,
-      std::size_t max_iter, double convergence);
+      std::size_t n_roots, const std::vector<TArray> &cis_vector,
+      const std::vector<numeric_type> &cis_eigs, std::size_t max_iter,
+      double convergence);
   // compute F and W intermediates
   void compute_FWintermediates();
 

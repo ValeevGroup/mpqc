@@ -1,6 +1,7 @@
 set(sources
   array_info.cpp
   array_info.h
+  reduction.h
   tensor_store.h
 )
 

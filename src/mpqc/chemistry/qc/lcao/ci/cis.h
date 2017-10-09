@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
 #include "mpqc/math/linalg/davidson_diag.h"
+#include "mpqc/math/external/tiledarray/array_max_n.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/print.h"
 
@@ -283,8 +284,6 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   }
 
   auto time1 = mpqc::fenced_now(world);
-  // used later
-  auto time2 = mpqc::fenced_now(world);
   auto time = mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent << "Computed H matrix. Time: " << time << " S\n";
@@ -308,8 +307,19 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   // solve the lowest n_roots eigenvalues
   auto eig = dvd.solve(guess, oper, pred.get(), converge, max_iter_);
 
+  ExEnv::out0() << "\n";
+  util::print_excitation_energy(eig, triplets);
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();
+
+  for(std::size_t i = 0; i < n_roots; i++){
+    auto dominants = array_abs_max_n_index(eigen_vector[i],5);
+
+    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1 << "\n";
+    util::print_cis_dominant_elements(dominants);
+    ExEnv::out0() << "\n";
+  }
+
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());
 
@@ -325,9 +335,7 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
                 << (triplets ? "Triplets" : "Singlets") << "\n";
   ExEnv::out0() << "\n";
 
-  auto &world = this->wfn_world()->world();
   auto &factory = this->lcao_factory();
-  auto &ao_factory = this->ao_factory();
 
   // compute required integrals
   auto F_ab = factory.compute(L"<a|F|b>[df]");
@@ -381,8 +389,18 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   // solve the lowest n_roots eigenvalues
   auto eig = dvd.solve(guess, oper, pred.get(), converge, max_iter_);
 
+  ExEnv::out0() << "\n";
+  util::print_excitation_energy(eig, triplets);
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();
+
+  for(std::size_t i = 0; i < n_roots; i++){
+    auto dominants = array_abs_max_n_index(eigen_vector[i],5);
+
+    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1 << "\n";
+    util::print_cis_dominant_elements(dominants);
+    ExEnv::out0() << "\n";
+  }
 
   eigen_vector_.insert(eigen_vector_.end(), eigen_vector.begin(),
                        eigen_vector.end());

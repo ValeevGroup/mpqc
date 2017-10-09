@@ -17,11 +17,11 @@
 namespace mpqc {
 namespace util {
 
-// print progress
+/// print progress
 void print_progress(std::size_t lowprogress, std::size_t upprogress,
                     std::vector<std::size_t> &progress_points);
 
-// print excitation energy at each iteration
+/// print excitation energy at each iteration
 template <typename T>
 inline void print_davidson_energy_iteration(std::size_t iter,
                                             const EigenVector<T> &delta_e,
@@ -43,7 +43,7 @@ inline void print_davidson_energy_iteration(std::size_t iter,
   ExEnv::out0() << "\n";
 }
 
-// print excitation energy at each iteration
+/// print excitation energy at each iteration
 template <typename T>
 inline void print_single_state_davidson_energy_iteration(
     std::size_t iter, const T &delta_e, const T &error, const T &eig,
@@ -56,6 +56,43 @@ inline void print_single_state_davidson_energy_iteration(
   ExEnv::out0() << mpqc::printf(
       "%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
       delta_e, error, eig, time1, time2);
+}
+
+/// print dominant index and element in cis vector, with index ordered as i,a
+template <typename T>
+inline void print_cis_dominant_elements(
+    std::vector<std::pair<T, std::vector<std::size_t>>> &dominants) {
+  for (const auto &x : dominants) {
+    auto &value = x.first;
+    auto &index = x.second;
+    ExEnv::out0() << mpqc::printf("%5i \t > %5i \t : \t %15.12f \n", index[0],
+                                  index[1], value);
+  }
+}
+
+/// print dominant index and element in t1, with index ordered as a, i
+template <typename T>
+inline void print_t1_dominant_elements(
+    std::vector<std::pair<T, std::vector<std::size_t>>> &dominants) {
+  for (const auto &x : dominants) {
+    auto &value = x.first;
+    auto &index = x.second;
+    ExEnv::out0() << mpqc::printf("%5i \t > %5i \t : \t %15.12f \n", index[1],
+                                  index[0], value);
+  }
+}
+
+/// print dominant index and element in t2, with index ordered as a,b,i,j
+template <typename T>
+inline void print_t2_dominant_elements(
+    std::vector<std::pair<T, std::vector<std::size_t>>> &dominants) {
+  for (const auto &x : dominants) {
+    auto &value = x.first;
+    auto &index = x.second;
+    ExEnv::out0() << mpqc::printf(
+        "%5i \t %5i \t > %5i \t %5i \t : \t %15.12f \n", index[2], index[3],
+        index[0], index[1], value);
+  }
 }
 
 /// print excitation energy with different unit

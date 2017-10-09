@@ -313,11 +313,13 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
   };
 
   EigenVector<numeric_type> eig;
+  std::vector<GuessVector> eig_vector;
   if (davidson_solver_ == "multi-state") {
     /// make davidson object
     DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
                                   vector_threshold_);
     eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
+    eig_vector = dvd.eigen_vector();
   }
   // single-state
   else {
@@ -331,10 +333,25 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
     SingleStateDavidsonDiag<GuessVector> dvd(n_roots, shift, false, 2,
                                              max_vector_, vector_threshold_);
     eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
+    eig_vector = dvd.eigen_vector();
   }
 
   ExEnv::out0() << "\n";
   util::print_excitation_energy(eig, false);
+
+  for (std::size_t i = 0; i < n_roots; i++) {
+    auto t1_dominants = array_abs_max_n_index(eig_vector[i].t1, 5);
+
+    /// double the size due to permutation symmetry in t2
+    auto t2_dominants = array_abs_max_n_index(eig_vector[i].t2, 5);
+
+    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1
+                  << "\n";
+    util::print_t1_dominant_elements(t1_dominants);
+    ExEnv::out0() << "\n";
+    util::print_t2_dominant_elements(t2_dominants);
+    ExEnv::out0() << "\n";
+  }
 
   return eig;
 }

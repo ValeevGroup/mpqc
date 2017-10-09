@@ -484,6 +484,8 @@ void construct_pno(
   auto& world = t2.world();
   std::size_t nocc_act = t2.trange().dim(2).extent();
   std::size_t nuocc = t2.trange().dim(0).extent();
+  ExEnv::out0() << "nocc_act is " << nocc_act << std::endl;
+  ExEnv::out0() << "nuocc is " << nuocc << std::endl;
 
   // For storing PNOs and and the Fock matrix in the PNO basis
   npnos.resize(nocc_act * nocc_act, 0);
@@ -508,7 +510,7 @@ void construct_pno(
     const int i = arg_tile.range().lobound()[2];
     const int j = arg_tile.range().lobound()[3];
 
-    auto delta_ij = (i == j) ? 1 : 0;
+    auto delta_ij = (i == j) ? 1.0 : 0.0;
 
     // Form T_ij matrix from arg_tile
     Matrix T_ij = TA::eigen_map(arg_tile, nuocc, nuocc);
@@ -517,8 +519,8 @@ void construct_pno(
     Matrix T_ji = T_ij.transpose();
 
     // Form D_ij from T_ij and T_ji
-    Matrix D_ij = (1.0 / (1 + delta_ij)) * (4 * T_ji * T_ij - 2 * T_ij * T_ij +
-                                            4 * T_ij * T_ji - 2 * T_ji * T_ji);
+    Matrix D_ij = (1.0 / (1.0 + delta_ij)) * (4.0 * T_ji * T_ij - 2.0 * T_ij * T_ij +
+                                            4.0 * T_ij * T_ji - 2.0 * T_ji * T_ji);
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -1513,6 +1515,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       // Reblock T2
       T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
+      ExEnv::out0() << "t2 trange is\n" << T_reblock.trange() << std::endl;
+
       detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
@@ -1584,23 +1588,35 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     // Recompute PNOs as appropriate
     if ((update_pno_ == true) && (iter_count_ % interval_ == 0)) {
+
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
-      detail::reconstruct_pno(T_reblock, F_uocc_, npnos_, nosvs_,
-                             pnos_, F_pno_diag_,
-                             osvs_, F_osv_diag_, pno_canonical_);
+      detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
+                            pnos_, npnos_, F_pno_diag_,
+                            osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+
+
+      mpqc::cc::T1T2<T, T> r(r1_reblock, r2_reblock);
+      mpqc::cc::T1T2<T, T> t(t1, t2);
+      this->reset();
+      //this->diis().extrapolate(t, r);
+      t1 = t.t1;
+      t2 = t.t2;
+      iter_count_ += 1;
     }
 
-
+    else {
 
     // transform residuals to the PNO space for the sake of extrapolation
-    T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
-    T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
-    mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
-    mpqc::cc::T1T2<T, T> t(t1, t2);
-    this->diis().extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
-    iter_count_ += 1;
+      T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
+      T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
+      mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
+      mpqc::cc::T1T2<T, T> t(t1, t2);
+
+      this->diis().extrapolate(t, r);
+      t1 = t.t1;
+      t2 = t.t2;
+      iter_count_ += 1;
+    }
   }
 
   // squared norm of 1-body residual in OSV subspace

@@ -68,7 +68,7 @@ class DIISSolver : public Solver<T1, T2> {
   // clang-format on
   DIISSolver(const KeyVal& kv)
       : diis_(kv.value<int>("diis_start", 1), kv.value<int>("n_diis", 8), kv.value<double>("diis_damp", 0.0),
-              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)) {}
+              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)), diis_pristine_(diis_) {}
   virtual ~DIISSolver() = default;
 
   /// Update the amplitudes using update_only() and extrapolate using DIIS.
@@ -95,6 +95,10 @@ class DIISSolver : public Solver<T1, T2> {
     t2 = t.t2;
   }
 
+  void reset() {
+    diis_ = diis_pristine_;
+  }
+
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
   /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
@@ -110,6 +114,7 @@ class DIISSolver : public Solver<T1, T2> {
 
  private:
   TA::DIIS<T1T2<T1, T2>> diis_;
+  TA::DIIS<T1T2<T1, T2>> diis_pristine_;
 };
 
 }  // namespace cc

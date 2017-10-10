@@ -266,7 +266,7 @@ std::tuple<TA::DistArray<Tile, TA::SparsePolicy>,
 RMP2F12<Tile>::compute_T() {
   TA::DistArray<Tile, TA::SparsePolicy> g_abij, t2;
   g_abij("a,b,i,j") = this->lcao_factory().compute(L"<i j|G|a b>")("i,j,a,b");
-  t2 = d_abij(g_abij, *(this->orbital_energy()),
+  t2 = detail::d_abij(g_abij, *(this->orbital_energy()),
               this->trange1_engine()->get_occ(),
               this->trange1_engine()->get_nfrozen());
 
@@ -355,7 +355,7 @@ RIRMP2F12<Tile>::compute_T() {
   TA::DistArray<Tile, TA::SparsePolicy> g_abij, t2;
   g_abij("a,b,i,j") =
       this->lcao_factory().compute(L"<i j|G|a b>[df]")("i,j,a,b");
-  t2 = d_abij(g_abij, *(this->orbital_energy()),
+  t2 = detail::d_abij(g_abij, *(this->orbital_energy()),
               this->trange1_engine()->get_occ(),
               this->trange1_engine()->get_nfrozen());
 

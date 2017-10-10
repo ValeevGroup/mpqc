@@ -128,15 +128,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   bool verbose_;
   double ccsd_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
-  std::shared_ptr<const Eigen::VectorXd> f_pq_diagonal_;
+  std::shared_ptr<const EigenVector<typename Tile::numeric_type>> f_pq_diagonal_;
 
  protected:
-  std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
+  std::shared_ptr<const EigenVector<typename Tile::numeric_type>> orbital_energy() {
     return f_pq_diagonal_;
   }
 
-  void set_orbital_energy(const Eigen::VectorXd &orbital_energy) {
-    f_pq_diagonal_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  void set_orbital_energy(const EigenVector<typename Tile::numeric_type> &orbital_energy) {
+    f_pq_diagonal_ = std::make_shared<EigenVector<typename Tile::numeric_type>>(orbital_energy);
   }
 
  public:

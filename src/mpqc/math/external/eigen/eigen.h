@@ -16,6 +16,9 @@ using RowMatrixXd = RowMatrix<double>;
 template <typename T>
 using EigenVector = ::Eigen::Matrix<T, ::Eigen::Dynamic, 1>;
 
+template <typename T>
+using RowEigenVector = ::Eigen::Matrix<T, 1, ::Eigen::Dynamic>;
+
 using Vector3d = Eigen::Vector3d;
 using Vector3i = Eigen::Vector3i;
 }

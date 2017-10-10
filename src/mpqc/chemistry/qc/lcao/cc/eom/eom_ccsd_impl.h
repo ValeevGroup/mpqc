@@ -1,11 +1,11 @@
 /*
- * eom_cc.cpp
  *
  *  Created on: Feb 26, 2016
  *      Author: jinmei
  */
 
-#include <mpqc/math/external/eigen/eigen.h>
+#include "mpqc/chemistry/qc/lcao/ci/cis_d.h"
+
 namespace mpqc {
 namespace lcao {
 
@@ -249,40 +249,52 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
 
     // if simulate PNO, need to compute guess and initialize PNO, OSV
     if (!eom_pno_.empty()) {
-      // make initial guess, by run 2 iteration of
-      DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
-                                    vector_threshold_);
+      //       make initial guess, by run 2 iteration of
+      //      DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
+      //                                    vector_threshold_);
+      //
+      //      for (std::size_t i = 0; i < 2; i++) {
+      //        std::size_t dim = C.size();
+      //        std::vector<GuessVector> HC(dim);
+      //        for (std::size_t i = 0; i < dim; ++i) {
+      //          if (C[i].t1.is_initialized() && C[i].t2.is_initialized()) {
+      //            HC[i].t1 = compute_HSS_HSD_C(C[i].t1, C[i].t2);
+      //            HC[i].t2 = compute_HDS_HDD_C(C[i].t1, C[i].t2);
+      //
+      //          } else {
+      //            throw ProgrammingError("Guess Vector not initialized",
+      //            __FILE__,
+      //                                   __LINE__);
+      //          }
+      //        }
+      //        EigenVector<numeric_type> eig_new, norms;
+      //        std::tie(eig_new, norms) = dvd.extrapolate(HC, C, pred.get());
+      //      }
+      //
+      //      C = dvd.eigen_vector();
 
-      for (std::size_t i = 0; i < 2; i++) {
-        std::size_t dim = C.size();
-        std::vector<GuessVector> HC(dim);
-        for (std::size_t i = 0; i < dim; ++i) {
-          if (C[i].t1.is_initialized() && C[i].t2.is_initialized()) {
-            HC[i].t1 = compute_HSS_HSD_C(C[i].t1, C[i].t2);
-            HC[i].t2 = compute_HDS_HDD_C(C[i].t1, C[i].t2);
+      //      std::vector<TArray> guess(n_roots);
+      //      for (std::size_t i = 0; i < n_roots; i++) {
+      //        guess[i] = C[i].t2;
+      //                        std::cout << guess[i] << std::endl;
+      //      }
 
-          } else {
-            throw ProgrammingError("Guess Vector not initialized", __FILE__,
-                                   __LINE__);
-          }
-        }
-        EigenVector<numeric_type> eig_new, norms;
-        std::tie(eig_new, norms) = dvd.extrapolate(HC, C, pred.get());
-      }
-
-      C = dvd.eigen_vector();
-
-      std::vector<TArray> guess(n_roots);
-      for (std::size_t i = 0; i < n_roots; i++) {
-        guess[i] = C[i].t2;
-        //                std::cout << guess[i] << std::endl;
-      }
+      // make CIS(D) doubles amplitudes
 
       if (eom_pno_ == "default") {
+        auto guess = compute_cis_d_double_amplitude(
+            this->lcao_factory(), cis_vector[0], cis_eigs[0], this->is_df());
+
         pred = std::make_shared<cc::PNOEEPred<TArray>>(
-            guess[0], n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
+            guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
       } else if (eom_pno_ == "state-average") {
+        std::vector<TArray> guess(n_roots);
+        for (std::size_t i = 0; i < n_roots; i++) {
+          guess[i] = compute_cis_d_double_amplitude(
+              this->lcao_factory(), cis_vector[i], cis_eigs[i], this->is_df());
+        }
+
         pred = std::make_shared<cc::StateAveragePNOEEPred<TArray>>(
             guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);

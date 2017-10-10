@@ -484,8 +484,6 @@ void construct_pno(
   auto& world = t2.world();
   std::size_t nocc_act = t2.trange().dim(2).extent();
   std::size_t nuocc = t2.trange().dim(0).extent();
-  ExEnv::out0() << "nocc_act is " << nocc_act << std::endl;
-  ExEnv::out0() << "nuocc is " << nuocc << std::endl;
 
   // For storing PNOs and and the Fock matrix in the PNO basis
   npnos.resize(nocc_act * nocc_act, 0);
@@ -1272,8 +1270,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
       // Reblock T2
       T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
-
-      ExEnv::out0() << "t2 trange is\n" << T_reblock.trange() << std::endl;
 
       detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,

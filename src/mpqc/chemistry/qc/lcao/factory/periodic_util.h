@@ -142,12 +142,15 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
  * \param shift_base the base position where all shifting vectors start
  * \param nshift the range of included lattices
  * \param dcell the direct unit cell params
+ * \param is_half_range true if only half range of \c nshift is needed, false
+ * if the full range of \c nshift is needed.
  * \return the shared pointer of the compound Basis object
  */
 std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3d &shift_base,
                                           const Vector3i &nshift,
-                                          const Vector3d &dcell);
+                                          const Vector3d &dcell,
+                                          const bool is_half_range = false);
 
 }  // namespace detail
 }  // namespace gaussian

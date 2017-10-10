@@ -155,15 +155,17 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
 std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3d &shift_base,
                                           const Vector3i &nshift,
-                                          const Vector3d &dcell) {
+                                          const Vector3d &dcell,
+                                          const bool is_half_range) {
   std::vector<ShellVec> vec_of_shells;
 
   using ::mpqc::lcao::detail::direct_ord_idx;
   using ::mpqc::lcao::detail::direct_vector;
-  int64_t shift_size =
-      1 + direct_ord_idx(nshift(0), nshift(1), nshift(2), nshift);
+  int64_t shift_size = 1 + direct_ord_idx(nshift, nshift);
+  assert(shift_size > 0 && shift_size % 2 == 1);
+  int64_t start = is_half_range ? ((shift_size - 1) / 2) : 0;
 
-  for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
+  for (auto idx_shift = start; idx_shift < shift_size; ++idx_shift) {
     Vector3d shift = direct_vector(idx_shift, nshift, dcell) + shift_base;
 
     for (auto shell_vec : basis.cluster_shells()) {

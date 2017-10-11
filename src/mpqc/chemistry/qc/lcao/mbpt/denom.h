@@ -37,7 +37,7 @@ void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
     for (auto a = a0; a < an; ++a) {
       const auto e_a = shift - ens[a + n_occ];
       for (auto b = b0; b < bn; ++b) {
-        const auto e_ab = -e_a - ens[b + n_occ];
+        const auto e_ab = e_a - ens[b + n_occ];
         for (auto i = i0; i < in; ++i) {
           const auto e_abi = e_ab + ens[i + n_frozen];
           for (auto j = j0; j < jn; ++j, ++tile_idx) {
@@ -82,7 +82,7 @@ TA::DistArray<Tile, Policy> d_abij(
     for (auto a = a0; a < an; ++a) {
       const auto e_a = shift - ens[a + n_occ];
       for (auto b = b0; b < bn; ++b) {
-        const auto e_ab = -e_a - ens[b + n_occ];
+        const auto e_ab = e_a - ens[b + n_occ];
         for (auto i = i0; i < in; ++i) {
           const auto e_abi = e_ab + ens[i + n_frozen];
           for (auto j = j0; j < jn; ++j, ++tile_idx) {

@@ -11,6 +11,12 @@
 namespace mpqc {
 namespace lcao {
 
+/**
+ *   CIS(D) Class, to be implemented
+ *
+ *   Helmich, B.; Hättig, C. J. Chem. Phys. 2011, 135 (21), 214106.
+ */
+
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_cis_d_double_amplitude(
     LCAOFactoryBase<Tile, Policy>& lcao_factory,
@@ -22,22 +28,22 @@ TA::DistArray<Tile, Policy> compute_cis_d_double_amplitude(
 
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
 
-  tmp("a,b,i,j") = g_ijka("j,i,k,a") * cis_ampl("k,b");
-  result("a,b,i,j") = tmp("a,b,i,j") + tmp("a,b,j,i");
+  tmp("a,b,i,j") = g_ijka("i,j,k,b") * cis_ampl("k,a");
+  result("a,b,i,j") = -(tmp("a,b,i,j") + tmp("b,a,j,i"));
 
   if (df) {
     auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
     auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
 
-    tmp("a,b,i,j") = Xab("K,a,c") * cis_ampl("i,c") * Xia("K,j,b");
-    result("a,b,i,j") -= tmp("a,b,i,j") + tmp("a,b,j,i");
+    tmp("a,b,i,j") = Xab("K,c,b") * cis_ampl("j,c") * Xia("K,i,a");
+    result("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
 
   } else {
     auto g_iabc = lcao_factory.compute(L"<i a|G|b c>");
 
     TA::DistArray<Tile, Policy> tmp;
-    tmp("a,b,i,j") = g_iabc("j,c,a,b") * cis_ampl("i,c");
-    result("a,b,i,j") -= tmp("a,b,i,j") + tmp("a,b,j,i");
+    tmp("a,b,i,j") = g_iabc("i,c,a,b") * cis_ampl("j,c");
+    result("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
   }
 
   auto f_ab = lcao_factory.compute(L"<a|F|b>" + postfix);
@@ -51,7 +57,7 @@ TA::DistArray<Tile, Policy> compute_cis_d_double_amplitude(
   EigenVector<typename Tile::numeric_type> ens(eps_o.rows() + eps_v.rows());
   ens << eps_o, eps_v;
 
-  detail::d_abij_inplace(result, ens, 0, -cis_energy);
+  detail::d_abij_inplace(result, ens, eps_o.rows(),0,cis_energy);
 
   return result;
 };

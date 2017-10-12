@@ -7,8 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
-#include "mpqc/math/linalg/davidson_diag.h"
 #include "mpqc/math/external/tiledarray/array_max_n.h"
+#include "mpqc/math/linalg/davidson_diag.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/print.h"
 
@@ -150,7 +150,8 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// this approach stores two electron integral and computes and stores H
   /// matrix
   /// @return excitation energy
-  std::vector<numeric_type> compute_cis(std::size_t n_roots, double precision,
+  std::vector<numeric_type> compute_cis(std::size_t n_roots,
+                                        std::size_t n_guess, double precision,
                                         bool triplets = false);
 
   /// this approach uses density-fitting, it stores three center integral,
@@ -158,9 +159,9 @@ class CIS : public LCAOWavefunction<Tile, Policy>,
   /// vector
   /// @return excitation energy
   std::vector<numeric_type> compute_cis_df(std::size_t n_roots,
+                                           std::size_t n_guess,
                                            double precision,
                                            bool triplets = false);
-
 
   /// @return guess vector of size n_roots as unit vector
   std::vector<TArray> init_guess_vector(std::size_t n_roots);
@@ -203,14 +204,15 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
 
     ExEnv::out0() << indent << "\nCIS Excitation Energy \n";
     auto n_roots = ex_energy->n_roots();
+    auto n_guess = ex_energy->n_guess();
 
     std::vector<numeric_type> result;
 
     if (ex_energy->singlets()) {
       if (method_ == "standard") {
-        result = compute_cis(n_roots, target_precision);
+        result = compute_cis(n_roots, n_guess, target_precision);
       } else if (method_ == "df") {
-        result = compute_cis_df(n_roots, target_precision);
+        result = compute_cis_df(n_roots, n_guess, target_precision);
       }
     }
 
@@ -218,9 +220,10 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
     if (ex_energy->triplets()) {
       decltype(result) triplet_result;
       if (method_ == "standard") {
-        triplet_result = compute_cis(n_roots, target_precision, true);
+        triplet_result = compute_cis(n_roots, n_guess, target_precision, true);
       } else if (method_ == "df") {
-        triplet_result = compute_cis_df(n_roots, target_precision, true);
+        triplet_result =
+            compute_cis_df(n_roots, n_guess, target_precision, true);
       }
       result.insert(result.end(), triplet_result.begin(), triplet_result.end());
     }
@@ -237,8 +240,8 @@ void CIS<Tile, Policy>::evaluate(ExcitationEnergy *ex_energy) {
 
 template <typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
-                               bool triplets) {
+CIS<Tile, Policy>::compute_cis(std::size_t n_roots, std::size_t n_guess,
+                               double converge, bool triplets) {
   ExEnv::out0() << "\n";
   ExEnv::out0() << indent
                 << "CIS standard: " << (triplets ? "Triplets" : "Singlets")
@@ -266,7 +269,7 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   }
 
   // get guess vector
-  auto guess = init_guess_vector(n_roots);
+  auto guess = init_guess_vector(n_guess);
 
   // compute H
   TA::DistArray<Tile, Policy> H;
@@ -312,10 +315,11 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();
 
-  for(std::size_t i = 0; i < n_roots; i++){
-    auto dominants = array_abs_max_n_index(eigen_vector[i],5);
+  for (std::size_t i = 0; i < n_roots; i++) {
+    auto dominants = array_abs_max_n_index(eigen_vector[i], 5);
 
-    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1 << "\n";
+    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1
+                  << "\n";
     util::print_cis_dominant_elements(dominants);
     ExEnv::out0() << "\n";
   }
@@ -328,8 +332,8 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, double converge,
 
 template <typename Tile, typename Policy>
 std::vector<typename CIS<Tile, Policy>::numeric_type>
-CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
-                                  bool triplets) {
+CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, std::size_t n_guess,
+                                  double converge, bool triplets) {
   ExEnv::out0() << "\n";
   ExEnv::out0() << indent << "CIS Density-fitting: "
                 << (triplets ? "Triplets" : "Singlets") << "\n";
@@ -355,7 +359,7 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   }
 
   // get guess vector
-  auto guess = init_guess_vector(n_roots);
+  auto guess = init_guess_vector(n_guess);
 
   // davidson object
   DavidsonDiag<TA::DistArray<Tile, Policy>> dvd(n_roots, true, 2, 10,
@@ -394,10 +398,11 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, double converge,
   // get the latest eigen vector
   auto &eigen_vector = dvd.eigen_vector();
 
-  for(std::size_t i = 0; i < n_roots; i++){
-    auto dominants = array_abs_max_n_index(eigen_vector[i],5);
+  for (std::size_t i = 0; i < n_roots; i++) {
+    auto dominants = array_abs_max_n_index(eigen_vector[i], 5);
 
-    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1 << "\n";
+    ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1
+                  << "\n";
     util::print_cis_dominant_elements(dominants);
     ExEnv::out0() << "\n";
   }

@@ -418,6 +418,8 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     std::vector<TArray> cis_vector;
     std::vector<numeric_type> cis_eig;
     {
+      auto n_guess = ex_energy->n_guess();
+
       // do not use cis direct method, not efficient
       KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
       std::string cis_method = (this->df_ ? "df" : "standard");
@@ -426,9 +428,9 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       // create CIS class and evaluate
       auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
 
-      // compute twice number of roots as guess
+      // compute number of guess CIS roots
       if (davidson_solver_ == "multi-state") {
-        ex_energy->set_n_roots(2 * n_roots);
+        ex_energy->set_n_roots(n_guess);
       }
 
       ::mpqc::evaluate(*ex_energy, cis);

@@ -3,7 +3,7 @@
 # this script builds an MPQC4 docker image
 
 # update these before rebuilding
-LIBINT_VERSION=2.4.0-beta.3
+LIBINT_VERSION=2.4.0-beta.4
 
 disable_aslr=disable_aslr.sh
 

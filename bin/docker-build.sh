@@ -1,14 +1,21 @@
 #!/bin/sh
 
 # this script builds an MPQC4 docker image
+#
+# to run bash in the image: docker run --privileged -i -t mpqc4-dev:latest /sbin/my_init -- bash -l
+# locations:
+#   - source dir: /usr/local/src/mpqc4
+#   - build dir: /usr/local/src/mpqc4-build
+#   - installed executable: /usr/local/bin/mpqc
+#   - installed headers dir: /usr/local/include/mpqc
+#   - installed libraries dir: /usr/local/lib, e.g. /usr/local/lib/libMPQCmpqc.a
 
 # update these before rebuilding
 LIBINT_VERSION=2.4.0-beta.4
 
-disable_aslr=disable_aslr.sh
-
 ##############################################################
 # make a script to disable ASLR to make MADWorld happy
+disable_aslr=disable_aslr.sh
 cat > $disable_aslr << END
 #!/bin/sh
 echo 0 > /proc/sys/kernel/randomize_va_space

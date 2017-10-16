@@ -453,6 +453,9 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
         total_roots_(n_roots),
         shift_(shift) {}
 
+  /// @return return current eigen vector in Davidson
+  value_type& eigen_vector() override  { return  converged_eigen_vector_; }
+
   /**
    * This is not a virtual function, it doesn't override DavidsonDiag::solve()
    *
@@ -524,7 +527,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
       }
 
       // converged
-      converged_eigen_vector_.push_back(this->eigen_vector()[0]);
+      converged_eigen_vector_.push_back(this->eigen_vector_.back()[0]);
       this->reset();
 
       total_eig[i] = eig[0];

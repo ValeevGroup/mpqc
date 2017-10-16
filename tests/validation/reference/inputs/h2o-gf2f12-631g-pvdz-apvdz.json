@@ -40,8 +40,8 @@
     "atoms": "$:atoms",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
-    "occ_block_size": 8,
-    "unocc_block_size":32,
+    "occ_block_size": 4,
+    "unocc_block_size":4,
     "use_cabs" : true,
     "dyson_method" : "diagonal"
   }

@@ -22,7 +22,7 @@
     "screen": "schwarz"
   },
   "wfn":{
-    "type": "Cadf-RHF",
+    "type": "CADF-RHF",
     "wfn_world": "$:wfn_world",
     "atoms" : "$:atoms",
     "secadf" : true

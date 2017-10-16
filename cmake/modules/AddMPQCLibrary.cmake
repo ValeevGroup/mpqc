@@ -21,6 +21,7 @@ macro(add_mpqc_library _name _rawlist_source_files _rawlist_public_header_files 
   set(_libname MPQC${_name})
   
   add_library(${_libname}-obj OBJECT ${_source_files})
+  target_sources(${_libname}-obj PRIVATE ${${_rawlist_source_files}})
   #cotire(${_libname}-obj)
   add_library(${_libname} $<TARGET_OBJECTS:${_libname}-obj>)
   if(BUILD_SHARED_LIBS)

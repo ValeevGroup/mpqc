@@ -1,22 +1,26 @@
 {
   "units": "2010CODATA",
-  "atoms": {
+  "molecule": {
+    "type": "Molecule",
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
-    "n_cluster": 2,
-    "attach_hydrogen" : false
+    "n_cluster": 1,
+    "reblock" : 4
   },
   "obs": {
+    "type": "Basis",
     "name": "6-31G",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
   "dfbs": {
+    "type": "Basis",
     "name": "cc-pVDZ",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
   "wfn_world":{
-    "atoms" : "$:atoms",
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
     "screen": "schwarz"
@@ -26,19 +30,22 @@
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "CCSD(T)",
+    "type": "CCSD",
     "wfn_world": "$:wfn_world",
-    "atoms" : "$:atoms",
+    "molecule" : "$:molecule",
     "ref": "$:scf",
-    "method" : "df",
-    "approach" : "straight",
+    "method" : "direct_df",
+    "solver" : "pno",
+    "pno_canonical" : "true",
+    "tpno" : "0",
+    "tosv" : "0",
+    "tiling_method" : "flexible",
     "occ_block_size" : 4,
-    "unocc_block_size" : 4,
-    "reblock_occ" : 4,
-    "reblock_unocc" : 4
+    "unocc_block_size" : 4
   },
   "property" : {
     "type" : "Energy",
+    "precision" : "1e-11",
     "wfn" : "$:wfn"
   }
 }

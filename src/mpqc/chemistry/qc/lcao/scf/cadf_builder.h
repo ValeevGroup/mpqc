@@ -30,7 +30,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   ArrayType Mchol_inv_;  // Chol(<Κ |G| Λ >)^-1
   ArrayType C_;          // CADF fitting coeffs
 
-  // SeCadf builder
+  // seCADF builder
   std::unique_ptr<ExactKDiagonalBuilder<Tile, Policy>> exactK_;
 
   float force_threshold_ = 0.0;
@@ -99,7 +99,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     force_threshold_ = force_threshold;
     LMO_chop_threshold_ = lmo_chop_threshold;
 
-    C_ = ao_factory.compute(L"( Κ | Cadf|κ λ)");
+    C_ = ao_factory.compute(L"( Κ | CADF|κ λ)");
     E_ = ao_factory.compute_direct(L"( Κ | G|κ λ)");
     M_ = ao_factory.compute(L"( Κ | G| Λ )");
 
@@ -294,7 +294,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     }
     K.truncate();
 
-    // SeCadf correction
+    // seCADF correction
     if (secadf_) {
       auto se0 = mpqc::fenced_now(world);
       auto K_se = exactK_->operator()(D, LMO, target_precision);

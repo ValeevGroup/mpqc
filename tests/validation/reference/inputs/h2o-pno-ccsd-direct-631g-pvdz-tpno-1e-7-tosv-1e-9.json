@@ -1,41 +1,45 @@
 {
   "units": "2010CODATA",
-  "atoms": {
+  "molecule": {
+    "type": "Molecule",
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
-    "n_cluster": 2
+    "n_cluster": 1,
+    "reblock" : 4
   },
   "obs": {
+    "type": "Basis",
     "name": "6-31G",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
   "dfbs": {
+    "type": "Basis",
     "name": "cc-pVDZ",
-    "atoms": "$:atoms"
-  },
-  "ribs":{
-    "name": "aug-cc-pVDZ",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
   "wfn_world":{
-    "atoms" : "$:atoms",
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
-    "aux_basis": "$:ribs",
-    "screen": "schwarz",
-    "f12_factor" : "stg-6g[1.2]"
+    "screen": "schwarz"
   },
   "scf":{
     "type": "RI-RHF",
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "CCSD(F12)",
-    "atoms" : "$:atoms",
+    "type": "CCSD",
     "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
     "ref": "$:scf",
     "method" : "direct_df",
+    "solver" : "pno",
+    "pno_canonical" : "true",
+    "tpno" : "1.0e-07",
+    "tosv" : "1.0e-09",
+    "tiling_method" : "flexible",
     "occ_block_size" : 4,
     "unocc_block_size" : 4
   },

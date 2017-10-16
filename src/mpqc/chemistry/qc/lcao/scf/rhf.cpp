@@ -36,9 +36,9 @@ template class mpqc::lcao::DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("Direct-RI-RHF",
                    mpqc::lcao::DirectRIRHF<TA::TensorD, TA::SparsePolicy>);
 
-template class mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>;
-MPQC_CLASS_EXPORT2("Cadf-RHF",
-                   mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>);
+template class mpqc::lcao::CADFRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("CADF-RHF",
+                   mpqc::lcao::CADFRHF<TA::TensorD, TA::SparsePolicy>);
 
 template class mpqc::lcao::RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("RIJ-ExactK-RHF",

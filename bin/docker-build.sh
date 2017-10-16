@@ -1,14 +1,21 @@
 #!/bin/sh
 
 # this script builds an MPQC4 docker image
+#
+# to run bash in the image: docker run --privileged -i -t mpqc4-dev:latest /sbin/my_init -- bash -l
+# locations:
+#   - source dir: /usr/local/src/mpqc4
+#   - build dir: /usr/local/src/mpqc4-build
+#   - installed executable: /usr/local/bin/mpqc
+#   - installed headers dir: /usr/local/include/mpqc
+#   - installed libraries dir: /usr/local/lib, e.g. /usr/local/lib/libMPQCmpqc.a
 
 # update these before rebuilding
-LIBINT_VERSION=2.3.0-beta.6
-
-disable_aslr=disable_aslr.sh
+LIBINT_VERSION=2.4.0-beta.4
 
 ##############################################################
 # make a script to disable ASLR to make MADWorld happy
+disable_aslr=disable_aslr.sh
 cat > $disable_aslr << END
 #!/bin/sh
 echo 0 > /proc/sys/kernel/randomize_va_space
@@ -23,7 +30,7 @@ cat > Dockerfile << END
 # to 'latest'! See
 # https://github.com/phusion/baseimage-docker/blob/master/Changelog.md
 # for a list of version numbers.
-FROM phusion/baseimage:0.9.19
+FROM phusion/baseimage:0.9.22
 
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]

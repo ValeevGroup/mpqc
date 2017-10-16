@@ -31,6 +31,18 @@ class Solver {
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
   virtual void update(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
+
+  /// Computes the error for the given residuals \c r1 and \c r2 .
+
+  /// The error is defined as the 2-norm per element, i.e.
+  /// \f$ \sqrt{||r_1||_2^2 + ||r_2||_2^2}/(\mathrm{size}(r_1) + \mathrm{size}(r_2)) \f$ .
+  /// @param[in] r1 the 1-body amplitude equation residual set
+  /// @param[in] r2 the 2-body amplitude equation residual set
+  /// @return the error
+  virtual double error(const T1& r1, const T2& r2) {
+    return std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+        (size(r1) + size(r2));
+  }
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS

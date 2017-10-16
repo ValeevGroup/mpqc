@@ -7,8 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 
-#include <memory>
 #include <madness/world/worldmem.h>
+#include <memory>
 
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
@@ -50,6 +50,8 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
   density_builder_str_ =
       kv.value<std::string>("density_builder", "eigen_solve");
   localize_ = kv.value<bool>("localize", false);
+  localization_method_ =
+      kv.value<std::string>("localization_method", "boys-foster");
   t_cut_c_ = kv.value<double>("t_cut_c", 0.0);
 }
 
@@ -77,12 +79,14 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
       gaussian::xyz_integrals<Tile, Policy>(world, multi_pool, bs_array);
 
   const auto nocc = nelectrons_ / 2;
+  const auto ncore = mol.core_electrons() / 2;
 
   // density builder
   std::size_t n_cluster = mol.nclusters();
   if (density_builder_str_ == "purification") {
     auto density_builder = scf::PurificationDensityBuilder<Tile, Policy>(
-        S_, r_xyz, nocc, n_cluster, t_cut_c_, localize_);
+        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, localize_,
+        localization_method_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder_str_ == "eigen_solve") {
@@ -90,8 +94,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
         kv.value<std::string>("decompo_type", "conditioned");
     double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
-        S_, r_xyz, nocc, n_cluster, t_cut_c_, decompo_type, s_tolerance,
-        localize_);
+        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, s_tolerance,
+        localize_, localization_method_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {
@@ -308,7 +312,7 @@ void RHF<Tile, Policy>::evaluate(PopulatedOrbitalSpace<array_type>* result,
                                  std::size_t target_blocksize) {
   if (!can_evaluate(result))
     throw ProgrammingError(
-        "RHF: populatd orbitals requested, but can't compute them", __FILE__,
+        "RHF: populated orbitals requested, but can't compute them", __FILE__,
         __LINE__);
 
   do_evaluate(target_energy_precision);
@@ -358,11 +362,10 @@ void DirectRIRHF<Tile, Policy>::init_fock_builder() {
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
-/**
- * CadfRHF member functions
- */
+/////////////// CADFRHF member functions
+
 template <typename Tile, typename Policy>
-CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
+CADFRHF<Tile, Policy>::CADFRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
   auto user_tcutc = kv.exists("tcutc");
   if (user_tcutc) {
@@ -377,16 +380,14 @@ CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
 }
 
 template <typename Tile, typename Policy>
-void CadfRHF<Tile, Policy>::init_fock_builder() {
+void CADFRHF<Tile, Policy>::init_fock_builder() {
   using DirectArray = typename gaussian::AOFactory<Tile, Policy>::DirectTArray;
   using Builder = scf::CADFFockBuilder<Tile, Policy, DirectArray>;
   this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), force_shape_threshold_, tcutc_, secadf_);
 }
 
-/**
- * DirectRHF member functions
- */
+///////////////  DirectRHF member functions
 template <typename Tile, typename Policy>
 DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
@@ -403,9 +404,8 @@ void DirectRHF<Tile, Policy>::init_fock_builder() {
       world, basis, basis, basis, true, true, screen, screen_threshold);
 }
 
-/**
- * DirectRIRHF member functions
- */
+///////////////  DirectRIRHF member functions
+
 template <typename Tile, typename Policy>
 RIJEXACTKRHF<Tile, Policy>::RIJEXACTKRHF(const KeyVal& kv)
     : RHF<Tile, Policy>(kv) {}

@@ -869,7 +869,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | update_pno | bool | false | Whether or not to recompute the PNOs every nth iteration |
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
-   * | interval | int | 10 | Every nth iteration, PNOs are recomputed |
+   * | pno_update_interval | int | 10 | Every nth iteration, PNOs are recomputed |
    * | residual_thresh | double | 1e-10 | Once the residual value is less than the threshold value, update_pno set to false |
    */
   // clang-format on
@@ -885,7 +885,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                                             // employed
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
-        interval_(kv.value<int>("interval", 10)),
+        pno_update_interval_(kv.value<int>("pno_update_interval", 10)),
         residual_thresh_(kv.value<double>("residual_thresh", 1e-10)){
     // part of WorldObject initialization
     this->process_pending();
@@ -1350,7 +1350,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     T delta_t2_abij;
 
     // Perform Jacobi update in full space when PNOs being recomputed
-    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % interval_ == 0)) {
+    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0)) {
       Vector ens_occ_act = F_occ_act_.diagonal();
       Vector ens_uocc = F_uocc_.diagonal();
 
@@ -1389,7 +1389,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     update_only(t1, t2, r1_reblock, r2_reblock);
 
     // Recompute PNOs as appropriate
-    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % interval_ == 0)) {
+    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0)) {
 
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
@@ -1524,7 +1524,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   T T_;                        //!< the array of MP2 T amplitudes
 
   int iter_count_;             //!< the CCSD iteration
-  int interval_;               //!< the interval at which to update PNOs
+  int pno_update_interval_;    //!< the interval at which to update PNOs
 
   double residual_thresh_;     //!< if residual becomes smaller than this
                                // threshold, stop updating PNOs

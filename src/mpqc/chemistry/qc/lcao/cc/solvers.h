@@ -877,7 +877,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       : ::mpqc::cc::DIISSolver<T, T>(kv),
         madness::WorldObject<PNOSolver<T, DT>>(factory.world()),
         factory_(factory),
-        pno_method_(kv.value<std::string>("pno_method", "standard")),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
         update_pno_(kv.value<bool>("update_pno", false)),
         tiling_method_(kv.value<std::string>(
@@ -1514,7 +1513,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
  private:
   Factory<T, DT>& factory_;
-  std::string pno_method_;     //!< the PNO construction method
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
   bool update_pno_;            //!< whether or not to update PNOs with each CC iter
   std::string tiling_method_;  //!< whether to employ rigid tiling or flexible
@@ -1574,7 +1572,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
    * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */

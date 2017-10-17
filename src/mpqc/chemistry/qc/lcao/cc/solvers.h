@@ -377,6 +377,55 @@ TA::DistArray<Tile, Policy> osv_transform_ai(
   return result;
 }
 
+// "Project" T2 into new PNO space
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> t2_project_pno(
+    const TA::DistArray<Tile, Policy>& t2,
+    std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
+  using Matrix = RowMatrix<typename Tile::numeric_type>;
+  using Vector = EigenVector<typename Tile::numeric_type>;
+
+  auto& world = t2.world();
+  std::size_t nocc_act = t2.trange().dim(2).extent();
+  std::size_t nuocc = t2.trange().dim(0).extent();
+
+  auto project_t2 = [nuocc, nocc_act, pnos](Tile& result_tile, const Tile& arg_tile) {
+    result_tile = Tile(arg_tile.range());
+
+    // Get values of i and j
+    const int i = arg_tile.range().lobound()[2];
+    const int j = arg_tile.range().lobound()[3];
+
+    // Select appropriate PNO matrix
+    Matrix pno_ij = pnos[i*nocc_act + j];
+
+    // Turn tile of t2 into matrix
+    Matrix t2_ij = TA::eigen_map(arg_tile, nuocc, nuocc);
+
+    // Project t2
+    Matrix t2_ij_prime = pno_ij.transpose() * t2_ij * pno_ij;
+
+    // Project back
+    Matrix T2_ij = pno_ij * t2_ij_prime * pno_ij.transpose();
+
+    // Turn T_ij back into tile
+    auto norm = 0.0;
+    for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
+      for (int b = 0; b != nuocc; ++b, ++tile_idx) {
+        const auto elem = T2_ij(a, b);
+        const auto abs_result = std::abs(elem);
+        norm += (abs_result * abs_result);
+        result_tile[tile_idx] = elem;
+      }
+    }
+    return std::sqrt(norm);
+  }; // project_t2
+
+  auto T2 = TA::foreach(t2, project_t2);
+  T2.world().gop.fence();
+  return T2;
+};  // t2_project_pno
+
 /**
  *
  * @param t2   T2 like array with dimention "a,b,i,j"
@@ -1348,13 +1397,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+      // Transform T_reblock
+      T T2 = detail::t2_project_pno(T_reblock, pnos_);
+      t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
 
       mpqc::cc::T1T2<T, T> r(r1_reblock, r2_reblock);
       mpqc::cc::T1T2<T, T> t(t1, t2);
       this->reset();
       //this->diis().extrapolate(t, r);
-      t1 = t.t1;
-      t2 = t.t2;
+//      t1 = t.t1;
+//      t2 = t.t2;
       iter_count_ += 1;
     }
 

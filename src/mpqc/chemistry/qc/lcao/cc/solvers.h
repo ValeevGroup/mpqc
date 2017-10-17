@@ -867,6 +867,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
+   * | update_pno | bool | false | Whether or not to recompute the PNOs every nth iteration |
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    * | interval | int | 10 | Every nth iteration, PNOs are recomputed |
    * | residual_thresh | double | 1e-10 | Once the residual value is less than the threshold value, update_pno set to false |

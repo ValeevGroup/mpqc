@@ -7,7 +7,7 @@
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/assert.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 #include <libint2/atom.h>
 

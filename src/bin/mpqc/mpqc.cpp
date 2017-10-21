@@ -17,8 +17,9 @@
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/misc/bug.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/options/GetLongOpt.h"
 
 // linkage files to force linking in of ALL Wavefunction-based classes

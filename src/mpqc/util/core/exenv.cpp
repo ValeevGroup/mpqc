@@ -42,7 +42,7 @@
 #include <cstring>
 #include <memory>
 
-#include "mpqc/util/misc/exenv.h"
+#include "exenv.h"
 
 using namespace std;
 using namespace mpqc;

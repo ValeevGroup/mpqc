@@ -22,9 +22,9 @@
 
 #include "mpqc/util/keyval/keyval.h"
 //#include "mpqc/util/misc/consumableresources.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/formio.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/formio.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 
 namespace mpqc {

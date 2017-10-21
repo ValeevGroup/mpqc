@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC4_SRC_MPQC_UTIL_MISC_FORMIO_H_
-#define MPQC4_SRC_MPQC_UTIL_MISC_FORMIO_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_CORE_FORMIO_H_
+#define MPQC4_SRC_MPQC_UTIL_CORE_FORMIO_H_
 
 #include <iostream>
 #include <fstream>
@@ -122,7 +122,7 @@ std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& o,
 
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_UTIL_MISC_FORMIO_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_CORE_FORMIO_H_
 
 // Local Variables:
 // mode: c++

@@ -734,21 +734,22 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       double norm_r1 = r1("a,i").norm();
       double norm_r2 = r2("a,b,i,j").norm();
       double norm_r3 = r3("a,b,c,i,j,k").norm();
+      /*
       ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
       ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
       ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
       ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;*/
 
 
       //denominator
       //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
 
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+      /*ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
       ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
       ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
       ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
+      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ; */
 
       }
        // end of triples part  _VR

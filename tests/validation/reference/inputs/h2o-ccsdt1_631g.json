@@ -25,15 +25,15 @@
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "CCSDT-1b",
+    "type": "CCSDT-1",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
     "method" : "standard",
-    "diis_start" : 2,
+    "diis_start" : 3,
     "occ_block_size" : 4,
     "unocc_block_size" : 4,
-    "Expected T1b energy" : -0.135915583049 
+    "Expected T1a energy" : -0.135915834821 
   },
   "property" : {
     "type" : "Energy",

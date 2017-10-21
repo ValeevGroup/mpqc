@@ -30,7 +30,7 @@
     "molecule" : "$:molecule",
     "ref": "$:scf",
     "method" : "standard",
-    "diis_start" : 10000,
+    "diis_start" : 2,
     "occ_block_size" : 4,
     "unocc_block_size" : 4,
     "Expected CCSDT-4 correlation energy" : -0.13596904908,

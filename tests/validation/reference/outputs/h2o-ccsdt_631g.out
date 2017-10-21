@@ -1,0 +1,437 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 50cab724034613a0982a47e8ba59f39c2b3040b6
+
+  Machine:          Darwin-16.6.0-x86_64
+  User:             varunris@varuns-MacBook-Pro.local
+  Start Time:       Sat Oct 21 00:31:40 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "verbose": "false",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSDT",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "diis_start": "2",
+        "occ_block_size": "4",
+        "unocc_block_size": "4",
+        "Expected CCSDT correlation energy": "-0.135957787435",
+        "Expected CCSDT total energy": "-76.119508081515"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-11",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 6-31G
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization. 
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 50.5531878082312
+
+Starting SCF:
+	Threshold: 1e-13
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -75.9699257743243
+	abs(Energy Change): 0.0765048650677613
+	(Gradient Norm)/n^2: 0.000965436190405684
+	Scf Time: 0.004172473
+		Density Time: 0.001675469
+		Fock Build Time: 0.001767635
+iteration: 1
+	Energy: -75.9822616080134
+	abs(Energy Change): 0.0123358336890789
+	(Gradient Norm)/n^2: 0.000334573850429697
+	Scf Time: 0.004111908
+		Density Time: 0.001679541
+		Fock Build Time: 0.001329842
+iteration: 2
+	Energy: -75.983362349906
+	abs(Energy Change): 0.00110074189267095
+	(Gradient Norm)/n^2: 0.000130506281947782
+	Scf Time: 0.004141116
+		Density Time: 0.00159774
+		Fock Build Time: 0.001440495
+iteration: 3
+	Energy: -75.9835444012106
+	abs(Energy Change): 0.000182051304520314
+	(Gradient Norm)/n^2: 1.47101948292997e-05
+	Scf Time: 0.008624918
+		Density Time: 0.002663444
+		Fock Build Time: 0.00462464
+iteration: 4
+	Energy: -75.9835501088065
+	abs(Energy Change): 5.70759597451342e-06
+	(Gradient Norm)/n^2: 2.94888267035634e-06
+	Scf Time: 0.005847511
+		Density Time: 0.001574535
+		Fock Build Time: 0.002712273
+iteration: 5
+	Energy: -75.9835503009751
+	abs(Energy Change): 1.92168513990509e-07
+	(Gradient Norm)/n^2: 3.14441458553364e-07
+	Scf Time: 0.005129869
+		Density Time: 0.001584642
+		Fock Build Time: 0.001336732
+iteration: 6
+	Energy: -75.9835503023532
+	abs(Energy Change): 1.37818290113501e-09
+	(Gradient Norm)/n^2: 4.9779839686999e-08
+	Scf Time: 0.004332076
+		Density Time: 0.001570277
+		Fock Build Time: 0.001342843
+iteration: 7
+	Energy: -75.9835503024017
+	abs(Energy Change): 4.84163820146932e-11
+	(Gradient Norm)/n^2: 1.14278676251765e-08
+	Scf Time: 0.009931423
+		Density Time: 0.001845785
+		Fock Build Time: 0.006428557
+iteration: 8
+	Energy: -75.9835503024051
+	abs(Energy Change): 3.45323769579409e-12
+	(Gradient Norm)/n^2: 2.29411767217128e-09
+	Scf Time: 0.005399348
+		Density Time: 0.001962347
+		Fock Build Time: 0.001609916
+iteration: 9
+	Energy: -75.9835503024051
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 8.0969611776537e-10
+	Scf Time: 0.005247154
+		Density Time: 0.001891725
+		Fock Build Time: 0.001642419
+iteration: 10
+	Energy: -75.9835503024051
+	abs(Energy Change): 2.8421709430404e-14
+	(Gradient Norm)/n^2: 1.14670364691004e-10
+	Scf Time: 0.005074194
+		Density Time: 0.001838203
+		Fock Build Time: 0.001504093
+iteration: 11
+	Energy: -75.9835503024053
+	abs(Energy Change): 1.84741111297626e-13
+	(Gradient Norm)/n^2: 4.5375868283696e-11
+	Scf Time: 0.004915181
+		Density Time: 0.001785061
+		Fock Build Time: 0.001460293
+iteration: 12
+	Energy: -75.9835503024053
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 1.86614942140338e-11
+	Scf Time: 0.004619751
+		Density Time: 0.001661171
+		Fock Build Time: 0.00140577
+iteration: 13
+	Energy: -75.9835503024051
+	abs(Energy Change): 1.27897692436818e-13
+	(Gradient Norm)/n^2: 9.6654759645345e-12
+	Scf Time: 0.004374731
+		Density Time: 0.0015501
+		Fock Build Time: 0.001390278
+iteration: 14
+	Energy: -75.9835503024051
+	abs(Energy Change): 0
+	(Gradient Norm)/n^2: 4.41258743020653e-12
+	Scf Time: 0.00442987
+		Density Time: 0.001605095
+		Fock Build Time: 0.001422055
+iteration: 15
+	Energy: -75.9835503024052
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 2.58075155768151e-12
+	Scf Time: 0.005106807
+		Density Time: 0.002035415
+		Fock Build Time: 0.001326978
+iteration: 16
+	Energy: -75.9835503024051
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 1.32171872544675e-12
+	Scf Time: 0.007117927
+		Density Time: 0.001616549
+		Fock Build Time: 0.002785168
+iteration: 17
+	Energy: -75.9835503024052
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 7.96054211449548e-13
+	Scf Time: 0.004422257
+		Density Time: 0.001554666
+		Fock Build Time: 0.001358404
+iteration: 18
+	Energy: -75.9835503024052
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 4.40903432761161e-13
+	Scf Time: 0.004284868
+		Density Time: 0.001629037
+		Fock Build Time: 0.001313589
+iteration: 19
+	Energy: -75.9835503024051
+	abs(Energy Change): 7.105427357601e-14
+	(Gradient Norm)/n^2: 2.64714959894055e-13
+	Scf Time: 0.004236962
+		Density Time: 0.001543707
+		Fock Build Time: 0.001301563
+iteration: 20
+	Energy: -75.9835503024052
+	abs(Energy Change): 1.4210854715202e-13
+	(Gradient Norm)/n^2: 1.52478129195558e-13
+	Scf Time: 0.008440408
+		Density Time: 0.003830562
+		Fock Build Time: 0.001344101
+iteration: 21
+	Energy: -75.9835503024052
+	abs(Energy Change): 7.105427357601e-14
+	(Gradient Norm)/n^2: 9.09650274018245e-14
+	Scf Time: 0.004403858
+		Density Time: 0.00161591
+		Fock Build Time: 0.001336204
+  Frozen Core: 2 electrons
+Occ Range
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+ActiveOcc Range
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Unocc Range
+( tiles = [ 0, 2 ), elements = [ 0, 8 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Obs Range
+( tiles = [ 0, 3 ), elements = [ 0, 13 ) )
+Min and Max block size: 4 5
+Average: 4
+
+Use Conventional CCSDT Compute
+    Waring! Transformation creates large intermediate:  ( a κ1 |G| κ2 κ3 ) Size: 0.000130951404571533 GB
+Integral Prepare Time: 0.167924859
+MP2 Energy      -0.128204487191067
+Start Iteration
+Max Iteration: 30
+Target precision: 1e-11
+AccurateTime: 0
+PrintDetail: 0
+Reduced ABCD Memory Approach: No
+t3 total time in constructing small intermediates  0.002065021
+t3 total time in constructing super-intermediates  0.016804968
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000504932
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.002356699
+t3 total time in T3 dependent contractions in the r3 residual  0.010040877
+t3 total time in T2 dependent contractions in the r3 residual  0.002981467
+t3 total time: 0.032259156
+iter 	     deltaE 	   residual 	          energy 	 total time/s 
+  0 	 2.37051e-03 	 4.72285e-06 	 -0.130575000184 	        0.1 
+t3 total time in constructing small intermediates  0.002615001
+t3 total time in constructing super-intermediates  0.01315948
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000463507
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000874507
+t3 total time in T3 dependent contractions in the r3 residual  0.009531305
+t3 total time in T2 dependent contractions in the r3 residual  0.003088322
+t3 total time: 0.028756712
+  1 	 4.60831e-03 	 1.76914e-06 	 -0.135183314456 	        0.1 
+t3 total time in constructing small intermediates  0.002064373
+t3 total time in constructing super-intermediates  0.017589502
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.003137697
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.008751301
+t3 total time in T3 dependent contractions in the r3 residual  0.029510828
+t3 total time in T2 dependent contractions in the r3 residual  0.003273736
+t3 total time: 0.052804745
+  2 	 6.04801e-04 	 8.37871e-07 	 -0.135788115465 	        0.1 
+t3 total time in constructing small intermediates  0.002051142
+t3 total time in constructing super-intermediates  0.012199285
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000464499
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000964896
+t3 total time in T3 dependent contractions in the r3 residual  0.010736356
+t3 total time in T2 dependent contractions in the r3 residual  0.005291973
+t3 total time: 0.030654863
+  3 	 1.78158e-04 	 1.81338e-07 	 -0.135966273530 	        0.1 
+t3 total time in constructing small intermediates  0.002075214
+t3 total time in constructing super-intermediates  0.011544863
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000875234
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000912057
+t3 total time in T3 dependent contractions in the r3 residual  0.010769486
+t3 total time in T2 dependent contractions in the r3 residual  0.002920351
+t3 total time: 0.027674715
+  4 	 7.25377e-06 	 6.93374e-08 	 -0.135959019756 	        0.1 
+t3 total time in constructing small intermediates  0.002059053
+t3 total time in constructing super-intermediates  0.011664843
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000937693
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000893534
+t3 total time in T3 dependent contractions in the r3 residual  0.009448794
+t3 total time in T2 dependent contractions in the r3 residual  0.003193819
+t3 total time: 0.026751189
+  5 	 2.52732e-06 	 2.31899e-08 	 -0.135956492433 	        0.1 
+t3 total time in constructing small intermediates  0.002013822
+t3 total time in constructing super-intermediates  0.01151857
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000449059
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.001339957
+t3 total time in T3 dependent contractions in the r3 residual  0.009278311
+t3 total time in T2 dependent contractions in the r3 residual  0.002936452
+t3 total time: 0.026112234
+  6 	 1.00127e-06 	 7.15493e-09 	 -0.135957493699 	        0.1 
+t3 total time in constructing small intermediates  0.002084884
+t3 total time in constructing super-intermediates  0.01409218
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000896974
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000940481
+t3 total time in T3 dependent contractions in the r3 residual  0.00951297
+t3 total time in T2 dependent contractions in the r3 residual  0.00337914
+t3 total time: 0.029432955
+  7 	 2.90189e-07 	 2.20130e-09 	 -0.135957783888 	        0.1 
+t3 total time in constructing small intermediates  0.002053093
+t3 total time in constructing super-intermediates  0.012970308
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000489755
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000892556
+t3 total time in T3 dependent contractions in the r3 residual  0.008888953
+t3 total time in T2 dependent contractions in the r3 residual  0.005716575
+t3 total time: 0.030005777
+  8 	 2.42681e-09 	 6.61174e-10 	 -0.135957781462 	        0.1 
+t3 total time in constructing small intermediates  0.002092718
+t3 total time in constructing super-intermediates  0.014120621
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000486706
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000919872
+t3 total time in T3 dependent contractions in the r3 residual  0.009101377
+t3 total time in T2 dependent contractions in the r3 residual  0.003261158
+t3 total time: 0.0289616
+  9 	 2.61863e-08 	 1.88760e-10 	 -0.135957807648 	        0.1 
+t3 total time in constructing small intermediates  0.002035663
+t3 total time in constructing super-intermediates  0.01408776
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000460714
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000886427
+t3 total time in T3 dependent contractions in the r3 residual  0.00909072
+t3 total time in T2 dependent contractions in the r3 residual  0.002903407
+t3 total time: 0.028477385
+ 10 	 1.27281e-08 	 7.28243e-11 	 -0.135957794920 	        0.1 
+t3 total time in constructing small intermediates  0.002004935
+t3 total time in constructing super-intermediates  0.011711896
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.002462898
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000912334
+t3 total time in T3 dependent contractions in the r3 residual  0.011232429
+t3 total time in T2 dependent contractions in the r3 residual  0.00406978
+t3 total time: 0.029395709
+ 11 	 2.40512e-09 	 2.57244e-11 	 -0.135957797325 	        0.1 
+t3 total time in constructing small intermediates  0.002018859
+t3 total time in constructing super-intermediates  0.01249539
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.000491205
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000950699
+t3 total time in T3 dependent contractions in the r3 residual  0.008675461
+t3 total time in T2 dependent contractions in the r3 residual  0.00352957
+t3 total time: 0.02709097
+ 12 	 5.10926e-10 	 1.02992e-11 	 -0.135957796814 	        0.1 
+t3 total time in constructing small intermediates  0.002180358
+t3 total time in constructing super-intermediates  0.014205369
+t3 total time in T3 dependent hhhh contractions in the r3 residual  0.00049689
+t3 total time in T3 dependent pppp contractions in the r3 residual  0.000905223
+t3 total time in T3 dependent contractions in the r3 residual  0.008791004
+t3 total time in T2 dependent contractions in the r3 residual  0.003342372
+t3 total time: 0.028891243
+ 13 	 1.93709e-12 	 3.43075e-12 	 -0.135957796816 	        0.1 
+CCSDT Energy  -0.135957796815827
+CCSDT Time in CCSDT: 1.006838462 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "verbose": "false",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSDT",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "diis_start": "2",
+        "occ_block_size": "4",
+        "unocc_block_size": "4",
+        "Expected CCSDT correlation energy": "-0.135957787435",
+        "Expected CCSDT total energy": "-76.119508081515"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-11",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-76.119508099220994"
+        }
+    }
+}
+

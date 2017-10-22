@@ -1,3 +1,30 @@
+//
+// backtrace.cpp
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@limitpt.com>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
+
 #include "backtrace.h"
 
 #include <iterator>
@@ -87,7 +114,7 @@ Backtrace::Backtrace(const std::string &prefix) : prefix_(prefix) {
 #if defined(SIMPLE_STACK)
   // This will go through the stack assuming a simple linked list
   // of pointers to the previous frame followed by the return address.
-  // It trys to be careful and avoid creating new execptions, but there
+  // It trys to be careful and avoid creating new exceptions, but there
   // are no guarantees.
   void **stack = (void **)&bottom;
 

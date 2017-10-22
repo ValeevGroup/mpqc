@@ -28,7 +28,9 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_CORE_EXCEPTION_H_
 #define MPQC4_SRC_MPQC_UTIL_CORE_EXCEPTION_H_
 
+#include <memory>
 #include <stdexcept>
+#include <string.h>
 #include <sstream>
 #include <vector>
 

@@ -1,5 +1,6 @@
 #include "backtrace.h"
 
+#include <iterator>
 #include <sstream>
 
 #include "mpqc/mpqc_config.h"

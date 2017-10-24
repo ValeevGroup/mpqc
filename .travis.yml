@@ -32,6 +32,9 @@ matrix:
     - compiler: clang
       env: GCC_VERSION=6 BUILD_TYPE=Release
   allow_failures:
+# this results in an ICE when compiling formio.cpp
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
 # this results in an ICE when compiling zrhf.cpp
     - compiler: gcc
       env: GCC_VERSION=6 BUILD_TYPE=Debug

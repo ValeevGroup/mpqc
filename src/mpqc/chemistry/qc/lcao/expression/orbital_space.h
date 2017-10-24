@@ -11,7 +11,7 @@
 #include "mpqc/chemistry/qc/lcao/expression/operator.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_index.h"
 #include "mpqc/math/groups/group.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace lcao {

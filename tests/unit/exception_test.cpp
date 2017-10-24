@@ -1,6 +1,6 @@
 
 #include "catch.hpp"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 using namespace mpqc;
 

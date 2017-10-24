@@ -8,9 +8,10 @@
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc_init.h"
 #include "mpqc_task.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/linkage.h"
+#include "mpqc/chemistry/qc/properties/linkage.h"
 
 madness::World* world_ptr = nullptr;
 

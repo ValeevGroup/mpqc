@@ -2,7 +2,7 @@
 #define MPQC4_SRC_MPQC_MATH_LINALG_CHOLESKY_INVERSE_H_
 
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 #include <tiledarray.h>
 

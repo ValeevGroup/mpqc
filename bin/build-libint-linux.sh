@@ -40,7 +40,7 @@ tar -xvzf libint-$RELID-test-mpqc4.tgz
 cd libint-$RELID/
 
 ./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
- --with-incdirs="-I/usr/include/eigen3"
+ --with-incdirs="-I/usr/include/eigen3" --enable-shared --disable-static
 
 
 make -j2

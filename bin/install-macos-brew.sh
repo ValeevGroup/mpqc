@@ -54,7 +54,7 @@ if test -z $BUILD_TYPE; then
 fi
 
 #    - libint
-export LIBINT_RELID=2.3.0-beta.4
+export LIBINT_RELID=2.4.0-beta.4
 if test ! -d build/libint-${LIBINT_RELID}; then
   mkdir -p build
   cd build

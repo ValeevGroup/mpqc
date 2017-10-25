@@ -35,7 +35,7 @@ namespace mpqc {
 namespace detail {
 /**
  * Creates a backtrace of a running program/thread. Example of use:
- * \code
+ * @code
  * void make_omelet(int num_eggs) {
  *   if (num_eggs < 1) {
  *     mpqc::detail::Backtrace bt("breakfast fail:");
@@ -44,7 +44,7 @@ namespace detail {
  *   stove.on();
  *   // etc.
  * }
- * \endcode
+ * @endcode
  *
  */
 class Backtrace {
@@ -56,7 +56,7 @@ class Backtrace {
   Backtrace(const Backtrace&);
 
   /**
-   * @return true is did not get a backtrace
+   * @return true if did not get a backtrace
    */
   bool empty() const { return frames_.empty(); }
 

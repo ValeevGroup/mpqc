@@ -14,9 +14,10 @@ target_link_libraries(MPQCmpqc PUBLIC ${LIBINT2_LIBRARIES})
 target_compile_definitions(MPQCmpqc PUBLIC ${LIBINT2_EXTRA_DEFINITIONS})
 
 ################## libmpqc super-library #########################
-
-# add the libraries you need and force their linkage in mpqc.cpp
-# developers will want to trim this list down to the minimum needed
+# libmpqc is an interface to the *entire* top-level MPQC functionality
+# this target is useful to create a standalone executable that augments the MPQC functionality
+# N.B. To force linking in of these libs into the executqble use ForceLink mechanism (see the top of mpqc.cpp)
+# N.B. developers will want to trim this list down to the minimum needed
 #set(MPQC_LIBS MPQClcao_f12 MPQClcao_cc MPQClcao_mbpt MPQClcao_scf MPQCmra)
 set(MPQC_LIBS MPQClcao_f12 MPQClcao_ci MPQClcao_cc MPQClcao_mbpt MPQClcao_scf)
 
@@ -33,14 +34,11 @@ add_custom_target(install-libmpqc)
 add_dependencies(install-libmpqc install-mpqc)
 
 ################## MPQCmain useful to develop plugins #########################
+# MPQCmain (see below) also depends on MPQC_LIBS functionality ... can't use libmpqc since it's just an INTERFACE
 set(main_source mpqc.cpp)
 add_mpqc_library(main  main_source ""
         "MPQCmpqc" "mpqc")
 target_link_libraries(MPQCmain PUBLIC ${MPQC_LIBS})
-# should make MPQCmain a MODULE ?? it's missing ForceLink symbols, but that's up to the user to satisfy
-if(APPLE)
-#    target_link_libraries(MPQCmain PUBLIC "-undefined dynamic_lookup")
-endif(APPLE)
 
 ##################### MPQC executable ###########################
 add_executable(mpqc mpqc.cpp)

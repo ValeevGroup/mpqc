@@ -113,7 +113,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
       debugger->debug("Starting debugger because -d given on command line.");
   }
 
-  // redirect filenames in KeyVal to the directory given by -p cmdline option
+
+      // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
   if (prefix_opt) {  // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);

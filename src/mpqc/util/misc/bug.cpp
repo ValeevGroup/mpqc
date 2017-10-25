@@ -60,12 +60,8 @@ static Debugger *signals[NSIG];
 
 std::shared_ptr<Debugger> Debugger::default_debugger_(nullptr);
 
-Debugger::Debugger(const char *exec) {
-  init();
-
+Debugger::Debugger(const char *exec) : Debugger(KeyVal()) {
   set_exec(exec);
-
-  default_cmd();
 }
 
 Debugger::Debugger(const KeyVal &keyval) {

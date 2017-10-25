@@ -68,8 +68,6 @@ class Debugger: virtual public DescribedClass {
      */
     static void __traceback(const std::string& prefix, const char *reason = 0);
   public:
-    Debugger(const char *exec = 0);
-
     /** \brief The KeyVal constructor.
 
         The KeyVal object will be queried for the following keywords:
@@ -102,6 +100,17 @@ class Debugger: virtual public DescribedClass {
         
         </dl> */
     Debugger(const KeyVal&);
+    /** @brief Programmatic construction of Debugger
+     *
+     * This is equivalent to:
+     * @code
+     * Debugger d(KeyVal());
+     * d.set_exec(exec);
+     * @endcode
+     *
+     * @param exec the executable name
+     */
+    Debugger(const char *exec = 0);
     ~Debugger();
 
     /** The debug member attempts to start a debugger
@@ -144,7 +153,7 @@ class Debugger: virtual public DescribedClass {
     virtual void set_cmd(const char *);
     /// Calls set_cmd with a hopefully suitable default.
     virtual void default_cmd();
-    /** Set the name of the exectuble for the current process.
+    /** Set the name of the executable for the current process.
         It is up to the programmer to set this, even if the Debugger
         is initialized with the KeyVal constructor. */
     virtual void set_exec(const char *);

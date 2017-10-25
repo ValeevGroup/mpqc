@@ -105,6 +105,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // now set up the debugger
   auto debugger = kv->class_ptr<Debugger>("debugger");
+  // use default-constructed debugger if -D given and debugger keyword is missing
+  if (!debugger && options->retrieve("D")) {
+    debugger = std::make_shared<Debugger>();
+  }
   if (debugger) {
     Debugger::set_default_debugger(debugger);
     debugger->set_exec(argv[0]);

@@ -28,6 +28,9 @@ int main( int argc, char* argv[] )
 
   int result = session.run( argc, argv );
 
+  mpqc::finalize();
+  madness::finalize();
+  
   return result;
 }
 
@@ -53,13 +56,17 @@ TEST_CASE("multiple tasks", "[multiworld]") {
       const std::string srcdir = std::string(SRCDIR);
       const std::string ifile =
           srcdir +
-          std::string(odd ? "/mpqc_test_odd.json" : "/mpqc_test_even.json");
+          std::string(odd ? "/mpqc_test_odd.xml" : "/mpqc_test_even.json");
       std::shared_ptr<mpqc::KeyVal> kv =
           mpqc::MPQCInit::instance().make_keyval(my_world, ifile);
       kv->assign("file_prefix", srcdir);
+      kv->assign("world", &my_world);   // set "$:world" keyword to &world to define
+                                        // the default execution context for this input
+      TA::set_default_world(my_world);  // must specify default world to avoid
+                                        // madness::World::get_default() getting called
       mpqc::MPQCTask task(my_world, kv);
       task.run();
-      if (rank == 0 || rank == 1) energy[rank] = kv->value<double>("wfn:energy");
+      if (rank == 0 || rank == 1) energy[rank] = kv->value<double>("property:value:value");
     }
     world.gop.sum(energy, sizeof(energy)/sizeof(double));
 
@@ -67,9 +74,9 @@ TEST_CASE("multiple tasks", "[multiworld]") {
     if (rank == 0) {
       auto eref0 = -75.8234375775808;
       auto eref1 = -75.2522350404768;
-      REQUIRE(std::abs(energy[0] - eref0) < 1e-11);
+      REQUIRE(std::abs(energy[0] - eref0) < 1e-9);
       if (world.size() > 1)
-        REQUIRE(std::abs(energy[1] - eref1) < 1e-11);
+        REQUIRE(std::abs(energy[1] - eref1) < 1e-9);
     }
   }
 }

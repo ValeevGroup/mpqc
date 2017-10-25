@@ -1544,7 +1544,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         for (int j = 0; j < nocc_act; ++j) {
           double eps_j = eps_o[j];
-          int delta_ij = (i == j) ? 1 : 0;
           std::array<int, 4> tile_ij = {{0, 0, i, j}};
           std::array<int, 4> tile_ji = {{0, 0, j, i}};
           const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);

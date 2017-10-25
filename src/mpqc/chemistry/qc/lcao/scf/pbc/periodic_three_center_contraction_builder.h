@@ -47,14 +47,14 @@ class PeriodicThreeCenterContractionBuilder
         aux_basis_(aux_basis),
         screen_(screen),
         screen_threshold_(screen_threshold),
+        shell_pair_threshold_(shell_pair_threshold),
         dcell_(dcell),
         R_max_(R_max),
         RJ_max_(RJ_max),
         RD_max_(RD_max),
         R_size_(R_size),
         RJ_size_(RJ_size),
-        RD_size_(RD_size),
-        shell_pair_threshold_(shell_pair_threshold) {
+        RD_size_(RD_size) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
     // WorldObject mandates this is called from the ctor

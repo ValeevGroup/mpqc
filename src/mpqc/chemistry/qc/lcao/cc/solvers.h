@@ -1119,14 +1119,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
-    // Print out npno per pair
-    ExEnv::out0() << "i\t" << "j\t"<< "npnos" << std::endl;
-    for (int elem = 0; elem != npnos_.size(); ++elem) {
-      int j = elem % nocc_act_;
-      int i = (elem - j)/nocc_act_;
-      int npno = npnos_.at(elem);
-      ExEnv::out0() << i << "\t" << j << "\t" << npno << std::endl;
-    }
+//    // Print out npno per pair
+//    ExEnv::out0() << "i\t" << "j\t"<< "npnos" << std::endl;
+//    for (int elem = 0; elem != npnos_.size(); ++elem) {
+//      int j = elem % nocc_act_;
+//      int i = (elem - j)/nocc_act_;
+//      int npno = npnos_.at(elem);
+//      ExEnv::out0() << i << "\t" << j << "\t" << npno << std::endl;
+//    }
   }
 
   virtual ~PNOSolver() = default;

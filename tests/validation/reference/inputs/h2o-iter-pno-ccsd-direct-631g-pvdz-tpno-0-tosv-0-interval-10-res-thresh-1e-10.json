@@ -32,7 +32,6 @@
   "wfn":{
     "type": "CCSD",
     "max_iter": 45,
-    "diis_start": 1000000,
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
@@ -41,7 +40,6 @@
     "pno_canonical" : "true",
     "tpno" : "0",
     "tosv" : "0",
-    "tiling_method" : "flexible",
     "update_pno": true,
     "interval": 10,
     "residual_thresh": 1.0e-10,

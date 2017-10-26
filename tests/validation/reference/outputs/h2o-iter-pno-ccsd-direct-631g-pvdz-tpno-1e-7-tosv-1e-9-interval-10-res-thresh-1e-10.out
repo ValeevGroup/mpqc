@@ -2,11 +2,11 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision d73cdf6f5cef3b703fca508214f2aac3dee1d7dd
+                 Revision 7505ee14a0475b112449cb55b97be0cf21eb0486
 
   Machine:          Darwin-16.7.0-x86_64
   User:             mcclemen@Marjorys-MacBook-Pro.local
-  Start Time:       Mon Sep 25 19:19:47 2017 UTC
+  Start Time:       Thu Oct 26 21:09:30 2017 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
@@ -44,7 +44,6 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
     "wfn": {
         "type": "CCSD",
         "max_iter": "45",
-        "diis_start": "1000000",
         "wfn_world": "$:wfn_world",
         "molecule": "$:molecule",
         "ref": "$:scf",
@@ -53,7 +52,6 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "pno_canonical": "true",
         "tpno": "1.0e-07",
         "tosv": "1.0e-09",
-        "tiling_method": "flexible",
         "update_pno": "true",
         "interval": "10",
         "residual_thresh": "1.0e-10",
@@ -105,218 +103,218 @@ iteration: 0
 	Energy: -76.172009821117
 	abs(Energy Change): 0.278588911860425
 	(Gradient Norm)/n^2: 0.00233094621893437
-	Scf Time: 0.003577181
-		Density Time: 0.001660494
-		Fock Build Time: 0.001268688
+	Scf Time: 0.003276478
+		Density Time: 0.001573302
+		Fock Build Time: 0.001131073
 		DF Fock builder:
-			W time: 0.000355161
-			J time: 0.000342829
-			K time: 0.000270345
-			Total exchange time: 0.000625506
+			W time: 0.000288465
+			J time: 0.000307156
+			K time: 0.00025468
+			Total exchange time: 0.000543145
 iteration: 1
 	Energy: -76.2140757286778
 	abs(Energy Change): 0.0420659075607972
 	(Gradient Norm)/n^2: 0.00111729007317779
-	Scf Time: 0.003754207
-		Density Time: 0.001698712
-		Fock Build Time: 0.001012184
+	Scf Time: 0.00348309
+		Density Time: 0.001592009
+		Fock Build Time: 0.000932421
 		DF Fock builder:
-			W time: 0.000210503
-			J time: 0.000284596
-			K time: 0.000267973
-			Total exchange time: 0.000478476
+			W time: 0.000220164
+			J time: 0.000265029
+			K time: 0.000232647
+			Total exchange time: 0.000452811
 iteration: 2
 	Energy: -76.2239081527738
 	abs(Energy Change): 0.00983242409600393
 	(Gradient Norm)/n^2: 0.000143551463877292
-	Scf Time: 0.003841832
-		Density Time: 0.001728624
-		Fock Build Time: 0.00100334
+	Scf Time: 0.003625161
+		Density Time: 0.001550472
+		Fock Build Time: 0.000953461
 		DF Fock builder:
-			W time: 0.00023519
-			J time: 0.000266864
-			K time: 0.000261219
-			Total exchange time: 0.000496409
+			W time: 0.000217636
+			J time: 0.000257741
+			K time: 0.000258152
+			Total exchange time: 0.000475788
 iteration: 3
 	Energy: -76.224179404067
 	abs(Energy Change): 0.000271251293227692
 	(Gradient Norm)/n^2: 2.08758073190256e-05
-	Scf Time: 0.004193074
-		Density Time: 0.001850304
-		Fock Build Time: 0.001116315
+	Scf Time: 0.003650418
+		Density Time: 0.001558635
+		Fock Build Time: 0.000910026
 		DF Fock builder:
-			W time: 0.000251887
-			J time: 0.00033547
-			K time: 0.000286401
-			Total exchange time: 0.000538288
+			W time: 0.00020508
+			J time: 0.000259873
+			K time: 0.000234317
+			Total exchange time: 0.000439397
 iteration: 4
 	Energy: -76.2241830588949
 	abs(Energy Change): 3.65482789277394e-06
 	(Gradient Norm)/n^2: 1.52468495838461e-06
-	Scf Time: 0.00391127
-		Density Time: 0.001572104
-		Fock Build Time: 0.000998047
+	Scf Time: 0.00379432
+		Density Time: 0.001538359
+		Fock Build Time: 0.000910849
 		DF Fock builder:
-			W time: 0.000207812
-			J time: 0.000315316
-			K time: 0.000239889
-			Total exchange time: 0.000447701
+			W time: 0.00020289
+			J time: 0.000258351
+			K time: 0.000236254
+			Total exchange time: 0.000439144
 iteration: 5
 	Energy: -76.2241830968481
 	abs(Energy Change): 3.79532423266937e-08
 	(Gradient Norm)/n^2: 2.57160622457132e-07
-	Scf Time: 0.003932492
-		Density Time: 0.001583574
-		Fock Build Time: 0.000964653
+	Scf Time: 0.003796471
+		Density Time: 0.001557953
+		Fock Build Time: 0.000924028
 		DF Fock builder:
-			W time: 0.000207004
-			J time: 0.000264691
-			K time: 0.000237738
-			Total exchange time: 0.000444742
+			W time: 0.000218196
+			J time: 0.000257739
+			K time: 0.000219572
+			Total exchange time: 0.000437768
 iteration: 6
 	Energy: -76.2241830985432
 	abs(Energy Change): 1.69502811786515e-09
 	(Gradient Norm)/n^2: 8.13417220478935e-08
-	Scf Time: 0.003837252
-		Density Time: 0.001565277
-		Fock Build Time: 0.000918626
+	Scf Time: 0.003846123
+		Density Time: 0.001568396
+		Fock Build Time: 0.00094055
 		DF Fock builder:
-			W time: 0.000205763
-			J time: 0.00027857
-			K time: 0.000221495
-			Total exchange time: 0.000427258
+			W time: 0.00020653
+			J time: 0.000290768
+			K time: 0.000233576
+			Total exchange time: 0.000440106
 iteration: 7
 	Energy: -76.2241830987047
 	abs(Energy Change): 1.61506363838271e-10
 	(Gradient Norm)/n^2: 5.89483144816229e-09
-	Scf Time: 0.003833068
-		Density Time: 0.001564293
-		Fock Build Time: 0.000930971
+	Scf Time: 0.003807871
+		Density Time: 0.001563542
+		Fock Build Time: 0.000914657
 		DF Fock builder:
-			W time: 0.000207825
-			J time: 0.00027716
-			K time: 0.000219064
-			Total exchange time: 0.000426889
+			W time: 0.000194216
+			J time: 0.000277404
+			K time: 0.000232197
+			Total exchange time: 0.000426413
 iteration: 8
 	Energy: -76.2241830987056
 	abs(Energy Change): 9.09494701772928e-13
 	(Gradient Norm)/n^2: 1.5233318718859e-09
-	Scf Time: 0.005075957
-		Density Time: 0.002626941
-		Fock Build Time: 0.000909258
+	Scf Time: 0.003806508
+		Density Time: 0.001564603
+		Fock Build Time: 0.000904934
 		DF Fock builder:
-			W time: 0.000196696
-			J time: 0.000261927
-			K time: 0.000237325
-			Total exchange time: 0.000434021
+			W time: 0.000207036
+			J time: 0.000262884
+			K time: 0.000219574
+			Total exchange time: 0.00042661
 iteration: 9
 	Energy: -76.2241830987056
 	abs(Energy Change): 5.6843418860808e-14
 	(Gradient Norm)/n^2: 3.29601993600965e-10
-	Scf Time: 0.003831177
-		Density Time: 0.001554632
-		Fock Build Time: 0.000965559
+	Scf Time: 0.003900224
+		Density Time: 0.001616096
+		Fock Build Time: 0.000905993
 		DF Fock builder:
-			W time: 0.000220962
-			J time: 0.000277759
-			K time: 0.000235969
-			Total exchange time: 0.000456931
+			W time: 0.000202853
+			J time: 0.000260711
+			K time: 0.000231451
+			Total exchange time: 0.000434304
 iteration: 10
 	Energy: -76.2241830987058
 	abs(Energy Change): 1.84741111297626e-13
 	(Gradient Norm)/n^2: 9.18506669851097e-11
-	Scf Time: 0.003974982
-		Density Time: 0.001721099
-		Fock Build Time: 0.000913681
+	Scf Time: 0.003822196
+		Density Time: 0.001554821
+		Fock Build Time: 0.000925888
 		DF Fock builder:
-			W time: 0.000204797
-			J time: 0.000280012
-			K time: 0.000218359
-			Total exchange time: 0.000423156
+			W time: 0.00021245
+			J time: 0.000280494
+			K time: 0.000219208
+			Total exchange time: 0.000431658
 iteration: 11
 	Energy: -76.2241830987057
 	abs(Energy Change): 1.27897692436818e-13
 	(Gradient Norm)/n^2: 1.28132895005997e-11
-	Scf Time: 0.004050008
-		Density Time: 0.001727448
-		Fock Build Time: 0.000915995
+	Scf Time: 0.003939875
+		Density Time: 0.001565492
+		Fock Build Time: 0.000910146
 		DF Fock builder:
-			W time: 0.000191388
-			J time: 0.000279334
-			K time: 0.000232458
-			Total exchange time: 0.000423846
+			W time: 0.000199599
+			J time: 0.000263933
+			K time: 0.000234639
+			Total exchange time: 0.000434238
 iteration: 12
 	Energy: -76.2241830987057
 	abs(Energy Change): 2.8421709430404e-14
 	(Gradient Norm)/n^2: 4.55484246167623e-12
-	Scf Time: 0.004247762
-		Density Time: 0.001549593
-		Fock Build Time: 0.001301152
+	Scf Time: 0.003956315
+		Density Time: 0.001538895
+		Fock Build Time: 0.001036903
 		DF Fock builder:
-			W time: 0.000530255
-			J time: 0.000294838
-			K time: 0.000245766
-			Total exchange time: 0.000776021
+			W time: 0.000256603
+			J time: 0.00030649
+			K time: 0.00024431
+			Total exchange time: 0.000500913
 iteration: 13
 	Energy: -76.2241830987056
 	abs(Energy Change): 2.8421709430404e-14
 	(Gradient Norm)/n^2: 1.63452437365055e-12
-	Scf Time: 0.003841454
-		Density Time: 0.001558321
-		Fock Build Time: 0.00090755
+	Scf Time: 0.003830354
+		Density Time: 0.001572216
+		Fock Build Time: 0.000904992
 		DF Fock builder:
-			W time: 0.000205163
-			J time: 0.000269205
-			K time: 0.000219654
-			Total exchange time: 0.000424817
+			W time: 0.00020719
+			J time: 0.000263441
+			K time: 0.000220616
+			Total exchange time: 0.000427806
 iteration: 14
 	Energy: -76.2241830987057
 	abs(Energy Change): 7.105427357601e-14
 	(Gradient Norm)/n^2: 8.10754407900959e-13
-	Scf Time: 0.003959692
-		Density Time: 0.001590514
-		Fock Build Time: 0.000898295
+	Scf Time: 0.003889471
+		Density Time: 0.001588456
+		Fock Build Time: 0.000938763
 		DF Fock builder:
-			W time: 0.000199017
-			J time: 0.000266643
-			K time: 0.000219188
-			Total exchange time: 0.000418205
+			W time: 0.000206263
+			J time: 0.000261825
+			K time: 0.000243534
+			Total exchange time: 0.000449797
 iteration: 15
 	Energy: -76.2241830987057
 	abs(Energy Change): 4.2632564145606e-14
 	(Gradient Norm)/n^2: 3.50869266340056e-13
-	Scf Time: 0.003819086
-		Density Time: 0.00159038
-		Fock Build Time: 0.000936052
+	Scf Time: 0.003973408
+		Density Time: 0.001553853
+		Fock Build Time: 0.001084403
 		DF Fock builder:
-			W time: 0.000197893
-			J time: 0.000281806
-			K time: 0.000241827
-			Total exchange time: 0.00043972
+			W time: 0.000261817
+			J time: 0.000276618
+			K time: 0.000330206
+			Total exchange time: 0.000592023
 iteration: 16
 	Energy: -76.2241830987057
 	abs(Energy Change): 4.2632564145606e-14
 	(Gradient Norm)/n^2: 2.01267788526926e-13
-	Scf Time: 0.003924005
-		Density Time: 0.00154753
-		Fock Build Time: 0.0009276
+	Scf Time: 0.003786152
+		Density Time: 0.00156937
+		Fock Build Time: 0.000916438
 		DF Fock builder:
-			W time: 0.000209587
-			J time: 0.000276637
-			K time: 0.000225068
-			Total exchange time: 0.000434655
+			W time: 0.000203137
+			J time: 0.000262816
+			K time: 0.000223445
+			Total exchange time: 0.000426582
 iteration: 17
 	Energy: -76.2241830987057
 	abs(Energy Change): 1.4210854715202e-14
 	(Gradient Norm)/n^2: 9.78749684515756e-14
-	Scf Time: 0.003823973
-		Density Time: 0.001578658
-		Fock Build Time: 0.000930499
+	Scf Time: 0.003866629
+		Density Time: 0.001603625
+		Fock Build Time: 0.000943771
 		DF Fock builder:
-			W time: 0.000194439
-			J time: 0.000276346
-			K time: 0.000245432
-			Total exchange time: 0.000439871
+			W time: 0.000202195
+			J time: 0.000271824
+			K time: 0.00024148
+			Total exchange time: 0.000443675
   Frozen Core: 2 electrons
 Occ Range
 ( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
@@ -341,7 +339,7 @@ Average: 13
 The average number of OSVs per pair is 8
 The average number of PNOs per pair is 5
 Use Direct-DF CCSD Compute 
-Integral Prepare Time: 0.007228055
+Integral Prepare Time: 0.007087419
 Start Iteration
 Max Iteration: 45
 Target Precision: 1e-11
@@ -352,41 +350,29 @@ PrintDetail: 0
     Sparse   = 2.1632e-05 GB
     Low Rank = 0 GB
 iter 	     deltaE 	   residual 	          energy 	   u time/s 	 total time/s 
-  1 	 1.17985e-01 	 6.60668e-05 	 -0.117984589884 	        0.0 	        0.1 
-  2 	 2.40188e-03 	 2.23616e-05 	 -0.120386474766 	        0.0 	        0.1 
-  3 	 2.42231e-04 	 8.08490e-06 	 -0.120628706082 	        0.0 	        0.1 
-  4 	 2.64536e-05 	 3.15943e-06 	 -0.120655159655 	        0.0 	        0.1 
-  5 	 1.35301e-06 	 1.28379e-06 	 -0.120656512663 	        0.0 	        0.1 
-  6 	 9.32832e-07 	 5.42641e-07 	 -0.120655579831 	        0.0 	        0.1 
-  7 	 6.44456e-07 	 2.38084e-07 	 -0.120654935375 	        0.0 	        0.1 
-  8 	 3.25805e-07 	 1.08466e-07 	 -0.120654609570 	        0.0 	        0.1 
-  9 	 1.54229e-07 	 5.11999e-08 	 -0.120654455341 	        0.0 	        0.1 
- 10 	 1.74993e-05 	 4.51410e-07 	 -0.120671954667 	        0.0 	        0.1 
- 11 	 3.12060e-09 	 8.65641e-08 	 -0.120671957788 	        0.0 	        0.1 
- 12 	 2.88217e-08 	 2.39138e-08 	 -0.120671928966 	        0.0 	        0.1 
- 13 	 3.11269e-09 	 8.94562e-09 	 -0.120671925853 	        0.0 	        0.1 
- 14 	 4.41515e-10 	 3.89999e-09 	 -0.120671926295 	        0.0 	        0.1 
- 15 	 1.33796e-09 	 1.88448e-09 	 -0.120671927633 	        0.0 	        0.1 
- 16 	 1.05851e-09 	 9.56968e-10 	 -0.120671928691 	        0.0 	        0.1 
- 17 	 6.94226e-10 	 4.99074e-10 	 -0.120671929385 	        0.0 	        0.1 
- 18 	 4.16418e-10 	 2.63800e-10 	 -0.120671929802 	        0.0 	        0.1 
- 19 	 2.39243e-10 	 1.40456e-10 	 -0.120671930041 	        0.0 	        0.1 
- 20 	 9.03859e-07 	 1.26862e-07 	 -0.120672833900 	        0.0 	        0.1 
- 21 	 2.05899e-08 	 2.91845e-08 	 -0.120672813310 	        0.0 	        0.1 
- 22 	 5.47952e-09 	 8.24669e-09 	 -0.120672807830 	        0.0 	        0.1 
- 23 	 9.19535e-11 	 2.85361e-09 	 -0.120672807738 	        0.0 	        0.1 
- 24 	 6.00892e-10 	 1.20384e-09 	 -0.120672808339 	        0.0 	        0.1 
- 25 	 5.90474e-10 	 5.86047e-10 	 -0.120672808930 	        0.0 	        0.1 
- 26 	 4.03893e-10 	 3.03887e-10 	 -0.120672809334 	        0.0 	        0.1 
- 27 	 2.47901e-10 	 1.61307e-10 	 -0.120672809582 	        0.0 	        0.1 
- 28 	 1.43978e-10 	 8.63079e-11 	 -0.120672809726 	        0.0 	        0.1 
- 29 	 8.12219e-11 	 4.63079e-11 	 -0.120672809807 	        0.0 	        0.1 
- 30 	 4.50365e-11 	 2.48695e-11 	 -0.120672809852 	        0.0 	        0.1 
- 31 	 2.47099e-11 	 1.33600e-11 	 -0.120672809877 	        0.0 	        0.1 
- 32 	 1.34665e-11 	 7.17741e-12 	 -0.120672809890 	        0.0 	        0.1 
- 33 	 7.30642e-12 	 3.85579e-12 	 -0.120672809897 	        0.0 	        0.0 
-CCSD Energy     -0.120672809897336
-CCSD Time in CCSD: 1.847935606 S
+  1 	 1.17985e-01 	 6.60668e-05 	 -0.117984589884 	        0.1 	        0.1 
+  2 	 2.42954e-03 	 2.12596e-05 	 -0.120414134355 	        0.1 	        0.1 
+  3 	 2.37480e-04 	 3.42735e-06 	 -0.120651614256 	        0.1 	        0.1 
+  4 	 3.18349e-06 	 7.48634e-07 	 -0.120654797744 	        0.1 	        0.1 
+  5 	 2.20029e-07 	 2.03844e-07 	 -0.120654577715 	        0.1 	        0.1 
+  6 	 1.82269e-07 	 5.94016e-08 	 -0.120654395446 	        0.1 	        0.1 
+  7 	 5.65397e-08 	 1.26199e-08 	 -0.120654338906 	        0.1 	        0.1 
+  8 	 2.11077e-08 	 2.76052e-09 	 -0.120654317798 	        0.1 	        0.1 
+  9 	 2.28155e-09 	 4.88258e-10 	 -0.120654315517 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 5
+ 10 	 2.99330e-10 	 1.27277e-10 	 -0.120654315218 	        0.1 	        0.1 
+ 11 	 1.74806e-05 	 5.62963e-07 	 -0.120671795800 	        0.1 	        0.1 
+ 12 	 7.87026e-08 	 1.27506e-07 	 -0.120671874503 	        0.1 	        0.1 
+ 13 	 1.77858e-08 	 2.28434e-08 	 -0.120671856717 	        0.1 	        0.1 
+ 14 	 8.48733e-09 	 7.15755e-09 	 -0.120671865205 	        0.1 	        0.1 
+ 15 	 5.65650e-09 	 2.21592e-09 	 -0.120671870861 	        0.1 	        0.1 
+ 16 	 4.15398e-09 	 4.54294e-10 	 -0.120671875015 	        0.1 	        0.1 
+ 17 	 8.65523e-10 	 1.01066e-10 	 -0.120671875881 	        0.1 	        0.1 
+ 18 	 1.66547e-10 	 2.13349e-11 	 -0.120671876047 	        0.1 	        0.1 
+ 19 	 9.17924e-12 	 3.64553e-12 	 -0.120671876056 	        0.1 	        0.1 
+CCSD Energy     -0.120671876056235
+CCSD Time in CCSD: 1.706016281 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -422,7 +408,6 @@ CCSD Time in CCSD: 1.847935606 S
     "wfn": {
         "type": "CCSD",
         "max_iter": "45",
-        "diis_start": "1000000",
         "wfn_world": "$:wfn_world",
         "molecule": "$:molecule",
         "ref": "$:scf",
@@ -431,7 +416,6 @@ CCSD Time in CCSD: 1.847935606 S
         "pno_canonical": "true",
         "tpno": "1.0e-07",
         "tosv": "1.0e-09",
-        "tiling_method": "flexible",
         "update_pno": "true",
         "interval": "10",
         "residual_thresh": "1.0e-10",
@@ -443,7 +427,7 @@ CCSD Time in CCSD: 1.847935606 S
         "precision": "1e-11",
         "wfn": "$:wfn",
         "value": {
-            "value": "-76.344855908603023"
+            "value": "-76.344854974761915"
         }
     }
 }

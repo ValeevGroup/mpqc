@@ -535,16 +535,18 @@ void construct_pno(
   std::size_t nuocc = t2.trange().dim(0).extent();
 
   // For storing PNOs and and the Fock matrix in the PNO basis
-  npnos.resize(nocc_act * nocc_act, 0);
+  npnos.resize(nocc_act * nocc_act);
   pnos.resize(nocc_act * nocc_act);
   F_pno_diag.resize(nocc_act * nocc_act);
+  std::fill(npnos.begin(), npnos.end(), 0);
 
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis
-  nosvs.resize(nocc_act, 0);
+  nosvs.resize(nocc_act);
   osvs.resize(nocc_act);
   F_osv_diag.resize(nocc_act);
+  std::fill(nosvs.begin(), nosvs.end(), 0);
 
 //#if PRODUCE_PNO_MOLDEN_FILES
 //      // prepare to Molden
@@ -777,6 +779,32 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
+//#if PRODUCE_PNO_MOLDEN_FILES
+//          // write PNOs to Molden
+//          {
+//            Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
+//            molden_coefs.col(0) = C_i_eig.col(i);
+//            molden_coefs.col(1) = C_i_eig.col(j);
+//            molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) =
+//                C_a_eig * pno_trunc;
+
+//            Eigen::VectorXd occs(2 + pno_trunc.cols());
+//            occs.setZero();
+//            occs[0] = 2.0;
+//            occs[1] = 2.0;
+
+//            Eigen::VectorXd evals(2 + pno_trunc.cols());
+//            evals(0) = 0.0;
+//            evals(1) = 0.0;
+//            evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
+
+//            libint2::molden::Export xport(libint2_atoms, libint2_shells,
+//                                          molden_coefs, occs, evals);
+//            xport.write(std::string("pno_") + std::to_string(i) + "_" +
+//                        std::to_string(j) + ".molden");
+//          }
+//#endif
+
     // Transform D_ij into a tile
     auto norm = 0.0;
     for (int a = 0, tile_idx = 0; a != nuocc; ++a) {
@@ -967,6 +995,38 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
 
+#if PRODUCE_PNO_MOLDEN_FILES
+      // prepare to Molden
+      const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
+      const auto C_i_eig =
+          array_ops::array_to_eigen(ofac.retrieve("i").coefs());
+
+//      for(auto i = 0; i < C_i_eig.cols(); ++i){
+//        auto const& col = C_i_eig.col(i);
+//        auto ind_largest_coeff = -1;
+//        auto largest_coeff = std::numeric_limits<double>::min();
+//        for(auto r = 0; r < col.size(); ++r){
+//          if(col(r) > largest_coeff){
+//            ind_largest_coeff = r;
+//            largest_coeff = col(r);
+//          }
+//        }
+//        std::cout << "Orbital " << i << " is probably on: " << ind_largest_coeff / 14 << " containing atom\n";
+//      }
+
+//      const auto C_a_eig =
+//          array_ops::array_to_eigen(ofac.retrieve("a").coefs());
+      const auto libint2_shells =
+          fac.basis_registry()->retrieve(L"μ")->flattened_shells();
+
+      // write out active occupied orbitals
+      auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
+
+      libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig,
+                                    occs, Eigen::VectorXd());
+      xport.write("occ.molden");
+#endif
+
 
     /// Step (1): Convert K to T
 
@@ -1058,6 +1118,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+
+    // Print out npno per pair
+    ExEnv::out0() << "i\t" << "j\t"<< "npnos" << std::endl;
+    for (int elem = 0; elem != npnos_.size(); ++elem) {
+      int j = elem % nocc_act_;
+      int i = (elem - j)/nocc_act_;
+      int npno = npnos_.at(elem);
+      ExEnv::out0() << i << "\t" << j << "\t" << npno << std::endl;
+    }
   }
 
   virtual ~PNOSolver() = default;

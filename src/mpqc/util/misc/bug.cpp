@@ -221,18 +221,23 @@ void Debugger::debug(const char *reason) {
     // start the debugger
     ExEnv::outn() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
     debugger_ready_ = 0;
-    system(cmd.c_str());
-    // wait until the debugger is ready
-    if (sleep_) {
-      ExEnv::outn() << prefix_ << "Sleeping " << sleep_
-                    << " seconds to wait for debugger ..." << endl;
-      sleep(sleep_);
+    const auto system_retvalue = system(cmd.c_str());
+    if (system_retvalue != 0) { // call to system() failed
+      ExEnv::outn() << prefix_ << "Failed debugger launch: system() did not succeed ..." << endl;
     }
-    if (wait_for_debugger_) {
-      ExEnv::outn() << prefix_ << ": Spinning until debugger_ready_ is set ..."
-                    << endl;
-      while (!debugger_ready_)
-        ;
+    else {  // call to system() succeeded
+      // wait until the debugger is ready
+      if (sleep_) {
+        ExEnv::outn() << prefix_ << "Sleeping " << sleep_
+                      << " seconds to wait for debugger ..." << endl;
+        sleep(sleep_);
+      }
+      if (wait_for_debugger_) {
+        ExEnv::outn() << prefix_ << ": Spinning until debugger_ready_ is set ..."
+                      << endl;
+        while (!debugger_ready_)
+          ;
+      }
     }
   }
 #endif

@@ -44,7 +44,7 @@ TA::SparseShape<float> cadf_shape_cluster(
     TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> const &C_atom,
     TA::TiledRange const &trange,
     std::unordered_map<int64_t, std::vector<int64_t>> &c2a  // cluster to atom
-    );
+);
 
 // Function to compute the CADF coefficients in a by atom fashion
 template <typename Array, typename DirectArray>
@@ -186,7 +186,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
   ExEnv::out0() << indent << "\tTime for abab shape: " << time_apply << "\n";
   ExEnv::out0() << indent << "\tTime for integrals: " << time_ints << "\n";
 
-
   //
   // Compute C, M and 3 center integrals for robust fitting
   //
@@ -224,7 +223,7 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
         out.emplace_back(std::make_pair(Idx_t{{b, a, b}}, in(b, a, b)));
         if (aaab) {
           // Realistically this one isn't needed since aaa will always get
-          // included, but it is here for completeness. 
+          // included, but it is here for completeness.
           const auto Caab = c_shape_data(a, a, b);
           const auto Caba = c_shape_data(a, b, a);
           const auto Xa_max = std::max(Caab, Caba);
@@ -252,7 +251,6 @@ TA::DistArray<Tile, Policy> secadf_by_atom_correction(
 
   auto E = direct_sparse_integrals(world, eng3, three_array, E_sparse_norms,
                                    std::move(eri3_screener));
-
 
   auto C_contract_shape_func = [&](TA::Tensor<float> const &Cin) {
     auto const &range = Cin.range();
@@ -413,8 +411,8 @@ void create_ii_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
   auto M_extent = M_tile.range().extent();
   RowMatrixXd M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
 
-  RowMatrixXd out_eig = M_eig.inverse() * eri3_eig;
-
+  // Use pivoted QR for stablility reasons. 
+  RowMatrixXd out_eig = M_eig.colPivHouseholderQr().solve(eri3_eig);
   TA::TensorD out_tile(eri3_tile.range(), 0.0);
 
   TA::eigen_map(out_tile, eri3_extent[0], eri3_extent[1] * eri3_extent[2]) =
@@ -467,22 +465,25 @@ void create_ij_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
   M_combo.block(M_extentii[0], M_extentii[1], M_extentjj[0], M_extentjj[1]) =
       TA::eigen_map(M_tile_jj, M_extentjj[0], M_extentjj[1]);
 
-  RowMatrixXd M_combo_inv = M_combo.inverse();
+  // Write the two eri3 tiles into one larger fused tile
+  const auto combo_rows = eri3_eig_iij.rows() + eri3_eig_jij.rows();
+  const auto combo_cols = eri3_eig_iij.cols();
 
-  // Doing the block wise GEMM by hand for now.
-  auto blockii = M_combo_inv.block(0, 0, M_extentii[0], M_extentii[1]);
+  RowMatrixXd eri_combo(combo_rows, combo_cols);
 
-  auto blockij =
-      M_combo_inv.block(0, M_extentii[1], M_extentij[0], M_extentij[1]);
+  eri_combo.block(0, 0, eri3_eig_iij.rows(), combo_cols) = eri3_eig_iij;
+  eri_combo.block(eri3_eig_iij.rows(), 0, eri3_eig_jij.rows(), combo_cols) =
+      eri3_eig_jij;
 
-  auto blockji =
-      M_combo_inv.block(M_extentii[0], 0, M_extentji[0], M_extentji[1]);
 
-  auto blockjj = M_combo_inv.block(M_extentii[0], M_extentii[1], M_extentjj[0],
-                                   M_extentjj[1]);
+  // Solver for the fitting Coeffs using more robust solver than LLT WARNING
+  // this was done because it turned out that LLT was not sufficent for basis
+  // set exploration and specifically LLT failed for d-aug-cc-pV5Z basis on s66
+  // benzene
+  RowMatrixXd C_total = M_combo.colPivHouseholderQr().solve(eri_combo);
 
   if (C->is_local(ord_iij)) {
-    RowMatrixXd C_iij = blockii * eri3_eig_iij + blockij * eri3_eig_jij;
+    RowMatrixXd C_iij = C_total.topRows(eri3_eig_iij.rows());
 
     TA::Tensor<double> out_iij(eri3_iij.range());
     TA::eigen_map(out_iij, eri3_extent_iij[0],
@@ -491,7 +492,7 @@ void create_ij_tile(TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> *C,
     C->set(ord_iij, out_iij);
   }
   if (C->is_local(ord_jij)) {
-    RowMatrixXd C_jij = blockji * eri3_eig_iij + blockjj * eri3_eig_jij;
+    RowMatrixXd C_jij = C_total.bottomRows(eri3_eig_jij.rows());
 
     TA::Tensor<double> out_jij(eri3_jij.range());
     TA::eigen_map(out_jij, eri3_extent_jij[0],

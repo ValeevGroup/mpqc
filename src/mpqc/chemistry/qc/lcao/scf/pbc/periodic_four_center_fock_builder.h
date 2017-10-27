@@ -3453,7 +3453,9 @@ class PeriodicFourCenterFockBuilder
    * \return symmetrized Fock matrix
    */
   array_type symmetrize_fock(const array_type &F_unsymm) const {
-    const auto F_uc_size = F_unsymm.trange().tiles_range().extent(1);
+    const auto tiles_range = F_unsymm.trange().tiles_range();
+    assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
+    const auto F_uc_size = tiles_range.extent(1) / tiles_range.extent(0);
     assert(F_uc_size > 0 && F_uc_size % 2 == 1);
     const auto F_ref_ord = (F_uc_size - 1) / 2;
     const auto nfunc = bra_basis_->nfunctions();

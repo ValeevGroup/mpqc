@@ -331,7 +331,9 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   const auto k_end_3D_idx = (recip_latt_range.array() - 1).matrix();
   const auto recip_latt_size =
       1 + detail::k_ord_idx(k_end_3D_idx, recip_latt_range);
-  assert(real_latt_size == matrix.trange().tiles_range().extent(1));
+  const auto tiles_range = matrix.trange().tiles_range();
+  assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
+  assert(real_latt_size == tiles_range.extent(1) / tiles_range.extent(0));
 
   array_type_z result;
   auto tr0 = matrix.trange().data()[0];

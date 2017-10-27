@@ -5,7 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_LINKAGE_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_LINKAGE_H_
 
-#include "mpqc/chemistry/qc/lcao/wfn/linkage.h"
+#include "mpqc/chemistry/qc/lcao/factory/linkage.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/keyval/forcelink.h"
 

@@ -22,9 +22,9 @@
 
 #include "mpqc/util/keyval/keyval.h"
 //#include "mpqc/util/misc/consumableresources.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/formio.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/formio.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 
 namespace mpqc {
@@ -234,6 +234,7 @@ std::shared_ptr<GetLongOpt> make_options() {
                  ".");
   options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
   options->enroll("d", GetLongOpt::NoValue, "start the program and attach a debugger");
+  options->enroll("D", GetLongOpt::NoValue, " if \"debugger\" keyword is not given, create a default debugger");
   //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");

@@ -1,7 +1,7 @@
 #include "schwarz_screen.h"
 
 #include "mpqc/math/groups/petite_list.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 namespace lcao {

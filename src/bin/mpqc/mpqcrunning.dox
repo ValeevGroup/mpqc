@@ -36,7 +36,9 @@ name.  The following command line options are recognized:
 
   <dt><tt>-u</tt><dd>Specifies the default units system to use (see mpqc::UnitFactory).
 
-  <dt><tt>-d</tt><dd>If a debugger object was given in the input, start the
+  <dt><tt>-D</tt><dd>If a debugger object was not given in the input, use a default debugger.
+
+  <dt><tt>-d</tt><dd>If a debugger object was given in the input or the <tt>-D</tt> option was given, start the
                 debugger running as soon as MPQC is started.
 
   <dt><tt>-v</tt><dd>Print the version number.

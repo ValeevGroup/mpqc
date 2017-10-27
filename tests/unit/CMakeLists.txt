@@ -29,13 +29,13 @@ set_property(SOURCE bug_test.cpp PROPERTY COMPILE_DEFINITIONS
              SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_test(NAME unit/run-np-1
-         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
+         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $ENV{MPQC_PRE_CMD} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
 set_tests_properties(unit/run-np-1
                      PROPERTIES DEPENDS unit/build
                                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/unit
                                 ENVIRONMENT MAD_NUM_THREADS=2)
 add_test(NAME unit/run-np-2
-         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
+         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $ENV{MPQC_PRE_CMD} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
 set_tests_properties(unit/run-np-2
                      PROPERTIES DEPENDS unit/build
                                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/unit

@@ -24,21 +24,24 @@ else (LIBINT2_INCLUDE_DIRS)
 
   mark_as_advanced(LIBINT2_INCLUDE_DIR)
 
-  set(_LIBINT2_LIB_NAMES
-    "int2"
-    )
+  # force linking against shared Libint only if building shared MPQC libs
+  # to avoid linking errors (best case) or multiple instances of libint global data (worst case ... looking at you MacOS)
+  if (BUILD_SHARED_LIBS)
+    message(WARNING "Since BUILD_SHARED_LIBS=TRUE, will only look for SHARED libint2 library (static library will be ignored)")
+    set(_LIBINT2_LIB_NAMES "libint2.so" "libint2.dylib")
+  else (BUILD_SHARED_LIBS)
+    set(_LIBINT2_LIB_NAMES "int2")
+  endif(BUILD_SHARED_LIBS)
 
   set(_LIBINT2_LIBRARY_DIR ${_LIBINT2_INSTALL_DIR}/lib)
   set(LIBINT2_LIBRARY "")
 
-  foreach(_lib ${_LIBINT2_LIB_NAMES})
-    set(current_lib NOTFOUND)
-    find_library(current_lib ${_lib} HINTS ${_LIBINT2_LIBRARY_DIR})
-    if(NOT current_lib)
-      message(FATAL_ERROR "MPQC could not find Libint2 lib: ${_lib}")
-    endif(NOT current_lib)
-    LIST(APPEND LIBINT2_LIBRARY ${current_lib})
-  endforeach()
+  set(current_lib NOTFOUND)
+  find_library(current_lib NAMES ${_LIBINT2_LIB_NAMES} HINTS ${_LIBINT2_LIBRARY_DIR})
+  if(NOT current_lib)
+    message(FATAL_ERROR "MPQC could not find Libint2 lib: tried ${_LIBINT2_LIB_NAMES}")
+  endif(NOT current_lib)
+  list(APPEND LIBINT2_LIBRARY ${current_lib})
 
   set(LIBINT2_LIBRARY_DIR ${_LIBINT2_LIBRARY_DIR})
   mark_as_advanced(LIBINT2_LIBRARY)

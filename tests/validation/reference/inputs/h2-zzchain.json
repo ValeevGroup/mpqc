@@ -8,10 +8,10 @@
   },
   "basis": {
     "name": "sto-3g",
-    "molecule": "$:unitcell"
+    "atoms": "$:unitcell"
   },
    "wfn_world":{
-     "molecule" : "$:unitcell",
+     "atoms" : "$:unitcell",
      "basis" : "$:basis",
      "screen": "schwarz",
      "threshold": 1.0e-20,
@@ -21,7 +21,7 @@
    },
    "wfn":{
      "type": "zRHF",
-     "molecule" : "$:unitcell",
+     "atoms" : "$:unitcell",
      "wfn_world": "$:wfn_world",
      "max_iter": 100,
      "soad_guess": true,

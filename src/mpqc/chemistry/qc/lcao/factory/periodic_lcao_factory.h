@@ -57,7 +57,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
 
     // Molecule was already created at this path, bypass registry and construct
     // UnitCell
-    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
+    unitcell_ = kv.class_ptr<UnitCell>(prefix + "atoms", true);
 
     dcell_ = unitcell_->dcell();
 

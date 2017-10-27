@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC4_SRC_MPQC_UTIL_MISC_EXENV_H_
-#define MPQC4_SRC_MPQC_UTIL_MISC_EXENV_H_
+#ifndef MPQC4_SRC_MPQC_CORE_MISC_EXENV_H_
+#define MPQC4_SRC_MPQC_CORE_MISC_EXENV_H_
 
 #include <cstdlib>
 #include <iostream>
@@ -35,7 +35,7 @@
 #include <madness/world/world.h>
 
 #include "mpqc/mpqc_config.h"
-#include "mpqc/util/misc/formio.h"
+#include "formio.h"
 
 namespace mpqc {
 

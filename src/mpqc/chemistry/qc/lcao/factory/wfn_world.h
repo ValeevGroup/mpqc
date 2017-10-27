@@ -4,8 +4,8 @@
  *  Created on: Aug 18, 2016
  *      Author: Drew Lewis
  */
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_WORLD_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_WORLD_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_
 
 #include <memory>
 
@@ -59,4 +59,4 @@ class WavefunctionWorld : virtual public DescribedClass {
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_WORLD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_

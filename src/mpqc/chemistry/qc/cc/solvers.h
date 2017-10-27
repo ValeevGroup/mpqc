@@ -3,7 +3,7 @@
 
 #include "diis.h"
 #include "mpqc/util/keyval/keyval.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace cc {

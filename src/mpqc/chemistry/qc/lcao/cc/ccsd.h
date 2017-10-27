@@ -234,7 +234,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
-            this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
+            this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -328,7 +328,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
@@ -681,7 +681,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
@@ -1033,7 +1033,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_) {
+      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
@@ -1483,8 +1483,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
           direct_ao_array_("p,q,r,s");
-      u2_u11("p, r, i, j") =
-          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
+//      u2_u11("p, r, i, j") =
+//          0.5 * (u2_u11("p, r, i, j") + u2_u11("r, p, j, i"));
       return u2_u11;
     } else {
       throw ProgrammingError(

@@ -1,6 +1,6 @@
 {
   "units": "2006CODATA",
-  "unitcell": {
+  "h2": {
     "charge": 0,
     "file_name": "h2.xyz",
     "sort_input": false,
@@ -9,14 +9,14 @@
   },
   "basis": {
     "name": "6-31g",
-    "molecule": "$:unitcell"
+    "atoms": "$:h2"
   },
   "dfbs": {
     "name": "cc-pvdz",
-    "molecule": "$:unitcell"
+    "atoms": "$:h2"
   },
    "wfn_world":{
-    "molecule" : "$:unitcell",
+    "atoms" : "$:h2",
     "basis" : "$:basis",
     "df_basis" : "$:dfbs",
     "screen": "schwarz",
@@ -28,7 +28,7 @@
    },
    "wfn":{
     "type": "RIJ-CADFK-zRHF",
-    "molecule" : "$:unitcell",
+    "atoms" : "$:h2",
     "wfn_world": "$:wfn_world",
     "max_iter": 100,
     "soad_guess": true,

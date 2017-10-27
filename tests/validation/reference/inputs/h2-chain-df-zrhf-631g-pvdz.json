@@ -1,21 +1,22 @@
 {
   "units": "2006CODATA",
-  "unitcell": {
+  "h2": {
     "file_name": "h2.xyz",
     "sort_input": true,
     "charge": 0,
+    "n_cluster": 1,
     "lattice_param": [0.0, 0.0, 3.7]
   },
   "basis": {
     "name": "6-31g",
-    "atoms": "$:unitcell"
+    "atoms": "$:h2"
   },
   "dfbs": {
     "name": "cc-pvdz",
-    "atoms": "$:unitcell"
+    "atoms": "$:h2"
   },
   "wfn_world":{
-    "atoms" : "$:unitcell",
+    "atoms" : "$:h2",
     "basis" : "$:basis",
     "df_basis" :"$:dfbs",
     "screen": "schwarz",
@@ -26,7 +27,7 @@
   },
   "wfn":{
     "type": "DF-zRHF",
-    "atoms" : "$:unitcell",
+    "atoms" : "$:h2",
     "wfn_world": "$:wfn_world",
     "max_iter": 100,
     "soad_guess": true,

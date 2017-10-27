@@ -5,4 +5,4 @@ set(sources
   petite_list.h
 )
 
-add_mpqc_library(math_groups sources sources "MPQCmath_eigen" "mpqc/math/groups")
+add_mpqc_library(math_groups sources sources "MPQCmath_eigen;MPQCutil_core" "mpqc/math/groups")

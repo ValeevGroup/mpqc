@@ -20,7 +20,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   using GuessVector = ::mpqc::cc::TPack<TArray>;
   using numeric_type = typename Tile::numeric_type;
 
-public:
+ public:
   // clang-format off
   /**
    * KeyVal constructor
@@ -36,7 +36,7 @@ public:
   // clang-format on
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
-    vector_threshold_ = kv.value<double>("vector_threshold",1.0e-5);
+    vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
   }
 
   void obsolete() override {
@@ -60,10 +60,9 @@ public:
     TArray WKlIc_ = TArray();
   }
 
-protected:
-
-  using CCSD<Tile,Policy>::can_evaluate;
-  using CCSD<Tile,Policy>::evaluate;
+ protected:
+  using CCSD<Tile, Policy>::can_evaluate;
+  using CCSD<Tile, Policy>::evaluate;
 
   bool can_evaluate(ExcitationEnergy *ex_energy) override {
     return ex_energy->order() == 0;
@@ -71,10 +70,9 @@ protected:
 
   void evaluate(ExcitationEnergy *ex_energy) override;
 
-private:
-
+ private:
   // preconditioner in DavidsonDiag, approximate the diagonal H_bar matrix
-  struct Preconditioner {
+  struct Preconditioner : public DavidsonDiagPreconditioner<GuessVector> {
     /// diagonal of F_ij matrix
     EigenVector<numeric_type> eps_o;
     /// diagonal of F_ab matrix
@@ -87,7 +85,7 @@ private:
     // default constructor
     Preconditioner() : eps_o(), eps_v() {}
 
-    void operator()(const numeric_type &e, GuessVector &guess) const {
+    virtual void compute(const numeric_type &e, GuessVector &guess) const {
       const auto &eps_v = this->eps_v;
       const auto &eps_o = this->eps_o;
 
@@ -121,8 +119,8 @@ private:
     }
   };
 
-  std::size_t max_vector_; // max number of guess vector
-  double vector_threshold_; // threshold for norm of new guess vector
+  std::size_t max_vector_;   // max number of guess vector
+  double vector_threshold_;  // threshold for norm of new guess vector
 
   TArray g_ijab_;
 
@@ -134,7 +132,7 @@ private:
   // W intermediates
   TArray WIbAj_;
   TArray WIbaJ_;
-  TArray WAbCd_; // this may not be initialized
+  TArray WAbCd_;  // this may not be initialized
   TArray WAbCi_;
   TArray WKlIj_;
   TArray WKaIj_;
@@ -142,7 +140,7 @@ private:
   TArray WKlIc_;
   // TArray WKliC_;
 
-  std::vector<GuessVector> C_; // initial guess vector
+  std::vector<GuessVector> C_;  // initial guess vector
 
   // compute F and W intermediates
   void compute_FWintermediates();
@@ -158,15 +156,15 @@ private:
 
     compute_FWintermediates();
 
-    auto remove_integral = [] (const Formula& formula){
+    auto remove_integral = [](const Formula &formula) {
       return formula.rank() == 4;
     };
 
     this->lcao_factory().registry().purge_if(remove_integral);
   }
 
-  EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter, double convergence);
-
+  EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter,
+                                                     double convergence);
 };
 
 #if TA_DEFAULT_POLICY == 0

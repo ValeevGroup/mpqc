@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "mpqc/util/misc/exception.h"
+#include "exception.h"
 
 #include <cerrno>
 #include <cstring>
@@ -33,7 +33,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "mpqc/util/misc/exenv.h"
+#include "exenv.h"
 
 using namespace std;
 

@@ -1,5 +1,5 @@
 {
-  "molecule": {
+  "water": {
     "atoms": [
       { "element":"O", "xyz" : [-0.702196054,  -0.056060256,   0.009942262]},
       { "element":"H", "xyz" : [-1.022193224,   0.846775782,  -0.011488714]},
@@ -9,18 +9,18 @@
   },
   "basis1": {
     "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "basis2": {
     "name": "aug-cc-pVTZ-RI",
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "basis3":{
     "name": "aug-cc-pVDZ-CABS",
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "world":{
-    "molecule" : "$:molecule",
+    "atoms" : "$:water",
     "basis" : "$:basis1",
     "df_basis" :"$:basis2",
     "aux_basis": "$:basis3",

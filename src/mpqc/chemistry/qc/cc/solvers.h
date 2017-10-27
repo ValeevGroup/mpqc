@@ -3,7 +3,7 @@
 
 #include "diis.h"
 #include "mpqc/util/keyval/keyval.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace cc {
@@ -30,7 +30,37 @@ class Solver {
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
   virtual void update(T& t1, T& t2, const T& r1, const T& r2) = 0;
+
+  /// Updates amplitudes \c t{1,2,3} using the residuals \c r{1,2,3} .
+  /// @warning This function assumes that \c t{1,2,3} and \c r{1,2,3}
+  ///          are congruent, but does not assume any particular structure.
+  ///          Derived classes \em may impose additional assumptions on the
+  ///          structure of the arguments.
+  /// @param t1 the 1-body amplitude set (current values on input, updated
+  /// values on output)
+  /// @param t2 the 2-body amplitude set (current values on input, updated
+  /// values on output)
+  /// @param t3 the 3-body amplitude set (current values on input, updated
+  /// values on output)
+  /// @param r1 the 1-body amplitude equation residual set (contents may be
+  /// modified)
+  /// @param r2 the 2-body amplitude equation residual set (contents may be
+  /// modified)
+  /// @param r3 the 3-body amplitude equation residual set (contents may be
+  /// modified)
   virtual void update(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) = 0;
+
+  /// Computes the error for the given residuals \c r1 and \c r2 .
+
+  /// The error is defined as the 2-norm per element, i.e.
+  /// \f$ \sqrt{||r_1||_2^2 + ||r_2||_2^2}/(\mathrm{size}(r_1) + \mathrm{size}(r_2)) \f$ .
+  /// @param[in] r1 the 1-body amplitude equation residual set
+  /// @param[in] r2 the 2-body amplitude equation residual set
+  /// @return the error
+  virtual double error(const T& r1, const T& r2) {
+    return std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
+        (size(r1) + size(r2));
+  }
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS
@@ -82,7 +112,7 @@ class DIISSolver : public Solver<T> {
     t2 = t[1];
   }
 
-  void update(T& t1, T& t2,  T& t3, const T& r1, const T& r2, const T& r3) override{
+  void update(T& t1, T& t2,  T& t3, const T& r1, const T& r2, const T& r3) override {
     update_only(t1, t2, t3, r1, r2, r3);
     T r1_copy = r1;
     T r2_copy = r2;

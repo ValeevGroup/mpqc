@@ -187,7 +187,7 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
       TArray U;
       U("p,r,i,j") =
           Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") * direct_integral("p,q,r,s");
-      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
+//      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
       HDS_HDD_C("a,b,i,j") +=
           U("p,r,i,j") * Ca("p,a") * Ca("r,b") -
           U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k") -

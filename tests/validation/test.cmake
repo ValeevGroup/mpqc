@@ -20,6 +20,7 @@ if (1)
                   ${mpiNPFlags}
                   ${mpiNProc}
                   ${mpiPre}
+                  $ENV{MPQC_PRE_CMD}
                   ${MPQC_CMD} ${MPQC_ARGS}
                   ${mpiPost}
                   OUTPUT_FILE "${OUTPUT_FILE_NAME}"

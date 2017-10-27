@@ -20,13 +20,19 @@ class PurificationDensityBuilder : public DensityBuilder<Tile,Policy> {
 
   double TcutC_;
   bool localize_;
+  std::string localization_method_;
   int64_t n_coeff_clusters_;
   int64_t occ_;
+  int64_t ncore_;
 
  public:
+  /// @param[in] localization_method defined the localization method; valid
+  ///            choices are "boys-foster" (default),
+  ///            "boys-foster(valence)" (do not localize the core).
   PurificationDensityBuilder(array_type const &S, std::vector<array_type> r_xyz,
-                             int64_t occ, int64_t nclusters, double TcutC = 0.0,
-                             bool localize = true);
+                             int64_t occ, int64_t ncore, int64_t nclusters,
+                             double TcutC = 0.0, bool localize = true,
+                             std::string localization_method = "boys-foster");
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;
 

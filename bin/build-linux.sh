@@ -10,8 +10,8 @@ if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION
     export CXX=/usr/bin/g++-$GCC_VERSION
 else
-    export CC=/usr/bin/clang-3.8
-    export CXX=/usr/bin/clang++-3.8
+    export CC=/usr/bin/clang-5.0
+    export CXX=/usr/bin/clang++-5.0
 fi
 
 echo $($CC --version)
@@ -27,6 +27,7 @@ ls $INSTALL_DIR
 cmake .. \
     -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/mpqc4" \
+    -DCMAKE_SHARED_LIBS=ON \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument" \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint" \

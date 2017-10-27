@@ -10,8 +10,8 @@ if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION
     export CXX=/usr/bin/g++-$GCC_VERSION
 else
-    export CC=/usr/bin/clang-3.8
-    export CXX=/usr/bin/clang++-3.8
+    export CC=/usr/bin/clang-5.0
+    export CXX=/usr/bin/clang++-5.0
 fi
 
 echo $($CC --version)
@@ -38,6 +38,7 @@ cmake ta_src \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \
       -DMPI_C_COMPILER=$MPICC \
+      -DBUILD_SHARED_LIBS=ON \
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
 # Build all libraries, examples, and applications

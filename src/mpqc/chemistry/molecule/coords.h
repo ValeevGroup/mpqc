@@ -2,7 +2,7 @@
 #define SRC_MPQC_CHEMISTRY_MOLECULE_COORDS_H_
 
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 

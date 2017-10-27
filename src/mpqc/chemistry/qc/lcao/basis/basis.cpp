@@ -4,9 +4,9 @@
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/basis/shell_vec_functions.h"
 #include "mpqc/util/keyval/forcelink.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/formio.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/formio.h"
+#include "mpqc/util/core/exenv.h"
 
 MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::AtomicBasis);
 

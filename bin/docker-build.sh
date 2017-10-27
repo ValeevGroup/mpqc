@@ -11,7 +11,7 @@
 #   - installed libraries dir: /usr/local/lib, e.g. /usr/local/lib/libMPQCmpqc.a
 
 # update these before rebuilding
-LIBINT_VERSION=2.4.0-beta.4
+LIBINT_VERSION=2.4.0
 
 ##############################################################
 # make a script to disable ASLR to make MADWorld happy

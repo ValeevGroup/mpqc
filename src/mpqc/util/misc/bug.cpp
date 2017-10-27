@@ -332,6 +332,25 @@ void Debugger::__traceback(const std::string &prefix, const char *reason) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+namespace mpqc {
+
+void launch_gdb_xterm() {
+  auto debugger = std::make_shared<mpqc::Debugger>();
+  if (ExEnv::initialized()) debugger->set_exec(ExEnv::argv()[0]);
+  debugger->debug("Starting gdb ...");
+}
+
+void launch_lldb_xterm() {
+  auto debugger = std::make_shared<mpqc::Debugger>();
+  if (ExEnv::initialized()) debugger->set_exec(ExEnv::argv()[0]);
+  debugger->set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e lldb -p $(PID) &");
+  debugger->debug("Starting gdb ...");
+}
+
+}  // namespace mpqc
+
+/////////////////////////////////////////////////////////////////////////////
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ"

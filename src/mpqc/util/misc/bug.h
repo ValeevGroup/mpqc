@@ -174,7 +174,12 @@ class Debugger: virtual public DescribedClass {
     static std::shared_ptr<Debugger> default_debugger();
 };
 
-}
+/// Use this to launch GNU debugger in xterm
+void launch_gdb_xterm();
+/// Use this to launch LLVM debugger in xterm
+void launch_lldb_xterm();
+
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
 

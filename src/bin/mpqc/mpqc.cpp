@@ -215,6 +215,9 @@ int main(int argc, char *argv[]) {
   // initialize MADNESS first
   try {
     world_ptr = &madness::initialize(argc, argv);
+  } catch (madness::MadnessException &e) {
+    std::cerr << "!! MADNESS exception: " << e.what() << "\n";
+    return 1;
   } catch (...) {
     std::cerr << "!! Failed to initialize MADWorld: "
               << "\n";

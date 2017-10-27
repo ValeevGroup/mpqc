@@ -7,6 +7,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/expression/formula_registry.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace scf {
@@ -48,6 +49,8 @@ class PeriodicFockBuilder {
 
   virtual void register_fock(const array_type &,
                              FormulaRegistry<array_type> &) = 0;
+
+  virtual Vector3i fock_latt_range() = 0;
 };
 
 }  // namespace scf

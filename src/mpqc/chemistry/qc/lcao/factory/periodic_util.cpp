@@ -99,6 +99,10 @@ Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &latt_max) {
   }
 }
 
+int64_t k_ord_idx(Vector3i const &in_3D_idx, Vector3i const &nk) {
+  return k_ord_idx(in_3D_idx(0), in_3D_idx(1), in_3D_idx(2), nk);
+}
+
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i const &nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {

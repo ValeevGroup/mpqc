@@ -55,6 +55,8 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 
+  Vector3i fock_latt_range() override { return ao_factory_.R_max(); }
+
  private:
   Factory &ao_factory_;
   std::unique_ptr<J_Builder> j_builder_;

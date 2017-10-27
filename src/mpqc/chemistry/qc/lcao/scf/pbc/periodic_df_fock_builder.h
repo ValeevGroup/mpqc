@@ -42,9 +42,15 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                         bool) override {
     array_type G;
 
+    const auto J_latt_range = ao_factory_.R_max();
+    const auto K_latt_range = k_builder_->fock_latt_range();
     // the '-' sign is embeded in K builder
-    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") +
-                  compute_K(D, target_precision)("mu, nu");
+    G = ::mpqc::pbc::detail::add(compute_J(D, target_precision),
+                                 compute_K(D, target_precision), J_latt_range,
+                                 K_latt_range, 2.0, 1.0);
+
+    //    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") +
+    //                  compute_K(D, target_precision)("mu, nu");
 
     return G;
   }
@@ -52,6 +58,26 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
   void register_fock(const array_type &fock,
                      FormulaRegistry<array_type> &registry) override {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
+  }
+
+  Vector3i fock_latt_range() override {
+    const auto J_latt_range = ao_factory_.R_max();
+    const auto K_latt_range = k_builder_->fock_latt_range();
+    if (J_latt_range(0) >= K_latt_range(0) &&
+        J_latt_range(1) >= K_latt_range(1) &&
+        J_latt_range(2) >= K_latt_range(2)) {
+      return J_latt_range;
+    } else if (J_latt_range(0) <= K_latt_range(0) &&
+               J_latt_range(1) <= K_latt_range(1) &&
+               J_latt_range(2) <= K_latt_range(2)) {
+      return K_latt_range;
+    } else {
+      ExEnv::out0() << "\nLattice range of Coulomb: "
+                    << J_latt_range.transpose()
+                    << "\nLattice range of exchange: "
+                    << K_latt_range.transpose() << std::endl;
+      throw "Invalid lattice ranges!";
+    }
   }
 
  private:

@@ -88,10 +88,25 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \param real_latt_range maximum unit cell index (n1, n2, n3) in lattice
+   * sum of \c R. n1, n2 and n3 are non-negative integers.
+   * \param recip_latt_range number of k points (k1, k2, k3) in reciprocal
+   * space. k1, k2, and k3 are positive integers
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
    */
-  array_type_z transform_real2recip(array_type& matrix);
+  array_type_z transform_real2recip(const array_type& matrix,
+                                    const Vector3i& real_latt_range,
+                                    const Vector3i& recip_latt_range);
+
+  /*!
+   * \brief This transforms an integral matrix from real to reciprocal space
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
+   */
+  array_type_z transform_real2recip(const array_type& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value

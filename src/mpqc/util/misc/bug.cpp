@@ -27,6 +27,7 @@
 
 #include "bug.h"
 
+#include <unistd.h>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -34,7 +35,6 @@
 #include <iostream>
 #include <iterator>
 #include <sstream>
-#include <unistd.h>
 
 #include "mpqc/util/core/backtrace.h"
 #include "mpqc/util/core/exenv.h"
@@ -60,9 +60,7 @@ static Debugger *signals[NSIG];
 
 std::shared_ptr<Debugger> Debugger::default_debugger_(nullptr);
 
-Debugger::Debugger(const char *exec) : Debugger(KeyVal()) {
-  set_exec(exec);
-}
+Debugger::Debugger(const char *exec) : Debugger(KeyVal()) { set_exec(exec); }
 
 Debugger::Debugger(const KeyVal &keyval) {
   init();
@@ -104,12 +102,10 @@ void Debugger::init() {
 }
 
 namespace {
-static void
-handler(int sig)
-{
+static void handler(int sig) {
   if (signals[sig]) signals[sig]->got_signal(sig);
 }
-}
+}  // namespace
 
 void Debugger::handle(int sig) {
   if (sig >= NSIG) return;
@@ -222,10 +218,11 @@ void Debugger::debug(const char *reason) {
     ExEnv::outn() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
     debugger_ready_ = 0;
     const auto system_retvalue = system(cmd.c_str());
-    if (system_retvalue != 0) { // call to system() failed
-      ExEnv::outn() << prefix_ << "Failed debugger launch: system() did not succeed ..." << endl;
-    }
-    else {  // call to system() succeeded
+    if (system_retvalue != 0) {  // call to system() failed
+      ExEnv::outn() << prefix_
+                    << "Failed debugger launch: system() did not succeed ..."
+                    << endl;
+    } else {  // call to system() succeeded
       // wait until the debugger is ready
       if (sleep_) {
         ExEnv::outn() << prefix_ << "Sleeping " << sleep_
@@ -233,8 +230,8 @@ void Debugger::debug(const char *reason) {
         sleep(sleep_);
       }
       if (wait_for_debugger_) {
-        ExEnv::outn() << prefix_ << ": Spinning until debugger_ready_ is set ..."
-                      << endl;
+        ExEnv::outn() << prefix_
+                      << ": Spinning until debugger_ready_ is set ..." << endl;
         while (!debugger_ready_)
           ;
       }

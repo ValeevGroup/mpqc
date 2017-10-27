@@ -4,8 +4,8 @@
 #include <chrono>
 #include <sstream>
 
-#include <libint2.hpp>
 #include <tiledarray.h>
+#include <libint2.hpp>
 
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_config.h"
@@ -15,11 +15,11 @@
 
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/units/units.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/bug.h"
-#include "mpqc/util/core/exception.h"
-#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/options/GetLongOpt.h"
 
 // linkage files to force linking in of ALL Wavefunction-based classes
@@ -53,20 +53,24 @@ void announce(madness::World &world) {
     ExEnv::out0() << ' ';
   ExEnv::out0() << title3 << std::endl << std::endl;
 
-  ExEnv::out0() << indent << printf("Machine:          %s", TARGET_ARCH) << std::endl
-                << indent << printf("User:             %s@%s", ExEnv::username(),
-                                    ExEnv::hostname())
+  ExEnv::out0() << indent << printf("Machine:          %s", TARGET_ARCH)
+                << std::endl
+                << indent
+                << printf("User:             %s@%s", ExEnv::username(),
+                          ExEnv::hostname())
                 << std::endl;
   std::time_t tm = std::time(nullptr);
   char tm_str[256];
   std::strftime(tm_str, 256, "%c %Z", std::gmtime(&tm));
-  ExEnv::out0() << indent << "Start Time:       " << tm_str
+  ExEnv::out0() << indent << "Start Time:       "
+                << tm_str
                 // << std::put_time(std::gmtime(&tm), "%c %Z")
                 << std::endl;
 
   auto nproc = world.size();
-  ExEnv::out0() << indent << "Default World:    " << nproc
-                << " MPI process" << (nproc > 1 ? "es" : "") << std::endl << std::endl;
+  ExEnv::out0() << indent << "Default World:    " << nproc << " MPI process"
+                << (nproc > 1 ? "es" : "") << std::endl
+                << std::endl;
 }
 
 }  // namespace mpqc
@@ -105,7 +109,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // now set up the debugger
   auto debugger = kv->class_ptr<Debugger>("debugger");
-  // use default-constructed debugger if -D given and debugger keyword is missing
+  // use default-constructed debugger if -D given and debugger keyword is
+  // missing
   if (!debugger && options->retrieve("D")) {
     debugger = std::make_shared<Debugger>();
   }
@@ -117,8 +122,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       debugger->debug("Starting debugger because -d given on command line.");
   }
 
-
-      // redirect filenames in KeyVal to the directory given by -p cmdline option
+  // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
   if (prefix_opt) {  // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);

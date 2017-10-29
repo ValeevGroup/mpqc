@@ -23,7 +23,7 @@ set(utests_src
 
 set(executable unit_tests)
 add_executable(${executable} EXCLUDE_FROM_ALL test_main.cpp ${utests_src})
-target_link_libraries(${executable} MPQCmpqc MPQClcao_integrals MPQClcao_wfn)
+target_link_libraries(${executable} MPQCmpqc MPQClcao_integrals MPQClcao_wfn  ${MADNESS_DISABLEPIE_LINKER_FLAG})
 add_test(unit/build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
 set_property(SOURCE bug_test.cpp PROPERTY COMPILE_DEFINITIONS
              SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

@@ -248,13 +248,14 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
       if (method_ == "standard") {
         CCSDT4_corr_energy_ = compute_CCSDT4_conventional(t1, t2, t3);
       } /*else if (method_ == "df") {
-        CCSDT4_corr_energy_ = compute_ccsd_df(t1, t2);
+        CCSDT4_corr_energy_ = compute_ccsdt4_df(t1, t2, t3);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
             this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
-        CCSDT4_corr_energy_ = compute_ccsd_direct(t1, t2);
+        CCSDT4_corr_energy_ = compute_ccsdt4_direct(t1, t2, t3);
       }*/
+      // DF(Density-fitted) and direct-integral version of CCSDT-4 not implemented yet
 
       T1_ = t1;
       T2_ = t2;
@@ -316,7 +317,6 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
     TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
-    // Is below the way to create a a new multi-dimensional array ? _VR
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
 
@@ -336,32 +336,6 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
     //first assign it a size indirectly
     t3("a,b,c,i,j,k") = t2("a,b,i,j") * t1("c,k");
 
-    /*t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                              t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
-
-    //permute
-    t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-    //denominator
-    t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-
-    //ExEnv::out0() << "Beginning of the iteration _Initial T3" << t3 << std::endl ;
-
-
-    /*t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
-                        g_cjkl("c,j,k,l") * t2("a,b,i,l");
-    */
-    //
-    double norm_t1 = t1("a,i").norm();
-    double norm_t2 = t2("a,b,i,j").norm();
-    double norm_t3 = t3("a,b,c,i,j,k").norm();
-    ExEnv::out0() << "Beginning of the iteration 0" <<std::endl ;
-    ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-    ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-    ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-    //
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -395,15 +369,6 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
       // start timer
       auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
-
-
-      //  See the amplitudes after the call to the solver
-      ExEnv::out0() << "At the beginning of iter #" << iter << std::endl ;
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-
-
 
       auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ki, h_ac;
@@ -466,220 +431,6 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
 
       //Add T3 contribution to T1 _VR
       {
-      // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
-      // Commenting the code below and building r3 residual later
-
-         // equations below are from spin-adapted CCSDT-4 implementation
-         // by Noga and Bartlett, JCP, 86, 7041 (1987)
-         // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1a
-         // Extension from CCSDT-1b to CCSDT-2 requires addition of T2T2 terms to t3/r3 residual
-         // Extension from CCSDT-2 to CCSDT-3 requires contribution of T1T2, T1T1T2, T1T2T2 and T1T1T1T2 terms to t3/r3 residual
-         // Extension from CCSDT-3 to CCSDT-4 requires addition of (W)T3 terms to t3/r3 residual equation
-         // Let's construct intermediates as done by Noga and Bartlett
-          /*
-          TArray Chi_dabi;
-          TArray Chi_cjkl;
-          TArray Chi_im;
-          TArray Chi_ae;
-          TArray Chi_jkmn;
-          TArray Chi_bcef;
-          TArray Chi_amei;
-          TArray Chi_amie;
-          TArray f_aijk;
-          TArray f_aibc;
-          TArray f_aijb;
-          TArray f_aibj;
-          TArray f_iabj;
-          TArray f_iajb;
-          TArray g_aijk;
-          TArray g_aijb;
-          TArray g_aibj;
-          TArray g_iajk;
-          TArray g_ijab_AS;
-          TArray f_int_me;
-
-          // some two-electron integrals
-          g_aijk("a,i,j,k")  = g_ijka("i,j,k,a") ;
-          g_iajk("i,a,j,k")  = g_ijka("i,j,k,a") ;
-          g_aijb("a,i,j,b")  = g_iabj("i,a,b,j") ;
-          g_aibj("a,i,b,j")  = g_iajb("i,a,j,b") ;
-          g_ijab_AS("i,j,a,b") = (2 * g_ijab("i,j,a,b")) - g_ijab("i,j,b,a");
-
-          // first define the intermediates
-
-          f_aijk("e,i,m,n")  = g_aijk("e,i,m,n") ;
-          f_aijk("e,i,m,n") += ( g_ijab("m,n,e,f") * t1("f,i")) ;
-
-          f_aibc("a,m,e,f")  = g_aibc("a,m,e,f") ;
-          f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
-
-          f_aijb("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
-
-          f_aibj("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          f_aibj("a,m,e,i") += ( g_aibc("a,m,e,f") * t1("f,i")) ;
-
-          f_iabj("i,e,a,m")  = g_iabj("i,e,a,m");
-          f_iabj("i,e,a,m") -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
-
-          f_iajb("i,e,m,a")  = g_iajb("i,e,m,a")  ;
-          f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
-
-          f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
-          //f_int_me("m,e")   += f_ia("m,e") ;
-
-          // Now the super-intermediates,
-
-
-          Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * tau("a,b,n,m"))
-                               + ((2 * f_aibc("b,m,e,f")- f_aibc("b,m,f,e")) * t2("a,f,i,m")
-                               - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i"))
-                               - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
-                               + g_abcd("a,b,f,e") * t1("f,i") ;
-
-          Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * tau("e,f,i,j"))
-                               + ((2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
-                               - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n"))
-                               + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
-                               - g_ijkl("i,j,n,m") * t1("a,n")
-                               + f_int_me("m,e") * t2("a,e,i,j");
-
-          Chi_im("i,m")  = ((2* g_iajk("i,e,m,n")) - g_iajk("i,e,n,m")) * t1("e,n") ;
-          Chi_im("i,m") += ((2* g_ijab("m,n,e,f")) - g_ijab("m,n,f,e")) * tau("e,f,i,n") ;
-          //Chi_im("i,m") += f_ij("i,m") ;
-
-          Chi_ae("a,e")  = ((2* g_aibc("a,m,e,f")) - g_aibc("a,m,f,e")) * t1("f,m") ;
-          Chi_ae("a,e") -= ((2* g_ijab("m,n,e,f")) - g_ijab("m,n,f,e")) * tau("a,f,m,n") ;
-          //Chi_ae("a,e") += f_ab("a,e") ;
-
-          Chi_jkmn("j,k,m,n")  = g_ijkl("j,k,m,n") ;
-          //Chi_jkmn("j,k,m,n") += g_ijab("j,k,e,f") * tau("e,f,m,n") ;
-          //Chi_jkmn("j,k,m,n") += g_iajk("j,e,m,n") * t1("e,k") + g_aijk("e,k,m,n") * t1("e,j") ;
-
-          Chi_bcef("b,c,e,f")  = g_abcd("b,c,e,f") ;
-          //Chi_bcef("b,c,e,f") += g_abij("b,c,m,n") * tau("e,f,m,n");
-          //Chi_bcef("b,c,e,f") -= (g_aibc("b,m,e,f") * t1("c,m") + g_iabc("m,c,e,f") * t1("b,m")) ;
-
-          Chi_amei("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          //Chi_amei("a,m,e,i") -= g_ijab("m,n,f,e") * tau("f,a,i,n") ;
-          //Chi_amei("a,m,e,i") -= g_ijak("n,m,e,i") * t1("a,n") ;
-          //Chi_amei("a,m,e,i") += g_aibc("a,m,e,f") * t1("f,i") ;
-
-          Chi_amie("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          //Chi_amie("a,m,i,e") += g_ijab_AS("m,n,e,f") * t2("a,f,i,n") - g_ijab("m,n,e,f") * tau("f,a,i,n") ;
-          //Chi_amie("a,m,i,e") -= g_ijka("n,m,i,e") * t1("a,n") ;
-          //Chi_amie("a,m,i,e") += g_abci("a,e,f,m") * t1("f,i") ;
-
-
-
-          // calculate t3
-          //
-          // terms that take into account the contribution of (W)T3 to t3/r3 equation
-          // Use t3 stored from previous iteration
-          // Limited to terms in CCSDT-4 model
-
-          TArray t3_t;
-          t3_t("a,b,c,i,j,k") =   Chi_jkmn("j,k,m,n") * t3("a,b,c,i,m,n")
-                                + Chi_bcef("b,c,e,f") * t3("a,e,f,i,j,k")
-                                + Chi_amie("a,m,i,e") * ((2 * t3("e,b,c,m,j,k")) - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k"))
-                                - Chi_amei("a,m,e,i") * t3("e,b,c,m,j,k")
-                                - Chi_amei("b,m,e,i") * t3("a,e,c,m,j,k")
-                                - Chi_amei("c,m,e,i") * t3("a,b,e,m,j,k") ;
-
-
-          // permute [(i,a) with (j,b) and (i,a) with (k,c)]
-
-          t3_t("a,b,c,i,j,k") = t3_t("a,b,c,i,j,k") + t3_t("b,a,c,j,i,k") + t3_t("c,b,a,k,j,i") ;
-
-
-          //  the T1 and T2 dependent terms in the t3/r3 equation
-
-          t3("a,b,c,i,j,k") = Chi_dabi("b,a,e,i") * t2("c,e,k,j") -
-                              Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
-
-          //permute
-          t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                              t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-
-          // Add the contribution of T3 dependent terms
-
-          t3("a,b,c,i,j,k") += t3_t("a,b,c,i,j,k") ;*/
-
-          // To Debug, Avoid lumping everything into intermediates,
-          // Extension from CCSDT-2 to CCSDT-3 is attempted below by adding explicit terms
-
-          /*
-          // T1T2 terms
-          TArray t3_sd ;
-
-          t3_sd("a,b,c,i,j,k")  =  (g_abcd("a,b,f,e") * t1("f,i")) * t2("c,e,k,j")
-                                 + (g_ijkl("i,j,n,m") * t1("a,n")) * t2("b,c,m,k")
-                                 - (g_aijb("a,m,i,e") * t1("b,m")) * t2("c,e,k,j")
-                                 - (g_aibj("b,m,e,i") * t1("a,m")) * t2("c,e,k,j")
-                                 - (g_iabj("i,e,a,m") * t1("e,j")) * t2("b,c,m,k")
-                                 - (g_iajb("j,e,m,a") * t1("e,i")) * t2("b,c,m,k") ;
-
-
-
-          // T1T1T2 terms
-          TArray t3_ssd ;
-
-          t3_ssd("a,b,c,i,j,k") =   (( g_aijk("e,i,m,n") * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("a,m,e,f") * t1("e,i")) * t1("f,j")) * t2("b,c,m,k")
-                                  + (( g_iajk("i,e,n,m") * t1("a,n")) * t1("e,j")) * t2("b,c,m,k")
-                                  + (( g_ijka("j,n,m,e") * t1("a,n")) * t1("e,i")) * t2("b,c,m,k")
-                                  - (( g_aibc("a,m,f,e") * t1("f,i")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("b,m,e,f") * t1("f,i")) * t1("a,m")) * t2("c,e,k,j");
-
-
-
-          // T1T1T1T2 terms
-          TArray t3_sssd ;
-
-          t3_sssd("a,b,c,i,j,k") =   (((g_ijab("m,n,e,f") * t1("f,i")) * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                   + (((g_ijab("n,m,e,f") * t1("a,n")) * t1("e,i")) * t1("f,j")) * t2("b,c,m,k") ;
-
-
-
-
-          // T1T2T2 terms
-          TArray t3_sdd ;
-
-          t3_sdd("a,b,c,i,j,k") =   (( g_ijab("m,n,e,f") * t1("f,i")) * t2("a,b,n,m")) * t2("c,e,k,j")
-                                  - ((2 * ( g_ijab("n,m,e,f") * t1("b,n")))* t2("a,f,i,m")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,f,e") * t1("b,n")) * t2("a,f,i,m")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,e,f") * t1("b,n")) * t2("a,f,m,i")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,f,e") * t1("a,n")) * t2("b,f,m,i")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,e,f") * t1("a,n")) * t2("e,f,i,j")) * t2("b,c,m,k")
-                                  - ((2 * (g_ijab("m,n,e,f") * t1("f,j"))) * t2("a,e,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("n,m,e,f") * t1("f,j")) * t2("a,e,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("m,n,e,f") * t1("f,j")) * t2("e,a,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("m,n,e,f") * t1("f,i")) * t2("e,a,j,n")) * t2("b,c,m,k")
-                                  - ((g_ijab_AS("m,n,e,f") * t1("f,n")) * t2("a,e,i,j")) * t2("b,c,m,k") ;                                                                   ;
-
-
-
-        // Add the contributions to t3
-          t3("a,b,c,i,j,k")   +=   t3_sd("a,b,c,i,j,k") ;
-          t3("a,b,c,i,j,k")   +=   t3_ssd("a,b,c,i,j,k") ;
-          t3("a,b,c,i,j,k")   +=   t3_sssd("a,b,c,i,j,k");
-          t3("a,b,c,i,j,k")   +=   t3_sdd("a,b,c,i,j,k") ;*/
-
-
-         /*
-          //permute
-          t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                              t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k"); */
-
-
-
-
-         //divide by energy denominator
-         //t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-
 
         TArray g_jkbc_AS;
 
@@ -1057,42 +808,10 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
            r3("a,b,c,i,j,k")  = r3_1("a,b,c,i,j,k") ;
            r3("a,b,c,i,j,k") += r3_2("a,b,c,i,j,k") ;
 
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      double norm_r1 = r1("a,i").norm();
-      double norm_r2 = r2("a,b,i,j").norm();
-      double norm_r3 = r3("a,b,c,i,j,k").norm();
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-
-
-      //denominator
-      //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
-
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-
-       }
+      }
        // end of triples part  _VR
-      double norm_t1 = t1("a,i").norm();
-      double norm_t2 = t2("a,b,i,j").norm();
-      double norm_t3 = t3("a,b,c,i,j,k").norm();
 
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-
-      // Just to check if we reached here
-      std::cout << "Checkpoint at the end of T3 amplitude calculation" << std::endl;
-
-
-      // error = residual norm per element _edited VR
+      // error = residual norm per element
       error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2)
                + std::pow(norm2(r3), 2)))/
               (size(r1) + size(r2) + size(r3));
@@ -1110,17 +829,14 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        //solver_->update(t1, t2, r1, r2);
         solver_->update(t1, t2, t3, r1, r2, r3);
 
-        ExEnv::out0() << "After the call to the solver " << std::endl ;
-        ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-        ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-        ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
+          mpqc::detail::print_size_info(r3, "R3");
+          mpqc::detail::print_size_info(t3, "T3");
         }
 
         // recompute tau as well
@@ -1163,7 +879,7 @@ class CCSDT4 : public LCAOWavefunction<Tile, Policy>,
 
  private:
   /*
-  double compute_ccsd_df(TArray &t1, TArray &t2) {
+  double compute_ccsdt4_df(TArray &t1, TArray &t2, TArray &t3) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 

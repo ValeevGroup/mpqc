@@ -248,13 +248,14 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       if (method_ == "standard") {
         ccsdt1_corr_energy_ = compute_ccsdt1_conventional(t1, t2, t3);
       } /*else if (method_ == "df") {
-        ccsdt1_corr_energy_ = compute_ccsd_df(t1, t2);
+        ccsdt1_corr_energy_ = compute_ccsdt1_df(t1, t2,t3);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
             this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
-        ccsdt1_corr_energy_ = compute_ccsd_direct(t1, t2);
+        ccsdt1_corr_energy_ = compute_ccsdt1_direct(t1, t2,t3);
       }*/
+      // DF and direct vesrsion of CCSDT-1a not implemented yet
 
       T1_ = t1;
       T2_ = t2;
@@ -265,7 +266,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "CCSD Time in CCSD: " << duration0 << " S" << std::endl;
+      ExEnv::out0() << "CCSDT-1a Time in CCSDT-1a: " << duration0 << " S" << std::endl;
     }
   }
 
@@ -315,7 +316,6 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
-    // Is below the way to create a a new multi-dimensional array ? _VR
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
 
@@ -332,35 +332,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
     // T3
 
     // Initialize T3 and set all elements to be zero
-    //first assign it a size indirectly
+    // first assign it a size indirectly
     t3("a,b,c,i,j,k") = t2("a,b,i,j") * t1("c,k");
-
-    /*t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                              t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
-
-    //permute
-    t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-    //denominator
-    t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-
-    //ExEnv::out0() << "Beginning of the iteration _Initial T3" << t3 << std::endl ;
-
-
-    /*t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
-                        g_cjkl("c,j,k,l") * t2("a,b,i,l");
-    */
-    //
-    double norm_t1 = t1("a,i").norm();
-    double norm_t2 = t2("a,b,i,j").norm();
-    double norm_t3 = t3("a,b,c,i,j,k").norm();
-    ExEnv::out0() << "Beginning of the iteration 0" <<std::endl ;
-    ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-    ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-    ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-    //
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -394,15 +367,6 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
       // start timer
       auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
-
-
-      //  See the amplitudes after the call to the solver
-      ExEnv::out0() << "At the beginning of iter #" << iter << std::endl ;
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-
-
 
       auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ki, h_ac;
@@ -465,24 +429,6 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       //Add T3 contribution to T1 _VR
       {
-      // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
-      // Commenting this part and building the r3 residual later
-         /*
-         // equations below are from spin-adapted CCSDT-1 implementation
-         // by Noga and Bartlett, JCP (1987)
-         // by Scuseria and Schaefer  (1988)
-         // Eq. 9 in Scuseria and Schaefer, CPL 146, 23 (1988)
-          t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
-                              g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
-
-          //permute
-          t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                              t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                              t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-         //divide by energy denominator
-         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen); */
-
 
         TArray g_jkbc_AS;
 
@@ -696,11 +642,9 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       // compute the r3 residual
       {
-      // equations below are from spin-adapted CCSDT-1 implementation
+      // equations below are from spin-adapted CCSDT-1a implementation
       // by Noga and Bartlett, JCP (1987)
-      // by Scuseria and Schaefer  (1988)
-      // Eq. 9 in Scuseria and Schaefer, CPL 146, 23 (1988)
-
+      // by Scuseria and Schaefer, CPL 146, 23  (1988)
 
         TArray r3_1;
         TArray r3_2;
@@ -730,41 +674,11 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         r3("a,b,c,i,j,k")  = r3_1("a,b,c,i,j,k") ;
         r3("a,b,c,i,j,k") += r3_2("a,b,c,i,j,k") ;
 
-        ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      double norm_r1 = r1("a,i").norm();
-      double norm_r2 = r2("a,b,i,j").norm();
-      double norm_r3 = r3("a,b,c,i,j,k").norm();
-      /*
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;*/
-
-
-      //denominator
-      //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
-
-      /*ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ; */
-
       }
        // end of triples part  _VR
       double norm_t1 = t1("a,i").norm();
       double norm_t2 = t2("a,b,i,j").norm();
       double norm_t3 = t3("a,b,c,i,j,k").norm();
-
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-
-      // Just to check if we reached here
-      std::cout << "Checkpoint at the end of T3 amplitude calculation" << std::endl;
-
 
       // error = residual norm per element _edited VR
       error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2)
@@ -784,13 +698,7 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        //solver_->update(t1, t2, r1, r2);
         solver_->update(t1, t2, t3, r1, r2, r3);
-
-        ExEnv::out0() << "After the call to the solver " << std::endl ;
-        ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-        ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-        ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -811,36 +719,8 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
         if (world.rank() == 0) {
           detail::print_ccsdt1(iter, dE, error, E1, duration);
         }
-
-        iter += 1ul;
-        //std::cout << "Check if triples (T3) indeed reproduce (T) energy " << std::endl;
-
-        /*t3("a,b,c,i,j,k") = g_dabi("b,a,e,i") * t2("c,e,k,j") -
-                            g_cjkl("a,m,i,j") * t2("b,c,m,k") ;
-
-         //permute
-         t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-         //denominator
-         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-         /*TArray v3;
-        v3("a,b,c,i,j,k") = g_abij("a,b,i,j") * t1("c,k");
-        v3("a,b,c,i,j,k") =
-            v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
-
-        std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
-
-        double triple_energy =
-            ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
-             (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") + t3("a,b,c,j,k,i") -
-              2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") + t3("a,b,c,j,i,k"))));
-        triple_energy = triple_energy / 3.0;
-
-        std::cout << "Triples energy (T) at the end of this iteration" << triple_energy << std::endl;*/
-
-      } else {
+        iter += 1ul;                
+        } else {
         auto time1 = mpqc::fenced_now(world);
         auto duration = mpqc::duration_in_s(time0, time1);
 
@@ -856,14 +736,14 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
                          "\n Warning!! Exceed Max Iteration! \n");
     }
     if (world.rank() == 0) {
-      std::cout << "CCSDT-1 Energy  " << E1 << std::endl;      
+      std::cout << "CCSDT-1a Energy  " << E1 << std::endl;
     }
     return E1;
   }
 
  private:
   /*
-  double compute_ccsd_df(TArray &t1, TArray &t2) {
+  double compute_ccsdt1_df(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 

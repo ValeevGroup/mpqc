@@ -124,7 +124,6 @@ src/mpqc/chemistry/qc/lcao/cc/ccsdt1/ccsdt1.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1/ccsdt1.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1/ccsdt1.pro
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1/ccsdt1_global.h
-src/mpqc/chemistry/qc/lcao/cc/ccsdt1_copy.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1b.cpp
 src/mpqc/chemistry/qc/lcao/cc/ccsdt1b.h
 src/mpqc/chemistry/qc/lcao/cc/ccsdt2.cpp

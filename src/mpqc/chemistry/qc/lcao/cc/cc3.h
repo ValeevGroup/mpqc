@@ -248,7 +248,7 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
       if (method_ == "standard") {
         CC3_corr_energy_ = compute_CC3_conventional(t1, t2, t3);
       } /*else if (method_ == "df") {
-        CC3_corr_energy_ = compute_ccsd_df(t1, t2);
+        CC3_corr_energy_ = compute_cc3_df(t1, t2);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
@@ -317,7 +317,6 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
     TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
-    // Is below the way to create a a new multi-dimensional array ? _VR
     TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
 
@@ -336,33 +335,6 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
     // Initialize T3 and set all elements to be zero
     //first assign it a size indirectly
     t3("a,b,c,i,j,k") = t2("a,b,i,j") * t1("c,k");
-
-    /*t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                              t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
-
-    //permute
-    t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-    //denominator
-    t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-
-    //ExEnv::out0() << "Beginning of the iteration _Initial T3" << t3 << std::endl ;
-
-
-    /*t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
-                        g_cjkl("c,j,k,l") * t2("a,b,i,l");
-    */
-    //
-    double norm_t1 = t1("a,i").norm();
-    double norm_t2 = t2("a,b,i,j").norm();
-    double norm_t3 = t3("a,b,c,i,j,k").norm();
-    ExEnv::out0() << "Beginning of the iteration 0" <<std::endl ;
-    ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-    ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-    ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-    //
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -396,16 +368,6 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
       // start timer
       auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
-
-
-      //  See the amplitudes after the call to the solver
-      ExEnv::out0() << "At the beginning of iter #" << iter << std::endl ;
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-
-
-
       auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ki, h_ac;
       {
@@ -467,161 +429,6 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
 
       //Add T3 contribution to T1 _VR
       {
-      // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
-
-         // The code below is commented and the r3 residual is built later
-         /*
-         // equations below are from spin-adapted CCSDT implementation
-         // by Noga and Bartlett, JCP, 86, 7041 (1987)
-         // by Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for T-1a
-         // Extension from CCSDT-1b to CC3 requires contribution of T1T2, T1T1T2, and T1T1T1T2 terms to t3/r3 residual
-         // For CC3 theory, refer to papers below
-         // by Christiansen, Koch, and Jørgensen, JCP, 103, 7429 (1995)
-         // by Koch, Christiansen, Jørgensen, de Merás, and Helgaker, JCP, 106, 1808 (1997)
-         // Let's construct intermediates as done by Noga and Bartlett
-
-          TArray Chi_dabi;
-          TArray Chi_cjkl;
-          TArray Chi_im;
-          TArray Chi_ae;
-          TArray Chi_jkmn;
-          TArray Chi_bcef;
-          TArray Chi_amei;
-          TArray Chi_amie;
-          TArray f_aijk;
-          TArray f_aibc;
-          TArray f_aijb;
-          TArray f_aibj;
-          TArray f_iabj;
-          TArray f_iajb;
-          TArray g_aijb;
-          TArray g_aibj;
-          TArray g_ijab_AS;
-          TArray f_int_me;
-
-          // some two-electron integrals
-
-          g_aijb("a,i,j,b")  = g_iabj("i,a,b,j") ;
-          g_aibj("a,i,b,j")  = g_iajb("i,a,j,b") ;
-          g_ijab_AS("i,j,a,b") = (2 * g_ijab("i,j,a,b")) - g_ijab("i,j,b,a");
-
-          // first define the intermediates
-
-          f_aijk("e,i,m,n")  = g_aijk("e,i,m,n") ;
-          f_aijk("e,i,m,n") += ( g_ijab("m,n,e,f") * t1("f,i")) ;
-
-          f_aibc("a,m,e,f")  = g_aibc("a,m,e,f") ;
-          f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
-
-          f_aijb("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
-
-          f_aibj("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          f_aibj("a,m,e,i") += ( g_aibc("a,m,e,f") * t1("f,i")) ;
-
-          f_iabj("i,e,a,m")  = g_iabj("i,e,a,m");
-          f_iabj("i,e,a,m") -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
-
-          f_iajb("i,e,m,a")  = g_iajb("i,e,m,a")  ;
-          f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
-
-          f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
-          //f_int_me("m,e")   += f_ia("m,e") ;
-
-          // Now the super-intermediates,
-
-
-          Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + ((f_aijk("e,i,m,n") * t1("a,n")) * t1("b,m"))
-                               - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
-                               + g_abcd("a,b,f,e") * t1("f,i") ;
-
-          Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + ((f_aibc("a,m,e,f") * t1("e,i")) * t1("f,j"))
-                               + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
-                               - g_ijkl("i,j,n,m") * t1("a,n") ;
-
-          // calculate t3
-
-          t3("a,b,c,i,j,k") = Chi_dabi("b,a,e,i") * t2("c,e,k,j") -
-                              Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
-
-          //permute
-
-          t3("a,b,c,i,j,k") =   t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                                t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                                t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k"); */
-
-
-          /*
-          // Alternate code below
-          // To Debug, Avoid lumping everything into intermediates,
-          // let's build it term-by-term
-          // First estimate of triples in CCSDT-1a and CCSDT-1b is through (W)T2
-
-          // (W)T2 term
-
-          TArray t3_d ;
-
-          t3_d("a,b,c,i,j,k") =  g_abci("b,a,e,i") * t2("c,e,k,j")
-                               - g_aijk("a,m,i,j") * t2("b,c,m,k") ;
-
-
-          // Extension from CCSDT-1b to CC3 is attempted below by adding explicit terms,
-          // T1T2, T1T1T2, T1T1T1T2 terms.
-
-          // T1T2 terms
-          TArray t3_sd ;
-
-          t3_sd("a,b,c,i,j,k")  =  (g_abcd("a,b,f,e") * t1("f,i")) * t2("c,e,k,j")
-                                 + (g_ijkl("i,j,n,m") * t1("a,n")) * t2("b,c,m,k")
-                                 - (g_aijb("a,m,i,e") * t1("b,m")) * t2("c,e,k,j")
-                                 - (g_aibj("b,m,e,i") * t1("a,m")) * t2("c,e,k,j")
-                                 - (g_iabj("i,e,a,m") * t1("e,j")) * t2("b,c,m,k")
-                                 - (g_iajb("j,e,m,a") * t1("e,i")) * t2("b,c,m,k") ;
-
-
-
-          // T1T1T2 terms
-          TArray t3_ssd ;
-
-          t3_ssd("a,b,c,i,j,k") =   (( g_aijk("e,i,m,n") * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("a,m,e,f") * t1("e,i")) * t1("f,j")) * t2("b,c,m,k")
-                                  + (( g_iajk("i,e,n,m") * t1("a,n")) * t1("e,j")) * t2("b,c,m,k")
-                                  + (( g_ijka("j,n,m,e") * t1("a,n")) * t1("e,i")) * t2("b,c,m,k")
-                                  - (( g_aibc("a,m,f,e") * t1("f,i")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("b,m,e,f") * t1("f,i")) * t1("a,m")) * t2("c,e,k,j");
-
-
-
-          // T1T1T1T2 terms
-          TArray t3_sssd ;
-
-          t3_sssd("a,b,c,i,j,k") =   (((g_ijab("m,n,e,f") * t1("f,i")) * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                   + (((g_ijab("n,m,e,f") * t1("a,n")) * t1("e,i")) * t1("f,j")) * t2("b,c,m,k") ;
-
-
-
-          // Add to T3 dependent part of t3/r3 residual
-
-          TArray t3_p2;
-
-          t3_p2("a,b,c,i,j,k")  =   t3_d("a,b,c,i,j,k")    ;
-          t3_p2("a,b,c,i,j,k") +=   t3_sd("a,b,c,i,j,k")   ;
-          t3_p2("a,b,c,i,j,k") +=   t3_ssd("a,b,c,i,j,k")  ;
-          t3_p2("a,b,c,i,j,k") +=   t3_sssd("a,b,c,i,j,k") ;
-
-          //permute
-
-          t3_p2("a,b,c,i,j,k") =   t3_p2("a,b,c,i,j,k") + t3_p2("a,c,b,i,k,j") +
-                                   t3_p2("c,a,b,k,i,j") + t3_p2("c,b,a,k,j,i") +
-                                   t3_p2("b,c,a,j,k,i") + t3_p2("b,a,c,j,i,k");
-
-          //Add to t3
-          t3("a,b,c,i,j,k")  = t3_p2("a,b,c,i,j,k") ;
-
-
-         //divide by energy denominator
-         t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen); */
-
 
         TArray g_jkbc_AS;
 
@@ -910,6 +717,7 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
            f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
 
            f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
+           //For non-HF reference with non-zero occupied-virtual block, add this part
            //f_int_me("m,e")   += f_ia("m,e") ;
 
            // Now the super-intermediates,
@@ -954,44 +762,12 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
            r3("a,b,c,i,j,k")  = r3_1("a,b,c,i,j,k") ;
            r3("a,b,c,i,j,k") += r3_2("a,b,c,i,j,k") ;
 
-      /*double norm_r3 = r3("a,b,c,i,j,k").norm();
-      ExEnv::out0() << "R3 amplitudes at the beginning of t3 part" << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;*/
-
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      double norm_r1 = r1("a,i").norm();
-      double norm_r2 = r2("a,b,i,j").norm();
-      double norm_r3 = r3("a,b,c,i,j,k").norm();
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-
 
       //denominator
       //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
 
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-
       }
        // end of triples part  _VR
-      double norm_t1 = t1("a,i").norm();
-      double norm_t2 = t2("a,b,i,j").norm();
-      double norm_t3 = t3("a,b,c,i,j,k").norm();
-
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-
-      // Just to check if we reached here
-      std::cout << "Checkpoint at the end of T3 amplitude calculation" << std::endl;
-
 
       // error = residual norm per element _edited VR
       error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2)
@@ -1011,13 +787,7 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        //solver_->update(t1, t2, r1, r2);
         solver_->update(t1, t2, t3, r1, r2, r3);
-
-        ExEnv::out0() << "After the call to the solver " << std::endl ;
-        ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-        ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-        ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -1064,7 +834,7 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
 
  private:
   /*
-  double compute_ccsd_df(TArray &t1, TArray &t2) {
+  double compute_cc3_df(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 

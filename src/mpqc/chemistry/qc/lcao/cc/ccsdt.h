@@ -248,13 +248,14 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
       if (method_ == "standard") {
         CCSDT_corr_energy_ = compute_CCSDT_conventional(t1, t2, t3);
       } /*else if (method_ == "df") {
-        CCSDT_corr_energy_ = compute_ccsd_df(t1, t2);
+        CCSDT_corr_energy_ = compute_ccsdt_df(t1, t2, t3);
       } else if (method_ == "direct" || method_ == "direct_df") {
         // initialize direct integral class
         direct_ao_array_ =
             this->ao_factory().compute_direct(L"(μ ν| G|κ λ)[ab_ab]");
-        CCSDT_corr_energy_ = compute_ccsd_direct(t1, t2);
+        CCSDT_corr_energy_ = compute_ccsdt_direct(t1, t2, t3);
       }*/
+      // DF(Density-fitted) and direct-integral version of CCSDT not implemented yet
 
       T1_ = t1;
       T2_ = t2;
@@ -345,33 +346,6 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
     //first assign it a size indirectly
     t3("a,b,c,i,j,k") = t2("a,b,i,j") * t1("c,k");
 
-    /*t3("a,b,c,i,j,k") = t2("a,d,i,j") * g_dabi("b,c,d,k") -
-                              t2("a,b,i,l") * g_cjkl("c,l,k,j") ;
-
-    //permute
-    t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
-                             t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
-                             t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
-
-    //denominator
-    t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);*/
-
-    //ExEnv::out0() << "Beginning of the iteration _Initial T3" << t3 << std::endl ;
-
-
-    /*t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2("d,c,j,k") -
-                        g_cjkl("c,j,k,l") * t2("a,b,i,l");
-    */
-    //
-    /*double norm_t1 = t1("a,i").norm();
-    double norm_t2 = t2("a,b,i,j").norm();
-    double norm_t3 = t3("a,b,c,i,j,k").norm();
-    ExEnv::out0() << "Beginning of the iteration 0" <<std::endl ;
-    ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-    ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-    ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;*/
-    //
-
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
@@ -404,15 +378,6 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
       // start timer
       auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
-
-
-      //  See the amplitudes after the call to the solver
-      /*ExEnv::out0() << "At the beginning of iter #" << iter << std::endl ;
-      ExEnv::out0() << "T1 amplitudes norm = " << norm_t1 << std::endl ;
-      ExEnv::out0() << "T2 amplitudes norm = " << norm_t2 << std::endl ;
-      ExEnv::out0() << "T3 amplitudes norm = " << norm_t3 << std::endl ;*/
-
-
 
       auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ki, h_ac;
@@ -475,330 +440,6 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
 
       //Add T3 contribution to T1 _VR
       {
-      // Commenting out the code below and building r3 residual later
-
-      // Is this a good place to give a T3 guess and to recalculate it every iteration ? Perhaps
-
-         // equations below are from spin-adapted CCSDT implementation
-         // by Noga and Bartlett, JCP, 86, 7041 (1987)
-         // Some typographical errors were corrected in the erratum to the paper
-         // Also see, Scuseria and Schaefer, CPL 146, 23 (1988), Eq. 9 for CCSDT-1a
-         // Extension from CCSDT-1b to CCSDT-2 requires addition of T2T2 terms to t3/r3 residual
-         // Extension from CCSDT-2 to CCSDT-3 requires contribution of T1T2, T1T1T2, T1T2T2 and T1T1T1T2 terms to t3/r3 residual
-         // Extension from CCSDT-3 to CCSDT-4 requires addition of (W)T3 terms to t3/r3 residual equation
-         // Extension from CCSDT-4 to CCSDT requires addition of T3T2, T3T1, T3T1T1 terms to t3/r3 residual equation
-         // Let's construct intermediates as done by Noga and Bartlett
-          /*
-          TArray Chi_dabi;
-          TArray Chi_cjkl;
-          TArray Chi_im;
-          TArray Chi_ae;
-          TArray Chi_jkmn;
-          TArray Chi_bcef;
-          TArray Chi_amei;
-          TArray Chi_amie;
-          TArray f_aijk;
-          TArray f_aibc;
-          TArray f_aijb;
-          TArray f_aibj;
-          TArray f_iabj;
-          TArray f_iajb;
-          TArray f_int_me;
-
-
-          // first define the intermediates
-
-          f_aijk("e,i,m,n")  = g_aijk("e,i,m,n") ;
-          f_aijk("e,i,m,n") += ( g_ijab("m,n,e,f") * t1("f,i")) ;
-
-          f_aibc("a,m,e,f")  = g_aibc("a,m,e,f") ;
-          f_aibc("a,m,e,f") -= ( g_ijab("n,m,e,f") * t1("a,n")) ;
-
-          f_aijb("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          f_aijb("a,m,i,e") += ( g_aibc("a,m,f,e") * t1("f,i")) ;
-
-          f_aibj("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          f_aibj("a,m,e,i") += ( g_aibc("a,m,e,f") * t1("f,i")) ;
-
-          f_iabj("i,e,a,m")  = g_iabj("i,e,a,m");
-          f_iabj("i,e,a,m") -= ( g_iajk("i,e,n,m") * t1("a,n")) ;
-
-          f_iajb("i,e,m,a")  = g_iajb("i,e,m,a")  ;
-          f_iajb("i,e,m,a") -= ( g_iajk("i,e,m,n") * t1("a,n")) ;
-
-          f_int_me("m,e")    = g_ijab_AS ("m,n,e,f") * t1("f,n") ;
-          //f_int_me("m,e")   += f_ia("m,e") ;
-
-          // Now the super-intermediates,
-
-
-          Chi_dabi("b,a,e,i") =  g_dabi("b,a,e,i") + (f_aijk("e,i,m,n") * tau("a,b,n,m"))
-                               + ((2 * f_aibc("b,m,e,f")- f_aibc("b,m,f,e")) * t2("a,f,i,m")
-                               - f_aibc("b,m,e,f") * t2("a,f,m,i") - f_aibc("a,m,f,e") * t2("b,f,m,i"))
-                               - f_aijb("a,m,i,e") * t1("b,m") - f_aibj("b,m,e,i") * t1("a,m")
-                               + g_abcd("a,b,f,e") * t1("f,i")
-                               - g_ijab("m,n,e,f") * ((2*t3("a,b,f,i,m,n")) - t3("a,b,f,n,m,i") - t3("a,b,f,i,n,m") ) ;
-
-          Chi_cjkl("a,m,i,j") =  g_cjkl("a,m,i,j") + (f_aibc("a,m,e,f") * tau("e,f,i,j"))
-                               + ((2 * f_aijk("e,j,n,m")- f_aijk("e,j,m,n")) * t2("a,e,i,n")
-                               - f_aijk("e,j,n,m") * t2("e,a,i,n") - f_aijk("e,i,m,n") * t2("e,a,j,n"))
-                               + f_iabj("i,e,a,m") * t1("e,j") + f_iajb("j,e,m,a") * t1("e,i")
-                               - g_ijkl("i,j,n,m") * t1("a,n")
-                               + f_int_me("m,e") * t2("a,e,i,j")
-                               + g_ijab("m,n,e,f") * ((2*t3("a,e,f,i,j,n")) - t3("f,e,a,i,j,n") - t3("a,f,e,i,j,n") ) ;
-
-          Chi_im("i,m")  = ((2* g_iajk("i,e,m,n")) - g_iajk("i,e,n,m")) * t1("e,n") ;
-          Chi_im("i,m") += ((2* g_ijab("m,n,e,f")) - g_ijab("m,n,f,e")) * tau("e,f,i,n") ;
-          //Chi_im("i,m") += f_ij("i,m") ;
-
-          Chi_ae("a,e")  = ((2* g_aibc("a,m,e,f")) - g_aibc("a,m,f,e")) * t1("f,m") ;
-          Chi_ae("a,e") -= ((2* g_ijab("m,n,e,f")) - g_ijab("m,n,f,e")) * tau("a,f,m,n") ;
-          //Chi_ae("a,e") += f_ab("a,e") ;
-
-          Chi_jkmn("j,k,m,n")  = g_ijkl("j,k,m,n") ;
-          Chi_jkmn("j,k,m,n") += g_ijab("m,n,e,f") * tau("e,f,j,k") ;
-          Chi_jkmn("j,k,m,n") += g_iajk("j,e,m,n") * t1("e,k") + g_aijk("e,k,m,n") * t1("e,j") ;
-
-          Chi_bcef("b,c,e,f")  = g_abcd("b,c,e,f") ;
-          Chi_bcef("b,c,e,f") += g_abij("e,f,m,n") * tau("b,c,m,n");
-          Chi_bcef("b,c,e,f") -= g_aibc("b,m,e,f") * t1("c,m") ;
-          Chi_bcef("b,c,e,f") -= g_iabc("m,c,e,f") * t1("b,m") ;
-
-          Chi_amei("a,m,e,i")  = g_aibj("a,m,e,i") ;
-          Chi_amei("a,m,e,i") -= g_ijab("m,n,f,e") * tau("f,a,i,n") ;
-          Chi_amei("a,m,e,i") -= g_ijak("n,m,e,i") * t1("a,n") ;
-          Chi_amei("a,m,e,i") += g_aibc("a,m,e,f") * t1("f,i") ;
-
-          Chi_amie("a,m,i,e")  = g_aijb("a,m,i,e") ;
-          Chi_amie("a,m,i,e") += g_ijab_AS("m,n,e,f") * t2("a,f,i,n") ;
-          Chi_amie("a,m,i,e") -= g_ijab("m,n,e,f") * tau("f,a,i,n") ;
-          Chi_amie("a,m,i,e") -= g_ijka("n,m,i,e") * t1("a,n") ;
-          Chi_amie("a,m,i,e") += g_aibc("a,m,f,e") * t1("f,i") ;
-
-
-          // calculate t3
-          //
-          // terms that have T3 in them, in the t3/r3 equation
-          // Use t3 stored from previous iteration
-
-
-          TArray t3_1;
-          TArray t3_2;
-          t3_1("a,b,c,i,j,k") =   Chi_jkmn("j,k,m,n") * t3("a,b,c,i,m,n")
-                                + Chi_bcef("b,c,e,f") * t3("a,e,f,i,j,k")
-                                + Chi_amie("a,m,i,e") * ((2 * t3("e,b,c,m,j,k")) - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k"))
-                                - Chi_amei("a,m,e,i") * t3("e,b,c,m,j,k")
-                                - Chi_amei("b,m,e,i") * t3("a,e,c,m,j,k")
-                                - Chi_amei("c,m,e,i") * t3("a,b,e,m,j,k")
-                                + Chi_ae("a,e") * t3("e,b,c,i,j,k")
-                                - Chi_im("i,m") * t3("a,b,c,m,j,k") ;
-
-
-          // permute [(i,a) with (j,b) and (i,a) with (k,c)]
-
-          t3_1("a,b,c,i,j,k") = t3_1("a,b,c,i,j,k") + t3_1("b,a,c,j,i,k") + t3_1("c,b,a,k,j,i") ;
-
-
-          //  Other terms in the t3/r3 equation
-          // all the terms in the CCSDT-3 method, plus few T3 dependent terms  as well
-
-          t3_2("a,b,c,i,j,k") =   Chi_dabi("b,a,e,i") * t2("c,e,k,j")
-                               -  Chi_cjkl("a,m,i,j") * t2("b,c,m,k") ;
-
-          //permute
-          t3_2("a,b,c,i,j,k") = t3_2("a,b,c,i,j,k") + t3_2("a,c,b,i,k,j") +
-                                t3_2("c,a,b,k,i,j") + t3_2("c,b,a,k,j,i") +
-                                t3_2("b,c,a,j,k,i") + t3_2("b,a,c,j,i,k");
-
-
-          // Add the contribution of T3 dependent terms
-
-          t3("a,b,c,i,j,k")  = t3_1("a,b,c,i,j,k") ;
-          t3("a,b,c,i,j,k") += t3_2("a,b,c,i,j,k") ;*/
-
-
-          /*
-          // Alternate code below
-          // To Debug, Avoid lumping everything into intermediates,
-          // let's build it term-by-term
-          // First estimate of triples in CCSDT-1a and CCSDT-1b is through (W)T2
-
-          // (W)T2 term
-
-          TArray t3_d ;
-
-          t3_d("a,b,c,i,j,k") =  g_abci("b,a,e,i") * t2("c,e,k,j")
-                               - g_aijk("a,m,i,j") * t2("b,c,m,k") ;
-
-          // Then extend from CCSDT-1b to CCSDT-2 by adding T2T2 terms to the t3/r3 equation,
-
-          TArray t3_dd ;
-
-          t3_dd("a,b,c,i,j,k") =   (g_aijk("e,i,m,n") * t2("a,b,n,m")) * t2("c,e,k,j")
-                                 + (((2 * g_aibc("b,m,e,f")) - g_aibc("b,m,f,e")) * t2("a,f,i,m")) * t2("c,e,k,j")
-                                 - (g_aibc("b,m,e,f") * t2("a,f,m,i")) * t2("c,e,k,j")
-                                 - (g_aibc("a,m,f,e") * t2("b,f,m,i")) * t2("c,e,k,j")
-                                 - (g_aibc("a,m,e,f") * t2("e,f,i,j")) * t2("b,c,m,k")
-                                 - (((2 * g_aijk("e,j,n,m")) - g_aijk("e,j,m,n")) * t2("a,e,i,n")) * t2("b,c,m,k")
-                                 + (g_aijk("e,j,n,m") * t2("e,a,i,n")) * t2("b,c,m,k")
-                                 + (g_aijk("e,i,m,n") * t2("e,a,j,n")) * t2("b,c,m,k") ;
-
-
-          // Extension from CCSDT-2 to CCSDT-3 is attempted below by adding explicit terms,
-          // T1T2, T1T1T2, T1T1T1T2, T1T2T2 terms.
-
-          // T1T2 terms
-          TArray t3_sd ;
-
-          t3_sd("a,b,c,i,j,k")  =  (g_abcd("a,b,f,e") * t1("f,i")) * t2("c,e,k,j")
-                                 + (g_ijkl("i,j,n,m") * t1("a,n")) * t2("b,c,m,k")
-                                 - (g_aijb("a,m,i,e") * t1("b,m")) * t2("c,e,k,j")
-                                 - (g_aibj("b,m,e,i") * t1("a,m")) * t2("c,e,k,j")
-                                 - (g_iabj("i,e,a,m") * t1("e,j")) * t2("b,c,m,k")
-                                 - (g_iajb("j,e,m,a") * t1("e,i")) * t2("b,c,m,k") ;
-
-
-
-          // T1T1T2 terms
-          TArray t3_ssd ;
-
-          t3_ssd("a,b,c,i,j,k") =   (( g_aijk("e,i,m,n") * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("a,m,e,f") * t1("e,i")) * t1("f,j")) * t2("b,c,m,k")
-                                  + (( g_iajk("i,e,n,m") * t1("a,n")) * t1("e,j")) * t2("b,c,m,k")
-                                  + (( g_ijka("j,n,m,e") * t1("a,n")) * t1("e,i")) * t2("b,c,m,k")
-                                  - (( g_aibc("a,m,f,e") * t1("f,i")) * t1("b,m")) * t2("c,e,k,j")
-                                  - (( g_aibc("b,m,e,f") * t1("f,i")) * t1("a,m")) * t2("c,e,k,j");
-
-
-
-          // T1T1T1T2 terms
-          TArray t3_sssd ;
-
-          t3_sssd("a,b,c,i,j,k") =   (((g_ijab("m,n,e,f") * t1("f,i")) * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
-                                   + (((g_ijab("n,m,e,f") * t1("a,n")) * t1("e,i")) * t1("f,j")) * t2("b,c,m,k") ;
-
-
-
-
-          // T1T2T2 terms
-          TArray t3_sdd ;
-
-          t3_sdd("a,b,c,i,j,k") =   (( g_ijab("m,n,e,f") * t1("f,i")) * t2("a,b,n,m")) * t2("c,e,k,j")
-                                  - ((2 * ( g_ijab("n,m,e,f") * t1("b,n")))* t2("a,f,i,m")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,f,e") * t1("b,n")) * t2("a,f,i,m")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,e,f") * t1("b,n")) * t2("a,f,m,i")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,f,e") * t1("a,n")) * t2("b,f,m,i")) * t2("c,e,k,j")
-                                  + (( g_ijab("n,m,e,f") * t1("a,n")) * t2("e,f,i,j")) * t2("b,c,m,k")
-                                  - ((2 * (g_ijab("n,m,e,f") * t1("f,j"))) * t2("a,e,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("m,n,e,f") * t1("f,j")) * t2("a,e,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("n,m,e,f") * t1("f,j")) * t2("e,a,i,n")) * t2("b,c,m,k")
-                                  + ((g_ijab("m,n,e,f") * t1("f,i")) * t2("e,a,j,n")) * t2("b,c,m,k")
-                                  - ((g_ijab_AS("m,n,e,f") * t1("f,n")) * t2("a,e,i,j")) * t2("b,c,m,k") ;                                                                   ;
-
-
-
-
-
-
-          // CCSDT-3 to CCSDT-4  requires addition of (W)T3 terms in the t3/r3 equation
-
-          TArray t3_t;
-
-          t3_t("a,b,c,i,j,k") =   g_ijkl("j,k,m,n") * t3("a,b,c,i,m,n")
-                                + g_abcd("b,c,e,f") * t3("a,e,f,i,j,k")
-                                + g_aijb("a,m,i,e") * ((2 * t3("e,b,c,m,j,k")) - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k"))
-                                - g_aibj("a,m,e,i") * t3("e,b,c,m,j,k")
-                                - g_aibj("b,m,e,i") * t3("a,e,c,m,j,k")
-                                - g_aibj("c,m,e,i") * t3("a,b,e,m,j,k") ;
-
-
-
-          // Extension from CCSDT-4 to CCSDT requires addition of T2T3, T1T3 and T1T1T3
-          //
-
-          // T1T3 terms
-          TArray t3_st;
-
-          t3_st("a,b,c,i,j,k") =   (t3("e,b,c,i,j,k") * ((2 * g_aibc("a,m,e,f")) - g_aibc("a,m,f,e"))) * t1("f,m")
-                                 - (t3("a,b,c,m,j,k") * ((2 * g_iajk("i,e,m,n")) - g_iajk("i,e,n,m"))) * t1("e,n")
-                                 + (t3("a,b,c,i,m,n") * g_iajk("j,e,m,n")) * t1("e,k")
-                                 + (t3("a,b,c,i,m,n") * g_aijk("e,k,m,n")) * t1("e,j")
-                                 - (t3("a,e,f,i,j,k") * g_aibc("b,m,e,f")) * t1("c,m")
-                                 - (t3("a,e,f,i,j,k") * g_iabc("m,c,e,f")) * t1("b,m")
-                                 - ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijka("n,m,i,e")) * t1("a,n")
-                                 + ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_abci("a,e,f,m")) * t1("f,i")
-                                 + (t3("e,b,c,m,j,k") * g_ijak("n,m,e,i")) * t1("a,n")
-                                 - (t3("e,b,c,m,j,k") * g_aibc("a,m,e,f")) * t1("f,i")
-                                 + (t3("a,e,c,m,j,k") * g_ijak("n,m,e,i")) * t1("b,n")
-                                 - (t3("a,e,c,m,j,k") * g_aibc("b,m,e,f")) * t1("f,i")
-                                 + (t3("a,b,e,m,j,k") * g_ijak("n,m,e,i")) * t1("c,n")
-                                 - (t3("a,b,e,m,j,k") * g_aibc("c,m,e,f")) * t1("f,i") ;
-
-
-          // T2T3 terms
-          TArray t3_dt_1;
-          TArray t3_dt_2;
-
-          t3_dt_1("a,b,c,i,j,k") = - (t3("e,b,c,i,j,k") * g_ijab_AS("m,n,e,f")) * t2("a,f,m,n")
-                                   - (t3("a,b,c,m,j,k") * g_ijab_AS("m,n,e,f")) * t2("e,f,i,n")
-                                   + (t3("a,b,c,i,m,n") * g_ijab("m,n,e,f")) * t2("e,f,j,k")
-                                   + (t3("a,e,f,i,j,k") * g_abij("e,f,m,n")) * t2("b,c,m,n")
-                                   + ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab_AS("m,n,e,f")) * t2("a,f,i,n")
-                                   - ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab("m,n,e,f")) * t2("f,a,i,n")
-                                   + (t3("e,b,c,m,j,k") * g_ijab("m,n,f,e")) * t2("f,a,i,n")
-                                   + (t3("a,e,c,m,j,k") * g_ijab("m,n,f,e")) * t2("f,b,i,n")
-                                   + (t3("a,b,e,m,j,k") * g_ijab("m,n,f,e")) * t2("f,c,i,n") ;
-
-          t3_dt_2("a,b,c,i,j,k") = - ((2*t3("a,b,f,i,m,n") - t3("a,b,f,n,m,i") - t3("a,b,f,i,n,m")) * g_ijab("m,n,e,f")) * t2("c,e,k,j")
-                                   - ((2*t3("a,e,f,i,j,n") - t3("f,e,a,i,j,n") - t3("a,f,e,i,j,n")) * g_ijab("m,n,e,f")) * t2("b,c,m,k") ;
-
-
-          // T1T1T3 terms
-          TArray t3_sst;
-
-          t3_sst("a,b,c,i,j,k") = - ((t3("e,b,c,i,j,k") * g_ijab_AS("m,n,e,f")) * t1("a,m")) * t1("f,n")
-                                  - ((t3("a,b,c,m,j,k") * g_ijab_AS("m,n,e,f")) * t1("e,i")) * t1("f,n")
-                                  + ((t3("a,b,c,i,m,n") * g_ijab("m,n,e,f")) * t1("e,j")) * t1("f,k")
-                                  + ((t3("a,e,f,i,j,k") * g_abij("e,f,m,n")) * t1("b,m")) * t1("c,n")
-                                  - (((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab("m,n,e,f")) * t1("f,i")) * t1("a,n")
-                                  + ((t3("e,b,c,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("a,n")
-                                  + ((t3("a,e,c,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("b,n")
-                                  + ((t3("a,b,e,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("c,n") ;
-
-
-          // Add to T3 dependent part of t3/r3 residual
-          TArray t3_p1;
-          TArray t3_p2;
-
-          t3_p1("a,b,c,i,j,k")  =   t3_t("a,b,c,i,j,k")    ;
-          t3_p1("a,b,c,i,j,k") +=   t3_st("a,b,c,i,j,k")   ;
-          t3_p1("a,b,c,i,j,k") +=   t3_dt_1("a,b,c,i,j,k") ;
-          t3_p1("a,b,c,i,j,k") +=   t3_sst("a,b,c,i,j,k")  ;
-
-          t3_p2("a,b,c,i,j,k")  =   t3_d("a,b,c,i,j,k")    ;
-          t3_p2("a,b,c,i,j,k") +=   t3_dd("a,b,c,i,j,k")   ;
-          t3_p2("a,b,c,i,j,k") +=   t3_sd("a,b,c,i,j,k")   ;
-          t3_p2("a,b,c,i,j,k") +=   t3_ssd("a,b,c,i,j,k")  ;
-          t3_p2("a,b,c,i,j,k") +=   t3_sssd("a,b,c,i,j,k") ;
-          t3_p2("a,b,c,i,j,k") +=   t3_sdd("a,b,c,i,j,k")  ;
-          t3_p2("a,b,c,i,j,k") +=   t3_dt_2("a,b,c,i,j,k") ;
-
-          //permute
-
-          t3_p1("a,b,c,i,j,k") = t3_p1("a,b,c,i,j,k") + t3_p1("b,a,c,j,i,k") + t3_p1("c,b,a,k,j,i") ;
-
-
-          t3_p2("a,b,c,i,j,k") =   t3_p2("a,b,c,i,j,k") + t3_p2("a,c,b,i,k,j") +
-                                   t3_p2("c,a,b,k,i,j") + t3_p2("c,b,a,k,j,i") +
-                                   t3_p2("b,c,a,j,k,i") + t3_p2("b,a,c,j,i,k");
-
-          //Add to t3
-          t3("a,b,c,i,j,k")  = t3_p2("a,b,c,i,j,k") ;
-          t3("a,b,c,i,j,k") += t3_p1("a,b,c,i,j,k") ; */
-
-         //divide by energy denominator
-         //t3 = d_abcijk(t3, *orbital_energy(), n_occ, n_frozen);
-
 
         TArray g_jkbc_AS;
 
@@ -1087,9 +728,9 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
           auto t3_time_si_final = mpqc::now(world, accurate_time);
           auto t3_time_si = mpqc::duration_in_s(t3_time0, t3_time_si_final);
 
-          //if (verbose_) {
+          if (verbose_) {
             mpqc::utility::print_par(world, "t3 total time in constructing small intermediates  ", t3_time_si, "\n");
-          //  }
+          }
 
 
           // Now the super-intermediates,
@@ -1144,9 +785,9 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
           auto t3_time_li_final = mpqc::now(world, accurate_time);
           auto t3_time_li = mpqc::duration_in_s(t3_time_si_final, t3_time_li_final);
 
-          //if (verbose_) {
+          if (verbose_) {
             mpqc::utility::print_par(world, "t3 total time in constructing super-intermediates  ", t3_time_li, "\n");
-          //  }
+          }
 
 
           // calculate t3
@@ -1165,8 +806,11 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
           r3_1("a,b,c,i,j,k") -=   Chi_amei("a,m,e,i") * t3("e,b,c,m,j,k") ;
           r3_1("a,b,c,i,j,k") -=   Chi_amei("b,m,e,i") * t3("a,e,c,m,j,k") ;
           r3_1("a,b,c,i,j,k") -=   Chi_amei("c,m,e,i") * t3("a,b,e,m,j,k") ;
-          r3_1("a,b,c,i,j,k") +=   Chi_ae("a,e") * t3("e,b,c,i,j,k")   ;
+          auto t3_time_r3_1_3  =   mpqc::now(world, accurate_time);
+          r3_1("a,b,c,i,j,k") +=   Chi_ae("a,e") * t3("e,b,c,i,j,k") ;
+          auto t3_time_r3_1_4  =   mpqc::now(world, accurate_time);
           r3_1("a,b,c,i,j,k") -=   Chi_im("i,m") * t3("a,b,c,m,j,k") ;
+          auto t3_time_r3_1_5  =   mpqc::now(world, accurate_time);
 
           r3_1("a,b,c,i,j,k") +=   f_ab("a,e") * t3("e,b,c,i,j,k")
                                  - f_ij("i,l") * t3("a,b,c,l,j,k");
@@ -1179,16 +823,23 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
 
           auto t3_time_r3_1_hhhh = mpqc::duration_in_s(t3_time_li_final, t3_time_r3_1_1);
           auto t3_time_r3_1_pppp = mpqc::duration_in_s(t3_time_r3_1_1, t3_time_r3_1_2);
-
-          mpqc::utility::print_par(world, "t3 total time in T3 dependent hhhh contractions in the r3 residual  ", t3_time_r3_1_hhhh, "\n");
-          mpqc::utility::print_par(world, "t3 total time in T3 dependent pppp contractions in the r3 residual  ", t3_time_r3_1_pppp, "\n");
+          auto t3_time_r3_1_hphp = mpqc::duration_in_s(t3_time_r3_1_2, t3_time_r3_1_3);
+          auto t3_time_r3_1_pp = mpqc::duration_in_s(t3_time_r3_1_3, t3_time_r3_1_4);
+          auto t3_time_r3_1_hh = mpqc::duration_in_s(t3_time_r3_1_4, t3_time_r3_1_5);
 
           auto t3_time_r3_1_final  =   mpqc::now(world, accurate_time);
           auto t3_time_r3_1 = mpqc::duration_in_s(t3_time_li_final, t3_time_r3_1_final);
 
-          //if (verbose_) {
-            mpqc::utility::print_par(world, "t3 total time in T3 dependent contractions in the r3 residual  ", t3_time_r3_1, "\n");
-          //  }
+          if (verbose_) {
+          ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent hhhh contractions in the r3 residual  ", t3_time_r3_1_hhhh, "\n");
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent pppp contractions in the r3 residual  ", t3_time_r3_1_pppp, "\n");
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent hphp contractions in the r3 residual  ", t3_time_r3_1_hphp, "\n");
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent hh contractions in the r3 residual  ", t3_time_r3_1_hh, "\n");
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent pp contractions in the r3 residual  ", t3_time_r3_1_pp, "\n");
+          mpqc::utility::print_par(world, "t3 total time in T3 dependent contractions in the r3 residual  ", t3_time_r3_1, "\n");
+          ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
+          }
 
           //  Other terms in the t3/r3 equation
           // all the terms in the CCSDT-3 method, plus few T3 dependent terms  as well
@@ -1204,9 +855,10 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
           auto t3_time_r3_2_final  =   mpqc::now(world, accurate_time);
           auto t3_time_r3_2 = mpqc::duration_in_s(t3_time_r3_1_final, t3_time_r3_2_final);
 
-          //if (verbose_) {
+          if (verbose_) {
             mpqc::utility::print_par(world, "t3 total time in T2 dependent contractions in the r3 residual  ", t3_time_r3_2, "\n");
-          //  }
+          }
+
 
           // Add the contribution of T3 dependent terms
 
@@ -1216,39 +868,204 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
 
           auto t3_time_final = mpqc::now(world, accurate_time);
           auto t3_time = mpqc::duration_in_s(t3_time0, t3_time_final);
-          mpqc::utility::print_par(world, "t3 total time: ", t3_time, "\n");
 
-          /*if (verbose_) {
+          if (verbose_) {
             mpqc::utility::print_par(world, "t3 total time: ", t3_time, "\n");
-          }*/
-
-      /*ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      double norm_r1 = r1("a,i").norm();
-      double norm_r2 = r2("a,b,i,j").norm();
-      double norm_r3 = r3("a,b,c,i,j,k").norm();
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;
-      ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;*/
+          }
 
 
-      //denominator
-      //t3 = d_abcijk(t3_temp, *orbital_energy(), n_occ, n_frozen);
 
-      /*ExEnv::out0() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"  << std::endl ;
-      ExEnv::out0() << "R  and T amplitudes norm at the end of t3 part" << std::endl ;
-      ExEnv::out0() << "R1 amplitudes norm = " << norm_r1 << std::endl ;
-      ExEnv::out0() << "R2 amplitudes norm = " << norm_r2 << std::endl ;
-      ExEnv::out0() << "R3 amplitudes norm = " << norm_r3 << std::endl ;*/
+          /*
+          // Alternate code below
+          // To Debug, Avoid lumping everything into intermediates,
+          // let's build it term-by-term
+          // First estimate of triples in CCSDT-1a and CCSDT-1b is through (W)T2
+
+          // (W)T2 term
+
+          TArray t3_d ;
+
+          t3_d("a,b,c,i,j,k") =  g_abci("b,a,e,i") * t2("c,e,k,j")
+                               - g_aijk("a,m,i,j") * t2("b,c,m,k") ;
+
+          // Then extend from CCSDT-1b to CCSDT-2 by adding T2T2 terms to the t3/r3 equation,
+
+          TArray t3_dd ;
+
+          t3_dd("a,b,c,i,j,k") =   (g_aijk("e,i,m,n") * t2("a,b,n,m")) * t2("c,e,k,j")
+                                 + (((2 * g_aibc("b,m,e,f")) - g_aibc("b,m,f,e")) * t2("a,f,i,m")) * t2("c,e,k,j")
+                                 - (g_aibc("b,m,e,f") * t2("a,f,m,i")) * t2("c,e,k,j")
+                                 - (g_aibc("a,m,f,e") * t2("b,f,m,i")) * t2("c,e,k,j")
+                                 - (g_aibc("a,m,e,f") * t2("e,f,i,j")) * t2("b,c,m,k")
+                                 - (((2 * g_aijk("e,j,n,m")) - g_aijk("e,j,m,n")) * t2("a,e,i,n")) * t2("b,c,m,k")
+                                 + (g_aijk("e,j,n,m") * t2("e,a,i,n")) * t2("b,c,m,k")
+                                 + (g_aijk("e,i,m,n") * t2("e,a,j,n")) * t2("b,c,m,k") ;
+
+
+          // Extension from CCSDT-2 to CCSDT-3 is attempted below by adding explicit terms,
+          // T1T2, T1T1T2, T1T1T1T2, T1T2T2 terms.
+
+          // T1T2 terms
+          TArray t3_sd ;
+
+          t3_sd("a,b,c,i,j,k")  =  (g_abcd("a,b,f,e") * t1("f,i")) * t2("c,e,k,j")
+                                 + (g_ijkl("i,j,n,m") * t1("a,n")) * t2("b,c,m,k")
+                                 - (g_aijb("a,m,i,e") * t1("b,m")) * t2("c,e,k,j")
+                                 - (g_aibj("b,m,e,i") * t1("a,m")) * t2("c,e,k,j")
+                                 - (g_iabj("i,e,a,m") * t1("e,j")) * t2("b,c,m,k")
+                                 - (g_iajb("j,e,m,a") * t1("e,i")) * t2("b,c,m,k") ;
+
+
+
+          // T1T1T2 terms
+          TArray t3_ssd ;
+
+          t3_ssd("a,b,c,i,j,k") =   (( g_aijk("e,i,m,n") * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
+                                  - (( g_aibc("a,m,e,f") * t1("e,i")) * t1("f,j")) * t2("b,c,m,k")
+                                  + (( g_iajk("i,e,n,m") * t1("a,n")) * t1("e,j")) * t2("b,c,m,k")
+                                  + (( g_ijka("j,n,m,e") * t1("a,n")) * t1("e,i")) * t2("b,c,m,k")
+                                  - (( g_aibc("a,m,f,e") * t1("f,i")) * t1("b,m")) * t2("c,e,k,j")
+                                  - (( g_aibc("b,m,e,f") * t1("f,i")) * t1("a,m")) * t2("c,e,k,j");
+
+
+
+          // T1T1T1T2 terms
+          TArray t3_sssd ;
+
+          t3_sssd("a,b,c,i,j,k") =   (((g_ijab("m,n,e,f") * t1("f,i")) * t1("a,n")) * t1("b,m")) * t2("c,e,k,j")
+                                   + (((g_ijab("n,m,e,f") * t1("a,n")) * t1("e,i")) * t1("f,j")) * t2("b,c,m,k") ;
+
+
+
+
+          // T1T2T2 terms
+          TArray t3_sdd ;
+
+          t3_sdd("a,b,c,i,j,k") =   (( g_ijab("m,n,e,f") * t1("f,i")) * t2("a,b,n,m")) * t2("c,e,k,j")
+                                  - ((2 * ( g_ijab("n,m,e,f") * t1("b,n")))* t2("a,f,i,m")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,f,e") * t1("b,n")) * t2("a,f,i,m")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,e,f") * t1("b,n")) * t2("a,f,m,i")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,f,e") * t1("a,n")) * t2("b,f,m,i")) * t2("c,e,k,j")
+                                  + (( g_ijab("n,m,e,f") * t1("a,n")) * t2("e,f,i,j")) * t2("b,c,m,k")
+                                  - ((2 * (g_ijab("n,m,e,f") * t1("f,j"))) * t2("a,e,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("m,n,e,f") * t1("f,j")) * t2("a,e,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("n,m,e,f") * t1("f,j")) * t2("e,a,i,n")) * t2("b,c,m,k")
+                                  + ((g_ijab("m,n,e,f") * t1("f,i")) * t2("e,a,j,n")) * t2("b,c,m,k")
+                                  - ((g_ijab_AS("m,n,e,f") * t1("f,n")) * t2("a,e,i,j")) * t2("b,c,m,k") ;                                                                   ;
+
+
+
+
+
+
+          // CCSDT-3 to CCSDT-4  requires addition of (W)T3 terms in the t3/r3 equation
+
+          TArray t3_t;
+
+          t3_t("a,b,c,i,j,k") =   g_ijkl("j,k,m,n") * t3("a,b,c,i,m,n")
+                                + g_abcd("b,c,e,f") * t3("a,e,f,i,j,k")
+                                + g_aijb("a,m,i,e") * ((2 * t3("e,b,c,m,j,k")) - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k"))
+                                - g_aibj("a,m,e,i") * t3("e,b,c,m,j,k")
+                                - g_aibj("b,m,e,i") * t3("a,e,c,m,j,k")
+                                - g_aibj("c,m,e,i") * t3("a,b,e,m,j,k") ;
+
+
+
+          // Extension from CCSDT-4 to CCSDT requires addition of T2T3, T1T3 and T1T1T3
+          //
+
+          // T1T3 terms
+          TArray t3_st;
+
+          t3_st("a,b,c,i,j,k") =   (t3("e,b,c,i,j,k") * ((2 * g_aibc("a,m,e,f")) - g_aibc("a,m,f,e"))) * t1("f,m")
+                                 - (t3("a,b,c,m,j,k") * ((2 * g_iajk("i,e,m,n")) - g_iajk("i,e,n,m"))) * t1("e,n")
+                                 + (t3("a,b,c,i,m,n") * g_iajk("j,e,m,n")) * t1("e,k")
+                                 + (t3("a,b,c,i,m,n") * g_aijk("e,k,m,n")) * t1("e,j")
+                                 - (t3("a,e,f,i,j,k") * g_aibc("b,m,e,f")) * t1("c,m")
+                                 - (t3("a,e,f,i,j,k") * g_iabc("m,c,e,f")) * t1("b,m")
+                                 - ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijka("n,m,i,e")) * t1("a,n")
+                                 + ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_abci("a,e,f,m")) * t1("f,i")
+                                 + (t3("e,b,c,m,j,k") * g_ijak("n,m,e,i")) * t1("a,n")
+                                 - (t3("e,b,c,m,j,k") * g_aibc("a,m,e,f")) * t1("f,i")
+                                 + (t3("a,e,c,m,j,k") * g_ijak("n,m,e,i")) * t1("b,n")
+                                 - (t3("a,e,c,m,j,k") * g_aibc("b,m,e,f")) * t1("f,i")
+                                 + (t3("a,b,e,m,j,k") * g_ijak("n,m,e,i")) * t1("c,n")
+                                 - (t3("a,b,e,m,j,k") * g_aibc("c,m,e,f")) * t1("f,i") ;
+
+
+          // T2T3 terms
+          TArray t3_dt_1;
+          TArray t3_dt_2;
+
+          t3_dt_1("a,b,c,i,j,k") = - (t3("e,b,c,i,j,k") * g_ijab_AS("m,n,e,f")) * t2("a,f,m,n")
+                                   - (t3("a,b,c,m,j,k") * g_ijab_AS("m,n,e,f")) * t2("e,f,i,n")
+                                   + (t3("a,b,c,i,m,n") * g_ijab("m,n,e,f")) * t2("e,f,j,k")
+                                   + (t3("a,e,f,i,j,k") * g_abij("e,f,m,n")) * t2("b,c,m,n")
+                                   + ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab_AS("m,n,e,f")) * t2("a,f,i,n")
+                                   - ((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab("m,n,e,f")) * t2("f,a,i,n")
+                                   + (t3("e,b,c,m,j,k") * g_ijab("m,n,f,e")) * t2("f,a,i,n")
+                                   + (t3("a,e,c,m,j,k") * g_ijab("m,n,f,e")) * t2("f,b,i,n")
+                                   + (t3("a,b,e,m,j,k") * g_ijab("m,n,f,e")) * t2("f,c,i,n") ;
+
+          t3_dt_2("a,b,c,i,j,k") = - ((2*t3("a,b,f,i,m,n") - t3("a,b,f,n,m,i") - t3("a,b,f,i,n,m")) * g_ijab("m,n,e,f")) * t2("c,e,k,j")
+                                   - ((2*t3("a,e,f,i,j,n") - t3("f,e,a,i,j,n") - t3("a,f,e,i,j,n")) * g_ijab("m,n,e,f")) * t2("b,c,m,k") ;
+
+
+          // T1T1T3 terms
+          TArray t3_sst;
+
+          t3_sst("a,b,c,i,j,k") = - ((t3("e,b,c,i,j,k") * g_ijab_AS("m,n,e,f")) * t1("a,m")) * t1("f,n")
+                                  - ((t3("a,b,c,m,j,k") * g_ijab_AS("m,n,e,f")) * t1("e,i")) * t1("f,n")
+                                  + ((t3("a,b,c,i,m,n") * g_ijab("m,n,e,f")) * t1("e,j")) * t1("f,k")
+                                  + ((t3("a,e,f,i,j,k") * g_abij("e,f,m,n")) * t1("b,m")) * t1("c,n")
+                                  - (((2*t3("e,b,c,m,j,k") - t3("b,e,c,m,j,k") - t3("c,b,e,m,j,k")) * g_ijab("m,n,e,f")) * t1("f,i")) * t1("a,n")
+                                  + ((t3("e,b,c,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("a,n")
+                                  + ((t3("a,e,c,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("b,n")
+                                  + ((t3("a,b,e,m,j,k") * g_ijab("m,n,f,e")) * t1("f,i")) * t1("c,n") ;
+
+
+          // Fock-matrix part of the residual
+           TArray t3_f;
+          t3_f("a,b,c,i,j,k")   =   f_ab("a,e") * t3("e,b,c,i,j,k")
+                                  - f_ij("i,l") * t3("a,b,c,l,j,k");
+
+
+          // Add to T3 dependent part of t3/r3 residual
+          TArray t3_p1;
+          TArray t3_p2;
+
+          t3_p1("a,b,c,i,j,k")  =   t3_t("a,b,c,i,j,k")    ;
+          t3_p1("a,b,c,i,j,k") +=   t3_st("a,b,c,i,j,k")   ;
+          t3_p1("a,b,c,i,j,k") +=   t3_dt_1("a,b,c,i,j,k") ;
+          t3_p1("a,b,c,i,j,k") +=   t3_sst("a,b,c,i,j,k")  ;
+
+          t3_p2("a,b,c,i,j,k")  =   t3_d("a,b,c,i,j,k")    ;
+          t3_p2("a,b,c,i,j,k") +=   t3_dd("a,b,c,i,j,k")   ;
+          t3_p2("a,b,c,i,j,k") +=   t3_sd("a,b,c,i,j,k")   ;
+          t3_p2("a,b,c,i,j,k") +=   t3_ssd("a,b,c,i,j,k")  ;
+          t3_p2("a,b,c,i,j,k") +=   t3_sssd("a,b,c,i,j,k") ;
+          t3_p2("a,b,c,i,j,k") +=   t3_sdd("a,b,c,i,j,k")  ;
+          t3_p2("a,b,c,i,j,k") +=   t3_dt_2("a,b,c,i,j,k") ;
+          t3_p2("a,b,c,i,j,k") +=   t3_f("a,b,c,i,j,k") ;
+
+
+          //permute
+
+          t3_p1("a,b,c,i,j,k") = t3_p1("a,b,c,i,j,k") + t3_p1("b,a,c,j,i,k") + t3_p1("c,b,a,k,j,i") ;
+
+
+          t3_p2("a,b,c,i,j,k") =   t3_p2("a,b,c,i,j,k") + t3_p2("a,c,b,i,k,j") +
+                                   t3_p2("c,a,b,k,i,j") + t3_p2("c,b,a,k,j,i") +
+                                   t3_p2("b,c,a,j,k,i") + t3_p2("b,a,c,j,i,k");
+
+          //Add to t3/r3
+          r3("a,b,c,i,j,k")  = t3_p2("a,b,c,i,j,k") ;
+          r3("a,b,c,i,j,k") += t3_p1("a,b,c,i,j,k") ; */
+
 
       }
-       // end of triples part  _VR
-      //double norm_t1 = t1("a,i").norm();
-      //double norm_t2 = t2("a,b,i,j").norm();
-      //double norm_t3 = t3("a,b,c,i,j,k").norm();
 
-      // error = residual norm per element _edited VR
+      // error = residual norm per element
       error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2)
                + std::pow(norm2(r3), 2)))/
               (size(r1) + size(r2) + size(r3));
@@ -1266,13 +1083,14 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
 
 
         assert(solver_);
-        //solver_->update(t1, t2, r1, r2);
         solver_->update(t1, t2, t3, r1, r2, r3);
 
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
           mpqc::detail::print_size_info(t2, "T2");
+          mpqc::detail::print_size_info(r3, "R3");
+          mpqc::detail::print_size_info(t3, "T3");
         }
 
         // recompute tau as well

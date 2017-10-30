@@ -112,10 +112,10 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
         return std::sqrt(norm);
       };
 
-      TA::foreach_inplace(guess[0], task1);
-      TA::foreach_inplace(guess[1], task2);
+      TA::foreach_inplace(guess.at(0), task1);
+      TA::foreach_inplace(guess.at(1), task2);
 
-      guess[0].world().gop.fence();
+      guess.at(0).world().gop.fence();
     }
   };
 

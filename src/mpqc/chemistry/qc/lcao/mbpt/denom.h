@@ -87,7 +87,7 @@ TA::DistArray<Tile, Policy> d_abij(
           const auto e_abi = e_ab + ens[i + n_frozen];
           for (auto j = j0; j < jn; ++j, ++tile_idx) {
             const auto e_abij = e_abi + ens[j + n_frozen];
-            const auto old = result_tile[tile_idx];
+            const auto old = arg_tile[tile_idx];
             const auto result_abij = old / (e_abij);
             norm += result_abij * result_abij;
             result_tile[tile_idx] = result_abij;

@@ -32,16 +32,18 @@ pwd
 mkdir -p /home/travis/build/ValeevGroup/_build
 mkdir -p /home/travis/build/ValeevGroup/_install
 
-cd /home/travis/build/ValeevGroup/_build
+# re-build if not in cache already ... must manualy wipe cache when need to bump version or update toolchain
+if [! -d /home/travis/build/ValeevGroup/_install/libint ]; then
+  cd /home/travis/build/ValeevGroup/_build
 
-# download and unpack libint tarball
-wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
-tar -xvzf libint-$RELID-test-mpqc4.tgz
-cd libint-$RELID/
+  # download and unpack libint tarball
+  wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
+  tar -xvzf libint-$RELID-test-mpqc4.tgz
+  cd libint-$RELID/
 
-./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
- --with-incdirs="-I/usr/include/eigen3" --enable-shared --disable-static
+  ./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
+    --with-incdirs="-I/usr/include/eigen3" --enable-shared --disable-static
 
-
-make -j2
-make install
+  make -j2
+  make install
+fi

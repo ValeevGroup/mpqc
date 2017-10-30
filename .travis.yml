@@ -1,5 +1,8 @@
 language: cpp
 cache: ccache
+cache:
+  directories:
+  - /home/travis/build/ValeevGroup/_install
 os: linux
 compiler:
 - gcc

@@ -17,7 +17,7 @@ $CXX --version
 # log the CMake version (need 3+)
 cmake --version
 
-# Install MPICH
+# Install MPICH unless previous install is cached ... must manually wipe cache on version bump or toolchain update
 export PREFIX=${HOME}/ValeevGroup/_install/mpich
 if [ ! -d "${PREFIX}" ]; then
     wget --no-check-certificate -q http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz

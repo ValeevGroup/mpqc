@@ -22,17 +22,19 @@ export MPICC=$MPI_HOME/bin/mpicc
 export MPICXX=$MPI_HOME/bin/mpicxx
 export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
 
-# Configure TiledArray
+# Install TA unless previous install is cached ... must manually wipe cache on version bump or toolchain update
+if [! -d /home/travis/build/ValeevGroup/_install/TA]; then
 
-mkdir -p /home/travis/build/ValeevGroup/_build
-cd  /home/travis/build/ValeevGroup/_build
+  # Configure TiledArray
+  mkdir -p /home/travis/build/ValeevGroup/_build
+  cd  /home/travis/build/ValeevGroup/_build
 
-mkdir -p TA
-cd TA
+  mkdir -p TA
+  cd TA
 
-git clone https://github.com/ValeevGroup/tiledarray.git ta_src
+  git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
-cmake ta_src \
+  cmake ta_src \
       -DCMAKE_INSTALL_PREFIX=/home/travis/build/ValeevGroup/_install/TA \
       -DCMAKE_CXX_COMPILER=$CXX \
       -DCMAKE_C_COMPILER=$CC \
@@ -41,6 +43,7 @@ cmake ta_src \
       -DBUILD_SHARED_LIBS=ON \
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
-# Build all libraries, examples, and applications
-make -j2 VERBOSE=1
-make install
+  # Build all libraries, examples, and applications
+  make -j2 VERBOSE=1
+  make install
+fi

@@ -22,6 +22,9 @@ echo $($CXX --version)
 
 # list the prebuilt prereqs
 ls ${INSTALL_PREFIX}
+ls -l /home/travis
+ls -l /home/travis/ValeevGroup
+ls -l /home/travis/ValeevGroup/mpqc4
 
 # where to install MPQC4 (need for testing installed code)
 export INSTALL_DIR=${INSTALL_PREFIX}/mpqc4

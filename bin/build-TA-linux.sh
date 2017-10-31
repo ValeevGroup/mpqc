@@ -17,7 +17,7 @@ fi
 echo $($CC --version)
 echo $($CXX --version)
 
-export MPI_HOME=${INSTALL_PREFIX}/_install/mpich
+export MPI_HOME=${INSTALL_PREFIX}/mpich
 export MPICC=$MPI_HOME/bin/mpicc
 export MPICXX=$MPI_HOME/bin/mpicxx
 export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH

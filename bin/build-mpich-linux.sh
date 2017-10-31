@@ -28,12 +28,12 @@ if [ ! -d "${INSTALL_DIR}" ]; then
     ./configure CC=$CC CXX=$CXX --disable-fortran --disable-romio --prefix=${INSTALL_DIR}
     make -j2
     make install
-    ${PREFIX}/bin/mpichversion
-    ${PREFIX}/bin/mpicc -show
-    ${PREFIX}/bin/mpicxx -show
+    ${INSTALL_DIR}/bin/mpichversion
+    ${INSTALL_DIR}/bin/mpicc -show
+    ${INSTALL_DIR}/bin/mpicxx -show
 else
     echo "MPICH installed..."
-    find ${PREFIX} -name mpiexec
-    find ${PREFIX} -name mpicc
-    find ${PREFIX} -name mpicxx
+    find ${INSTALL_DIR} -name mpiexec
+    find ${INSTALL_DIR} -name mpicc
+    find ${INSTALL_DIR} -name mpicxx
 fi

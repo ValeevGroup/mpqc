@@ -938,7 +938,7 @@ class PeriodicFourCenterFockBuilder
                 continue;
               }
               for (auto tile2 = 0ul; tile2 != ntiles; ++tile2) {
-                if (R2_ord == ref_Rrho_ord_ && tile2 < tile1) {
+                if (R2_ord == ref_Rrho_ord_ && tile2 < tile0) {
                   continue;
                 }
                 // tile indices of D02 and D12

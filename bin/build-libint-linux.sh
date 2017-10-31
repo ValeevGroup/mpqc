@@ -33,7 +33,7 @@ mkdir -p /home/travis/build/ValeevGroup/_build
 mkdir -p /home/travis/build/ValeevGroup/_install
 
 # re-build if not in cache already ... must manualy wipe cache when need to bump version or update toolchain
-if [! -d /home/travis/build/ValeevGroup/_install/libint ]; then
+if [ ! -d /home/travis/build/ValeevGroup/_install/libint ]; then
   cd /home/travis/build/ValeevGroup/_build
 
   # download and unpack libint tarball

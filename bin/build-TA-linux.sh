@@ -23,7 +23,7 @@ export MPICXX=$MPI_HOME/bin/mpicxx
 export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
 
 # Install TA unless previous install is cached ... must manually wipe cache on version bump or toolchain update
-if [! -d /home/travis/build/ValeevGroup/_install/TA]; then
+if [ ! -d /home/travis/build/ValeevGroup/_install/TA ]; then
 
   # Configure TiledArray
   mkdir -p /home/travis/build/ValeevGroup/_build

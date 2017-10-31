@@ -120,13 +120,13 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
     const auto in = result_tile.range().upbound()[1];
 
     auto ai = 0;
-    typename Tile::value_type tmp = 1.0;
+    const typename Tile::value_type identity = 1.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens[a + n_occ];
       for (auto i = i0; i < in; ++i, ++ai) {
         const auto e_i = ens[i + n_frozen];
         const auto e_ia = e_i - e_a;
-        const auto result_ai = tmp / (e_ia);
+        const auto result_ai = identity / (e_ia);
         result_tile[ai] = result_ai;
       }
     }
@@ -187,13 +187,13 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
     const auto in = result_tile.range().upbound()[1];
 
     auto ai = 0;
-    typename Tile::value_type tmp = 1.0;
+    const typename Tile::value_type identity = 1.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens[a + n_occ];
       for (auto i = i0; i < in; ++i, ++ai) {
         const auto e_i = ens[i + n_frozen];
         const auto e_ia = e_i - e_a;
-        const auto result_ai = tmp / (e_ia);
+        const auto result_ai = identity / (e_ia);
         result_tile[ai] = result_ai;
       }
     }

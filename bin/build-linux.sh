@@ -20,20 +20,24 @@ fi
 echo $($CC --version)
 echo $($CXX --version)
 
-mkdir -p mpqc4_build
-cd mpqc4_build
+# list the prebuilt prereqs
+ls ${INSTALL_PREFIX}
 
-INSTALL_DIR=/home/travis/build/ValeevGroup/_install
-mkdir -p /home/travis/build/ValeevGroup/_install
-ls $INSTALL_DIR
+# where to install MPQC4 (need for testing installed code)
+export INSTALL_DIR=${INSTALL_PREFIX}/mpqc4
 
-cmake .. \
-    -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
-    -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/mpqc4" \
+# make build dir
+cd ${BUILD_PREFIX}
+mkdir -p mpqc4
+cd mpqc4
+
+cmake ${TRAVIS_BUILD_DIR} \
+    -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
+    -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DBUILD_SHARED_LIBS=ON \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS}" \
-    -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint" \
+    -DLIBINT2_INSTALL_DIR="${INSTALL_PREFIX}/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true
 
 ### build
@@ -42,7 +46,7 @@ make -j1 mpqc
 setarch `uname -m` -R make -j1 check
 ### install and test dev samples
 make install
-cd $INSTALL_DIR/mpqc4/share/doc/mpqc*/examples
+cd ${INSTALL_DIR}/share/doc/mpqc*/examples
 cd mp2
   cmake .
   make mp2

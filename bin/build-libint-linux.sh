@@ -28,20 +28,17 @@ $CXX --version
 ls 
 pwd
 
-# Make install directory for MPQC dependencies 
-mkdir -p /home/travis/build/ValeevGroup/_build
-mkdir -p /home/travis/build/ValeevGroup/_install
-
 # re-build if not in cache already ... must manualy wipe cache when need to bump version or update toolchain
-if [ ! -d /home/travis/build/ValeevGroup/_install/libint ]; then
-  cd /home/travis/build/ValeevGroup/_build
+export INSTALL_DIR=${INSTALL_PREFIX}/libint
+if [ ! -d "${INSTALL_DIR}" ]; then
+  cd ${BUILD_PREFIX}
 
   # download and unpack libint tarball
   wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
   tar -xvzf libint-$RELID-test-mpqc4.tgz
   cd libint-$RELID/
 
-  ./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
+  ./configure --prefix="${INSTALL_DIR}" \
     --with-incdirs="-I/usr/include/eigen3" --enable-shared --disable-static
 
   make -j2

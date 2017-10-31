@@ -23,19 +23,18 @@ export MPICXX=$MPI_HOME/bin/mpicxx
 export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
 
 # Install TA unless previous install is cached ... must manually wipe cache on version bump or toolchain update
-if [ ! -d /home/travis/build/ValeevGroup/_install/TA ]; then
+export INSTALL_DIR=${INSTALL_PREFIX}/TA
+if [ ! -d "${INSTALL_DIR}" ]; then
 
   # Configure TiledArray
-  mkdir -p /home/travis/build/ValeevGroup/_build
-  cd  /home/travis/build/ValeevGroup/_build
-
+  cd ${BUILD_PREFIX}
   mkdir -p TA
   cd TA
 
   git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
   cmake ta_src \
-      -DCMAKE_INSTALL_PREFIX=/home/travis/build/ValeevGroup/_install/TA \
+      -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
       -DCMAKE_CXX_COMPILER=$CXX \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \

@@ -31,7 +31,7 @@ cd ${BUILD_PREFIX}
 mkdir -p mpqc4
 cd mpqc4
 
-cmake ${TRAVIS_BUILD_DIR} \
+cmake ${BUILD_PREFIX}/.. \
     -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DBUILD_SHARED_LIBS=ON \

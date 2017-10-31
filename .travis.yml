@@ -2,15 +2,15 @@ language: cpp
 cache: ccache
 cache:
   directories:
-  - ${TRAVIS_BUILD_DIR}/_install
+  - /home/travis/ValeevGroup/mpqc4/_install
 os: linux
 compiler:
 - gcc
 - clang
 env:
   global:
-    - BUILD_PREFIX=${TRAVIS_BUILD_DIR}/_build
-    - INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/_install
+    - BUILD_PREFIX=/home/travis/ValeevGroup/mpqc4/_build
+    - INSTALL_PREFIX=/home/travis/ValeevGroup/mpqc4/_install
   matrix:
     - GCC_VERSION=4.9 BUILD_TYPE=Debug
     - GCC_VERSION=4.9 BUILD_TYPE=Release

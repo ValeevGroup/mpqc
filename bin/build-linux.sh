@@ -22,9 +22,6 @@ echo $($CXX --version)
 
 # list the prebuilt prereqs
 ls ${INSTALL_PREFIX}
-ls -l /home/travis
-ls -l /home/travis/ValeevGroup
-ls -l /home/travis/ValeevGroup/mpqc4
 
 # where to install MPQC4 (need for testing installed code)
 export INSTALL_DIR=${INSTALL_PREFIX}/mpqc4
@@ -34,7 +31,7 @@ cd ${BUILD_PREFIX}
 mkdir -p mpqc4
 cd mpqc4
 
-cmake ${BUILD_PREFIX}/.. \
+cmake ${TRAVIS_BUILD_DIR} \
     -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DBUILD_SHARED_LIBS=ON \

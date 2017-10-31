@@ -2,15 +2,15 @@ language: cpp
 cache: ccache
 cache:
   directories:
-  - /home/travis/ValeevGroup/mpqc4/_install
+  - ${TRAVIS_BUILD_DIR}/_install
 os: linux
 compiler:
 - gcc
 - clang
 env:
   global:
-    - BUILD_PREFIX=/home/travis/ValeevGroup/mpqc4/_build
-    - INSTALL_PREFIX=/home/travis/ValeevGroup/mpqc4/_install
+    - BUILD_PREFIX=${TRAVIS_BUILD_DIR}/_build
+    - INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/_install
   matrix:
     - GCC_VERSION=4.9 BUILD_TYPE=Debug
     - GCC_VERSION=4.9 BUILD_TYPE=Release
@@ -69,10 +69,11 @@ addons:
     - cmake
     - cmake-data
 before_install:
+- "env"
 - "mkdir -p ${BUILD_PREFIX} && mkdir -p ${INSTALL_PREFIX}"
-- "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
-- "./bin/build-libint-$TRAVIS_OS_NAME.sh"
-- "./bin/build-TA-$TRAVIS_OS_NAME.sh"
+- "./bin/build-mpich-$TRAVIS_OS_NAME.sh > build-mpich-$TRAVIS_OS_NAME.output"
+- "./bin/build-libint-$TRAVIS_OS_NAME.sh > build-libint-$TRAVIS_OS_NAME.output"
+- "./bin/build-TA-$TRAVIS_OS_NAME.sh > > build-TA-$TRAVIS_OS_NAME.output"
 script: "travis_wait 50 ./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
 - cat ./mpqc4_build/CMakeFiles/CMakeOutput.log

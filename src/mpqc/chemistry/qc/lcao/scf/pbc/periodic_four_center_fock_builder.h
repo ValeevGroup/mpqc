@@ -891,7 +891,6 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::lcao::detail::direct_ord_idx;
 
     auto empty = TA::Future<Tile>(Tile());
-
     for (auto R1_ord = ref_sig_latt_ord_, task = int64_t(0);
          R1_ord != sig_latt_size_; ++R1_ord) {
       const auto R1_3D = direct_3D_idx(R1_ord, sig_latt_max_);
@@ -2775,10 +2774,9 @@ class PeriodicFourCenterFockBuilder
 
     // 1-d tile ranges
     const auto &rng0 = trange_eri4_.dim(0).tile(tile0);
-    const auto &rng1 = trange_eri4_.dim(1).tile(tile1);
+    const auto &rng1 = trange_eri4_.dim(1).tile(tile1_R1);
     const auto &rng2 = trange_eri4_.dim(2).tile(tile2);
-    const auto &rng3 = trange_eri4_.dim(3).tile(tile3);
-    const auto rng1_size = rng1.second - rng1.first;
+    const auto &rng3 = trange_eri4_.dim(3).tile(tile3_R3);
     const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;
 
@@ -2839,9 +2837,9 @@ class PeriodicFourCenterFockBuilder
     {
       // index of first shell in this cluster
       const auto sh0_offset = basis0_shell_offset_map_[tile0];
-      const auto sh1_offset = basisR_shell_offset_map_[tile1];
+      const auto sh1_offset = basisR_shell_offset_map_[tile1_R1];
       const auto sh2_offset = basis0_shell_offset_map_[tile2];
-      const auto sh3_offset = basisR_shell_offset_map_[tile3];
+      const auto sh3_offset = basisR_shell_offset_map_[tile3_R3];
 
       // index of last shell in this cluster
       const auto sh0_max = sh0_offset + nshells0;

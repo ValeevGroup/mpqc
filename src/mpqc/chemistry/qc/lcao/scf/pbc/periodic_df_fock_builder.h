@@ -49,9 +49,6 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                                  compute_K(D, target_precision), J_latt_range,
                                  K_latt_range, 2.0, 1.0);
 
-    //    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") +
-    //                  compute_K(D, target_precision)("mu, nu");
-
     return G;
   }
 

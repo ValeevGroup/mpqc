@@ -39,7 +39,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \
       -DMPI_C_COMPILER=$MPICC \
-      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
   # Build all libraries, examples, and applications

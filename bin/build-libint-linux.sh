@@ -39,7 +39,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
   cd libint-$RELID/
 
   ./configure --prefix="${INSTALL_DIR}" \
-    --with-incdirs="-I/usr/include/eigen3" --enable-shared --disable-static
+    --with-incdirs="-I/usr/include/eigen3" --disable-shared --enable-static
 
   make -j2
   make install

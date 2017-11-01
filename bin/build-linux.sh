@@ -34,7 +34,7 @@ cd mpqc4
 cmake ${TRAVIS_BUILD_DIR} \
     -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
-    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS}" \
     -DLIBINT2_INSTALL_DIR="${INSTALL_PREFIX}/libint" \

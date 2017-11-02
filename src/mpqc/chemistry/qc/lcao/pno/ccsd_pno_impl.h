@@ -535,8 +535,8 @@ namespace mpqc {
 
           if (dE >= this->target_precision_ || error >= this->target_precision_) {
               tmp_time0 = mpqc::now(world, accurate_time);
-              ::mpqc::cc::T1T2<TArray, TArray> t(t1, t2);
-              ::mpqc::cc::T1T2<TArray, TArray> r(r1, r2);
+              ::mpqc::cc::TPack<TArray> t(t1, t2);
+              ::mpqc::cc::TPack<TArray> r(r1, r2);
               error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
               diis.extrapolate(t, r);
 

@@ -17,27 +17,26 @@
 #include <sys/time.h>
 #endif
 #ifdef HAVE_FENV_H
-#  include <fenv.h>
+#include <fenv.h>
 #endif
 
 #include "mpqc/util/keyval/keyval.h"
 //#include "mpqc/util/misc/consumableresources.h"
 #include "mpqc/util/core/exception.h"
-#include "mpqc/util/core/formio.h"
 #include "mpqc/util/core/exenv.h"
+#include "mpqc/util/core/formio.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 
 namespace mpqc {
 
 std::unique_ptr<MPQCInit> MPQCInit::instance_;
 
-void initialize(int &argc, char **argv,
-                const madness::World& top_world,
-                std::shared_ptr<GetLongOpt> opt)
-{
+void initialize(int &argc, char **argv, const madness::World &top_world,
+                std::shared_ptr<GetLongOpt> opt) {
   if (!madness::initialized()) {
     throw ProgrammingError(
-        "MADWorld runtime must be initialized before calling mpqc::initialize()",
+        "MADWorld runtime must be initialized before calling "
+        "mpqc::initialize()",
         __FILE__, __LINE__);
   }
   if (MPQCInit::instance_) {
@@ -49,9 +48,7 @@ void initialize(int &argc, char **argv,
   }
 }
 
-void finalize() {
-  MPQCInit::instance_.reset();
-}
+void finalize() { MPQCInit::instance_.reset(); }
 
 MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
                    const madness::World &top_world)
@@ -68,12 +65,12 @@ MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
   libint2::initialize();
 
   init_io(top_world);
-  //init_resources(keyval);
+  // init_resources(keyval);
 }
 
 MPQCInit::~MPQCInit() {
   libint2::finalize();
-//  ConsumableResources::set_default_instance(0);
+  //  ConsumableResources::set_default_instance(0);
   FormIO::set_default_basename(0);
 }
 
@@ -121,57 +118,63 @@ void MPQCInit::init_limits() {
 }
 
 namespace {
-std::shared_ptr<mpqc::KeyVal>
-__make_keyval(madness::World& world, const std::string &filename,
-            MPQCInit::InputFormat format) {
+std::shared_ptr<mpqc::KeyVal> __make_keyval(madness::World &world,
+                                            const std::string &filename,
+                                            MPQCInit::InputFormat format) {
   std::shared_ptr<mpqc::KeyVal> kv;
   std::stringstream ss;
   utility::parallel_read_file(world, filename, ss);
   kv = std::make_shared<mpqc::KeyVal>();
-  switch(format) {
-    case MPQCInit::InputFormat::xml: kv->read_xml(ss); break;
-    case MPQCInit::InputFormat::json: kv->read_json(ss); break;
-    case MPQCInit::InputFormat::info: kv->read_info(ss); break;
-    default: abort();
+  switch (format) {
+    case MPQCInit::InputFormat::xml:
+      kv->read_xml(ss);
+      break;
+    case MPQCInit::InputFormat::json:
+      kv->read_json(ss);
+      break;
+    case MPQCInit::InputFormat::info:
+      kv->read_info(ss);
+      break;
+    default:
+      abort();
   }
   return kv;
 }
-}
+}  // namespace
 
-std::shared_ptr<mpqc::KeyVal>
-MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
+std::shared_ptr<mpqc::KeyVal> MPQCInit::make_keyval(
+    madness::World &world, const std::string &filename) {
   std::shared_ptr<mpqc::KeyVal> kv;
   try {
     kv = __make_keyval(world, filename, InputFormat::json);
     input_format_ = InputFormat::json;
-  }
-  catch(...) {
+  } catch (...) {
   }
   if (input_format_ == InputFormat::invalid) {
     try {
       kv = __make_keyval(world, filename, InputFormat::xml);
       input_format_ = InputFormat::xml;
-    }
-    catch(std::exception& e) {
+    } catch (std::exception &e) {
     }
   }
   if (input_format_ == InputFormat::invalid) {
     try {
       kv = __make_keyval(world, filename, InputFormat::info);
       input_format_ = InputFormat::info;
-    }
-    catch(...) {
+    } catch (...) {
       std::cout << "failed read_info\n";
     }
   }
   if (input_format_ == InputFormat::invalid)
-    throw InputError("did not recognize input file format (recognized formats: JSON, XML, INFO)",
-                     __FILE__, __LINE__);
+    throw InputError(
+        "did not recognize input file format (recognized formats: JSON, XML, "
+        "INFO)",
+        __FILE__, __LINE__);
 
   return kv;
 }
 
-void MPQCInit::init_io(const madness::World& top_world) {
+void MPQCInit::init_io(const madness::World &top_world) {
   std::setlocale(LC_ALL, "en_US.UTF-8");
   std::cout << std::setprecision(15);
   FormIO::setindent(ExEnv::outn(), 2);
@@ -182,7 +185,7 @@ void MPQCInit::init_io(const madness::World& top_world) {
   if (top_world.size() > 1) FormIO::init_mp(top_world.rank());
 }
 
-//void MPQCInit::init_resources(Ref<KeyVal> keyval) {
+// void MPQCInit::init_resources(Ref<KeyVal> keyval) {
 //  // get the resources object. first try commandline and environment
 //  Ref<ConsumableResources> inst =
 //      ConsumableResources::initial_instance(argc_, argv_);
@@ -227,15 +230,23 @@ std::shared_ptr<GetLongOpt> make_options() {
   // parse commandline options
   std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
-  options->usage("[options] input_file.{json|xml|info}");
-  options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
-  options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
+  options->usage("[options] [input_file.{json|xml|info}]\nThe input file name can be given as the last argument unless an option with omitted optional value is used (e.g. -D)");
+  options->enroll("i", GetLongOpt::MandatoryValue,
+                  "the name of the input file");
+  options->enroll("o", GetLongOpt::MandatoryValue,
+                  "the name of the output file");
+  options->enroll("p", GetLongOpt::MandatoryValue,
+                  "prefix for all relative paths in KeyVal");
   options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
-                 ".");
+                  ".");
   options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
-  options->enroll("d", GetLongOpt::NoValue, "start the program and attach a debugger");
-  options->enroll("D", GetLongOpt::NoValue, " if \"debugger\" keyword is not given, create a default debugger");
-  //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
+  options->enroll("d", GetLongOpt::NoValue,
+                  "start the program and attach a debugger");
+  options->enroll("D", GetLongOpt::OptionalValue,
+                  " if \"debugger\" keyword is not given, create a default "
+                  "debugger; an optional JSON string can be given to provide "
+                  "KeyVal ctor input");
+  // options->enroll("c", GetLongOpt::NoValue, "check input then exit");
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
@@ -244,8 +255,8 @@ std::shared_ptr<GetLongOpt> make_options() {
   return options;
 }
 
-std::tuple<std::string, std::string>
-process_options(const std::shared_ptr<GetLongOpt>& options) {
+std::tuple<std::string, std::string> process_options(
+    const std::shared_ptr<GetLongOpt> &options) {
   // set the working dir
   if (*options->retrieve("W") != ".") {
     std::string dir = *options->retrieve("W");
@@ -261,46 +272,45 @@ process_options(const std::shared_ptr<GetLongOpt>& options) {
   std::string output_filename = output_opt ? *output_opt : std::string();
 
   if (options->retrieve("h")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl;
+    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
+                  << indent << "compiled for " << TARGET_ARCH << std::endl
+                  << FormIO::copyright << std::endl;
     options->usage(ExEnv::out0());
     std::exit(0);
   }
 
   if (options->retrieve("v")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright;
+    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
+                  << indent << "compiled for " << TARGET_ARCH << std::endl
+                  << FormIO::copyright;
     std::exit(0);
   }
 
   if (options->retrieve("w")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl
-         << FormIO::warranty;
+    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
+                  << indent << "compiled for " << TARGET_ARCH << std::endl
+                  << FormIO::copyright << std::endl
+                  << FormIO::warranty;
     std::exit(0);
   }
 
   if (options->retrieve("L")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl
-         << FormIO::license;
+    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
+                  << indent << "compiled for " << TARGET_ARCH << std::endl
+                  << FormIO::copyright << std::endl
+                  << FormIO::license;
     std::exit(0);
   }
 
-  // get input file name
+  // get input file name ... can be given as the last option
+  auto input_opt = options->retrieve("i");
   std::string input_filename;
-  if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
-    input_filename = MPQCInit::instance().argv()[options->first_unprocessed_arg()];
-  }
-  else {
+  if (input_opt) {
+    input_filename = *input_opt;
+  } else if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
+    input_filename =
+        MPQCInit::instance().argv()[options->first_unprocessed_arg()];
+  } else {
     options->usage();
     throw std::invalid_argument("input filename not given");
   }
@@ -309,4 +319,3 @@ process_options(const std::shared_ptr<GetLongOpt>& options) {
 }
 
 }  // namespace mpqc
-

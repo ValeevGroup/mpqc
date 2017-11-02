@@ -1,18 +1,25 @@
 language: cpp
 cache: ccache
+cache:
+  directories:
+  - /home/travis/_install
 os: linux
 compiler:
 - gcc
 - clang
 env:
-- GCC_VERSION=4.9 BUILD_TYPE=Debug
-- GCC_VERSION=4.9 BUILD_TYPE=Release
-- GCC_VERSION=5 BUILD_TYPE=Debug
-- GCC_VERSION=5 BUILD_TYPE=Release
-- GCC_VERSION=6 BUILD_TYPE=Debug
-- GCC_VERSION=6 BUILD_TYPE=Release
-- GCC_VERSION=7 BUILD_TYPE=Debug
-- GCC_VERSION=7 BUILD_TYPE=Release
+  global:
+    - BUILD_PREFIX=/home/travis/_build
+    - INSTALL_PREFIX=/home/travis/_install
+  matrix:
+    - GCC_VERSION=4.9 BUILD_TYPE=Debug
+    - GCC_VERSION=4.9 BUILD_TYPE=Release
+    - GCC_VERSION=5 BUILD_TYPE=Debug
+    - GCC_VERSION=5 BUILD_TYPE=Release
+    - GCC_VERSION=6 BUILD_TYPE=Debug
+    - GCC_VERSION=6 BUILD_TYPE=Release
+    - GCC_VERSION=7 BUILD_TYPE=Debug
+    - GCC_VERSION=7 BUILD_TYPE=Release
 branches:
   only:
   - master
@@ -62,9 +69,11 @@ addons:
     - cmake
     - cmake-data
 before_install:
-- "./bin/build-mpich-$TRAVIS_OS_NAME.sh > build-mpich-$TRAVIS_OS_NAME.output"
+- "env"
+- "mkdir -p ${BUILD_PREFIX} && mkdir -p ${INSTALL_PREFIX}"
+- "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
 - "./bin/build-libint-$TRAVIS_OS_NAME.sh"
-- "./bin/build-TA-$TRAVIS_OS_NAME.sh > build-TA-$TRAVIS_OS_NAME.output"
+- "./bin/build-TA-$TRAVIS_OS_NAME.sh"
 script: "travis_wait 50 ./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
 - cat ./mpqc4_build/CMakeFiles/CMakeOutput.log

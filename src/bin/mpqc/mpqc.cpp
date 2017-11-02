@@ -111,8 +111,19 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto debugger = kv->class_ptr<Debugger>("debugger");
   // use default-constructed debugger if -D given and debugger keyword is
   // missing
-  if (!debugger && options->retrieve("D")) {
-    debugger = std::make_shared<Debugger>();
+  if (!debugger) {
+    auto debugger_opt = options->retrieve("D");
+    if (debugger_opt) {
+      const auto debugger_json_str = *debugger_opt;
+      if (debugger_json_str.empty()) { // no JSON spec for Debugger given, use default ctor
+        debugger = std::make_shared<Debugger>();
+      } else {  // JSON spec for Debugger given
+        std::istringstream iss(debugger_json_str);
+        KeyVal kv;
+        kv.read_json(iss);
+        debugger = std::make_shared<Debugger>(kv);
+      }
+    }
   }
   if (debugger) {
     Debugger::set_default_debugger(debugger);

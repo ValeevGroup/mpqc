@@ -114,7 +114,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   if (!debugger) {
     auto debugger_opt = options->retrieve("D");
     if (debugger_opt) {
-      const auto debugger_json_str = debugger_opt.value();
+      const auto debugger_json_str = *debugger_opt;
       if (debugger_json_str.empty()) { // no JSON spec for Debugger given, use default ctor
         debugger = std::make_shared<Debugger>();
       } else {  // JSON spec for Debugger given

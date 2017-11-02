@@ -27,18 +27,17 @@ namespace cc {
 /**
  *
  */
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIj(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& tau, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_KlIj(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, const Array& tau, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto time0 = mpqc::now(world, accurate_time);
 
   std::wstring postfix = df ? L"[df]" : L"";
-  TA::DistArray<Tile, Policy> W_KlIj;
+  Array W_KlIj;
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
   auto g_ijkl = lcao_factory.compute(L"<i j|G|k l>" + postfix);
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
@@ -57,11 +56,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIj(
   return W_KlIj;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& t2, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_IbAj(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, const Array& t2, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -69,7 +67,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
 
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_IbAj;
+  Array W_IbAj;
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
@@ -102,11 +100,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
   return W_IbAj;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& t2, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_IbaJ(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, const Array& t2, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -114,7 +111,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
 
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_IbaJ;
+  Array W_IbaJ;
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_iajb = lcao_factory.compute(L"<i a|G|j b>" + postfix);
@@ -146,10 +143,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
   return W_IbaJ;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AkCd(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_AkCd(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -157,7 +154,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AkCd(
 
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_AkCd;
+  Array W_AkCd;
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
@@ -174,17 +171,17 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AkCd(
   return W_AkCd;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIc(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_KlIc(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_KlIc;
+  Array W_KlIc;
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
@@ -201,28 +198,25 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KlIc(
   return W_KlIc;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KaIj(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& t2,
-    const TA::DistArray<Tile, Policy>& tau,
-    const TA::DistArray<Tile, Policy>& FIA,
-    const TA::DistArray<Tile, Policy>& W_KlIj, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_KaIj(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, const Array& t2, const Array& tau,
+                             const Array& FIA, const Array& W_KlIj, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_KaIj;
+  Array W_KaIj;
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_iajb = lcao_factory.compute(L"<i a|G|j b>" + postfix);
   auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
 
-  TA::DistArray<Tile, Policy> t22;
+  Array t22;
   t22("a,b,i,j") = 2.0 * t2("a,b,i,j") - t2("a,b,j,i");
 
   W_KaIj("k,a,i,j") =
@@ -250,15 +244,12 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_KaIj(
   return W_KaIj;
 };
 
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& t2,
-    const TA::DistArray<Tile, Policy>& tau,
-    const TA::DistArray<Tile, Policy>& FIA,
-    const TA::DistArray<Tile, Policy>& W_AbCd, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_AbCi(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
+                             const Array& t1, const Array& t2, const Array& tau,
+                             const Array& FIA, const Array& W_AbCd, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -270,10 +261,10 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
   auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
 
-  TA::DistArray<Tile, Policy> t22;
+  Array t22;
   t22("a,b,i,j") = 2.0 * t2("a,b,i,j") - t2("a,b,j,i");
 
-  TA::DistArray<Tile, Policy> W_AbCi;
+  Array W_AbCi;
 
   W_AbCi("a,b,c,i") =
 
@@ -298,7 +289,7 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
       auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
       auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
 
-      TA::DistArray<Tile, Policy> Xt;
+      Array Xt;
       Xt("K,b,i") = (0.5 * Xab("K,b,d") - t1("b,k") * Xia("K,k,d")) * t1("d,i");
 
       W_AbCi("a,b,c,i") += Xab("K,a,c") * Xt("K,b,i") +
@@ -333,18 +324,17 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
 /*
  *
  */
-template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCd(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    const TA::DistArray<Tile, Policy>& t1,
-    const TA::DistArray<Tile, Policy>& tau, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+Array compute_cs_ccsd_W_AbCd(LCAOFactoryBase<Tile, Policy>& lcao_factory,
+                             const Array& t1, const Array& tau, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto time0 = mpqc::now(world, accurate_time);
   std::wstring postfix = df ? L"[df]" : L"";
 
-  TA::DistArray<Tile, Policy> W_AbCd;
+  Array W_AbCd;
 
   auto g_abcd = lcao_factory.compute(L"<a b|G|c d>" + postfix);
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
@@ -370,13 +360,12 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCd(
  * @return std::tuple of FAB, FIA, FIJ
  *
  */
-template <typename Tile, typename Policy>
-std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>,
-           TA::DistArray<Tile, Policy>>
-compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
-                  gaussian::AOFactoryBase<Tile, Policy>& ao_factory,
-                  const TA::DistArray<Tile, Policy>& t1,
-                  const TA::DistArray<Tile, Policy>& tau, bool df) {
+template <typename Tile, typename Policy,
+          typename Array = TA::DistArray<Tile, Policy>>
+std::tuple<Array, Array, Array> compute_cs_ccsd_F(
+    LCAOFactoryBase<Tile, Policy>& lcao_factory,
+    gaussian::AOFactoryBase<Tile, Policy>& ao_factory, const Array& t1,
+    const Array& tau, bool df) {
   bool verbose = lcao_factory.verbose();
   auto& world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -389,10 +378,10 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
   auto f_ia = lcao_factory.compute(L"<i|F|a>" + postfix);
 
   // compute FIA
-  TA::DistArray<Tile, Policy> FIA;
+  Array FIA;
   { FIA("i,a") = f_ia("i,a") + g_ijab_bar("i,j,a,b") * t1("b,j"); }
 
-  TA::DistArray<Tile, Policy> FIJ;
+  Array FIJ;
   {
     FIJ = lcao_factory.compute(L"<i|F|j>" + postfix);
     auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
@@ -401,7 +390,7 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
                   f_ia("i,a") * t1("a,j");
   }
 
-  TA::DistArray<Tile, Policy> FAB;
+  Array FAB;
   {
     FAB = lcao_factory.compute(L"<a|F|b>" + postfix);
     FAB("a,b") -=

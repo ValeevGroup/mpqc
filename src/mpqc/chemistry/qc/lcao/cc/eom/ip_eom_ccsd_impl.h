@@ -38,8 +38,9 @@ void IP_EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     // initialize intermediates
     ExEnv::out0() << indent << "\nInitialize Intermediates \n";
-    auto imds = cc::compute_intermediates(this->lcao_factory(), this->ao_factory(),
-                                          this->t2(), this->t1(), this->is_df(), "ip");
+    auto imds =
+        cc::compute_intermediates(this->lcao_factory(), this->ao_factory(),
+                                  this->t2(), this->t1(), this->is_df(), "ip");
 
     auto max_iter = this->max_iter_;
     auto result =
@@ -115,13 +116,9 @@ template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
 IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
     std::vector<typename IP_EOM_CCSD<Tile, Policy>::GuessVector>& C,
-    const cc::Intermediates<Tile, Policy>& imds, std::size_t max_iter,
+    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds, std::size_t max_iter,
     double convergence) {
-  madness::World& world =
-      C[0].t1.is_initialized() ? C[0].t1.world() : C[0].t2.world();
-  std::size_t iter = 0;
   std::size_t n_roots = C.size();
-  double norm_r = 1.0;
 
   /// make preconditioner
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
@@ -136,7 +133,7 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
 
   /// make operator
 
-  auto op = [this, &imds](const std::vector<GuessVector>& vec){
+  auto op = [this, &imds](const std::vector<GuessVector>& vec) {
     std::size_t dim = vec.size();
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
@@ -163,7 +160,7 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
 
   EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
 
-  eig = dvd.solve(C,op,pred.get(),convergence,max_iter);
+  eig = dvd.solve(C, op, pred.get(), convergence, max_iter);
 
   ExEnv::out0() << "\n";
   util::print_excitation_energy(eig, false);
@@ -174,7 +171,7 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> IP_EOM_CCSD<Tile, Policy>::compute_HS1(
     const TArray& Ci, const TArray& Caij,
-    const cc::Intermediates<Tile, Policy>& imds) {
+    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds) {
   TArray HS1;
 
   {
@@ -194,7 +191,7 @@ TA::DistArray<Tile, Policy> IP_EOM_CCSD<Tile, Policy>::compute_HS1(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> IP_EOM_CCSD<Tile, Policy>::compute_HS2(
     const TArray& Ci, const TArray& Caij,
-    const cc::Intermediates<Tile, Policy>& imds) {
+    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds) {
   TArray HS2;
   {
     HS2("a,i,j") = -imds.Wiajk("k,a,i,j") * Ci("k");

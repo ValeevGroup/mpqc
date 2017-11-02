@@ -10,6 +10,7 @@
 #include "mpqc/chemistry/qc/cc/diis.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/cc/solvers.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsd_r1_r2.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
@@ -275,6 +276,16 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
     this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
+    this->lcao_factory().registry().purge_formula(L"(a ν| G |κ λ )");
+
+
+    cc::Integrals<TArray> ints;
+    ints.Gabcd = g_abcd;
+    ints.Gijab = g_ijab;
+    ints.Gijkl = g_ijkl;
+    ints.Giajb = g_iajb;
+    ints.Giabc = g_iabc;
+    ints.Gijka = g_ijka;
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -283,6 +294,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
     TArray f_ab = this->get_fock_ab();
+
+    ints.Fia("i,a") = f_ai("a,i");
+    ints.Fij = f_ij;
+    ints.Fab = f_ab;
+
 
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
@@ -372,62 +388,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       time0 = mpqc::fenced_now(world);
 
       auto t1_time0 = mpqc::now(world, accurate_time);
-      TArray h_ki, h_ac;
-      {
-        // intermediates for t1
-        // external index i and a
-        // vir index a b c d
-        // occ index i j k l
-        TArray h_kc;
 
-        // compute residual r1(n) (at convergence r1 = 0)
-        // external index i and a
-        tmp_time0 = mpqc::now(world, accurate_time);
-        r1("a,i") = f_ai("a,i") - 2.0 * (f_ai("c,k") * t1("c,i")) * t1("a,k");
+      r1 = cc::compute_cs_ccsd_r1(t1, t2, tau, ints);
 
-        {
-          h_ac("a,c") =
-              f_ab("a,c") -
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("a,d,k,l");
-          r1("a,i") += h_ac("a,c") * t1("c,i");
-        }
+      auto h_ki = ints.FIJ;
+      auto h_ac = ints.FAB;
 
-        {
-          h_ki("k,i") =
-              f_ij("k,i") +
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("c,d,i,l");
-          r1("a,i") -= t1("a,k") * h_ki("k,i");
-        }
-
-        {
-          h_kc("k,c") =
-              f_ai("c,k") +
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * t1("d,l");
-          r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
-                                      t1("c,i") * t1("a,k"));
-        }
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
-        }
-
-        tmp_time0 = mpqc::now(world, accurate_time);
-        r1("a,i") += (2.0 * g_ijab("k,i,c,a") - g_iajb("k,a,i,c")) * t1("c,k");
-
-        r1("a,i") +=
-            (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
-
-        r1("a,i") -=
-            (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
-
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
-        }
-      }
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
       if (verbose_) {

@@ -81,11 +81,10 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   EigenVector<element_type> eps_v_;
 };
 
-
 // preconditioner of EA-EOM-CCSD approximate the diagonal of H matrix
 template <typename Array>
-class EAPred : public  DavidsonDiagPred<::mpqc::cc::T1T2<Array,Array>>{
-public:
+class EAPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+ public:
   using element_type = typename Array::element_type;
   using Tile = typename Array::value_type;
   /// diagonal of F_ij matrix
@@ -94,7 +93,7 @@ public:
   EigenVector<element_type> eps_v;
 
   EAPred(const EigenVector<element_type> &eps_O,
-                 const EigenVector<element_type> &eps_V)
+         const EigenVector<element_type> &eps_V)
       : eps_o(eps_O), eps_v(eps_V) {}
 
   // default constructor
@@ -112,7 +111,8 @@ public:
     }
   }
 
-  void compute(const element_type &e, ::mpqc::cc::T1T2<Array, Array> &guess) const {
+  void compute(const element_type &e,
+               ::mpqc::cc::T1T2<Array, Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -146,11 +146,10 @@ public:
   }
 };
 
-
 /// preconditioner for IP-EOM-CCSD, approximate the diagonal of H matrix
 template <typename Array>
-class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array,Array>> {
-public:
+class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+ public:
   using element_type = typename Array::element_type;
   using Tile = typename Array::value_type;
   /// diagonal of F_ij matrix
@@ -159,7 +158,7 @@ public:
   EigenVector<element_type> eps_v;
 
   IPPred(const EigenVector<element_type> &eps_O,
-                 const EigenVector<element_type> &eps_V)
+         const EigenVector<element_type> &eps_V)
       : eps_o(eps_O), eps_v(eps_V) {}
 
   // default constructor
@@ -177,7 +176,8 @@ public:
     }
   }
 
-  void compute(const element_type &e, ::mpqc::cc::T1T2<Array, Array> &guess) const {
+  void compute(const element_type &e,
+               ::mpqc::cc::T1T2<Array, Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -243,7 +243,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       const EigenVector<typename Tile::numeric_type> &e,
       std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
     TA_ASSERT(e.size() == guess.size());
-//    TA_ASSERT(e.size() == n_roots_);
+    //    TA_ASSERT(e.size() == n_roots_);
 
     // precondition
     const auto n = guess.size();
@@ -373,10 +373,9 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
             detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
         Ds = detail::construct_density(T_reblock);
 
-        if(i==0){
+        if (i == 0) {
           D("a,b,i,j") = Ds("a,b,i,j");
-        }
-        else{
+        } else {
           D("a,b,i,j") += Ds("a,b,i,j");
         }
       }

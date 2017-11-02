@@ -60,7 +60,10 @@ static Debugger *signals[NSIG];
 
 std::shared_ptr<Debugger> Debugger::default_debugger_(nullptr);
 
-Debugger::Debugger(const char *exec) : Debugger(KeyVal()) { set_exec(exec); }
+Debugger::Debugger(const char *exec) : Debugger(KeyVal()) {
+  set_exec(exec);
+  resolve_cmd_alias();
+}
 
 Debugger::Debugger(const KeyVal &keyval) {
   init();
@@ -75,6 +78,8 @@ Debugger::Debugger(const KeyVal &keyval) {
   prefix_ = keyval.value<std::string>("prefix", std::string());
   handle_sigint_ = keyval.value<bool>("handle_sigint", true);
   if (keyval.value<bool>("handle_defaults", true)) handle_defaults();
+
+  resolve_cmd_alias();
 }
 
 Debugger::~Debugger() {
@@ -170,9 +175,17 @@ void Debugger::default_cmd() {
   int has_x11_display = (getenv("DISPLAY") != 0);
 
   if (has_x11_display) {
-    set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID) &");
+    set_cmd("gdb_xterm");
   } else {
     set_cmd(0);
+  }
+}
+
+void Debugger::resolve_cmd_alias() {
+  if (cmd_ == "gdb_xterm") {
+    cmd_ = "xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID) &";
+  } else if (cmd_ == "lldb_xterm") {
+    cmd_ = "xterm -title \"$(PREFIX)$(EXEC)\" -e lldb -p $(PID) &";
   }
 }
 

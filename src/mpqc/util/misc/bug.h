@@ -98,16 +98,20 @@ class Debugger : virtual public DescribedClass {
       line that is printed by Debugger. The default is nothing.
 
       <dt><tt>cmd</tt><dd> Gives a command to be executed to start the
-      debugger.  If environment variable <tt>DISPLAY</tt> is set, the default
-      command is <tt>"xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID)
-     &"</tt> where token <tt>$(PREFIX)</tt> is replaced by the value of keyword
-     <tt>prefix</tt>, <tt>$(EXEC)</tt> is replaced by the name of the current
-     executable, and <tt>$(PID)</tt> is the process ID of each process. This
-     will launch one <tt>xterm</tt> per MPI rank. There is no default if
-     <tt>DISPLAY</tt> is not set (hence no debugger will be launched, only an
-     informational statement will be printed). N.B. To use LLDB instead of GDB
-     set <tt>cmd</tt> to <tt>"xterm -title \"$(PREFIX)$(EXEC)\" -e lldb -p
-     $(PID) &"</tt>.
+      debugger.  If the environment variable <tt>DISPLAY</tt> is not set,
+      there is no default, and no debugger will be launched (an
+      informational statement will be printed).
+      If <tt>DISPLAY</tt> is set, the default
+      command is <tt>xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID)
+      &</tt> where token <tt>$(PREFIX)</tt> is replaced by the value of keyword
+      <tt>prefix</tt>, <tt>$(EXEC)</tt> is replaced by the name of the current
+      executable, and <tt>$(PID)</tt> is the process ID of each process. This
+      will launch one <tt>xterm</tt> per MPI rank, each running a <tt>gdb</tt>
+     instance. N.B. The default GDB launch command is equivalent to setting
+     <tt>cmd</tt> to alias <tt>gdb_xterm</tt>. To use LLDB instead of GDB set
+     <tt>cmd</tt> to <tt>lldb_xterm</tt>, which is an alias for <tt>xterm -title
+     \"$(PREFIX)$(EXEC)\" -e lldb -p
+      $(PID) &</tt>.
 
       </dl> */
   Debugger(const KeyVal &);
@@ -176,6 +180,10 @@ class Debugger : virtual public DescribedClass {
   static void set_default_debugger(const std::shared_ptr<Debugger> &);
   /// Return the global default debugger.
   static std::shared_ptr<Debugger> default_debugger();
+
+ private:
+  /// Replaces alias in cmd_ with its full form
+  void resolve_cmd_alias();
 };
 
 /// Use this to launch GNU debugger in xterm

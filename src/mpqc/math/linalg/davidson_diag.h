@@ -13,8 +13,23 @@
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/misc/print.h"
+#include "mpqc/util/misc/time.h"
 
 namespace mpqc {
+
+template <typename D>
+class DavidsonDiagPred {
+ public:
+  virtual void operator()(const EigenVector<typename D::element_type>& e,
+                          std::vector<D>& guess) const = 0;
+
+  virtual typename D::element_type norm(const D& d) const {
+    return norm2(d) / size(d);
+  }
+
+  virtual ~DavidsonDiagPred() = default;
+};
 
 // clang-format off
 /**
@@ -34,6 +49,8 @@ namespace mpqc {
  * - `void scale(D& y , element_type a)`
  * - `void axpy(D&y , element_tye a, const D& z)`
  * - `void zero(D& x)`
+ * - `std::size_t size(const D& x)`
+ * - `element_type norm2(const D& x)`
  *
  */
 // clang-format on
@@ -93,39 +110,92 @@ class DavidsonDiag {
         B_(),
         subspace_() {}
 
-  ~DavidsonDiag() {
+  virtual ~DavidsonDiag() {
     eigen_vector_.clear();
     HB_.clear();
     B_.clear();
     subspace_.resize(0, 0);
   }
 
-  /// @return all stored eigen vector in Davidson
-  std::deque<value_type, std::allocator<value_type>>& eigen_vector() {
-    return eigen_vector_;
-  }
+  /**
+   *
+   * @tparam Operator  operator that computes the product of H*B
+   *
+   * @param guess initial guess vector
+   * @param op    op(B) should compute HB
+   * @param pred  preconditioner, which inherit from DavidsonDiagPred
+   * @param convergence   convergence threshold
+   * @param max_iter  max number of iteration allowd
+   * @return
+   */
+  template <typename Operator>
+  EigenVector<element_type> solve(value_type& guess, const Operator& op,
+                                  const DavidsonDiagPred<D>* const pred,
+                                  double convergence, std::size_t max_iter) {
+    double norm_e = 1.0;
+    double norm_r = 1.0;
+    std::size_t iter = 0;
+    auto& world = TA::get_default_world();
+
+    EigenVector<element_type> eig = EigenVector<element_type>::Zero(n_roots_);
+
+    while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
+      auto time0 = mpqc::fenced_now(world);
+
+      // compute product of H with guess vector
+      value_type HC = op(guess);
+
+      auto time1 = mpqc::fenced_now(world);
+      EigenVector<element_type> eig_new, norms;
+      std::tie(eig_new, norms) = extrapolate(HC, guess, pred);
+      auto time2 = mpqc::fenced_now(world);
+
+      EigenVector<element_type> delta_e = (eig - eig_new);
+      delta_e = delta_e.cwiseAbs();
+      norm_e =
+          *std::max_element(delta_e.data(), delta_e.data() + delta_e.size());
+      norm_r = *std::max_element(norms.data(), norms.data() + norms.size());
+
+      util::print_davidson_energy_iteration(iter, delta_e, norms, eig_new,
+                                            mpqc::duration_in_s(time0, time1),
+                                            mpqc::duration_in_s(time1, time2));
+
+      eig = eig_new;
+      iter++;
+
+    }  // end of while loop
+
+    if (iter == max_iter) {
+      throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
+                            __FILE__, __LINE__, max_iter, "DavidsonDiag");
+    }
+
+    return eig;
+  };
+
+  /// @return return current eigen vector in Davidson
+  virtual value_type& eigen_vector() { return eigen_vector_.back(); }
 
   // clang-format off
   /**
    *
-   * @tparam Pred preconditioner object, which has void Pred(const element_type & e,D& residual) to update residual
-   *
    * @param HB product with A and guess vector
    * @param B  guess vector
-   * @param pred preconditioner
+   * @param pred preconditioner, which inherit from DavidsonDiagPred
    *
    * @return B updated guess vector
-   * @return updated eigen values
+   * @return updated eigen values, norm of residual
    */
   // clang-format on
-  template <typename Pred>
-  EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
-                                        const Pred& pred) {
+  std::tuple<EigenVector<element_type>, EigenVector<element_type>> extrapolate(
+      value_type& HB, value_type& B, const DavidsonDiagPred<D>* const pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of new vector
     const auto n_b = B.size();
     // size of original subspace
     const auto n_s = subspace_.cols();
+
+    deflation(HB, B);
 
     B_.insert(B_.end(), B.begin(), B.end());
     B.clear();
@@ -207,6 +277,8 @@ class DavidsonDiag {
                                    __LINE__);
         }
 
+//        std::cout << e << std::endl;
+
         for (std::size_t i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
         }
@@ -264,6 +336,7 @@ class DavidsonDiag {
     // R(i) = (H - e(i)I)*B(i)*C(i)
     //      = (HB(i)*C(i) - e(i)*X(i)
     value_type residual(n_roots_);
+    EigenVector<element_type> norms(n_roots_);
     for (std::size_t i = 0; i < n_roots_; ++i) {
       residual[i] = copy(X[i]);
       const auto e_i = -E[i];
@@ -271,6 +344,7 @@ class DavidsonDiag {
       for (std::size_t j = 0; j < n_v; ++j) {
         axpy(residual[i], C(j, i), HB_[j]);
       }
+      norms[i] = pred->norm(residual[i]);
     }
 
     // precondition
@@ -278,9 +352,7 @@ class DavidsonDiag {
     // usually it is D(i) = (e(i) - H_D)^-1 R(i)
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
-    for (std::size_t i = 0; i < n_roots_; i++) {
-      pred(E[i], residual[i]);
-    }
+    pred->operator()(E, residual);
 
     // subspace collapse
     // restart with new vector and most recent eigen vector
@@ -335,10 +407,25 @@ class DavidsonDiag {
     }
 #endif
 
-    return E.segment(0, n_roots_);
+    return std::make_tuple(E.segment(0, n_roots_), norms);
+  }
+
+  /// clean the cached values
+  void reset() {
+    eigen_vector_.clear();
+    HB_.clear();
+    B_.clear();
+    subspace_.resize(0, 0);
   }
 
  private:
+
+  /// this is a interface for SingleStateDavidsonDiag class
+  virtual void deflation(value_type& HB, const value_type& B) const {
+    // do nothing here
+  }
+
+ protected:
   unsigned int n_roots_;
   bool symmetric_;
   unsigned int n_guess_;
@@ -348,6 +435,143 @@ class DavidsonDiag {
   value_type HB_;
   value_type B_;
   RowMatrix<element_type> subspace_;
+};
+
+template <typename D>
+class SingleStateDavidsonDiag : public DavidsonDiag<D> {
+ public:
+  using typename DavidsonDiag<D>::element_type;
+  using typename DavidsonDiag<D>::value_type;
+  using typename DavidsonDiag<D>::result_type;
+
+  SingleStateDavidsonDiag(unsigned int n_roots, double shift,
+                          bool symmetric = true, unsigned int n_guess = 2,
+                          unsigned int max_n_guess = 4,
+                          double vector_threshold = 1.0e-5)
+      : DavidsonDiag<D>(n_roots, symmetric, n_guess, max_n_guess,
+                        vector_threshold),
+        total_roots_(n_roots),
+        shift_(shift) {}
+
+  /// @return return current eigen vector in Davidson
+  value_type& eigen_vector() override  { return  converged_eigen_vector_; }
+
+  /**
+   * This is not a virtual function, it doesn't override DavidsonDiag::solve()
+   *
+   * @tparam Operator  operator that computes the product of H*B
+   *
+   * @param guess initial guess vector
+   * @param op    op(B) should compute HB
+   * @param pred  preconditioner, which inherit from DavidsonDiagPred
+   * @param convergence   convergence threshold
+   * @param max_iter  max number of iteration allowd
+   * @return
+   */
+  template <typename Operator>
+  EigenVector<element_type> solve(value_type& guess, const Operator& op,
+                                  const DavidsonDiagPred<D>* const pred,
+                                  double convergence, std::size_t max_iter) {
+    // set roots in DavidsonDiag as 1, solve roots 1 at a time
+    this->n_roots_ = 1;
+
+    EigenVector<element_type> total_eig =
+        EigenVector<element_type>::Zero(total_roots_);
+
+    TA_ASSERT(guess.size() == total_roots_);
+
+    for (std::size_t i = 0; i < total_roots_; i++) {
+      ExEnv::out0() << "Start solving root " << i + 1 << "\n";
+      std::vector<D> guess_i = {guess[i]};
+
+      double norm_e = 1.0;
+      double norm_r = 1.0;
+      std::size_t iter = 0;
+      auto& world = TA::get_default_world();
+
+      EigenVector<element_type> eig = EigenVector<element_type>::Zero(1);
+
+      while (iter < max_iter &&
+             (norm_r > convergence || norm_e > convergence)) {
+        auto time0 = mpqc::fenced_now(world);
+
+        // compute product of H with guess vector
+        value_type HC = op(guess_i);
+
+        auto time1 = mpqc::fenced_now(world);
+        EigenVector<element_type> eig_new, norms;
+        std::tie(eig_new, norms) = this->extrapolate(HC, guess_i, pred);
+        auto time2 = mpqc::fenced_now(world);
+
+        TA_ASSERT(eig_new.size() == 1);
+        TA_ASSERT(norms.size() == 1);
+
+        EigenVector<element_type> delta_e = (eig - eig_new);
+        delta_e = delta_e.cwiseAbs();
+        norm_e = delta_e[0];
+        norm_r = norms[0];
+
+        util::print_single_state_davidson_energy_iteration(
+            iter, norm_e, norm_r, eig_new[0], mpqc::duration_in_s(time0, time1),
+            mpqc::duration_in_s(time1, time2));
+
+        eig = eig_new;
+        iter++;
+
+      }  // end of while loop
+
+      if (iter == max_iter) {
+        throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
+                              __FILE__, __LINE__, max_iter,
+                              "SingleStateDavidsonDiag");
+      }
+
+      // converged
+      converged_eigen_vector_.push_back(this->eigen_vector_.back()[0]);
+      this->reset();
+
+      total_eig[i] = eig[0];
+      ExEnv::out0() << "Solved root " << i + 1 << " : " << eig[0] << "\n\n";
+    }
+
+    return total_eig;
+  }
+
+ private:
+
+  void deflation(value_type& HB, const value_type& B) const override {
+
+    // size of new vector
+    const auto n_b = B.size();
+    const auto n = converged_eigen_vector_.size();
+
+    RowMatrix<element_type> QB = RowMatrix<element_type>::Zero(n, n_b);
+
+    for (std::size_t i = 0; i < n; i++){
+      for (std::size_t j = 0; j < n_b; j++){
+
+        QB(i,j) = dot_product(converged_eigen_vector_[i], B[j]);
+
+      }
+    }
+
+    for(std::size_t i = 0; i < n_b; i++){
+      D tmp = copy(HB[i]);
+      zero(tmp);
+
+      for (std::size_t j = 0; j < n; j++){
+        axpy(tmp, QB(j,i),converged_eigen_vector_[j]);
+      }
+
+      axpy(HB[i], shift_, tmp);
+
+    }
+
+  }
+
+  std::size_t total_roots_;
+  element_type shift_;
+  value_type converged_eigen_vector_;
 };
 
 }  // namespace mpqc

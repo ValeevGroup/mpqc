@@ -56,23 +56,35 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
 
   EigenVector<double> diagonal = A.diagonal();
 
-  auto pred = [&diagonal](const double& e, Array& guess) {
 
-    auto task = [&diagonal, &e](TA::TensorD& result_tile) {
-      const auto& range = result_tile.range();
-      double norm = 0.0;
-      for (const auto& i : range) {
-        const auto result = result_tile[i] / (e - diagonal[i[0]]);
-        result_tile[i] = result;
-        norm += result * result;
+  struct Pred : public DavidsonDiagPred<Array>{
+
+    Pred(const EigenVector<double> &diagonal) : diagonal_(diagonal) {}
+
+    void operator()(const EigenVector<double> & e, std::vector<Array>& guess) const override {
+      for(std::size_t i = 0; i < guess.size(); i++){
+        auto& ei = e[i];
+        auto& diagonal = this->diagonal_;
+        auto task = [&diagonal, &ei](TA::TensorD& result_tile) {
+          const auto& range = result_tile.range();
+          double norm = 0.0;
+          for (const auto& i : range) {
+            const auto result = result_tile[i] / (ei - diagonal[i[0]]);
+            result_tile[i] = result;
+            norm += result * result;
+          }
+          return std::sqrt(norm);
+        };
+        TA::foreach_inplace(guess[i], task);
+        guess[i].world().gop.fence();
       }
-      return std::sqrt(norm);
-    };
+    }
 
-    TA::foreach_inplace(guess, task);
-    guess.world().gop.fence();
-
+    EigenVector<double> diagonal_;
   };
+
+  auto pred = std::make_unique<Pred>(diagonal);
+
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
   auto i = 0;
@@ -86,7 +98,8 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
       HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
 
-    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
+    EigenVector<double> eig_new, err;
+    std::tie(eig_new,err) = dvd.extrapolate(HB, guess_ta, pred.get());
 
 //        std::cout << "n_vector= " << n_v << "\n";
 //        std::cout << "norm= " << (eig - eig_new).norm() << "\n";
@@ -150,23 +163,33 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
 
   EigenVector<double> diagonal = A.diagonal();
 
-  auto pred = [&diagonal](const double& e, Array& guess) {
+  struct Pred : public DavidsonDiagPred<Array>{
 
-    auto task = [&diagonal, &e](TA::TensorD& result_tile) {
-      const auto& range = result_tile.range();
-      double norm = 0.0;
-      for (const auto& i : range) {
-        const auto result = result_tile[i] / (e - diagonal[i[0]]);
-        result_tile[i] = result;
-        norm += result * result;
+    Pred(const EigenVector<double> &diagonal) : diagonal_(diagonal) {}
+
+    void operator()(const EigenVector<double> & e, std::vector<Array>& guess) const override{
+      for(std::size_t i = 0; i < guess.size(); i++){
+        auto& ei = e[i];
+        auto& diagonal = this->diagonal_;
+        auto task = [&diagonal, &ei](TA::TensorD& result_tile) {
+          const auto& range = result_tile.range();
+          double norm = 0.0;
+          for (const auto& i : range) {
+            const auto result = result_tile[i] / (ei - diagonal[i[0]]);
+            result_tile[i] = result;
+            norm += result * result;
+          }
+          return std::sqrt(norm);
+        };
+        TA::foreach_inplace(guess[i], task);
+        guess[i].world().gop.fence();
       }
-      return std::sqrt(norm);
-    };
+    }
 
-    TA::foreach_inplace(guess, task);
-    guess.world().gop.fence();
-
+    EigenVector<double> diagonal_;
   };
+
+  auto pred = std::make_unique<Pred>(diagonal);
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
   auto i = 0;
@@ -179,7 +202,8 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
       HB[i]("i,j") = A_ta("i,k") * guess_ta[i]("k,j");
     }
 
-    EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta, pred);
+    EigenVector<double> eig_new, err;
+    std::tie(eig_new,err)  = dvd.extrapolate(HB, guess_ta, pred.get());
 
 //        std::cout << eig_new << std::endl;
 //        std::cout << "norm= " << (eig - eig_new).norm() << "\n";

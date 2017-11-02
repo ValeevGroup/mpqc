@@ -31,7 +31,7 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
     case Operator::Type::Coulomb: {
       result = libint2::Operator::coulomb;
     } break;
-    case Operator::Type::Cadf: {
+    case Operator::Type::CADF: {
       result = libint2::Operator::coulomb;
     } break;
     case Operator::Type::cGTG: {
@@ -128,36 +128,33 @@ std::shared_ptr<Basis> index_to_basis(
   }
 }
 
-std::array<std::wstring, 3> get_df_formula(const Formula &formula) {
-  std::array<std::wstring, 3> result;
+std::array<std::wstring, 2> get_df_formula(const Formula &formula) {
+
+  TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
+
+  std::array<std::wstring, 2> result;
 
   // chemical notation
   if (formula.notation() == Formula::Notation::Chemical) {
     std::wstring left = L"( Κ |" + formula.oper().oper_string() + L"| " +
                         formula.bra_indices()[0].name() + L" " +
-                        formula.bra_indices()[1].name() + L" )";
+                        formula.bra_indices()[1].name() + L" )[inv_sqr]";
     std::wstring right = L"( Κ |" + formula.oper().oper_string() + L"| " +
                          formula.ket_indices()[0].name() + L" " +
-                         formula.ket_indices()[1].name() + L" )";
-    std::wstring center =
-        L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
+                         formula.ket_indices()[1].name() + L" )[inv_sqr]";
     result[0] = left;
-    result[1] = center;
-    result[2] = right;
+    result[1] = right;
   }
   // physical notation
   else {
     std::wstring left = L"( Κ |" + formula.oper().oper_string() + L"| " +
                         formula.bra_indices()[0].name() + L" " +
-                        formula.ket_indices()[0].name() + L" )";
+                        formula.ket_indices()[0].name() + L" )[inv_sqr]";
     std::wstring right = L"( Κ |" + formula.oper().oper_string() + L"| " +
                          formula.bra_indices()[1].name() + L" " +
-                         formula.ket_indices()[1].name() + L" )";
-    std::wstring center =
-        L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
+                         formula.ket_indices()[1].name() + L" )[inv_sqr]";
     result[0] = left;
-    result[1] = center;
-    result[2] = right;
+    result[1] = right;
   }
 
   return result;
@@ -244,6 +241,10 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
   std::array<Formula, 3> result;
   Formula h(formula);
   h.set_operator(Operator(L"H"));
+  // H doesn't need DF
+  if(formula.has_option(Formula::Option::DensityFitting)){
+    h.remove_option(Formula::Option::DensityFitting);
+  }
   decltype(h) j(formula);
   j.set_operator_type(Operator::Type::J);
   decltype(h) k(formula);

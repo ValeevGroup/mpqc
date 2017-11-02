@@ -33,7 +33,8 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
    * keywords:
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | n_roots | unsigned int | 3 | number of excitation energy to compute |
+   * | n_roots | unsigned int | 3 | number of states to compute |
+   * | n_guess | unsigned int | n_roots | number of guess states used to compute |
    * | singlets | bool | true | compute singlet excitation energy, only apply to closed-shell system|
    * | triplets | bool | false | compute triplet excitation energy, only apply to closed-shell system|
    *
@@ -45,7 +46,13 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
   ~ExcitationEnergy() = default;
 
   /// @return number of roots
-  unsigned int n_roots() const;
+  std::size_t n_roots() const;
+
+  /// @return number of guess
+  std::size_t n_guess() const;
+
+  /// set the number of roots
+  void set_n_roots(unsigned int n_roots_);
 
   /// @return if do singlets
   bool singlets() const;
@@ -56,7 +63,8 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
  private:
   void do_evaluate() override;
 
-  unsigned int n_roots_;
+  std::size_t n_roots_;
+  std::size_t n_guess_;
   bool singlets_;
   bool triplets_;
 };

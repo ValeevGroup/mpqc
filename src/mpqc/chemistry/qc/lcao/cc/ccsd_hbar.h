@@ -73,14 +73,23 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbAj(
 
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
-  auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
 
   W_IbAj("i,b,a,j") =
-      g_ijab("i,j,a,b") + t1("d,j") * g_iabc("i,b,a,d") -
-      t1("b,l") * g_ijka("l,i,j,a") +
+      g_ijab("i,j,a,b") - t1("b,l") * g_ijka("l,i,j,a") +
       t2("b,d,j,l") * (2.0 * g_ijab("i,l,a,d") - g_ijab("l,i,a,d")) -
       t2("d,b,j,l") * g_ijab("i,l,a,d") -
       t1("d,j") * (t1("b,l") * g_ijab("i,l,a,d"));
+
+  if (df) {
+    auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
+    auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
+
+    W_IbAj("i,b,a,j") += t1("d,j") * Xab("X,b,d") * Xia("X,i,a");
+
+  } else {
+    auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
+    W_IbAj("i,b,a,j") += t1("d,j") * g_iabc("i,b,a,d");
+  }
 
   auto time1 = mpqc::now(world, accurate_time);
   auto time = mpqc::duration_in_s(time0, time1);
@@ -110,12 +119,22 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_IbaJ(
   auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
   auto g_iajb = lcao_factory.compute(L"<i a|G|j b>" + postfix);
   auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
-  auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
 
-  W_IbaJ("i,b,a,j") = -g_iajb("j,a,i,b") - t1("d,j") * g_iabc("i,b,d,a") +
-                      t1("b,l") * g_ijka("i,l,j,a") +
+  W_IbaJ("i,b,a,j") = -g_iajb("j,a,i,b") + t1("b,l") * g_ijka("i,l,j,a") +
                       t2("d,b,j,l") * g_ijab("i,l,d,a") +
                       t1("d,j") * (t1("b,l") * g_ijab("i,l,d,a"));
+
+  if (df) {
+    auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
+    auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
+
+    W_IbaJ("i,b,a,j") -= t1("d,j") * Xia("X,i,d") * Xab("X,b,a");
+
+  } else {
+    auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
+
+    W_IbaJ("i,b,a,j") -= t1("d,j") * g_iabc("i,b,d,a");
+  }
 
   auto time1 = mpqc::now(world, accurate_time);
   auto time = mpqc::duration_in_s(time0, time1);
@@ -267,25 +286,38 @@ TA::DistArray<Tile, Policy> compute_cs_ccsd_W_AbCi(
       - g_iabc("k,b,c,d") * t2("a,d,k,i") + g_iabc("k,a,d,c") * t22("b,d,i,k") -
       g_iabc("k,a,c,d") * t2("b,d,i,k")
 
-      -
-      t1("a,k") * (g_ijab("i,k,b,c") + (t22("d,b,l,i") * g_ijab("k,l,c,d") -
-                                        t2("d,b,l,i") * g_ijab("k,l,d,c"))) +
+      - t1("a,k") * (g_ijab("i,k,b,c") + (t22("d,b,l,i") * g_ijab("k,l,c,d") -
+                                          t2("d,b,l,i") * g_ijab("k,l,d,c"))) +
       t1("b,k") * (-g_iajb("k,a,i,c") + t2("a,d,l,i") * g_ijab("l,k,c,d"));
 
   // if W_AbCd term is computed and stored
   if (W_AbCd.is_initialized()) {
     W_AbCi("a,b,c,i") += t1("d,i") * W_AbCd("a,b,c,d");
   } else {
-    W_AbCi("a,b,c,i") += -t1("d,i") * g_iabc("k,a,d,c") * t1("b,k") -
-                         t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
-                         t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+    if (df) {
+      auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
+      auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
 
-    // integral direct term
-    auto direct_integral = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
-    auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
+      TA::DistArray<Tile, Policy> Xt;
+      Xt("K,b,i") = (0.5 * Xab("K,b,d") - t1("b,k") * Xia("K,k,d")) * t1("d,i");
 
-    W_AbCi("a,b,c,i") += (t1("d,i") * Ca("s,d") * direct_integral("p,q,r,s")) *
-                         Ca("r,b") * Ca("q,c") * Ca("p,a");
+      W_AbCi("a,b,c,i") += Xab("K,a,c") * Xt("K,b,i") +
+                           Xab("K,b,c") * Xt("K,a,i") +
+                           t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+
+    } else {
+      W_AbCi("a,b,c,i") += -t1("d,i") * g_iabc("k,a,d,c") * t1("b,k") -
+                           t1("d,i") * g_iabc("k,b,c,d") * t1("a,k") +
+                           t1("d,i") * g_ijab("k,l,c,d") * tau("a,b,k,l");
+
+      // integral direct term
+      auto direct_integral = ao_factory.compute_direct(L"(μ ν| G|κ λ)");
+      auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
+
+      W_AbCi("a,b,c,i") +=
+          (t1("d,i") * Ca("s,d") * direct_integral("p,q,r,s")) * Ca("r,b") *
+          Ca("q,c") * Ca("p,a");
+    }
   }
 
   auto time1 = mpqc::now(world, accurate_time);
@@ -365,7 +397,8 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
     FIJ = lcao_factory.compute(L"<i|F|j>" + postfix);
     auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
     FIJ("i,j") += t1("c,l") * (2.0 * g_ijka("i,l,j,c") - g_ijka("l,i,j,c")) +
-                  tau("c,d,j,l") * g_ijab_bar("i,l,c,d");
+                  tau("c,d,j,l") * g_ijab_bar("i,l,c,d") -
+                  f_ia("i,a") * t1("a,j");
   }
 
   TA::DistArray<Tile, Policy> FAB;
@@ -376,12 +409,11 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
 
     if (df) {
       //     refactorize with density fitting
-      auto Xia = lcao_factory.compute(L"( Λ |G|i a)");
-      auto Xab = lcao_factory.compute(L"( Λ |G|a b)");
-      auto X = ao_factory.compute(L"( Κ |G| Λ)[inv]");
+      auto Xia = lcao_factory.compute(L"( Λ |G|i a)[inv_sqr]");
+      auto Xab = lcao_factory.compute(L"( Λ |G|a b)[inv_sqr]");
 
-      FAB("a,b") += 2.0 * t1("d,k") * Xia("X,k,d") * X("X,Y") * Xab("Y,a,b") -
-                    t1("d,k") * Xab("X,a,d") * X("X,Y") * Xia("Y,k,b");
+      FAB("a,b") += 2.0 * t1("d,k") * Xia("X,k,d") * Xab("X,a,b") -
+                    t1("d,k") * Xab("X,a,d") * Xia("X,k,b");
 
     } else {
       auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
@@ -397,8 +429,8 @@ compute_cs_ccsd_F(LCAOFactoryBase<Tile, Policy>& lcao_factory,
   return std::make_tuple(FAB, FIA, FIJ);
 }
 
-}  // namespace lcao
 }  // namespace cc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_CC_CCSD_HBAR_H_

@@ -69,6 +69,12 @@ inline void scale(T1T2<T1, T2> &y, Scalar a) {
   scale(y.t2, a);
 };
 
+template <typename T1, typename T2>
+inline std::size_t size(const T1T2<T1,T2>& x) {
+  return size(x.t1) + size(x.t2);
+};
+
+
 }  // namespace cc
 }  // namespace mpqc
 

@@ -42,6 +42,10 @@ class Factory : virtual public DescribedClass {
   Factory(const KeyVal& kv)
       : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
 
+    // if wfn_world was not provided, create one using the contents of the current KeyVal
+    if(!wfn_world_)
+      wfn_world_ = std::make_shared<WavefunctionWorld>(kv);
+
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";

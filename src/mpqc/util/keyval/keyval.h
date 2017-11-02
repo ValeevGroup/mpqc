@@ -459,7 +459,6 @@ class KeyVal {
   /// \brief returns a shared_ptr to the (top) tree
   std::shared_ptr<ptree> top_tree() const { return top_tree_; }
   /// \brief returns a shared_ptr to this (sub)tree
-  /// @param path the path to the subtree
   /// @note the result is aliased against the top tree
   std::shared_ptr<ptree> tree() const;
 
@@ -467,7 +466,15 @@ class KeyVal {
   /// @param path the path
   /// @return true if \c path exists
   bool exists(const key_type& path) const {
-    return exists_(resolve_path(path));
+    std::string resolved_path;
+    bool bad_path = false;
+    try {
+      resolved_path = resolve_path(path);
+    }
+    catch (KeyVal::bad_input&) {
+      bad_path = true;
+    }
+    return bad_path ? false : exists_(resolved_path);
   }
 
   /// check whether the given class exists
@@ -755,6 +762,11 @@ class KeyVal {
   }
   /// @}
 
+  /// @return the path from the root of top tree to this subtree
+  std::string path() const {
+    return path_;
+  }
+
  private:
   std::shared_ptr<ptree> top_tree_;
   // 'dc' = DescribedClass
@@ -829,6 +841,7 @@ class KeyVal {
   /// leading "$" is dropped)
   /// @return the absolute path
   /// @note this does not resolve references
+  /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
   static key_type to_absolute_path(const key_type& path_prefix,
                                    const key_type& path) {
     auto is_ref = path.size() != 0 && path[0] == '$';
@@ -851,6 +864,7 @@ class KeyVal {
   /// leading "$" is dropped)
   /// @return the absolute path
   /// @note this does not resolve references
+  /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
   key_type to_absolute_path(const key_type& path) const {
     return to_absolute_path(path_, path);
   }
@@ -869,6 +883,7 @@ class KeyVal {
   /// normalizes path by 1. converting path to absolute path (see \c
   /// to_absolute_path())
   /// and 2. resolving any refs in the path
+  /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
   key_type resolve_path(const key_type& path) const {
     auto abs_path = to_absolute_path(path);
     auto result = resolve_refs(abs_path);
@@ -981,8 +996,6 @@ class KeyVal {
         : std::runtime_error(_what + "(path=" + path + ")") {}
     virtual ~bad_input() noexcept {}
   };
-
- private:
 };  // KeyVal
 
 /// union of two KeyVal objects

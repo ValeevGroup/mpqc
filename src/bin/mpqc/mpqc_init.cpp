@@ -227,15 +227,23 @@ std::shared_ptr<GetLongOpt> make_options() {
   // parse commandline options
   std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
-  options->usage("[options] input_file.{json|xml|info}");
-  options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
-  options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
+  options->usage("[options] [input_file.{json|xml|info}]\nThe input file name can be given as the last argument unless an option with omitted optional value is used (e.g. -D)");
+  options->enroll("i", GetLongOpt::MandatoryValue,
+                  "the name of the input file");
+  options->enroll("o", GetLongOpt::MandatoryValue,
+                  "the name of the output file");
+  options->enroll("p", GetLongOpt::MandatoryValue,
+                  "prefix for all relative paths in KeyVal");
   options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
-                 ".");
+                  ".");
   options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
-  options->enroll("d", GetLongOpt::NoValue, "start the program and attach a debugger");
-  options->enroll("D", GetLongOpt::NoValue, " if \"debugger\" keyword is not given, create a default debugger");
-  //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
+  options->enroll("d", GetLongOpt::NoValue,
+                  "start the program and attach a debugger");
+  options->enroll("D", GetLongOpt::OptionalValue,
+                  " if \"debugger\" keyword is not given, create a default "
+                  "debugger; an optional JSON string can be given to provide "
+                  "KeyVal ctor input");
+  // options->enroll("c", GetLongOpt::NoValue, "check input then exit");
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
@@ -295,12 +303,15 @@ process_options(const std::shared_ptr<GetLongOpt>& options) {
     std::exit(0);
   }
 
-  // get input file name
+  // get input file name ... can be given as the last option
+  auto input_opt = options->retrieve("i");
   std::string input_filename;
-  if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
-    input_filename = MPQCInit::instance().argv()[options->first_unprocessed_arg()];
-  }
-  else {
+  if (input_opt) {
+    input_filename = *input_opt;
+  } else if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
+    input_filename =
+        MPQCInit::instance().argv()[options->first_unprocessed_arg()];
+  } else {
     options->usage();
     throw std::invalid_argument("input filename not given");
   }

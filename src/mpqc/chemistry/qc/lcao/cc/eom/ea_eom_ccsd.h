@@ -69,54 +69,7 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
     TArray Wiajb;
   };
 
-  // preconditioner in DavidsonDiag, approximate the diagonal of H matrix
-  struct Preconditioner {
-    /// diagonal of F_ij matrix
-    EigenVector<numeric_type> eps_o;
-    /// diagonal of F_ab matrix
-    EigenVector<numeric_type> eps_v;
 
-    Preconditioner(const EigenVector<numeric_type> &eps_O,
-                   const EigenVector<numeric_type> &eps_V)
-        : eps_o(eps_O), eps_v(eps_V) {}
-
-    // default constructor
-    Preconditioner() = default;
-    ~Preconditioner() = default;
-
-    void operator()(const numeric_type &e, GuessVector &guess) const {
-      const auto &eps_v = this->eps_v;
-      const auto &eps_o = this->eps_o;
-
-      auto task1 = [&eps_v, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result = result_tile[i] / (e - eps_v[i[0]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result =
-              result_tile[i] / (e - eps_v[i[0]] - eps_v[i[1]] + eps_o[i[2]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      TA::foreach_inplace(guess.t1, task1);
-      TA::foreach_inplace(guess.t2, task2);
-
-      guess.t1.world().gop.fence();
-    }
-  };
 
   /// @return guess vector of size n_roots as unit vector
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);

@@ -8,7 +8,7 @@ namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-void EOM_CCSD<Tile, Policy>::compute_intermediates() {
+void EOM_CCSD<Tile, Policy>::compute_FWintermediates() {
   ExEnv::out0() << indent << "\nInitialize Intermediates in EOM-CCSD\n";
 
   auto& world = this->wfn_world()->world();

@@ -5,6 +5,8 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_IMPL_H_
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_IMPL_H_
 
+#include "mpqc/chemistry/qc/lcao/cc/eom/eom_preconditioner.h"
+
 namespace mpqc {
 namespace lcao {
 
@@ -122,33 +124,28 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
   double norm_r = 1.0;
 
   /// make preconditioner
-  Preconditioner pred;
+  std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
   {
     EigenVector<numeric_type> eps_o =
         array_ops::array_to_eigen(imds.FIJ).diagonal();
     EigenVector<numeric_type> eps_v =
         array_ops::array_to_eigen(imds.FAB).diagonal();
 
-    pred = Preconditioner(eps_o, eps_v);
+    pred = std::make_shared<cc::IPPred<TArray>>(eps_o, eps_v);
   }
 
-  /// make davidson object
-  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
-                                vector_threshold_);
+  /// make operator
 
-  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
-
-  while (iter < max_iter && norm_r > convergence) {
-    auto time0 = mpqc::fenced_now(world);
-    std::size_t dim = C.size();
+  auto op = [this, &imds](const std::vector<GuessVector>& vec){
+    std::size_t dim = vec.size();
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
     // compute product of H with guess vector
     std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
-      if (C[i].t1.is_initialized() && C[i].t2.is_initialized()) {
-        HC[i].t1 = compute_HS1(C[i].t1, C[i].t2, imds);
-        HC[i].t2 = compute_HS2(C[i].t1, C[i].t2, imds);
+      if (vec[i].t1.is_initialized() && vec[i].t2.is_initialized()) {
+        HC[i].t1 = compute_HS1(vec[i].t1, vec[i].t2, imds);
+        HC[i].t2 = compute_HS2(vec[i].t1, vec[i].t2, imds);
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,
@@ -156,26 +153,17 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
       }
     }
 
-    auto time1 = mpqc::fenced_now(world);
-    EigenVector<double> eig_new = dvd.extrapolate(HC, C, pred);
-    auto time2 = mpqc::fenced_now(world);
+    return HC;
 
-    EigenVector<numeric_type> delta_e = eig - eig_new;
-    norm_r = delta_e.norm();
+  };
 
-    util::print_excitation_energy_iteration(iter, delta_e, eig_new,
-                                            mpqc::duration_in_s(time0, time1),
-                                            mpqc::duration_in_s(time1, time2));
+  /// make davidson object
+  DavidsonDiag<GuessVector> dvd(n_roots, false, 2, max_vector_,
+                                vector_threshold_);
 
-    eig = eig_new;
-    iter++;
+  EigenVector<numeric_type> eig = EigenVector<numeric_type>::Zero(n_roots);
 
-  }  // end of while loop
-
-  if (iter == max_iter) {
-    throw MaxIterExceeded("Davidson Diagonalization Exceeded Max Iteration",
-                          __FILE__, __LINE__, max_iter, "IP-EOM-CCSD");
-  }
+  eig = dvd.solve(C,op,pred.get(),convergence,max_iter);
 
   ExEnv::out0() << "\n";
   util::print_excitation_energy(eig, false);

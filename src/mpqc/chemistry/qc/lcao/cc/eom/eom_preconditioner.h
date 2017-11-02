@@ -81,6 +81,136 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   EigenVector<element_type> eps_v_;
 };
 
+
+// preconditioner of EA-EOM-CCSD approximate the diagonal of H matrix
+template <typename Array>
+class EAPred : public  DavidsonDiagPred<::mpqc::cc::T1T2<Array,Array>>{
+public:
+  using element_type = typename Array::element_type;
+  using Tile = typename Array::value_type;
+  /// diagonal of F_ij matrix
+  EigenVector<element_type> eps_o;
+  /// diagonal of F_ab matrix
+  EigenVector<element_type> eps_v;
+
+  EAPred(const EigenVector<element_type> &eps_O,
+                 const EigenVector<element_type> &eps_V)
+      : eps_o(eps_O), eps_v(eps_V) {}
+
+  // default constructor
+  EAPred() = default;
+  ~EAPred() = default;
+
+  /// override the abstract virtual function
+  virtual void operator()(
+      const EigenVector<element_type> &e,
+      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+    std::size_t n_roots = e.size();
+    TA_ASSERT(n_roots == guess.size());
+    for (std::size_t i = 0; i < n_roots; i++) {
+      compute(e[i], guess[i]);
+    }
+  }
+
+  void compute(const element_type &e, ::mpqc::cc::T1T2<Array, Array> &guess) const {
+    const auto &eps_v = this->eps_v;
+    const auto &eps_o = this->eps_o;
+
+    auto task1 = [&eps_v, e](Tile &result_tile) {
+      const auto &range = result_tile.range();
+      float norm = 0.0;
+      for (const auto &i : range) {
+        const auto result = result_tile[i] / (e - eps_v[i[0]]);
+        result_tile[i] = result;
+        norm += result * result;
+      }
+      return std::sqrt(norm);
+    };
+
+    auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
+      const auto &range = result_tile.range();
+      float norm = 0.0;
+      for (const auto &i : range) {
+        const auto result =
+            result_tile[i] / (e - eps_v[i[0]] - eps_v[i[1]] + eps_o[i[2]]);
+        result_tile[i] = result;
+        norm += result * result;
+      }
+      return std::sqrt(norm);
+    };
+
+    TA::foreach_inplace(guess.t1, task1);
+    TA::foreach_inplace(guess.t2, task2);
+
+    guess.t1.world().gop.fence();
+  }
+};
+
+
+/// preconditioner for IP-EOM-CCSD, approximate the diagonal of H matrix
+template <typename Array>
+class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array,Array>> {
+public:
+  using element_type = typename Array::element_type;
+  using Tile = typename Array::value_type;
+  /// diagonal of F_ij matrix
+  EigenVector<element_type> eps_o;
+  /// diagonal of F_ab matrix
+  EigenVector<element_type> eps_v;
+
+  IPPred(const EigenVector<element_type> &eps_O,
+                 const EigenVector<element_type> &eps_V)
+      : eps_o(eps_O), eps_v(eps_V) {}
+
+  // default constructor
+  IPPred() = default;
+  ~IPPred() = default;
+
+  /// override the abstract virtual function
+  virtual void operator()(
+      const EigenVector<element_type> &e,
+      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+    std::size_t n_roots = e.size();
+    TA_ASSERT(n_roots == guess.size());
+    for (std::size_t i = 0; i < n_roots; i++) {
+      compute(e[i], guess[i]);
+    }
+  }
+
+  void compute(const element_type &e, ::mpqc::cc::T1T2<Array, Array> &guess) const {
+    const auto &eps_v = this->eps_v;
+    const auto &eps_o = this->eps_o;
+
+    auto task1 = [&eps_o, e](Tile &result_tile) {
+      const auto &range = result_tile.range();
+      float norm = 0.0;
+      for (const auto &i : range) {
+        const auto result = result_tile[i] / (e + eps_o[i[0]]);
+        result_tile[i] = result;
+        norm += result * result;
+      }
+      return std::sqrt(norm);
+    };
+
+    auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
+      const auto &range = result_tile.range();
+      float norm = 0.0;
+      for (const auto &i : range) {
+        const auto result =
+            result_tile[i] / (e - eps_v[i[0]] + eps_o[i[1]] + eps_o[i[2]]);
+        result_tile[i] = result;
+        norm += result * result;
+      }
+      return std::sqrt(norm);
+    };
+
+    TA::foreach_inplace(guess.t1, task1);
+    TA::foreach_inplace(guess.t2, task2);
+
+    guess.t1.world().gop.fence();
+  }
+};
+
 /// PNO preconditioner for EE-EOM-CCSD
 template <typename Array>
 class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {

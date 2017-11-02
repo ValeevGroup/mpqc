@@ -177,7 +177,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
-  bool print_detail() const { return verbose_; }
+  bool verbose() const { return verbose_; }
 
   void set_target_precision(double precision) { target_precision_ = precision; }
 
@@ -237,15 +237,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       TArray t1;
       TArray t2;
 
-      if (method_ == "standard") {
-        ccsd_corr_energy_ = compute_ccsd_conventional(t1, t2);
-      } else if (method_ == "df") {
-        ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
-      } else if (method_ == "direct" || method_ == "direct_df") {
-        // initialize direct integral class
+      if (method_ == "direct" || method_ == "direct_df") {
         direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
-        ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
+
+      ccsd_corr_energy_ = compute_ccsd(t1, t2);
 
       T1_ = t1;
       T2_ = t2;
@@ -263,26 +259,54 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   }
 
  protected:
-  // store all the integrals in memory
-  // used as reference for development
-  double compute_ccsd_conventional(TArray &t1, TArray &t2) {
+  double compute_ccsd(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 
-    if (world.rank() == 0) {
-      std::cout << "Use Conventional CCSD Compute" << std::endl;
+    if (method_ == "standard") {
+      mpqc::utility::print_par(world, "Use Conventional CCSD Compute \n");
+    } else if (method_ == "df") {
+      mpqc::utility::print_par(world, "Use DF CCSD Compute \n");
+    } else if (method_ == "direct") {
+      mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
     }
 
     auto tmp_time0 = mpqc::now(world, accurate_time);
+    cc::Integrals<TArray> ints;
+    // fock matrix
+    ints.Fia = this->get_fock_ia();
+    ints.Fij = this->get_fock_ij();
+    ints.Fab = this->get_fock_ab();
     // get all two electron integrals
-    TArray g_abcd = this->get_abcd();
-    TArray g_ijab = this->get_ijab();
-    TArray g_ijkl = this->get_ijkl();
-    TArray g_iajb = this->get_iajb();
-    TArray g_iabc = this->get_iabc();
-    TArray g_aibc = this->get_aibc();
-    TArray g_ijak = this->get_ijak();
-    TArray g_ijka = this->get_ijka();
+    ints.Gijab = this->get_ijab();
+    ints.Gijkl = this->get_ijkl();
+    ints.Giajb = this->get_iajb();
+    ints.Gijka = this->get_ijka();
+
+    if (method_ == "standard" || (method_ == "df" && !reduced_abcd_memory_)) {
+      ints.Gabcd = this->get_abcd();
+      ints.Giabc = this->get_iabc();
+    } else if (method_ == "direct") {
+      ints.Giabc = this->get_iabc();
+    }
+
+    if (df_) {
+      ints.Xai = this->get_Xai();
+      ints.Xij = this->get_Xij();
+      ints.Xab = this->get_Xab();
+    }
+
+    if (method_ == "direct" || method_ == "direct_df") {
+      ints.Ci = this->lcao_factory()
+                    .orbital_registry()
+                    .retrieve(OrbitalIndex(L"i"))
+                    .coefs();
+      ints.Ca = this->lcao_factory()
+                    .orbital_registry()
+                    .retrieve(OrbitalIndex(L"a"))
+                    .coefs();
+    }
+
     this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
     this->lcao_factory().registry().purge_formula(L"(a ν| G |κ λ )");
 
@@ -290,26 +314,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
     mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
-    TArray f_ai = this->get_fock_ai();
-    TArray f_ij = this->get_fock_ij();
-    TArray f_ab = this->get_fock_ab();
-
-    cc::Integrals<TArray> ints;
-    ints.Gabcd = g_abcd;
-    ints.Gijab = g_ijab;
-    ints.Gijkl = g_ijkl;
-    ints.Giajb = g_iajb;
-    ints.Giabc = g_iabc;
-    ints.Gijka = g_ijka;
-    ints.Fia("i,a") = f_ai("a,i");
-    ints.Fij = f_ij;
-    ints.Fab = f_ab;
-
+    TArray f_ai;
+    f_ai("a,i") = ints.Fia("i,a");
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     t1.fill(0.0);
     TArray g_abij;
-    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
+    g_abij("a,b,i,j") = ints.Gijab("i,j,a,b");
     t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
     t2.fill(0.0);
 
@@ -331,367 +342,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
       std::cout << "Target precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
-      std::cout << "PrintDetail: " << verbose_ << std::endl;
+      std::cout << "Verbose: " << verbose_ << std::endl;
       std::cout << "Reduced ABCD Memory Approach: "
                 << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
     }
-
-    // CCSD solver loop
-    mpqc::time_point time0;
-    while (iter < max_iter_) {
-      TArray::wait_for_lazy_cleanup(world);
-
-      // zero out singles if want CCD
-      // TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
-      // r1("a,i") = r1_new("a,i");
-      error = solver_->error(r1, r2);
-
-      // recompute energy
-      E0 = E1;
-      E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
-           TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
-                   2 * tau("a,b,i,j") - tau("b,a,i,j"));
-      dE = std::abs(E0 - E1);
-
-      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
-        tmp_time0 = mpqc::now(world, accurate_time);
-
-        assert(solver_);
-        solver_->update(t1, t2, r1, r2);
-
-        if (verbose_) {
-          mpqc::detail::print_size_info(r2, "R2");
-          mpqc::detail::print_size_info(t2, "T2");
-        }
-
-        // recompute tau
-        tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time,
-                                   "\n");
-        }
-
-        // log the iteration
-        auto time1 = mpqc::fenced_now(world);
-        if (world.rank() == 0 && iter > 0) {
-          auto duration = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd(iter, dE, error, E1, duration);
-        }
-      } else {  // break out of the solver loop, if converged
-        // log the iteration
-        auto time1 = mpqc::fenced_now(world);
-        if (world.rank() == 0) {
-          MPQC_ASSERT(iter > 0);
-          auto duration = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd(iter, dE, error, E1, duration);
-        }
-
-        break;
-      }
-
-      // start iteration timer
-      time0 = mpqc::fenced_now(world);
-
-      auto t1_time0 = mpqc::now(world, accurate_time);
-
-      r1 = cc::compute_cs_ccsd_r1(t1, t2, tau, ints);
-
-      auto t1_time1 = mpqc::now(world, accurate_time);
-      auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t1 total time: ", t1_time, "\n");
-      }
-
-      // intermediates for t2
-      // external index i j a b
-
-      auto t2_time0 = mpqc::now(world, accurate_time);
-
-      r2 = cc::compute_cs_ccsd_r2(t1, t2, tau, ints);
-
-      auto t2_time1 = mpqc::now(world, accurate_time);
-      auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
-      }
-
-      ++iter;
-    }  // CCSD solver loop
-    if (iter >= max_iter_) {
-      utility::print_par(this->wfn_world()->world(),
-                         "\n Warning!! Exceed Max Iteration! \n");
-    }
-    if (world.rank() == 0) {
-      std::cout << "CCSD Energy  " << E1 << std::endl;
-    }
-    return E1;
-  }
-
- private:
-  double compute_ccsd_df(TArray &t1, TArray &t2) {
-    auto &world = this->wfn_world()->world();
-    bool accurate_time = this->lcao_factory().accurate_time();
-
-    if (world.rank() == 0) {
-      std::cout << "Use DF CCSD Compute" << std::endl;
-    }
-
-    auto tmp_time0 = mpqc::now(world, accurate_time);
-    // get all two electron integrals
-    TArray g_ijab = this->get_ijab();
-    TArray g_ijkl = this->get_ijkl();
-    TArray g_iajb = this->get_iajb();
-    TArray g_ijak = this->get_ijak();
-    TArray g_ijka = this->get_ijka();
-
-    TArray g_abcd;
-    TArray g_iabc;
-    if (!reduced_abcd_memory_) {
-      g_abcd = this->get_abcd();
-      g_iabc = this->get_iabc();
-    }
-
-    TArray X_ai = this->get_Xai();
-    TArray X_ij = this->get_Xij();
-    TArray X_ab = this->get_Xab();
-
-    TArray f_ai = this->get_fock_ai();
-    TArray f_ij = this->get_fock_ij();
-    TArray f_ab = this->get_fock_ab();
-
-    cc::Integrals<TArray> ints;
-    ints.Gabcd = g_abcd;
-    ints.Gijab = g_ijab;
-    ints.Gijkl = g_ijkl;
-    ints.Giajb = g_iajb;
-    ints.Giabc = g_iabc;
-    ints.Gijka = g_ijka;
-    ints.Fia("i,a") = f_ai("a,i");
-    ints.Fij = f_ij;
-    ints.Fab = f_ab;
-    ints.Xai = X_ai;
-    ints.Xab = X_ab;
-    ints.Xij = X_ij;
-
-    auto tmp_time1 = mpqc::now(world, accurate_time);
-    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
-
-    // initial guess = 0
-    t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
-    t1.fill(0.0);
-    TArray g_abij;
-    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
-    t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
-    t2.fill(0.0);
-
-    TArray tau;
-    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-
-    double E0;
-    double E1 = 0.0;
-    double dE;
-
-    // optimize t1 and t2
-    std::size_t iter = 0ul;
-    double error = 1.0;
-    TArray r1(f_ai);
-    TArray r2(g_abij);
-
-    if (world.rank() == 0) {
-      std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Target Precision: " << target_precision_ << std::endl;
-      std::cout << "AccurateTime: " << accurate_time << std::endl;
-      std::cout << "PrintDetail: " << verbose_ << std::endl;
-      std::cout << "Reduced ABCD Memory Approach: "
-                << (reduced_abcd_memory_ ? "Yes" : "No") << std::endl;
-    }
-
-    // CCSD solver loop
-    mpqc::time_point time0;
-    while (iter < max_iter_) {
-      TArray::wait_for_lazy_cleanup(world);
-
-      // zero out singles if want CCD
-      // TArray r1_new(r1.world(), r1.trange(), r1.shape()); r1_new.fill(0.0);
-      // r1("a,i") = r1_new("a,i");
-      error = solver_->error(r1, r2);
-
-      // recompute energy
-      E0 = E1;
-      E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
-           TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
-                   2 * tau("a,b,i,j") - tau("b,a,i,j"));
-      dE = std::abs(E0 - E1);
-
-      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
-        tmp_time0 = mpqc::now(world, accurate_time);
-
-        assert(solver_);
-        solver_->update(t1, t2, r1, r2);
-
-        if (verbose_) {
-          mpqc::detail::print_size_info(r2, "R2");
-          mpqc::detail::print_size_info(t2, "T2");
-        }
-
-        // recompute tau
-        tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-        tmp_time1 = mpqc::now(world, accurate_time);
-        tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (verbose_) {
-          mpqc::utility::print_par(world, "Solver::update time: ", tmp_time,
-                                   "\n");
-        }
-
-        // log the iteration
-        auto time1 = mpqc::fenced_now(world);
-        if (world.rank() == 0 && iter > 0) {
-          auto duration = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd(iter, dE, error, E1, duration);
-        }
-      } else {  // break out of the solver loop, if converged
-        // log the iteration
-        auto time1 = mpqc::fenced_now(world);
-        if (world.rank() == 0) {
-          MPQC_ASSERT(iter > 0);
-          auto duration = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd(iter, dE, error, E1, duration);
-        }
-
-        break;
-      }
-
-      // start iteration timer
-      time0 = mpqc::fenced_now(world);
-
-      auto t1_time0 = mpqc::now(world, accurate_time);
-
-      r1 = cc::compute_cs_ccsd_r1_df(t1, t2, tau, ints);
-
-      auto h_ki = ints.FIJ;
-      auto h_ac = ints.FAB;
-
-      auto t1_time1 = mpqc::now(world, accurate_time);
-      auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t1 total time: ", t1_time, "\n");
-      }
-
-      // intermediates for t2
-      // external index i j a b
-
-      auto t2_time0 = mpqc::now(world, accurate_time);
-
-      r2 = cc::compute_cs_ccsd_r2_df(t1, t2, tau, ints);
-
-      auto t2_time1 = mpqc::now(world, accurate_time);
-      auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-      if (verbose_) {
-        mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
-      }
-
-      ++iter;
-    }  // CCSD solver loop
-
-    if (iter >= max_iter_) {
-      utility::print_par(this->wfn_world()->world(),
-                         "\n Warning!! Exceed Max Iteration! \n");
-    }
-    if (world.rank() == 0) {
-      std::cout << "CCSD Energy  " << E1 << std::endl;
-    }
-    return E1;
-  }
-
-  double compute_ccsd_direct(TArray &t1, TArray &t2) {
-    auto &world = this->wfn_world()->world();
-    // get mo coefficient
-    TArray ca = this->get_Ca();
-    TArray ci = this->get_Ci();
-
-    if (this->df_) {
-      mpqc::utility::print_par(world, "Use Direct-DF CCSD Compute \n");
-    } else {
-      mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
-    }
-
-    bool accurate_time = this->lcao_factory().accurate_time();
-
-    auto tmp_time0 = mpqc::now(world, accurate_time);
-
-    // get three center integral
-    TArray Xab, Xij, Xai;
-    if (this->df_) {
-      Xab = this->get_Xab();
-      Xij = this->get_Xij();
-      Xai = this->get_Xai();
-    }
-    // get all integrals
-    TArray g_ijkl = this->get_ijkl();
-    TArray g_ijab = this->get_ijab();
-    TArray g_iajb = this->get_iajb();
-    TArray g_ijka = this->get_ijka();
-    TArray g_ijak = this->get_ijak();
-    TArray g_iabc;
-    if (!this->df_) {
-      g_iabc = this->get_iabc();
-    }
-    TArray f_ai = this->get_fock_ai();
-    TArray f_ij = this->get_fock_ij();
-    TArray f_ab = this->get_fock_ab();
-    this->lcao_factory().registry().purge_formula(L"(i ν| G |κ λ )");
-
-    auto tmp_time1 = mpqc::now(world, accurate_time);
-    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
-
-    cc::Integrals<TArray> ints;
-    ints.Gijab = g_ijab;
-    ints.Gijkl = g_ijkl;
-    ints.Giajb = g_iajb;
-    ints.Giabc = g_iabc;
-    ints.Gijka = g_ijka;
-    ints.Fia("i,a") = f_ai("a,i");
-    ints.Fij = f_ij;
-    ints.Fab = f_ab;
-    ints.Xai = Xai;
-    ints.Xab = Xab;
-    ints.Xij = Xij;
-    ints.Ci = ci;
-    ints.Ca = ca;
-
-    // initial guess = 0
-    t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
-    t1.fill(0.0);
-    TArray g_abij;
-    g_abij("a,b,i,j") = g_ijab("i,j,a,b");
-    t2 = TArray(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
-    t2.fill(0.0);
-
-    TArray tau;
-    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-
-    double E0;
-    double E1 = 0.0;
-    double dE;
-
-    // optimize t1 and t2
-    std::size_t iter = 0ul;
-    double error = 1.0;
-    TArray r1(f_ai);
-    TArray r2(g_abij);
-
-    if (world.rank() == 0) {
-      std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Target Precision: " << target_precision_ << std::endl;
-      std::cout << "AccurateTime: " << accurate_time << std::endl;
-      std::cout << "PrintDetail: " << verbose_ << std::endl;
-    };
 
     // CCSD solver loop
     mpqc::time_point time0;
@@ -717,11 +371,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         assert(solver_);
         solver_->update(t1, t2, r1, r2);
 
-        if (verbose_) {
-          mpqc::detail::print_size_info(r2, "R2");
-          mpqc::detail::print_size_info(t2, "T2");
-        }
-
         // recompute tau
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
@@ -734,45 +383,40 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         // log the iteration
         auto time1 = mpqc::fenced_now(world);
         if (world.rank() == 0 && iter > 0) {
-          auto duration_t = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
-                                    duration_t);
+          auto duration = mpqc::duration_in_s(time0, time1);
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
       } else {  // break out of the solver loop, if converged
         // log the iteration
         auto time1 = mpqc::fenced_now(world);
+        MPQC_ASSERT(iter > 0);
         if (world.rank() == 0) {
-          MPQC_ASSERT(iter > 0);
-          auto duration_t = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
-                                    duration_t);
+          auto duration = mpqc::duration_in_s(time0, time1);
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
-
         break;
       }
 
       // start iteration timer
       time0 = mpqc::fenced_now(world);
 
-      TArray u2_u11;
-      // compute half transformed intermediates
+      TArray U;
       auto tu0 = mpqc::now(world, accurate_time);
-      { u2_u11 = this->compute_u2_u11(t2, t1); }
+      if (method_ == "direct" || method_ == "direct_df") {
+        U = compute_u2_u11(t2, t1);
+      }
       auto tu1 = mpqc::now(world, accurate_time);
       duration_u = mpqc::duration_in_s(tu0, tu1);
 
-      if (verbose_) {
-        mpqc::detail::print_size_info(u2_u11, "U_aaoo");
-        mpqc::utility::print_par(world, "u term time: ", duration_u, "\n");
-      } else if (iter == 0) {
-        mpqc::detail::print_size_info(u2_u11, "U_aaoo");
-      }
-
       auto t1_time0 = mpqc::now(world, accurate_time);
-      r1 = cc::compute_cs_ccsd_r1(t1,t2,tau,ints,u2_u11);
 
-      auto h_ac = ints.FAB;
-      auto h_ki = ints.FIJ;
+      if (method_ == "standard") {
+        r1 = cc::compute_cs_ccsd_r1(t1, t2, tau, ints);
+      } else if (method_ == "df") {
+        r1 = cc::compute_cs_ccsd_r1_df(t1, t2, tau, ints);
+      } else if (method_ == "direct" || method_ == "direct_df") {
+        r1 = cc::compute_cs_ccsd_r1(t1, t2, tau, ints, U);
+      }
 
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
@@ -782,14 +426,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
       // intermediates for t2
       // external index i j a b
+
       auto t2_time0 = mpqc::now(world, accurate_time);
 
-
-      if(this->df_){
-        r2 = cc::compute_cs_ccsd_r2_df(t1,t2,tau,ints,u2_u11);
-      }
-      else{
-        r2 = cc::compute_cs_ccsd_r2(t1,t2,tau,ints,u2_u11);
+      if (method_ == "standard") {
+        r2 = cc::compute_cs_ccsd_r2(t1, t2, tau, ints);
+      } else if (method_ == "df") {
+        r2 = cc::compute_cs_ccsd_r2_df(t1, t2, tau, ints);
+      } else if (method_ == "direct") {
+        r2 = cc::compute_cs_ccsd_r2(t1, t2, tau, ints, U);
+      } else {
+        r2 = cc::compute_cs_ccsd_r2_df(t1, t2, tau, ints, U);
       }
 
       auto t2_time1 = mpqc::now(world, accurate_time);
@@ -805,29 +452,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                          "\n Warning!! Exceed Max Iteration! \n");
     }
     if (world.rank() == 0) {
-      std::cout << "CCSD Energy     " << E1 << std::endl;
+      std::cout << "CCSD Energy  " << E1 << std::endl;
     }
     return E1;
   }
 
  protected:
-  /// get mo coefficient
-  /// occ part
-  const TArray get_Ci() {
-    return this->lcao_factory()
-        .orbital_registry()
-        .retrieve(OrbitalIndex(L"i"))
-        .coefs();
-  }
-
-  /// vir part
-  const TArray get_Ca() {
-    return this->lcao_factory()
-        .orbital_registry()
-        .retrieve(OrbitalIndex(L"a"))
-        .coefs();
-  }
-
   /// get three center integral (X|ab)
   const TArray get_Xab() {
     return this->lcao_factory().compute(L"(Κ|G|a b)[inv_sqr]");
@@ -870,18 +500,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     return this->lcao_factory().compute(L"<i a|G|b c>" + postfix);
   }
 
-  /// <ai|bc>
-  virtual const TArray get_aibc() {
-    std::wstring postfix = df_ ? L"[df]" : L"";
-    return this->lcao_factory().compute(L"<a i|G|b c>" + postfix);
-  }
-
-  /// <ij|ak>
-  virtual const TArray get_ijak() {
-    std::wstring postfix = df_ ? L"[df]" : L"";
-    return this->lcao_factory().compute(L"<i j|G|a k>" + postfix);
-  }
-
   /// <ia|jb>
   virtual const TArray get_iajb() {
     std::wstring postfix = df_ ? L"[df]" : L"";
@@ -894,10 +512,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     return this->lcao_factory().compute(L"<i j|G|k a>" + postfix);
   }
 
-  /// <a|f|i>
-  virtual const TArray get_fock_ai() {
+  /// <i|f|a>
+  virtual const TArray get_fock_ia() {
     std::wstring postfix = df_ ? L"[df]" : L"";
-    return this->lcao_factory().compute(L"<a|F|i>" + postfix);
+    return this->lcao_factory().compute(L"<i|F|a>" + postfix);
   }
 
   /// <i|f|j>
@@ -929,7 +547,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   /// @return U tensor
   TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
     if (direct_ao_array_.array().is_initialized()) {
-      TArray Ca = get_Ca();
+      TArray Ca = this->lcao_factory()
+                      .orbital_registry()
+                      .retrieve(OrbitalIndex(L"a"))
+                      .coefs();
+      ;
       TArray tc;
       TArray u2_u11;
       tc("i,q") = Ca("q,c") * t1("c,i");

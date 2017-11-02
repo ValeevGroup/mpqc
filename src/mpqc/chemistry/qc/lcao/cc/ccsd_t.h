@@ -646,7 +646,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     TA::set_default_world(global_world);
 
-    if (this->print_detail()) {
+    if (this->verbose()) {
       // loop over all rank and print
       for (auto i = 0; i < size; ++i) {
         global_world.gop.fence();

@@ -261,7 +261,6 @@ Gamma-Point MP2 Energy = -0.0152110243451564
         "molecule": "$:unitcell",
         "wfn_world": "$:wfn_world",
         "ref": "$:scf",
-        "print_detail": "false",
         "occ_block_size": "1",
         "unocc_block_size": "1"
     },

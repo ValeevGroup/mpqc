@@ -103,7 +103,7 @@ IP_EOM_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
 
     if (guess_vector[i][0].is_local(tile_idx)) {
       auto tile = guess_vector[i][0].find(tile_idx).get();
-      tile[element_idx] = numeric_type(1.0);
+      tile[element_idx] = numeric_type(0.98);
     }
     guess_vector[i][0].truncate();
 

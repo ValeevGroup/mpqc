@@ -1,0 +1,38 @@
+{
+  "units": "2010CODATA",
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "h2o.xyz",
+    "attach_hydrogen" : false,
+    "charge": 0,
+    "n_cluster": 2
+  },
+  "obs": {
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:obs"
+  },
+  "scf":{
+    "type": "Direct-RHF",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "EA-EOM-CCSD",
+    "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
+    "ref": "$:scf",
+    "method" : "standard",
+    "occ_block_size" : 4,
+    "unocc_block_size" : 4
+  },
+  "property" : {
+    "type" : "ExcitationEnergy",
+    "precision" : "1e-9",
+    "n_roots" : 2,
+    "wfn" : "$:wfn"
+  }
+}

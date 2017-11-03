@@ -20,7 +20,7 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
                     public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
+  using GuessVector = ::mpqc::cc::TPack<TArray>;
   using numeric_type = typename Tile::numeric_type;
 
   // clang-format off
@@ -38,7 +38,7 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
 
   EA_EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
-    vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+    vector_threshold_ = kv.value<double>("vector_threshold", 0);
   }
 
   void obsolete() override { CCSD<Tile, Policy>::obsolete(); }

@@ -327,7 +327,7 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
     TArray f_ab = this->get_fock_ab();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+    TArray d1 = detail::create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
                                           *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
@@ -336,7 +336,7 @@ class CCSDT : public LCAOWavefunction<Tile, Policy>,
     {
       TArray g_abij;
       g_abij("a,b,i,j") = g_ijab("i,j,a,b");
-      t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
+      t2 = detail::d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
     }
 
 

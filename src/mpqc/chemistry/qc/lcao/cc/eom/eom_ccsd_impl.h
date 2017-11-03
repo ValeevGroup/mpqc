@@ -243,9 +243,10 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
   std::vector<GuessVector> C(n_guess);
   auto t2 = this->t2();
   for (std::size_t i = 0; i < n_guess; i++) {
-    C[i].[0]("a,i") = cis_vector[i]("i,a");
-    C[i].[0] = TArray(t2.world(), t2.trange(), t2.shape());
-    C[i].[0].fill(0.0);
+    C[i] = ::mpqc::cc::TPack<TArray>(2);
+    C[i][0]("a,i") = cis_vector[i]("i,a");
+    C[i][1] = TArray(t2.world(), t2.trange(), t2.shape());
+    C[i][1].fill(0.0);
   }
 
   /// make preconditioner
@@ -324,6 +325,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
     std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
       if (vec[i][0].is_initialized() && vec[i][1].is_initialized()) {
+        HC[i] = ::mpqc::cc::TPack<TArray>(2);
         HC[i][0] = compute_HSS_HSD_C(vec[i][0], vec[i][1], imds);
         HC[i][1] = compute_HDS_HDD_C(vec[i][0], vec[i][1], imds);
 
@@ -364,10 +366,10 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
   util::print_excitation_energy(eig, false);
 
   for (std::size_t i = 0; i < n_roots; i++) {
-    auto t1_dominants = array_abs_max_n_index(eig_vector[i].t1, 5);
+    auto t1_dominants = array_abs_max_n_index(eig_vector[i][0], 5);
 
     /// double the size due to permutation symmetry in t2
-    auto t2_dominants = array_abs_max_n_index(eig_vector[i].t2, 5);
+    auto t2_dominants = array_abs_max_n_index(eig_vector[i][1], 5);
 
     ExEnv::out0() << "Dominant determinants of excited wave function " << i + 1
                   << "\n";

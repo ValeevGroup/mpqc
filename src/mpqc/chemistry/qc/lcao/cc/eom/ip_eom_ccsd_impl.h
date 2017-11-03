@@ -13,6 +13,9 @@ namespace lcao {
 template <typename Tile, typename Policy>
 void IP_EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
+  if(vector_threshold_ == 0.0){
+    vector_threshold_ = 10*target_precision;
+  }
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 
@@ -89,25 +92,26 @@ IP_EOM_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
       TA::Tensor<float>(trange_caij.tiles_range(), 0.0), trange_caij);
 
   for (std::size_t i = 0; i < n_roots; ++i) {
+    guess_vector[i] = ::mpqc::cc::TPack<TArray>(2);
     // Ci
-    guess_vector[i].t1 = TA::DistArray<Tile, Policy>(world, trange_ci, shape_o);
-    guess_vector[i].t1.fill(0.0);
+    guess_vector[i][0] = TA::DistArray<Tile, Policy>(world, trange_ci, shape_o);
+    guess_vector[i][0].fill(0.0);
     // make unit vector
     std::vector<std::size_t> element_idx = {n_o - i - 1};
 
     auto tile_idx = trange_ci.element_to_tile(element_idx);
 
-    if (guess_vector[i].t1.is_local(tile_idx)) {
-      auto tile = guess_vector[i].t1.find(tile_idx).get();
+    if (guess_vector[i][0].is_local(tile_idx)) {
+      auto tile = guess_vector[i][0].find(tile_idx).get();
       tile[element_idx] = numeric_type(1.0);
     }
-    guess_vector[i].t1.truncate();
+    guess_vector[i][0].truncate();
 
     // Caij
-    guess_vector[i].t2 =
+    guess_vector[i][1] =
         TA::DistArray<Tile, Policy>(world, trange_caij, shape_voo);
-    guess_vector[i].t2.fill(0.0);
-    guess_vector[i].t2.truncate();
+    guess_vector[i][1].fill(0.0);
+    guess_vector[i][1].truncate();
   }
   return guess_vector;
 }
@@ -140,9 +144,10 @@ IP_EOM_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
     // compute product of H with guess vector
     std::vector<GuessVector> HC(dim);
     for (std::size_t i = 0; i < dim; ++i) {
-      if (vec[i].t1.is_initialized() && vec[i].t2.is_initialized()) {
-        HC[i].t1 = compute_HS1(vec[i].t1, vec[i].t2, imds);
-        HC[i].t2 = compute_HS2(vec[i].t1, vec[i].t2, imds);
+      if (vec[i][0].is_initialized() && vec[i][1].is_initialized()) {
+        HC[i] = ::mpqc::cc::TPack<TArray>(2);
+        HC[i][0] = compute_HS1(vec[i][0], vec[i][1], imds);
+        HC[i][1] = compute_HS2(vec[i][0], vec[i][1], imds);
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,

@@ -13,8 +13,8 @@
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/core/exception.h"
 #include "mpqc/util/core/exenv.h"
-#include "mpqc/util/core/print.h"
-#include "mpqc/util/core/time.h"
+#include "mpqc/util/misc/print.h"
+#include "mpqc/util/misc/time.h"
 
 namespace mpqc {
 

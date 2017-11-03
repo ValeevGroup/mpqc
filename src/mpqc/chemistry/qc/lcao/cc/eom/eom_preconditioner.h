@@ -15,7 +15,7 @@ namespace cc {
 /// preconditioner in DavidsonDiag for EA-EOM-CCSD, approximate the diagonal
 /// H_bar matrix
 template <typename Array>
-class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+class EEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
   using element_type = typename Array::element_type;
   using Tile = typename Array::value_type;
@@ -32,7 +32,7 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   /// override the abstract virtual function
   virtual void operator()(
       const EigenVector<element_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+      std::vector<::mpqc::cc::TPack<Array>> &guess) const override {
     std::size_t n_roots = e.size();
     TA_ASSERT(n_roots == guess.size());
     for (std::size_t i = 0; i < n_roots; i++) {
@@ -41,7 +41,7 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   }
 
   void compute(const element_type &e,
-               ::mpqc::cc::T1T2<Array, Array> &guess) const {
+               ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v_;
     const auto &eps_o = this->eps_o_;
 
@@ -68,10 +68,10 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       return std::sqrt(norm);
     };
 
-    TA::foreach_inplace(guess.t1, task1);
-    TA::foreach_inplace(guess.t2, task2);
+    TA::foreach_inplace(guess[0], task1);
+    TA::foreach_inplace(guess[1], task2);
 
-    guess.t1.world().gop.fence();
+    guess[0].world().gop.fence();
   }
 
  private:
@@ -83,7 +83,7 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
 
 // preconditioner of EA-EOM-CCSD approximate the diagonal of H matrix
 template <typename Array>
-class EAPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+class EAPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
   using element_type = typename Array::element_type;
   using Tile = typename Array::value_type;
@@ -103,7 +103,7 @@ class EAPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   /// override the abstract virtual function
   virtual void operator()(
       const EigenVector<element_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+      std::vector<::mpqc::cc::TPack<Array>> &guess) const override {
     std::size_t n_roots = e.size();
     TA_ASSERT(n_roots == guess.size());
     for (std::size_t i = 0; i < n_roots; i++) {
@@ -112,7 +112,7 @@ class EAPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   }
 
   void compute(const element_type &e,
-               ::mpqc::cc::T1T2<Array, Array> &guess) const {
+               ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -139,16 +139,16 @@ class EAPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       return std::sqrt(norm);
     };
 
-    TA::foreach_inplace(guess.t1, task1);
-    TA::foreach_inplace(guess.t2, task2);
+    TA::foreach_inplace(guess[0], task1);
+    TA::foreach_inplace(guess[1], task2);
 
-    guess.t1.world().gop.fence();
+    guess[0].world().gop.fence();
   }
 };
 
 /// preconditioner for IP-EOM-CCSD, approximate the diagonal of H matrix
 template <typename Array>
-class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
   using element_type = typename Array::element_type;
   using Tile = typename Array::value_type;
@@ -168,7 +168,7 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   /// override the abstract virtual function
   virtual void operator()(
       const EigenVector<element_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+      std::vector<::mpqc::cc::TPack<Array>> &guess) const override {
     std::size_t n_roots = e.size();
     TA_ASSERT(n_roots == guess.size());
     for (std::size_t i = 0; i < n_roots; i++) {
@@ -177,7 +177,7 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   }
 
   void compute(const element_type &e,
-               ::mpqc::cc::T1T2<Array, Array> &guess) const {
+               ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -204,16 +204,16 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
       return std::sqrt(norm);
     };
 
-    TA::foreach_inplace(guess.t1, task1);
-    TA::foreach_inplace(guess.t2, task2);
+    TA::foreach_inplace(guess[0], task1);
+    TA::foreach_inplace(guess[1], task2);
 
-    guess.t1.world().gop.fence();
+    guess[0].world().gop.fence();
   }
 };
 
 /// PNO preconditioner for EE-EOM-CCSD
 template <typename Array>
-class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -241,7 +241,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
 
   virtual void operator()(
       const EigenVector<typename Tile::numeric_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const override {
+      std::vector<::mpqc::cc::TPack<Array>> &guess) const override {
     TA_ASSERT(e.size() == guess.size());
     //    TA_ASSERT(e.size() == n_roots_);
 
@@ -254,9 +254,9 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
 
   /// override the default norm function
   virtual typename Tile::numeric_type norm(
-      const ::mpqc::cc::T1T2<Array, Array> &t1t2) const override {
-    auto r1_reblock = detail::reblock_t1(t1t2.t1, reblock_i_, reblock_a_);
-    auto r2_reblock = detail::reblock_t2(t1t2.t2, reblock_i_, reblock_a_);
+      const ::mpqc::cc::TPack<Array> &t1t2) const override {
+    auto r1_reblock = detail::reblock_t1(t1t2[0], reblock_i_, reblock_a_);
+    auto r2_reblock = detail::reblock_t2(t1t2[1], reblock_i_, reblock_a_);
 
     detail::R1SquaredNormReductionOp<Array> op1(osvs_);
     detail::R2SquaredNormReductionOp<Array> op2(pnos_);
@@ -273,24 +273,24 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
   double tosv() const { return tosv_; }
 
   void compute(const typename Tile::numeric_type &e,
-               ::mpqc::cc::T1T2<Array, Array> &guess) const {
+               ::mpqc::cc::TPack<Array> &guess) const {
     // reblock
-    guess.t1 = detail::reblock_t1(guess.t1, reblock_i_, reblock_a_);
-    guess.t2 = detail::reblock_t2(guess.t2, reblock_i_, reblock_a_);
+    guess[0] = detail::reblock_t1(guess[0], reblock_i_, reblock_a_);
+    guess[1] = detail::reblock_t2(guess[1], reblock_i_, reblock_a_);
 
     // pno update
-    guess.t1 =
-        detail::pno_jacobi_update_t1(guess.t1, eps_o_, F_osv_diag_, osvs_, -e);
-    guess.t2 =
-        detail::pno_jacobi_update_t2(guess.t2, eps_o_, F_pno_diag_, pnos_, -e);
+    guess[0] =
+        detail::pno_jacobi_update_t1(guess[0], eps_o_, F_osv_diag_, osvs_, -e);
+    guess[1] =
+        detail::pno_jacobi_update_t2(guess[1], eps_o_, F_pno_diag_, pnos_, -e);
 
     // unblock
-    guess.t1 = detail::unblock_t1(guess.t1, reblock_i_, reblock_a_);
-    guess.t2 = detail::unblock_t2(guess.t2, reblock_i_, reblock_a_);
+    guess[0] = detail::unblock_t1(guess[0], reblock_i_, reblock_a_);
+    guess[1] = detail::unblock_t2(guess[1], reblock_i_, reblock_a_);
 
     // change the sign
-    guess.t1("a,i") = -guess.t1("a,i");
-    guess.t2("a,b,i,j") = -guess.t2("a,b,i,j");
+    guess[0]("a,i") = -guess[0]("a,i");
+    guess[1]("a,b,i,j") = -guess[1]("a,b,i,j");
   }
 
   void init_reblock(const Array &T2) {
@@ -393,7 +393,7 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
 
 template <typename Array>
 class StateSpecificPNOEEPred
-    : public DavidsonDiagPred<::mpqc::cc::T1T2<Array, Array>> {
+    : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -451,7 +451,7 @@ class StateSpecificPNOEEPred
 
   virtual void operator()(
       const EigenVector<typename Tile::numeric_type> &e,
-      std::vector<::mpqc::cc::T1T2<Array, Array>> &guess) const {
+      std::vector<::mpqc::cc::TPack<Array>> &guess) const {
     TA_ASSERT(e.size() == guess.size());
     TA_ASSERT(e.size() == n_roots_);
 
@@ -462,24 +462,24 @@ class StateSpecificPNOEEPred
   }
 
   void compute(std::size_t i, const typename Tile::numeric_type &e,
-               ::mpqc::cc::T1T2<Array, Array> &guess) const {
+               ::mpqc::cc::TPack<Array> &guess) const {
     // reblock
-    guess.t1 = detail::reblock_t1(guess.t1, reblock_i_, reblock_a_);
-    guess.t2 = detail::reblock_t2(guess.t2, reblock_i_, reblock_a_);
+    guess[0] = detail::reblock_t1(guess[0], reblock_i_, reblock_a_);
+    guess[1] = detail::reblock_t2(guess[1], reblock_i_, reblock_a_);
 
     // pno update
-    guess.t1 = detail::pno_jacobi_update_t1(guess.t1, eps_o_, F_osv_diag_[i],
+    guess[0] = detail::pno_jacobi_update_t1(guess[0], eps_o_, F_osv_diag_[i],
                                             osvs_[i], -e);
-    guess.t2 = detail::pno_jacobi_update_t2(guess.t2, eps_o_, F_pno_diag_[i],
+    guess[1] = detail::pno_jacobi_update_t2(guess[1], eps_o_, F_pno_diag_[i],
                                             pnos_[i], -e);
 
     // unblock
-    guess.t1 = detail::unblock_t1(guess.t1, reblock_i_, reblock_a_);
-    guess.t2 = detail::unblock_t2(guess.t2, reblock_i_, reblock_a_);
+    guess[0] = detail::unblock_t1(guess[0], reblock_i_, reblock_a_);
+    guess[1] = detail::unblock_t2(guess[1], reblock_i_, reblock_a_);
 
     // change the sign
-    guess.t1("a,i") = -guess.t1("a,i");
-    guess.t2("a,b,i,j") = -guess.t2("a,b,i,j");
+    guess[0]("a,i") = -guess[0]("a,i");
+    guess[1]("a,b,i,j") = -guess[1]("a,b,i,j");
   }
 
   /// return pnos for root i

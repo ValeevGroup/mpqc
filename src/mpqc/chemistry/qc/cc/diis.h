@@ -27,6 +27,7 @@ public:
   TPack(T &_t1, T &_t2, T &_t3) : std::vector<T>{_t1,_t2,_t3} {}
 
   TPack() = default;
+  TPack(std::size_t i) : std::vector<T>(i) {}
 };  // TPack<T>
 
 template <typename T>
@@ -76,9 +77,13 @@ inline void scale(TPack<T> &y, Scalar a) {
     scale(t, a);
 }
 
-template <typename T1, typename T2>
-inline std::size_t size(const T1T2<T1,T2>& x) {
-  return size(x.t1) + size(x.t2);
+template <typename T>
+inline std::size_t size(const TPack<T>& x) {
+
+  auto size_function = [](std::size_t t1, const T& t2){
+    return t1 + size(t2);
+  };
+  return std::accumulate(x.begin(), x.end(), 0, size_function);
 };
 
 

@@ -11,6 +11,10 @@
 namespace mpqc {
 namespace lcao {
 
+/**
+ *   IP-EOM-CCSD
+ *   @todo docs, optimize code
+ */
 template <typename Tile, typename Policy>
 class IP_EOM_CCSD : public CCSD<Tile, Policy>,
                     public Provides<ExcitationEnergy> {

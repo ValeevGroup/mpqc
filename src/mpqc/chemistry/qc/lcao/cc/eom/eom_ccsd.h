@@ -63,29 +63,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     eom_tosv_ = kv.value<double>("eom_tosv", 0.0);
   }
 
-  void obsolete() override {
-    CCSD<Tile, Policy>::obsolete();
-    g_ijab_ = TArray();
-
-    FAB_ = TArray();
-    FIJ_ = TArray();
-    FIA_ = TArray();
-
-    WIbAj_ = TArray();
-    WIbaJ_ = TArray();
-
-    WAbCd_ = TArray();
-    WAbCi_ = TArray();
-
-    WKlIj_ = TArray();
-    WKaIj_ = TArray();
-
-    WAkCd_ = TArray();
-    WKlIc_ = TArray();
-
-    Xab_ = TArray();
-    Xia_ = TArray();
-  }
+  void obsolete() override { CCSD<Tile, Policy>::obsolete(); }
 
  protected:
   using CCSD<Tile, Policy>::can_evaluate;
@@ -103,24 +81,26 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
       const std::vector<numeric_type> &cis_eigs, std::size_t max_iter,
       double convergence);
   // compute F and W intermediates
-  void compute_FWintermediates();
+  cc::Intermediates<TArray> compute_FWintermediates();
 
   // compute contractions of HSS, HSD, HDS, and HDD
   //                         with guess vector Ci
   // reference: CPL, 248 (1996), 189
-  TArray compute_HSS_HSD_C(const TArray &Cai, const TArray &Cabij);
-  TArray compute_HDS_HDD_C(const TArray &Cai, const TArray &Cabij);
+  TArray compute_HSS_HSD_C(const TArray &Cai, const TArray &Cabij,
+                           const cc::Intermediates<TArray> &imds);
+  TArray compute_HDS_HDD_C(const TArray &Cai, const TArray &Cabij,
+                           const cc::Intermediates<TArray> &imds);
 
-  void init() {
-    g_ijab_ = this->get_ijab();
-
-    compute_FWintermediates();
+  cc::Intermediates<TArray> init() {
+    auto imds = compute_FWintermediates();
 
     auto remove_integral = [](const Formula &formula) {
       return formula.rank() == 4;
     };
 
     this->lcao_factory().registry().purge_if(remove_integral);
+
+    return imds;
   }
 
  private:
@@ -131,27 +111,6 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   bool eom_pno_canonical_;
   double eom_tpno_;
   double eom_tosv_;
-
-  TArray g_ijab_;
-
-  // F intermediates
-  TArray FAB_;
-  TArray FIJ_;
-  TArray FIA_;
-
-  // W intermediates
-  TArray WIbAj_;
-  TArray WIbaJ_;
-  TArray WAbCd_;  // this may not be initialized
-  TArray WAbCi_;
-  TArray WKlIj_;
-  TArray WKaIj_;
-  TArray WAkCd_;  // this may not be initialized
-  TArray WKlIc_;
-
-  // three center integral
-  TArray Xab_;
-  TArray Xia_;
 };
 
 #if TA_DEFAULT_POLICY == 0

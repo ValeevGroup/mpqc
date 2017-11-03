@@ -6,7 +6,6 @@
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_CCSD_INTERMEDIATES_H_
 
 #include <tiledarray.h>
-#include "mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h"
 #include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 
 namespace mpqc {
@@ -40,6 +39,10 @@ struct Intermediates {
   Array Wabci;
   Array Waibc;
   Array Wabcd;
+
+  Array Xab;
+  Array Xia;
+  Array Xij;
 };
 
 ///
@@ -310,92 +313,6 @@ Array compute_cs_ccsd_W_ovvo(const Array& W_ooov, const Array& g_iabc,
   Array W_ovvo2 = compute_cs_ccsd_W_ovvo2(W_ooov, g_iabc, t1);
   W_ovvo1("i,a,b,j") += W_ovvo2("i,a,b,j");
   return W_ovvo1;
-};
-
-template <typename Tile, typename Policy,
-          typename Array = TA::DistArray<Tile, Policy>>
-cc::Intermediates<Array> compute_eom_intermediates(
-    LCAOFactoryBase<Tile, Policy> &lcao_factory,
-    gaussian::AOFactoryBase<Tile, Policy> &ao_factory, const Array &t2,
-    const Array &t1, bool df, std::string option) {
-  cc::Intermediates<Array> imds;
-
-  std::wstring postfix = df ? L"[df]" : L"";
-
-  auto f_ia = lcao_factory.compute(L"<i|F|a>" + postfix);
-  auto f_ij = lcao_factory.compute(L"<i|F|j>" + postfix);
-  auto f_ab = lcao_factory.compute(L"<a|F|b>" + postfix);
-
-  auto g_ijkl = lcao_factory.compute(L"<i j|G|k l>" + postfix);
-  auto g_ijab = lcao_factory.compute(L"<i j|G|a b>" + postfix);
-  auto g_iajb = lcao_factory.compute(L"<i a|G|j b>" + postfix);
-  auto g_iabc = lcao_factory.compute(L"<i a|G|b c>" + postfix);
-  auto g_ijka = lcao_factory.compute(L"<i j|G|k a>" + postfix);
-
-  Array tau;
-  tau("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
-
-  Array g_ijab_bar;
-  g_ijab_bar("i,j,a,b") = 2.0 * g_ijab("i,j,a,b") - g_ijab("j,i,a,b");
-
-  // one body
-  {
-    Array g_ijka_bar;
-    g_ijka_bar("i,j,k,a") = 2.0 * g_ijka("i,j,k,a") - g_ijka("j,i,k,a");
-    //
-    imds.FIJ =
-        compute_cs_ccsd_F_OO(f_ij, f_ia, g_ijab_bar, g_ijka_bar, tau, t1);
-    //
-    imds.FIA = compute_cs_ccsd_F_ov(f_ia, g_ijab_bar, t1);
-
-    Array g_iabc_bar;
-    g_iabc_bar("k,a,d,b") = 2.0 * g_iabc("k,a,d,b") - g_iabc("k,a,b,d");
-    //
-    imds.FAB =
-        compute_cs_ccsd_F_VV(f_ab, f_ia, g_ijab_bar, g_iabc_bar, tau, t1);
-
-    //    std::tie(imds.FAB, imds.FIA, imds.FIJ) =
-    //    compute_cs_ccsd_F(lcao_factory,ao_factory,t1,tau,df);
-  }
-
-  // two body
-  {
-    imds.Wijab = g_ijab;
-
-    imds.Wijka = compute_cs_ccsd_W_ooov(g_ijka, g_ijab, t1);
-
-    if (option == "ip") {
-      imds.Wiajb =
-          compute_cs_ccsd_W_ovov(imds.Wijka, g_iabc, g_ijab, g_iajb, t2, t1);
-
-      imds.Wiabj = compute_cs_ccsd_W_ovvo(imds.Wijka, g_iabc, g_ijab_bar,
-                                          g_ijab, g_iajb, t2, t1);
-
-      imds.Wijkl = compute_cs_ccsd_W_oooo(g_ijkl, g_ijka, g_ijab, tau, t1);
-
-      imds.Wiajk = compute_cs_ccsd_W_KaIj(lcao_factory, t1, t2, tau, imds.FIA,
-                                          imds.Wijkl, df);
-    } else if (option == "ea") {
-      imds.Wiajb =
-          compute_cs_ccsd_W_ovov(imds.Wijka, g_iabc, g_ijab, g_iajb, t2, t1);
-
-      imds.Wiabj = compute_cs_ccsd_W_ovvo(imds.Wijka, g_iabc, g_ijab_bar,
-                                          g_ijab, g_iajb, t2, t1);
-
-      imds.Wabcd = compute_cs_ccsd_W_AbCd(lcao_factory, t1, tau, df);
-
-      imds.Waibc = compute_cs_ccsd_W_AkCd(lcao_factory, t1, df);
-
-      imds.Wabci = compute_cs_ccsd_W_AbCi(lcao_factory, ao_factory, t1, t2, tau,
-                                          imds.FIA, imds.Wabcd, df);
-
-    } else {
-      throw InputError("Wrong Option in compute_eom_intermediates", __FILE__,
-                       __LINE__);
-    }
-  }
-
-  return imds;
 };
 
 }  // end of namespace cc

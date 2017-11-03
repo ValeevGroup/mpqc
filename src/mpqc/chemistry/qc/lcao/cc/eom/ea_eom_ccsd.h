@@ -11,6 +11,10 @@
 namespace mpqc {
 namespace lcao {
 
+/**
+ *   EA-EOM-CCSD
+ *   @todo docs, optimize code
+ */
 template <typename Tile, typename Policy>
 class EA_EOM_CCSD : public CCSD<Tile, Policy>,
                     public Provides<ExcitationEnergy> {

@@ -39,7 +39,7 @@ void IP_EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     // initialize intermediates
     ExEnv::out0() << indent << "\nInitialize Intermediates \n";
     auto imds =
-        cc::compute_intermediates(this->lcao_factory(), this->ao_factory(),
+        cc::compute_eom_intermediates(this->lcao_factory(), this->ao_factory(),
                                   this->t2(), this->t1(), this->is_df(), "ip");
 
     auto max_iter = this->max_iter_;

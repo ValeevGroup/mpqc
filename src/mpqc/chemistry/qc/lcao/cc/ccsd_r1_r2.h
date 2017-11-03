@@ -196,13 +196,13 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
     // compute g intermediate
     Array g_ki, g_ac;
 
-    g_ki("k,i") =
-        ints.FIJ("k,i") + ints.Fia("k,c") * t1("c,i") +
-        (2.0 * ints.Gijka("k,l,i,c") - ints.Gijka("l,k,i,c")) * t1("c,l");
+    Array g_ijka_bar;
+    g_ijka_bar("i,j,k,a") = 2.0 * ints.Gijka("i,j,k,a") - ints.Gijka("j,i,k,a");
+    g_ki = cc::compute_cs_ccsd_F_OO(ints.FIJ, ints.Fia, g_ijka_bar, t1);
 
-    g_ac("a,c") =
-        ints.FAB("a,c") - ints.Fia("k,c") * t1("a,k") +
-        (2.0 * ints.Giabc("k,a,d,c") - ints.Giabc("k,a,c,d")) * t1("d,k");
+    Array g_iabc_bar;
+    g_iabc_bar("k,a,d,b") = 2.0 * ints.Giabc("k,a,d,b") - ints.Giabc("k,a,b,d");
+    g_ac = cc::compute_cs_ccsd_F_VV(ints.FAB, ints.Fia, g_iabc_bar, t1);
 
     r2("a,b,i,j") += g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
   }
@@ -232,8 +232,9 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
     r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
                      (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
 
-    r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                     k_kaic("k,b,i,c") * t2("a,c,k,j");
+    Array tmp;
+    tmp("a,b,i,j") = k_kaic("k,a,i,c") * t2("c,b,j,k");
+    r2("a,b,i,j") -= 0.5 * tmp("a,b,i,j") + tmp("b,a,i,j");
   }
 
   // perform the permutation
@@ -242,12 +243,9 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
   r2("a,b,i,j") += ints.Gijab("i,j,a,b");
 
   {
-    Array a_klij;
     // compute a intermediate
-    a_klij("k,l,i,j") = ints.Gijkl("k,l,i,j") +
-                        ints.Gijka("k,l,i,c") * t1("c,j") +
-                        ints.Gijka("l,k,j,c") * t1("c,i") +
-                        ints.Gijab("k,l,c,d") * tau("c,d,i,j");
+    Array a_klij =
+        cc::compute_cs_ccsd_W_oooo(ints.Gijkl, ints.Gijka, ints.Gijab, tau, t1);
 
     r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
   }
@@ -286,7 +284,8 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
  */
 template <typename Array>
 Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
-                            const cc::Integrals<Array>& ints, const Array& u = Array()) {
+                            const cc::Integrals<Array>& ints,
+                            const Array& u = Array()) {
   // compute residual r2(n) (at convergence r2 = 0)
 
   Array r2;
@@ -303,13 +302,13 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
     // compute g intermediate
     Array g_ki, g_ac;
 
-    g_ki("k,i") =
-        ints.FIJ("k,i") + ints.Fia("k,c") * t1("c,i") +
-        (2.0 * ints.Gijka("k,l,i,c") - ints.Gijka("l,k,i,c")) * t1("c,l");
+    Array g_ijka_bar;
+    g_ijka_bar("i,j,k,a") = 2.0 * ints.Gijka("i,j,k,a") - ints.Gijka("j,i,k,a");
+    g_ki = cc::compute_cs_ccsd_F_OO(ints.FIJ, ints.Fia, g_ijka_bar, t1);
 
     g_ac("a,c") = ints.FAB("a,c") - ints.Fia("k,c") * t1("a,k") +
-                  2.0 * ints.Xai("K,d,k") * t1("d,k") * ints.Xab("K,a,c") -
-                  X_ab_t1("K,a,k") * ints.Xai("K,c,k");
+           2.0 * ints.Xai("K,d,k") * t1("d,k") * ints.Xab("K,a,c") -
+           X_ab_t1("K,a,k") * ints.Xai("K,c,k");
 
     r2("a,b,i,j") += g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
   }
@@ -348,12 +347,9 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
   r2("a,b,i,j") += ints.Gijab("i,j,a,b");
 
   {
-    Array a_klij;
     // compute a intermediate
-    a_klij("k,l,i,j") = ints.Gijkl("k,l,i,j") +
-                        ints.Gijka("k,l,i,c") * t1("c,j") +
-                        ints.Gijka("l,k,j,c") * t1("c,i") +
-                        ints.Gijab("k,l,c,d") * tau("c,d,i,j");
+    Array a_klij =
+        cc::compute_cs_ccsd_W_oooo(ints.Gijkl, ints.Gijka, ints.Gijab, tau, t1);
 
     r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
   }

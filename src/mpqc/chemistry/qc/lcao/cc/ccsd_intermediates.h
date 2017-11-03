@@ -226,7 +226,7 @@ Array compute_cs_ccsd_W_ovov1(const Array& g_iajb, const Array& g_ijab,
  * @param W_ooov ccsd intermediate W_ooov
  * @param g_iabc  <i a|G|b c>
  * @param t1  CCSD T1 amplitude T1("a,i")
- * @return
+ * @return second term in W_ovov intermediate
  */
 template <typename Array>
 Array compute_cs_ccsd_W_ovov2(const Array& W_ooov, const Array& g_iabc,
@@ -314,10 +314,10 @@ Array compute_cs_ccsd_W_ovvo(const Array& W_ooov, const Array& g_iabc,
 
 template <typename Tile, typename Policy,
           typename Array = TA::DistArray<Tile, Policy>>
-cc::Intermediates<Array> compute_intermediates(
-    LCAOFactoryBase<Tile, Policy>& lcao_factory,
-    gaussian::AOFactoryBase<Tile, Policy>& ao_factory, const Array& t2,
-    const Array& t1, bool df, std::string option) {
+cc::Intermediates<Array> compute_eom_intermediates(
+    LCAOFactoryBase<Tile, Policy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory, const Array &t2,
+    const Array &t1, bool df, std::string option) {
   cc::Intermediates<Array> imds;
 
   std::wstring postfix = df ? L"[df]" : L"";
@@ -390,7 +390,7 @@ cc::Intermediates<Array> compute_intermediates(
                                           imds.FIA, imds.Wabcd, df);
 
     } else {
-      throw InputError("Wrong Option in compute_intermediates", __FILE__,
+      throw InputError("Wrong Option in compute_eom_intermediates", __FILE__,
                        __LINE__);
     }
   }

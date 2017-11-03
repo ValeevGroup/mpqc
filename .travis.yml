@@ -116,6 +116,7 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
+           - g++-7
            - clang-5.0
     - compiler: clang
       env: GCC_VERSION=7 BUILD_TYPE=Release
@@ -126,6 +127,7 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
+           - g++-7
            - clang-5.0
   allow_failures:
 # 3 runtime failures in validation tests

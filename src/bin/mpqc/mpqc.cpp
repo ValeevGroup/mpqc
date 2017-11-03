@@ -4,8 +4,8 @@
 #include <chrono>
 #include <sstream>
 
-#include <libint2.hpp>
 #include <tiledarray.h>
+#include <libint2.hpp>
 
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_config.h"
@@ -15,10 +15,11 @@
 
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/units/units.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/misc/bug.h"
 #include "mpqc/util/options/GetLongOpt.h"
 
 // linkage files to force linking in of ALL Wavefunction-based classes
@@ -52,20 +53,24 @@ void announce(madness::World &world) {
     ExEnv::out0() << ' ';
   ExEnv::out0() << title3 << std::endl << std::endl;
 
-  ExEnv::out0() << indent << printf("Machine:          %s", TARGET_ARCH) << std::endl
-                << indent << printf("User:             %s@%s", ExEnv::username(),
-                                    ExEnv::hostname())
+  ExEnv::out0() << indent << printf("Machine:          %s", TARGET_ARCH)
+                << std::endl
+                << indent
+                << printf("User:             %s@%s", ExEnv::username(),
+                          ExEnv::hostname())
                 << std::endl;
   std::time_t tm = std::time(nullptr);
   char tm_str[256];
   std::strftime(tm_str, 256, "%c %Z", std::gmtime(&tm));
-  ExEnv::out0() << indent << "Start Time:       " << tm_str
+  ExEnv::out0() << indent << "Start Time:       "
+                << tm_str
                 // << std::put_time(std::gmtime(&tm), "%c %Z")
                 << std::endl;
 
   auto nproc = world.size();
-  ExEnv::out0() << indent << "Default World:    " << nproc
-                << " MPI process" << (nproc > 1 ? "es" : "") << std::endl << std::endl;
+  ExEnv::out0() << indent << "Default World:    " << nproc << " MPI process"
+                << (nproc > 1 ? "es" : "") << std::endl
+                << std::endl;
 }
 
 }  // namespace mpqc
@@ -104,6 +109,22 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // now set up the debugger
   auto debugger = kv->class_ptr<Debugger>("debugger");
+  // use default-constructed debugger if -D given and debugger keyword is
+  // missing
+  if (!debugger) {
+    auto debugger_opt = options->retrieve("D");
+    if (debugger_opt) {
+      const auto debugger_json_str = *debugger_opt;
+      if (debugger_json_str.empty()) { // no JSON spec for Debugger given, use default ctor
+        debugger = std::make_shared<Debugger>();
+      } else {  // JSON spec for Debugger given
+        std::istringstream iss(debugger_json_str);
+        KeyVal kv;
+        kv.read_json(iss);
+        debugger = std::make_shared<Debugger>(kv);
+      }
+    }
+  }
   if (debugger) {
     Debugger::set_default_debugger(debugger);
     debugger->set_exec(argv[0]);
@@ -209,6 +230,9 @@ int main(int argc, char *argv[]) {
   // initialize MADNESS first
   try {
     world_ptr = &madness::initialize(argc, argv);
+  } catch (madness::MadnessException &e) {
+    std::cerr << "!! MADNESS exception: " << e.what() << "\n";
+    return 1;
   } catch (...) {
     std::cerr << "!! Failed to initialize MADWorld: "
               << "\n";

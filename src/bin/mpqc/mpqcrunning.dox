@@ -20,34 +20,53 @@ different environments, as well as optimization hints:
 
 \section mpqccomline Command Line Options
 
-  MPQC can be given options followed by the input file
-name.  The following command line options are recognized:
+  MPQC executable can be given the following command-line options:
 
-<dl>
+| option          | accept value?| description                                           |
+|-----------------|--------------|-------------------------------------------------------|
+| <tt>-i</tt>     | mandatory    | The name of the input file. MPQC will attempt to parse the given input file using the JSON, XML, and INFO formats (in that order). If <tt>-i</tt> is not given, and no options with omitted optional values are used (e.g., <tt>-D</tt>), the last command-line argument that does not specify an option will be assumed to give the input file name.|
+| <tt>-o</tt>     | mandatory    | The name of the output file.  The default is to send output to the console. |
+| <tt>-p</tt>     | mandatory    | The prefix for all relative file paths in the input file               |
+| <tt>-W</tt>     | mandatory    | the working directory in which to compute             |
+| <tt>-D</tt>     | optional     | unless "debugger" keyword is given in input KeyVal, create a debugger at start, with the optional argument as its JSON KeyVal input |
+| <tt>-v</tt>     | no           | print the version number and exit                     |
+| <tt>-w</tt>     | no           | print the warranty and exit                           |
+| <tt>-L</tt>     | no           | print the license and exit                            |
+| <tt>-h</tt>     | no           | print the usage info and exit                         |
+| <tt>-d</tt>     | no           | start the program and attach a debugger               |
 
-  <dt><tt>-o</tt><dd>Gives the name of the output file.  The default is the
-                console.
+\subsection mpqccomlineexamples MPQC Usage Examples
 
-  <dt><tt>-p</tt><dd>Specifies the prefix to prepend to all relative paths
-                in the input file.
-
-  <dt><tt>-W</tt><dd>Sets the working directory.  The default is the
-                current directory.
-
-  <dt><tt>-u</tt><dd>Specifies the default units system to use (see mpqc::UnitFactory).
-
-  <dt><tt>-d</tt><dd>If a debugger object was given in the input, start the
-                debugger running as soon as MPQC is started.
-
-  <dt><tt>-v</tt><dd>Print the version number.
-
-  <dt><tt>-w</tt><dd>Print the warranty information (there is no warranty).
-
-  <dt><tt>-L</tt><dd>Print the license information.
-
-  <dt><tt>-h</tt><dd>Print a list of options.
-
-</dl>
+<ol>
+  <li> prints the usage info:
+  \code{.sh}
+  mpqc -h
+  \endcode
+  <li> run MPQC using `input.json` as the input file:
+  \code{.sh}
+    mpqc input.json
+  \endcode
+  <li> same as 2, but launches GDB upon failure:
+  \code{.sh}
+    mpqc -D '{"cmd": "gdb_xterm"}' input.json
+  \endcode
+  <li> same as 3, but __broken__ since <tt>-D</tt> "consumes" <tt>input.json</tt> as its argument:
+  \code{.sh}
+    mpqc -D input.json
+  \endcode
+  <li> fixed version of 4, <tt>input.json</tt> is passed via <tt>-i</tt>:
+  \code{.sh}
+    mpqc -D -i input.json
+  \endcode
+  <li> same as 2, but launches LLDB at the start:
+  \code{.sh}
+    mpqc -d -D '{"cmd": "lldb_xterm"}' input.json
+  \endcode
+  <li> same as 6, but redirects output to <tt>output.log</tt>':
+  \code{.sh}
+    mpqc -d -D '{"cmd": "lldb_xterm"}' -o output.log input.json
+  \endcode
+</ol>
 
 \section mpqcenv Environmental Variables
 

@@ -1,5 +1,5 @@
 //
-// scexception.h
+// exception.h
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -25,13 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
-#define MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_CORE_EXCEPTION_H_
+#define MPQC4_SRC_MPQC_UTIL_CORE_EXCEPTION_H_
 
+#include <memory>
 #include <stdexcept>
+#include <string.h>
 #include <sstream>
 #include <vector>
-#include "mpqc/util/misc/bug.h"
+
+#include "mpqc/util/core/backtrace.h"
 
 #if __cplusplus > 199711L
 // C++11
@@ -91,7 +94,7 @@ class Exception: public detail::Exception {
     const char *exception_type_;
     mutable char *elaboration_c_str_;
     std::unique_ptr<std::ostringstream> elaboration_;
-    Debugger::Backtrace backtrace_;
+    detail::Backtrace backtrace_;
 
   public:
     /** Create an Exception.
@@ -592,6 +595,5 @@ class AssertionFailed : public Exception {
 
 }
 
-#define __scexception_h_finished
-#endif  // MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_CORE_EXCEPTION_H_
 

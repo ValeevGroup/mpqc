@@ -6,7 +6,7 @@
  */
 
 #include "mpqc/util/keyval/forcelink.h"
-#include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
+#include "mpqc/chemistry/qc/lcao/factory/wfn_world.h"
 
 MPQC_CLASS_EXPORT2("WfnWorld", mpqc::lcao::WavefunctionWorld);
 

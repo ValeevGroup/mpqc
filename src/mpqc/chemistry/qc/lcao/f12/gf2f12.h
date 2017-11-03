@@ -160,6 +160,8 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
         method = Method::diag;
       else if (method_str == "nondiagonal")
         method = Method::nondiag;
+      else
+        throw ProgrammingError("unknown method string", __FILE__, __LINE__);
 
       ExEnv::out0() << "orbital = " << orbital << " method = " << method_str
                     << " cabs = " << std::to_string(use_cabs_) << "\n";

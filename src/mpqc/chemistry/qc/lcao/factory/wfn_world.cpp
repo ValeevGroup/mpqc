@@ -1,4 +1,4 @@
-#include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
+#include "mpqc/chemistry/qc/lcao/factory/wfn_world.h"
 
 using namespace mpqc;
 lcao::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)

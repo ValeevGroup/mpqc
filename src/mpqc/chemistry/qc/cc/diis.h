@@ -8,66 +8,73 @@
 #include <cmath>
 #include <utility>
 
+#include <mpqc/util/misc/assert.h>
+
 namespace mpqc {
 namespace cc {
 
-/// the {T1,T2} amplitude pair
+/// a vector of objects that can be used for DIIS, e.g. {T1, T2, T3}
 
-/// @tparam T1 the type representing the set of 1-body amplitudes
-/// @tparam T2 the type representing the set of 2-body amplitudes
-template <typename T1, typename T2>
-struct T1T2 {
-  typedef typename T1::element_type element_type;
-  typedef decltype(norm2(std::declval<T1>())) scalar_type;
+/// @tparam T the type of an amplitude tensor
+template <typename T>
+class TPack : public std::vector<T> {
+public:
+  typedef typename T::element_type element_type;
+  typedef decltype(norm2(std::declval<T>())) scalar_type;
 
   // constructor
-  T1T2(T1 &_t1, T2 &_t2) : t1(_t1), t2(_t2) {}
+  TPack(T &_t1, T &_t2) : std::vector<T>{_t1,_t2} {}
+  TPack(T &_t1, T &_t2, T &_t3) : std::vector<T>{_t1,_t2,_t3} {}
 
-  // default constructor
-  T1T2() : t1(), t2() {}
+  TPack() = default;
+};  // TPack<T>
 
-  T1 t1;
-  T2 t2;
-
-  auto norm() const{
-    auto t1_norm = norm2(t1);
-    auto t2_norm = norm2(t2);
-    return double(std::sqrt(t1_norm * t1_norm + t2_norm * t2_norm));
+template <typename T>
+inline auto norm2(const TPack<T> &a) -> decltype(norm2(std::declval<T>())) {
+  using scalar_type = typename TPack<T>::scalar_type;
+  scalar_type norm2_squared = 0;
+  for(auto& t: a) {
+    auto t_norm = norm2(t);
+    norm2_squared += t_norm * t_norm;
   }
-};
-
-template <typename T1, typename T2>
-auto norm2(const T1T2<T1, T2> &a) -> decltype(norm2(std::declval<T1>())) {
-  return a.norm();
+  return double(std::sqrt(norm2_squared));
 }
 
-template <typename T1, typename T2>
-inline void zero(T1T2<T1, T2> &a) {
-  zero(a.t1);
-  zero(a.t2);
+template <typename T>
+inline void zero(TPack<T> &a) {
+  for(auto& t: a) {
+    zero(t);
+  }
 }
 
-template <typename T1, typename T2>
-inline auto dot_product(const T1T2<T1, T2> &a, const T1T2<T1, T2> &b) {
-  return dot_product(a.t1, b.t1) + dot_product(a.t2, b.t2);
+template <typename T>
+inline auto dot_product(const TPack<T> &a, const TPack<T> &b) {
+  MPQC_ASSERT(a.size() == b.size());
+  typename TPack<T>::scalar_type result = 0;
+  for(auto i=0; i!=a.size(); ++i) {
+    result += dot_product(a[i], b[i]);
+  }
+  return result;
 }
 
-template <typename T1, typename T2, typename Scalar>
-inline void axpy(T1T2<T1, T2> &y, Scalar a, const T1T2<T1, T2> &x) {
-  axpy(y.t1, a, x.t1);
-  axpy(y.t2, a, x.t2);
-};
+template <typename T, typename Scalar>
+inline void axpy(TPack<T> &y, Scalar a, const TPack<T> &x) {
+  MPQC_ASSERT(x.size() == y.size());
+  for(auto i=0; i!=x.size(); ++i) {
+    axpy(y[i], a, x[i]);
+  }
+}
 
-template <typename T1, typename T2>
-inline T1T2<T1,T2> copy(T1T2<T1, T2> &a) {
+template <typename T>
+inline TPack<T> copy(TPack<T> &a) {
   return a;
 }
 
-template <typename T1, typename T2, typename Scalar>
-inline void scale(T1T2<T1, T2> &y, Scalar a) {
-  scale(y.t1, a);
-  scale(y.t2, a);
-};
+template <typename T, typename Scalar>
+inline void scale(TPack<T> &y, Scalar a) {
+  for(auto& t: y)
+    scale(t, a);
+}
 
 template <typename T1, typename T2>
 inline std::size_t size(const T1T2<T1,T2>& x) {

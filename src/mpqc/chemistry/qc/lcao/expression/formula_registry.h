@@ -10,7 +10,7 @@
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 

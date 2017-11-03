@@ -32,7 +32,7 @@
 
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/bug.h"
-#include "mpqc/util/misc/formio.h"
+#include "mpqc/util/core/formio.h"
 
 using namespace std;
 using namespace mpqc;

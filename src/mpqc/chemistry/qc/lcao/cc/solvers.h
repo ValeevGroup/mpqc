@@ -32,6 +32,64 @@ inline void print_local(TiledArray::World& world,
   }
 }
 
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> jacobi_update_t3_abcijk(
+    const TA::DistArray<Tile, Policy>& r3_abcijk,
+    const EigenVector<typename Tile::numeric_type>& ens_occ,
+    const EigenVector<typename Tile::numeric_type>& ens_uocc) {
+    auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto b0 = result_tile.range().lobound()[1];
+    const auto bn = result_tile.range().upbound()[1];
+    const auto c0 = result_tile.range().lobound()[2];
+    const auto cn = result_tile.range().upbound()[2];
+    const auto i0 = result_tile.range().lobound()[3];
+    const auto in = result_tile.range().upbound()[3];
+    const auto j0 = result_tile.range().lobound()[4];
+    const auto jn = result_tile.range().upbound()[4];
+    const auto k0 = result_tile.range().lobound()[5];
+    const auto kn = result_tile.range().upbound()[5];
+
+    auto tile_idx = 0;
+    typename Tile::scalar_type norm = 0.0;
+    for (auto a = a0; a < an; ++a) {
+      const auto e_a = ens_uocc[a];
+      for (auto b = b0; b < bn; ++b) {
+        const auto e_b = ens_uocc[b];
+        for (auto c = c0; c < cn; ++c) {
+          const auto e_c = ens_uocc[c];
+        for (auto i = i0; i < in; ++i) {
+          const auto e_i = ens_occ[i];
+          for (auto j = j0; j < jn; ++j) {
+            const auto e_j = ens_occ[j];
+            for (auto k = k0; k < kn; ++k, ++tile_idx) {
+              const auto e_k = ens_occ[k];
+            const auto e_iajbkc = e_i + e_j + e_k - e_a - e_b - e_c ;
+            const auto old = arg_tile[tile_idx];
+            const auto result_abcijk = old / (e_iajbkc);
+            const auto abs_result_abcijk = std::abs(result_abcijk);
+            norm += abs_result_abcijk * abs_result_abcijk;
+            result_tile[tile_idx] = result_abcijk;
+          }
+        }
+       }
+      }
+     }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto delta_t3_abcijk = TA::foreach (r3_abcijk, denom);
+  delta_t3_abcijk.world().gop.fence();
+  return delta_t3_abcijk;
+}
+
+
 // squared norm of 1-body residual in OSV subspace
 template <typename T>
 struct R1SquaredNormReductionOp {
@@ -806,7 +864,7 @@ void construct_pno(
 
 // // JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
 template <typename T>
-class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
+class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T> {
  public:
   // clang-format off
   /**
@@ -819,7 +877,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   JacobiDIISSolver(const KeyVal& kv,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii,
                    Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa)
-      : ::mpqc::cc::DIISSolver<T, T>(kv) {
+      : ::mpqc::cc::DIISSolver<T>(kv) {
     std::swap(f_ii_, f_ii);
     std::swap(f_aa_, f_aa);
   }
@@ -835,7 +893,18 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
     t1.truncate();
     t2.truncate();
   }
+
+  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) override {
+    t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
+    t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
+    t3("a,b,c,i,j,k") += detail::jacobi_update_t3_abcijk(r3, f_ii_, f_aa_)("a,b,c,i,j,k");
+    t1.truncate();
+    t2.truncate();
+    t3.truncate();
+  }
+
 };
+
 
 /// PNOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PNO
 /// space
@@ -843,7 +912,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T, typename DT>
-class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
+class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                   public madness::WorldObject<PNOSolver<T, DT>> {
  public:
   using Tile = typename T::value_type;
@@ -867,7 +936,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
-      : ::mpqc::cc::DIISSolver<T, T>(kv),
+      : ::mpqc::cc::DIISSolver<T>(kv),
         madness::WorldObject<PNOSolver<T, DT>>(factory.world()),
         factory_(factory),
         pno_method_(kv.value<std::string>("pno_method", "standard")),
@@ -1352,11 +1421,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     update_only(t1, t2, r1_reblock, r2_reblock);
     T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
     T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
-    mpqc::cc::T1T2<T, T> r(r1_osv, r2_pno);
-    mpqc::cc::T1T2<T, T> t(t1, t2);
+    mpqc::cc::TPack<T> r(r1_osv, r2_pno);
+    mpqc::cc::TPack<T> t(t1, t2);
     this->diis().extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
+    t1 = t.at(0);
+    t2 = t.at(1);
   }
 
  public:
@@ -1407,7 +1476,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 ///          given to Solver::update() are laid out as "a,i" and "a,b,i,j",
 ///          respectively
 template <typename T, typename DT>
-class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
+class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
                   public madness::WorldObject<SVOSolver<T, DT>> {
  public:
   typedef typename T::value_type Tile;
@@ -1426,7 +1495,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
    */
   // clang-format on
   SVOSolver(const KeyVal& kv, Factory<T, DT>& factory)
-      : ::mpqc::cc::DIISSolver<T, T>(kv),
+      : ::mpqc::cc::DIISSolver<T>(kv),
         madness::WorldObject<SVOSolver<T, DT>>(factory.world()),
         factory_(factory),
         tiling_method_(kv.value<std::string>("tiling_method", "flexible")),
@@ -1528,7 +1597,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
         for (int j = 0; j < nocc_act; ++j) {
           double eps_j = eps_o[j];
-          //          int delta_ij = (i == j) ? 1 : 0;
           std::array<int, 4> tile_ij = {{0, 0, i, j}};
           std::array<int, 4> tile_ji = {{0, 0, j, i}};
           const auto ord_ij = ktrange.tiles_range().ordinal(tile_ij);
@@ -2066,11 +2134,11 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     update_only(t1, t2, r1_reblock, r2_reblock);
     T r1_svo1 = svo_transform_ai(r1_reblock, svo1s_);
     T r2_svo2 = svo_transform_abij(r2_reblock, l_svo2s_, r_svo2s_);
-    mpqc::cc::T1T2<T, T> r(r1_svo1, r2_svo2);
-    mpqc::cc::T1T2<T, T> t(t1, t2);
+    mpqc::cc::TPack<T> r(r1_svo1, r2_svo2);
+    mpqc::cc::TPack<T> t(t1, t2);
     this->diis().extrapolate(t, r);
-    t1 = t.t1;
-    t2 = t.t2;
+    t1 = t.at(0);
+    t2 = t.at(1);
   }
 
   template <typename Tile, typename Policy>

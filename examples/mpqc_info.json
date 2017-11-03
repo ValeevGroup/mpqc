@@ -1,5 +1,5 @@
 {
-  "molecule": {
+  "water": {
     "atoms": [
       { "element":"O", "xyz" : [-0.702196054,  -0.056060256,   0.009942262]},
       { "element":"H", "xyz" : [-1.022193224,   0.846775782,  -0.011488714]},
@@ -10,15 +10,15 @@
   "basis": {
     "name": "cc-pVDZ-F12",
     "reblock" : 20,
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "df_basis": {
     "name": "aug-cc-pVDZ-RI",
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "aux_basis":{
     "name": "cc-pVDZ-F12-CABS",
-    "molecule": "$:molecule"
+    "atoms": "$:water"
   },
   "frozen_core" : true
 }

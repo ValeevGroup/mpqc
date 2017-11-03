@@ -17,7 +17,7 @@ template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
+  using GuessVector = ::mpqc::cc::TPack<TArray>;
   using numeric_type = typename Tile::numeric_type;
 
  public:

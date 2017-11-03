@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "mpqc/util/misc/formio.h"
-#include "mpqc/util/misc/exenv.h"
+#include "formio.h"
+#include "exenv.h"
 
 #include <cstdio> // for vsprintf
 #include <cwchar> // for vswprintf

@@ -4,8 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_index.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 namespace lcao {

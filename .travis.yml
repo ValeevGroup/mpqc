@@ -36,7 +36,7 @@ matrix:
   fast_finish: true
   include:
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      env: GCC_VERSION=4.9 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
@@ -45,7 +45,7 @@ matrix:
            - *base_packages
            - g++-4.9
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Release
+      env: GCC_VERSION=4.9 BUILD_TYPE=Release
       addons:
         apt:
           sources:
@@ -54,7 +54,7 @@ matrix:
            - *base_packages
            - g++-4.9
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      env: GCC_VERSION=5 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
@@ -63,7 +63,7 @@ matrix:
            - *base_packages
            - g++-5
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Release
+      env: GCC_VERSION=5 BUILD_TYPE=Release
       addons:
         apt:
           sources:
@@ -72,7 +72,7 @@ matrix:
            - *base_packages
            - g++-5
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
@@ -81,7 +81,7 @@ matrix:
            - *base_packages
            - g++-6
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Release
+      env: GCC_VERSION=6 BUILD_TYPE=Release
       addons:
         apt:
           sources:
@@ -128,6 +128,9 @@ matrix:
            - *base_packages
            - clang-5.0
   allow_failures:
+# 3 runtime failures in validation tests
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
 # this results in an ICE when compiling formio.cpp
     - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Debug

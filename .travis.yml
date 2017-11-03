@@ -23,7 +23,7 @@ env:
 branches:
   only:
   - master
-sudo: false
+sudo: required
 matrix:
   exclude:
     - compiler: clang
@@ -69,6 +69,8 @@ addons:
     - cmake
     - cmake-data
 before_install:
+- "echo 0 | sudo tee /proc/sys/kernel/randomize_va_space"
+- "cat /proc/sys/kernel/randomize_va_space"
 - "env"
 - "mkdir -p ${BUILD_PREFIX} && mkdir -p ${INSTALL_PREFIX}"
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh"

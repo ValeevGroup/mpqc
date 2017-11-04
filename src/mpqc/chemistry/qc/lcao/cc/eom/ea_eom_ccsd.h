@@ -54,22 +54,6 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-  // EA-EOM-CCSD intermediates
-  struct Intermediates {
-    Intermediates() = default;
-    ~Intermediates() = default;
-
-    TArray FIA;
-    TArray FIJ;
-    TArray FAB;
-
-    TArray Wijkl;
-    TArray Wijka;
-    TArray Wiajk;
-    TArray Wiabj;
-    TArray Wiajb;
-  };
-
   /// @return guess vector of size n_roots as unit vector
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);
 

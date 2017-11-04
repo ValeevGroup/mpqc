@@ -1,6 +1,8 @@
 set(sources
         ccsd.h
         ccsd_hbar.h
+        ccsd_intermediates.h
+        ccsd_r1_r2.h
         ccsd.cpp
         ccsd_t.h
         ccsd_t.cpp
@@ -21,6 +23,7 @@ set(sources
         cc3.cpp
         eom/eom_ccsd.h
         eom/eom_ccsd_impl.h
+        eom/eom_preconditioner.h
         eom/eom_ccsd.cpp
         eom/ea_eom_ccsd.h
         eom/ea_eom_ccsd_impl.h

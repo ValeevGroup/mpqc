@@ -27,6 +27,7 @@
 
 #include "backtrace.h"
 
+#include <cstring>
 #include <iterator>
 #include <sstream>
 
@@ -76,13 +77,35 @@ Backtrace::Backtrace(const std::string &prefix) : prefix_(prefix) {
   // starting @ 1 to skip this function
   for (int i = 1; i < naddrs; ++i) {
     // extract (mangled) function name
-    std::string mangled_function_name;
+    // parsing frame_symbols[i] is OS-specific
+    // for unknown OS ... just return the whole string
+    std::string mangled_function_name = frame_symbols[i];
+#if defined(__APPLE__)
     {
+      // "frame_id /path/to/exec address symbol"
       std::istringstream iss(std::string(frame_symbols[i]),
                              std::istringstream::in);
       std::string frame, file, address;
       iss >> frame >> file >> address >> mangled_function_name;
     }
+#elif defined(__linux__)
+    {
+      // "/path/to/exec(symbol+0x...) [address]"
+      // parse from the back to avoid dealing with parentheses in the path
+      const auto last_right_bracket = mangled_function_name.rfind(']');
+      const auto last_left_bracket =
+          mangled_function_name.rfind('[', last_right_bracket);
+      const auto last_right_parens =
+          mangled_function_name.rfind(')', last_left_bracket);
+      const auto offset = mangled_function_name.rfind("+0x", last_right_parens);
+      const auto last_left_parens =
+          mangled_function_name.rfind('(', last_right_parens);
+      if (last_left_parens + 1 < mangled_function_name.size()) {
+        mangled_function_name = mangled_function_name.substr(
+            last_left_parens + 1, offset - last_left_parens - 1);
+      }
+    }
+#endif
 
     std::ostringstream oss;
     oss << prefix_ << "frame " << i << ": return address = " << stack_addrs[i]
@@ -91,7 +114,7 @@ Backtrace::Backtrace(const std::string &prefix) : prefix_(prefix) {
     frames_.push_back(oss.str());
   }
   free(frame_symbols);
-#else                          // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
+#else  // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
 #if defined(SIMPLE_STACK)
   int bottom = 0x1234;
   void **topstack = (void **)0xffffffffL;

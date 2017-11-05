@@ -4,80 +4,154 @@ cache:
   directories:
   - /home/travis/_install
 os: linux
-compiler:
-- gcc
-- clang
-env:
-  global:
-    - BUILD_PREFIX=/home/travis/_build
-    - INSTALL_PREFIX=/home/travis/_install
-  matrix:
-    - GCC_VERSION=4.9 BUILD_TYPE=Debug
-    - GCC_VERSION=4.9 BUILD_TYPE=Release
-    - GCC_VERSION=5 BUILD_TYPE=Debug
-    - GCC_VERSION=5 BUILD_TYPE=Release
-    - GCC_VERSION=6 BUILD_TYPE=Debug
-    - GCC_VERSION=6 BUILD_TYPE=Release
-    - GCC_VERSION=7 BUILD_TYPE=Debug
-    - GCC_VERSION=7 BUILD_TYPE=Release
-branches:
-  only:
-  - master
-sudo: false
-matrix:
-  exclude:
-    - compiler: clang
-      env: GCC_VERSION=4.9 BUILD_TYPE=Debug
-    - compiler: clang
-      env: GCC_VERSION=4.9 BUILD_TYPE=Release
-    - compiler: clang
-      env: GCC_VERSION=5 BUILD_TYPE=Debug
-    - compiler: clang
-      env: GCC_VERSION=5 BUILD_TYPE=Release
-    - compiler: clang
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-    - compiler: clang
-      env: GCC_VERSION=6 BUILD_TYPE=Release
-  allow_failures:
-# this results in an ICE when compiling formio.cpp
-    - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
-# this results in an ICE when compiling zrhf.cpp
-    - compiler: gcc
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-# this results in an unexplained failure in h2o-sto3g-gpmp2-mol-mp2
-    - compiler: gcc
-      env: GCC_VERSION=5 BUILD_TYPE=Debug
+sudo: required
+
 addons:
   apt:
-    sources:
-    - llvm-toolchain-trusty-5.0
-    - ubuntu-toolchain-r-test
-    - boost-latest
-    - kubuntu-backports
-    packages:
-    - g++-4.9
-    - g++-5
-    - g++-6
-    - g++-7
+    sources: &base_sources
+      - ubuntu-toolchain-r-test
+      - boost-latest
+      - kubuntu-backports
+    sources: &clang_sources
+      - llvm-toolchain-trusty-5.0
+    packages: &base_packages
     - libeigen3-dev
     - libboost1.55-all-dev
     - libblas-dev
     - liblapack-dev
     - libtbb-dev
-    - clang-5.0
     - cmake
     - cmake-data
+
+env:
+  global:
+    - BUILD_PREFIX=/home/travis/_build
+    - INSTALL_PREFIX=/home/travis/_install
+
+branches:
+  only:
+  - master
+
+matrix:
+  fast_finish: true
+  include:
+    - compiler: gcc
+      env: GCC_VERSION=4.9 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-4.9
+    - compiler: gcc
+      env: GCC_VERSION=4.9 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-4.9
+    - compiler: gcc
+      env: GCC_VERSION=5 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-5
+    - compiler: gcc
+      env: GCC_VERSION=5 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-5
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-6
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-6
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-7
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-7
+    - compiler: clang
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+           - *clang_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - clang-5.0
+    - compiler: clang
+      env: GCC_VERSION=7 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+           - *clang_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - clang-5.0
+  allow_failures:
+# 3 runtime failures in validation tests
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
+# this results in an ICE when compiling formio.cpp
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
+
 before_install:
+- "echo 0 | sudo tee /proc/sys/kernel/randomize_va_space"
+- "cat /proc/sys/kernel/randomize_va_space"
 - "env"
 - "mkdir -p ${BUILD_PREFIX} && mkdir -p ${INSTALL_PREFIX}"
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
 - "./bin/build-libint-$TRAVIS_OS_NAME.sh"
 - "./bin/build-TA-$TRAVIS_OS_NAME.sh"
+
 script: "travis_wait 80 ./bin/build-$TRAVIS_OS_NAME.sh"
+
 after_failure:
 - cat ./mpqc4_build/CMakeFiles/CMakeOutput.log
 - cat ./mpqc4_build/CMakeFiles/CMakeError.log
+
 notifications:
   slack:
     secure: aTBPnV/QUvD5zjB82Gz8MwqtjDcxMuAtGY3m2KM4kD54kxZxPXGC7sHb9e/EOHm0qoudTR8aielY99y9mPH3v/5qXvyQKU3md+aE9i+XB2ewm5WXDUXmr8wS63W+9EflXfFeC1JxantyYkZ9n4itCZP7WlY9x7rMfs/+1P5A0Ew=

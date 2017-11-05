@@ -239,6 +239,7 @@ class DavidsonDiag {
     //    std::cout << "G: " << std::endl;
     //    std::cout << G << std::endl;
 
+    TA::get_default_world().gop.fence();
     // do eigen solve locally
     result_type E(n_roots_);
     RowMatrix<element_type> C(n_v, n_roots_);
@@ -314,6 +315,7 @@ class DavidsonDiag {
       //        }
       //      }
     }
+    TA::get_default_world().gop.fence();
 
     // compute eigen_vector at current iteration and store it
     // X(i) = B(i)*C(i)

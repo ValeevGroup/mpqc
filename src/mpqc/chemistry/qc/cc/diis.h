@@ -54,6 +54,7 @@ inline auto dot_product(const TPack<T> &a, const TPack<T> &b) {
   typename TPack<T>::scalar_type result = 0;
   for(auto i=0; i!=a.size(); ++i) {
     result += dot_product(a[i], b[i]);
+    TA::get_default_world().gop.fence();
   }
   return result;
 }

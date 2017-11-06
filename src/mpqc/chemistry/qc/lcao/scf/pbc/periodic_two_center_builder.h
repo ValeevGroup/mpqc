@@ -431,6 +431,8 @@ class PeriodicTwoCenterBuilder
       }
     };
 
+    // N.B. preallocate buckets to avoid race between result.insert() before and result[] above
+    result.reserve(nsh1);
     for (auto s1 = 0l; s1 != nsh1; ++s1) {
       result.insert(std::make_pair(s1, std::vector<size_t>()));
       world.taskq.add(compute, s1);

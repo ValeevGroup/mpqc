@@ -60,8 +60,8 @@ Backtrace::Backtrace(const std::string &prefix) : prefix_(prefix) {
     while (unw_step(&cursor) > 0) {
       unw_get_reg(&cursor, UNW_REG_IP, &ip);
       unw_get_reg(&cursor, UNW_REG_SP, &sp);
-      char name[1024];
-      unw_get_proc_name(&cursor, name, 1024, &offp);
+      char name[32768];
+      unw_get_proc_name(&cursor, name, 32768, &offp);
       std::ostringstream oss;
       oss << prefix_ << "frame " << frame << ": "
           << mpqc::printf("ip = 0x%lx sp = 0x%lx ", (long)ip, (long)sp)

@@ -384,7 +384,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         auto time1 = mpqc::fenced_now(world);
         if (world.rank() == 0 && iter > 0) {
           auto duration = mpqc::duration_in_s(time0, time1);
-          detail::print_ccsd(iter, dE, error, E1, duration);
+          if(method_ == "direct" || method_ == "direct_df"){
+            detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration);
+          }
+          else{
+            detail::print_ccsd(iter, dE, error, E1, duration);
+          }
         }
       } else {  // break out of the solver loop, if converged
         // log the iteration

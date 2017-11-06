@@ -496,7 +496,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   for (auto i = 0ul; i < natoms0; ++i) {
     const auto uc0_ord = i / natoms_per_uc;
-    const auto uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
+    const Vector3i uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
     const auto uc0_ord_in_df = direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
     const auto i_in_df = uc0_ord_in_df * natoms_per_uc + i % natoms_per_uc;
 
@@ -518,7 +518,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
     for (auto j = 0ul; j < natoms1; ++j) {
       const auto uc1_ord = j / natoms_per_uc;
-      const auto uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
+      const Vector3i uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
       if (uc0_3D == uc1_3D && (j % natoms_per_uc) == (i % natoms_per_uc)) {
         continue;
       }

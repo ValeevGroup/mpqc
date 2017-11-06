@@ -328,7 +328,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
 
   const auto real_latt_size =
       1 + detail::direct_ord_idx(real_latt_range, real_latt_range);
-  const auto k_end_3D_idx = (recip_latt_range.array() - 1).matrix();
+  const Vector3i k_end_3D_idx = (recip_latt_range.array() - 1).matrix();
   const auto recip_latt_size =
       1 + detail::k_ord_idx(k_end_3D_idx, recip_latt_range);
   const auto tiles_range = matrix.trange().tiles_range();
@@ -372,7 +372,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
 template <typename Tile, typename Policy>
 typename zRHF<Tile, Policy>::array_type_z
 zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
-  const auto k_end_3D_idx = (nk_.array() - 1).matrix();
+  const Vector3i k_end_3D_idx = (nk_.array() - 1).matrix();
   assert(k_size_ == 1 + detail::k_ord_idx(k_end_3D_idx, nk_));
   assert(R_size_ == 1 + detail::direct_ord_idx(R_max_, R_max_));
   return transform_real2recip(matrix, R_max_, nk_);

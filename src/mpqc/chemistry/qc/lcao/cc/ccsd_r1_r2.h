@@ -13,44 +13,55 @@ namespace lcao {
 namespace cc {
 
 /**
- * @todo need docs
- * @tparam Array
+ * @brief this file contains functions to compute spin-adapted closed-shell CCSD
+ * amplitude equation
+ */
+
+/**
+ * Structure to hold integrals needed to compute CCSD amplitudes
  */
 template <typename Array>
 struct Integrals {
   Integrals() = default;
   ~Integrals() = default;
 
-  Array Fia;
-  Array Fij;
-  Array Fab;
+  Array Fia;  // fock matrix <i|F|a>
+  Array Fij;  // fock matrix <i|F|j>
+  Array Fab;  // fock matrix <a|F|a>
 
-  Array FIJ;
-  Array FAB;
+  // effective one body Hamiltonian
+  Array FIJ;  // <i|H_bar|j>
+  Array FAB;  // <a|H_bar|b>
 
-  Array Gabcd;
-  Array Gijab;
-  Array Gijkl;
-  Array Giajb;
-  Array Giabc;
-  Array Gijka;
+  // mo two electron integrals
+  Array Gabcd;  // <a b|G|c d>
+  Array Gijab;  // <i j|G|a b>
+  Array Gijkl;  // <i j|G|k l>
+  Array Giajb;  // <i a|G|j b>
+  Array Giabc;  // <i a|G|b c>
+  Array Gijka;  // <i j|G|k a>
 
-  Array Xai;
-  Array Xij;
-  Array Xab;
+  // mo three center integrals
+  Array Xai;  // (X|a i)(X|K)^-1/2
+  Array Xij;  // (X|i j)(X|K)^-1/2
+  Array Xab;  // (X|a b)(X|K)^-1/2
 
+  // mo coefficients
   Array Ci;
   Array Ca;
 };
 
 /**
- * @todo need docs
- * @tparam Array
- * @param t1
- * @param t2
- * @param tau
- * @param ints
- * @return
+ * computes closed-shell CCSD R1 residual
+ *
+ * @param t1 CCSD T1 amplitudes in T1("a,i")
+ * @param t2 CCSD T2 amplitudes in T2("a,b,i,j")
+ * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
+ * @param ints cc::Integrals, requires Fia, Fij, Fab, Gijab, Giajb, Gijka and
+ * Giabc if u is not initialized
+ * @param u half transformed intermediates U("p,r,i,j") =
+ * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
+ * @return R1 residual, and update FIJ and FAB in ints
  */
 template <typename Array>
 Array compute_cs_ccsd_r1(const Array& t1, const Array& t2, const Array& tau,
@@ -109,13 +120,14 @@ Array compute_cs_ccsd_r1(const Array& t1, const Array& t2, const Array& tau,
 };
 
 /**
- * @todo need docs
- * @tparam Array
- * @param t1
- * @param t2
- * @param tau
- * @param ints
- * @return
+ * computes closed-shell CCSD R1 residual with density-fitting
+ *
+ * @param t1 CCSD T1 amplitudes in T1("a,i")
+ * @param t2 CCSD T2 amplitudes in T2("a,b,i,j")
+ * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
+ * @param ints cc::Integrals, requires Fia, Fij, Fab, Gijab, Giajb, Xai, Xab,
+ * Xij
+ * @return R1 residual, and update FIJ and FAB in ints
  */
 template <typename Array>
 Array compute_cs_ccsd_r1_df(const Array& t1, const Array& t2, const Array& tau,
@@ -168,13 +180,16 @@ Array compute_cs_ccsd_r1_df(const Array& t1, const Array& t2, const Array& tau,
 }
 
 /**
- *  @todo need docs
- * @tparam Array
- * @param t1
- * @param t2
- * @param tau
- * @param ints
- * @return
+ * computes closed-shell CCSD R2 residual
+ *
+ * @param t1 CCSD T1 amplitudes in T1("a,i")
+ * @param t2 CCSD T2 amplitudes in T2("a,b,i,j")
+ * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
+ * @param ints cc::Integrals, requires Fia, FIJ, FAB, Gijab, Giajb, Gijka,
+ * Gijkl, Giabc and Gabcd if u is not initialized
+ * @param u half transformed intermediates U("p,r,i,j") =
+ * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
+ * @return R2 residual
  */
 template <typename Array>
 Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
@@ -274,13 +289,16 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
 }
 
 /**
- * @todo docs, more refactor
- * @tparam Array
- * @param t1
- * @param t2
- * @param tau
- * @param ints
- * @return
+ * computes closed-shell CCSD R2 residual with density-fitting
+ *
+ * @param t1 CCSD T1 amplitudes in T1("a,i")
+ * @param t2 CCSD T2 amplitudes in T2("a,b,i,j")
+ * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
+ * @param ints cc::Integrals, requires Fia, FIJ, FAB, Xai, Xab, Xij, Gijab,
+ * Giajb, Gijka, Gijkl  and  Giabc with Gabcd if u is not initialized
+ * @param u half transformed intermediates U("p,r,i,j") =
+ * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
+ * @return R2 residual
  */
 template <typename Array>
 Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
@@ -307,8 +325,8 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
     g_ki = cc::compute_cs_ccsd_F_OO(ints.FIJ, ints.Fia, g_ijka_bar, t1);
 
     g_ac("a,c") = ints.FAB("a,c") - ints.Fia("k,c") * t1("a,k") +
-           2.0 * ints.Xai("K,d,k") * t1("d,k") * ints.Xab("K,a,c") -
-           X_ab_t1("K,a,k") * ints.Xai("K,c,k");
+                  2.0 * ints.Xai("K,d,k") * t1("d,k") * ints.Xab("K,a,c") -
+                  X_ab_t1("K,a,k") * ints.Xai("K,c,k");
 
     r2("a,b,i,j") += g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
   }

@@ -4,6 +4,8 @@ cache:
   directories:
   - /home/travis/_install
 os: linux
+# remove if want to switch back to container builds
+# also make changes below and in build-linux.sh
 sudo: required
 
 addons:
@@ -138,8 +140,8 @@ matrix:
       env: GCC_VERSION=7 BUILD_TYPE=Debug
 
 before_install:
+# remove if switched back to container builds
 - "echo 0 | sudo tee /proc/sys/kernel/randomize_va_space"
-- "cat /proc/sys/kernel/randomize_va_space"
 - "env"
 - "mkdir -p ${BUILD_PREFIX} && mkdir -p ${INSTALL_PREFIX}"
 - "./bin/build-mpich-$TRAVIS_OS_NAME.sh"

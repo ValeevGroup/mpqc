@@ -43,12 +43,14 @@ cmake ${TRAVIS_BUILD_DIR} \
 ### build
 make -j1 mpqc
 ### test within build tree
-setarch `uname -m` -R make -j1 check
+# prepend "setarch `uname -m` -R" if switched back to container builds
+make -j1 check
 ### install and test dev samples
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples
 cd mp2
   cmake .
   make mp2
-  setarch `uname -m` -R ./mp2 ./mp2.json
+  # prepend "setarch `uname -m` -R" if switched back to container builds
+  ./mp2 ./mp2.json
 cd ..

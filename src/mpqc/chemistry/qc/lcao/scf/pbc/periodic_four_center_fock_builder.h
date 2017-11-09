@@ -891,8 +891,8 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::lcao::detail::direct_ord_idx;
 
     auto empty = TA::Future<Tile>(Tile());
-    for (auto R1_ord = ref_sig_latt_ord_, task = int64_t(0);
-         R1_ord != sig_latt_size_; ++R1_ord) {
+    auto task_id = 0ul;
+    for (auto R1_ord = ref_sig_latt_ord_; R1_ord != sig_latt_size_; ++R1_ord) {
       const auto R1_3D = direct_3D_idx(R1_ord, sig_latt_max_);
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
@@ -950,11 +950,12 @@ class PeriodicFourCenterFockBuilder
                     {long(tile0), long(tile2 + uc_ord_F02 * ntiles_per_uc_)}};
                 const std::array<long, 2> idx_F12{
                     {long(tile1), long(tile2 + uc_ord_F12 * ntiles_per_uc_)}};
-                for (auto tile3 = 0ul; tile3 != ntiles; ++tile3, ++task) {
-                  if (task % nproc == me) {
-                    if (R3_ord == ref_sig_latt_ord_ && tile3 < tile2) {
-                      continue;
-                    }
+                for (auto tile3 = 0ul; tile3 != ntiles; ++tile3) {
+                  if (R3_ord == ref_sig_latt_ord_ && tile3 < tile2) {
+                    continue;
+                  }
+                  task_id++;
+                  if (task_id % nproc == me) {
                     // tile indices of D03 and D13
                     const std::array<long, 2> idx_D03{
                         {long(tile0),

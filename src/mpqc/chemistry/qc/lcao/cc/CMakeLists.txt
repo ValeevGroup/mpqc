@@ -25,10 +25,10 @@ set(sources
         eom/eom_ccsd_impl.h
         eom/eom_preconditioner.h
         eom/eom_ccsd.cpp
-        eom/ea_eom_ccsd.h
-        eom/ea_eom_ccsd_impl.h
-        eom/ip_eom_ccsd.h
-        eom/ip_eom_ccsd_impl.h
+        eom/eom_ea_ccsd.h
+        eom/eom_ea_ccsd_impl.h
+        eom/eom_ip_ccsd.h
+        eom/eom_ip_ccsd_impl.h
         gamma_point_ccsd.h
         gamma_point_ccsd.cpp
         laplace_transform.h

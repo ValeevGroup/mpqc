@@ -33,7 +33,7 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "wfn_world": "$:wfn_world"
     },
     "wfn": {
-        "type": "EA-EOM-CCSD",
+        "type": "EOM-EA-CCSD",
         "wfn_world": "$:wfn_world",
         "molecule": "$:molecule",
         "ref": "$:scf",
@@ -266,7 +266,7 @@ iter 	     deltaE 	   residual 	          energy 	 total time/s
 CCSD Energy  -0.211568215362394
 CCSD Time in CCSD: 2.105856255 S
   
-EA-EOM-CCSD Electron Affinity
+EOM-EA-CCSD Electron Affinity
   Number of roots: 2
   Max number of vector per root: 8
   Threshold for norm of new vector: 1e-08
@@ -355,7 +355,7 @@ state 	         au 	         eV 	      cm^-1
     1 	 0.16653183 	    4.53156 	   36549.51 
     2 	 0.23974632 	    6.52383 	   52618.23 
 
-EA-EOM-CCSD Total Time: 3.058851047 S
+EOM-EA-CCSD Total Time: 3.058851047 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -380,7 +380,7 @@ EA-EOM-CCSD Total Time: 3.058851047 S
         "wfn_world": "$:wfn_world"
     },
     "wfn": {
-        "type": "EA-EOM-CCSD",
+        "type": "EOM-EA-CCSD",
         "wfn_world": "$:wfn_world",
         "molecule": "$:molecule",
         "ref": "$:scf",

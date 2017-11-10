@@ -21,7 +21,7 @@
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "EA-EOM-CCSD",
+    "type": "EOM-EA-CCSD",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",

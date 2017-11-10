@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/cc/diis.h"
+#include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"

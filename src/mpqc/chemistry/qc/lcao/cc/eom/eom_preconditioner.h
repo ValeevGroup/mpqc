@@ -12,7 +12,7 @@ namespace mpqc {
 namespace lcao {
 namespace cc {
 
-/// preconditioner in DavidsonDiag for EA-EOM-CCSD, approximate the diagonal
+/// preconditioner in DavidsonDiag for EOM-EA-CCSD, approximate the diagonal
 /// H_bar matrix
 template <typename Array>
 class EEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
@@ -81,7 +81,7 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
   EigenVector<element_type> eps_v_;
 };
 
-// preconditioner of EA-EOM-CCSD approximate the diagonal of H matrix
+// preconditioner of EOM-EA-CCSD approximate the diagonal of H matrix
 template <typename Array>
 class EAPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
@@ -146,7 +146,7 @@ class EAPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
   }
 };
 
-/// preconditioner for IP-EOM-CCSD, approximate the diagonal of H matrix
+/// preconditioner for EOM-IP-CCSD, approximate the diagonal of H matrix
 template <typename Array>
 class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:
@@ -211,7 +211,7 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
   }
 };
 
-/// PNO preconditioner for EE-EOM-CCSD
+/// PNO preconditioner for EOM-EE-CCSD
 template <typename Array>
 class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
  public:

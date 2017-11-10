@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/21/17.
 //
 
-#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EA_EOM_CCSD_H_
-#define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EA_EOM_CCSD_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_H_
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/math/linalg/davidson_diag.h"
@@ -12,11 +12,11 @@ namespace mpqc {
 namespace lcao {
 
 /**
- *   EA-EOM-CCSD
+ *   EOM-IP-CCSD
  *   @todo docs, optimize code
  */
 template <typename Tile, typename Policy>
-class EA_EOM_CCSD : public CCSD<Tile, Policy>,
+class EOM_IP_CCSD : public CCSD<Tile, Policy>,
                     public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
@@ -36,7 +36,7 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
 
   // clang-format on
 
-  EA_EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
+  EOM_IP_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
     vector_threshold_ = kv.value<double>("vector_threshold", 0);
   }
@@ -58,15 +58,14 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
   std::vector<GuessVector> init_guess_vector(std::size_t n_roots);
 
   /// @return ionization potentials
-  EigenVector<numeric_type> ea_eom_ccsd_davidson_solver(
+  EigenVector<numeric_type> ip_eom_ccsd_davidson_solver(
       std::vector<GuessVector> &C, const cc::Intermediates<TArray> &imds,
       std::size_t max_iter, double convergence);
 
   /// compute the product of H with vectors
-  TArray compute_HS1(const TArray &Ca, const TArray &Cabi,
+  TArray compute_HS1(const TArray &Ci, const TArray &Caij,
                      const cc::Intermediates<TArray> &imds);
-
-  TArray compute_HS2(const TArray &Ca, const TArray &Cabi,
+  TArray compute_HS2(const TArray &Ci, const TArray &Caij,
                      const cc::Intermediates<TArray> &imds);
 
  private:
@@ -75,14 +74,14 @@ class EA_EOM_CCSD : public CCSD<Tile, Policy>,
 };
 
 #if TA_DEFAULT_POLICY == 0
-extern template class EA_EOM_CCSD<TA::TensorD, TA::DensePolicy>;
+extern template class EOM_IP_CCSD<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
-extern template class EA_EOM_CCSD<TA::TensorD, TA::SparsePolicy>;
+extern template class EOM_IP_CCSD<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // end of namespace lcao
 }  // end of namespace mpqc
 
-#include "ea_eom_ccsd_impl.h"
+#include "eom_ip_ccsd_impl.h"
 
-#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_EA_EOM_CCSD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_CC_EOM_IP_EOM_CCSD_H_

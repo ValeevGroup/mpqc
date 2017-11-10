@@ -6,7 +6,7 @@
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_CCSD_HBAR_H_
 
 /**
- * @brief This file contains functions to compute Hamiltonian of EE-EOM-CCSD
+ * @brief This file contains functions to compute effective Hamiltonian of CCSD
  *
  * The spin orbital equations for intermediates can be found in
  * Gauss, J., & Stanton, J. F. (1995). The Journal of Chemical Physics, 103(9),

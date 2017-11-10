@@ -49,7 +49,6 @@ class DavidsonDiagPred {
  * - `void scale(D& y , element_type a)`
  * - `void axpy(D&y , element_tye a, const D& z)`
  * - `void zero(D& x)`
- * - `std::size_t size(const D& x)`
  * - `element_type norm2(const D& x)`
  *
  */

@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/cc/diis.h"
+#include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_r1_r2.h"
 #include "mpqc/chemistry/qc/lcao/cc/solvers.h"
@@ -69,9 +69,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
+   * | method | string | direct or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 30 | maxmium iteration in CCSD |
-   * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |
+   * | verbose | bool | default is false | if print more information in CCSD iteration |
    * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
    */
 

@@ -18,7 +18,7 @@
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "IP-EOM-CCSD",
+    "type": "EOM-IP-CCSD",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",

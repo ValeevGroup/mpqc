@@ -569,7 +569,7 @@ TA::DistArray<Tile, Policy> unblock_t1(
     const TA::DistArray<Tile, Policy>& a_block) {
   // Reblock T1
   TA::DistArray<Tile, Policy> result;
-  result("an,in") = t1("a,i") * i_block("in,i") * a_block("an,a");
+  result("an,in") = t1("a,i") * a_block("an,a") * i_block("in,i");
   return result;
 }
 

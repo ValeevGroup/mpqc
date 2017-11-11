@@ -10,9 +10,9 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/gram_schmidt.h"
-#include "mpqc/util/misc/assert.h"
 #include "mpqc/util/core/exception.h"
 #include "mpqc/util/core/exenv.h"
+#include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/print.h"
 #include "mpqc/util/misc/time.h"
 
@@ -24,9 +24,7 @@ class DavidsonDiagPred {
   virtual void operator()(const EigenVector<typename D::element_type>& e,
                           std::vector<D>& guess) const = 0;
 
-  virtual typename D::element_type norm(const D& d) const {
-    return norm2(d) / size(d);
-  }
+  virtual typename D::element_type norm(const D& d) const { return norm2(d); }
 
   virtual ~DavidsonDiagPred() = default;
 };
@@ -138,7 +136,9 @@ class DavidsonDiag {
 
     EigenVector<element_type> eig = EigenVector<element_type>::Zero(n_roots_);
 
-    while (iter < max_iter && (norm_r > convergence || norm_e > convergence)) {
+    while (iter < max_iter &&
+           (norm_r > convergence || norm_e > 10 * convergence) &&
+           !guess.empty()) {
       auto time0 = mpqc::fenced_now(world);
 
       // compute product of H with guess vector
@@ -277,7 +277,7 @@ class DavidsonDiag {
                                    __LINE__);
         }
 
-//        std::cout << e << std::endl;
+        //        std::cout << e << std::endl;
 
         for (std::size_t i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
@@ -420,7 +420,6 @@ class DavidsonDiag {
   }
 
  private:
-
   /// this is a interface for SingleStateDavidsonDiag class
   virtual void deflation(value_type& HB, const value_type& B) const {
     // do nothing here
@@ -455,7 +454,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
         shift_(shift) {}
 
   /// @return return current eigen vector in Davidson
-  value_type& eigen_vector() override  { return  converged_eigen_vector_; }
+  value_type& eigen_vector() override { return converged_eigen_vector_; }
 
   /**
    * This is not a virtual function, it doesn't override DavidsonDiag::solve()
@@ -493,7 +492,8 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
       EigenVector<element_type> eig = EigenVector<element_type>::Zero(1);
 
       while (iter < max_iter &&
-             (norm_r > convergence || norm_e > convergence)) {
+             (norm_r > convergence || norm_e > convergence) &&
+             !guess_i.empty()) {
         auto time0 = mpqc::fenced_now(world);
 
         // compute product of H with guess vector
@@ -539,35 +539,29 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
   }
 
  private:
-
   void deflation(value_type& HB, const value_type& B) const override {
-
     // size of new vector
     const auto n_b = B.size();
     const auto n = converged_eigen_vector_.size();
 
     RowMatrix<element_type> QB = RowMatrix<element_type>::Zero(n, n_b);
 
-    for (std::size_t i = 0; i < n; i++){
-      for (std::size_t j = 0; j < n_b; j++){
-
-        QB(i,j) = dot_product(converged_eigen_vector_[i], B[j]);
-
+    for (std::size_t i = 0; i < n; i++) {
+      for (std::size_t j = 0; j < n_b; j++) {
+        QB(i, j) = dot_product(converged_eigen_vector_[i], B[j]);
       }
     }
 
-    for(std::size_t i = 0; i < n_b; i++){
+    for (std::size_t i = 0; i < n_b; i++) {
       D tmp = copy(HB[i]);
       zero(tmp);
 
-      for (std::size_t j = 0; j < n; j++){
-        axpy(tmp, QB(j,i),converged_eigen_vector_[j]);
+      for (std::size_t j = 0; j < n; j++) {
+        axpy(tmp, QB(j, i), converged_eigen_vector_[j]);
       }
 
       axpy(HB[i], shift_, tmp);
-
     }
-
   }
 
   std::size_t total_roots_;

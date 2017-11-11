@@ -36,7 +36,7 @@ void gram_schmidt(std::vector<D> &V, double threshold, std::size_t start = 0) {
 
     auto norm = norm2(V[i]);
 
-    if (norm < threshold && n_neglect != original_k - 1) {
+    if (norm < threshold) {
       ExEnv::out0() << "Gram Schmidt neglect " << i + n_neglect
                     << "th vector with norm: " << norm << "\n";
       V.erase(V.begin() + i);
@@ -94,7 +94,7 @@ void gram_schmidt(const std::vector<D> &V1, std::vector<D> &V2,
     }
 
     auto norm = norm2(V2[i]);
-    if (norm < threshold && n_neglect != original_k - 1) {
+    if (norm < threshold) {
       ExEnv::out0() << "Gram Schmidt neglect " << i + n_neglect
                     << "th vector with norm: " << norm << "\n";
       V2.erase(V2.begin() + i);

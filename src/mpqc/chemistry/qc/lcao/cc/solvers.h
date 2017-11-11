@@ -37,7 +37,7 @@ TA::DistArray<Tile, Policy> jacobi_update_t3_abcijk(
     const TA::DistArray<Tile, Policy>& r3_abcijk,
     const EigenVector<typename Tile::numeric_type>& ens_occ,
     const EigenVector<typename Tile::numeric_type>& ens_uocc) {
-    auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
+  auto denom = [ens_occ, ens_uocc](Tile& result_tile, const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -63,23 +63,23 @@ TA::DistArray<Tile, Policy> jacobi_update_t3_abcijk(
         const auto e_b = ens_uocc[b];
         for (auto c = c0; c < cn; ++c) {
           const auto e_c = ens_uocc[c];
-        for (auto i = i0; i < in; ++i) {
-          const auto e_i = ens_occ[i];
-          for (auto j = j0; j < jn; ++j) {
-            const auto e_j = ens_occ[j];
-            for (auto k = k0; k < kn; ++k, ++tile_idx) {
-              const auto e_k = ens_occ[k];
-            const auto e_iajbkc = e_i + e_j + e_k - e_a - e_b - e_c ;
-            const auto old = arg_tile[tile_idx];
-            const auto result_abcijk = old / (e_iajbkc);
-            const auto abs_result_abcijk = std::abs(result_abcijk);
-            norm += abs_result_abcijk * abs_result_abcijk;
-            result_tile[tile_idx] = result_abcijk;
+          for (auto i = i0; i < in; ++i) {
+            const auto e_i = ens_occ[i];
+            for (auto j = j0; j < jn; ++j) {
+              const auto e_j = ens_occ[j];
+              for (auto k = k0; k < kn; ++k, ++tile_idx) {
+                const auto e_k = ens_occ[k];
+                const auto e_iajbkc = e_i + e_j + e_k - e_a - e_b - e_c;
+                const auto old = arg_tile[tile_idx];
+                const auto result_abcijk = old / (e_iajbkc);
+                const auto abs_result_abcijk = std::abs(result_abcijk);
+                norm += abs_result_abcijk * abs_result_abcijk;
+                result_tile[tile_idx] = result_abcijk;
+              }
+            }
           }
         }
-       }
       }
-     }
     }
     return std::sqrt(norm);
   };
@@ -88,7 +88,6 @@ TA::DistArray<Tile, Policy> jacobi_update_t3_abcijk(
   delta_t3_abcijk.world().gop.fence();
   return delta_t3_abcijk;
 }
-
 
 // squared norm of 1-body residual in OSV subspace
 template <typename T>
@@ -527,8 +526,8 @@ TA::DistArray<Tile, Policy> unblock_t2(
     const TA::DistArray<Tile, Policy>& a_block) {
   // Reblock T2
   TA::DistArray<Tile, Policy> result;
-  result("an,bn,in,jn") = t2("a,b,i,j") * i_block("jn,j") * i_block("in,i") *
-                          a_block("bn,b") * a_block("an,a");
+  result("an,bn,in,jn") = t2("a,b,i,j") * a_block("bn,b") * a_block("an,a") *
+                          i_block("jn,j") * i_block("in,i");
 
   return result;
 }
@@ -734,7 +733,7 @@ void construct_pno(
 
   // loop over all local tiles and compute OSV
   for (auto i = reblock_r1_pmap->begin(); i != reblock_r1_pmap->end(); ++i) {
-//    std::cout << "Node: " << world.rank() << " OSV: " << *i << std::endl;
+    //    std::cout << "Node: " << world.rank() << " OSV: " << *i << std::endl;
     madness::Future<Tile> D_ii = D.find({0ul, 0ul, *i, *i});
     world.taskq.add(form_osv, *i, D_ii, &osvs);
   };
@@ -894,17 +893,17 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T> {
     t2.truncate();
   }
 
-  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2, const T& r3) override {
+  void update_only(T& t1, T& t2, T& t3, const T& r1, const T& r2,
+                   const T& r3) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
-    t3("a,b,c,i,j,k") += detail::jacobi_update_t3_abcijk(r3, f_ii_, f_aa_)("a,b,c,i,j,k");
+    t3("a,b,c,i,j,k") +=
+        detail::jacobi_update_t3_abcijk(r3, f_ii_, f_aa_)("a,b,c,i,j,k");
     t1.truncate();
     t2.truncate();
     t3.truncate();
   }
-
 };
-
 
 /// PNOSolver updates the CC T amplitudes using standard Jacobi+DIIS in PNO
 /// space

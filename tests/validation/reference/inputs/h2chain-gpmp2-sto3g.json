@@ -1,7 +1,6 @@
 {
   "units": "2006CODATA",
   "unitcell": {
-    "charge": 0,
     "file_name": "h2.xyz",
     "sort_input": true,
     "n_cluster": 1,

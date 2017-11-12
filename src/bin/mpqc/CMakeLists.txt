@@ -17,13 +17,21 @@ target_compile_definitions(MPQCmpqc PUBLIC ${LIBINT2_EXTRA_DEFINITIONS})
 # libmpqc is an interface to the *entire* top-level MPQC functionality
 # this target is useful to create a standalone executable that augments the MPQC functionality
 # N.B. To force linking in of these libs into the executqble use ForceLink mechanism (see the top of mpqc.cpp)
-# N.B. developers will want to trim this list down to the minimum needed
-#set(MPQC_LIBS MPQClcao_f12 MPQClcao_cc MPQClcao_mbpt MPQClcao_scf MPQCmra)
-set(MPQC_LIBS MPQClcao_f12 MPQClcao_ci MPQClcao_cc MPQClcao_mbpt MPQClcao_scf)
+# N.B. developers will want to trim this list down to the minimum needed, e.g. down to "lcao_scf" to test HF only
+set (mpqc_features "lcao_cc;lcao_f12;lcao_ci;lcao_mbpt;lcao_scf")
+set (MPQC_FEATURES ${mpqc_features} CACHE STRING
+        "The list of features supported by the MPQC executable" FORCE)
+# transform MPQC_FEATURES to the list of library targets
+set(MPQC_FEATURE_LIBS )
+set(MPQC_FEATURE_DEFINITIONS )
+foreach(feature ${MPQC_FEATURES})
+     list(APPEND MPQC_FEATURE_LIBS "MPQC${feature}")
+     list(APPEND MPQC_FEATURE_DEFINITIONS "-DMPQC_INCLUDES_${feature}=1")
+endforeach()
 
-# create libmpqc, an interface to MPQC_LIBS
+# create libmpqc, an interface to MPQC_FEATURE_LIBS
 # linking libmpqc in will link in ALL MPQC functionality
-set(deplibs "MPQCmpqc" ${MPQC_LIBS})
+set(deplibs "MPQCmpqc" ${MPQC_FEATURE_LIBS})
 add_library(libmpqc INTERFACE)
 target_link_libraries(libmpqc INTERFACE ${deplibs})
 install(TARGETS libmpqc EXPORT mpqc
@@ -34,17 +42,19 @@ add_custom_target(install-libmpqc)
 add_dependencies(install-libmpqc install-mpqc)
 
 ################## MPQCmain useful to develop plugins #########################
-# MPQCmain (see below) also depends on MPQC_LIBS functionality ... can't use libmpqc since it's just an INTERFACE
+# MPQCmain (see below) also depends on MPQC_FEATURE_LIBS functionality ... can't use libmpqc since it's just an INTERFACE
 set(main_source mpqc.cpp)
 add_mpqc_library(main  main_source ""
         "MPQCmpqc" "mpqc")
-target_link_libraries(MPQCmain PUBLIC ${MPQC_LIBS})
+target_link_libraries(MPQCmain PUBLIC ${MPQC_FEATURE_LIBS})
+target_compile_definitions(MPQCmain PUBLIC ${MPQC_FEATURE_DEFINITIONS})
 
 ##################### MPQC executable ###########################
 add_executable(mpqc mpqc.cpp)
 INCLUDE_DIRECTORIES(${MPQC_SOURCE_DIR}/src/bin)
 target_link_libraries(mpqc
                       libmpqc ${MADNESS_DISABLEPIE_LINKER_FLAG})
+target_compile_definitions(mpqc PUBLIC ${MPQC_FEATURE_DEFINITIONS})
 # note above an ad hoc treatment of PIE until CMake allows to do it properly ... specifically, need CMake to:
 # 1. force non-PIE for compilers that default to PIE
 # 2. allow clean specification of PIE/non-PIE properties for library targets

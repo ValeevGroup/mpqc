@@ -99,7 +99,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     auto screen_threshold = ao_factory_.screen_threshold();
     auto shell_pair_threshold = ao_factory_.shell_pair_threshold();
 
-    // construct PerioidcThreeCenterContractionBuilder for contractions
+    // construct PeriodicThreeCenterContractionBuilder for contractions
     // involving 3-center ints
     three_center_builder_ = std::make_unique<PTC_Builder>(
         world, basis, aux_basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,

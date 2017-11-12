@@ -26,7 +26,7 @@ if (${PYTHONINTERP_FOUND})
     if ((${baseName} MATCHES "mp2" OR ${baseName} MATCHES "gf2") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_mbpt")
         continue()
     endif()
-    if ((${baseName} MATCHES "hf") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_mbpt")
+    if ((${baseName} MATCHES "hf") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_scf")
         continue()
     endif()
 

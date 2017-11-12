@@ -17,11 +17,14 @@ target_compile_definitions(MPQCmpqc PUBLIC ${LIBINT2_EXTRA_DEFINITIONS})
 # libmpqc is an interface to the *entire* top-level MPQC functionality
 # this target is useful to create a standalone executable that augments the MPQC functionality
 # N.B. To force linking in of these libs into the executqble use ForceLink mechanism (see the top of mpqc.cpp)
+# N.B. due to transitive dependencies this could be shortened to: set (mpqc_features "lcao_f12;lcao_ci")
+#      *but* this would break introspection of MPQC capabilities later (e.g. in validation suite)
+set(mpqc_features "lcao_f12;lcao_cc;lcao_mbpt;lcao_ci;lcao_scf")
 # N.B. developers will want to trim this list down to the minimum needed, e.g. down to "lcao_scf" to test HF only
-set (mpqc_features "lcao_cc;lcao_f12;lcao_ci;lcao_mbpt;lcao_scf")
-set (MPQC_FEATURES ${mpqc_features} CACHE STRING
-        "The list of features supported by the MPQC executable" FORCE)
-# transform MPQC_FEATURES to the list of library targets
+#set (mpqc_features "lcao_scf" )
+set(MPQC_FEATURES ${mpqc_features} CACHE STRING
+    "The list of features supported by the MPQC executable" FORCE)
+# transform MPQC_FEATURES to the list of library targets and associated preprocessor definitions
 set(MPQC_FEATURE_LIBS )
 set(MPQC_FEATURE_DEFINITIONS )
 foreach(feature ${MPQC_FEATURES})

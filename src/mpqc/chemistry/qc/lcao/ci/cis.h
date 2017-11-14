@@ -420,9 +420,51 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
 
   auto &factory = this->lcao_factory();
 
-  std::size_t n_i = factory.orbital_registry().retrieve("i").rank();
-  std::size_t n_a = factory.orbital_registry().retrieve("a").rank();
+  std::size_t n_m = factory.orbital_registry().retrieve("m").rank();
+  const auto &orbital_i = factory.orbital_registry().retrieve("i");
+  const auto &orbital_a = factory.orbital_registry().retrieve("a");
+  std::size_t n_i = orbital_i.rank();
+  std::size_t n_a = orbital_a.rank();
+  std::size_t n_frozen = n_m - n_i;
 
+  auto canonical_orbs_provider = std::dynamic_pointer_cast<
+      typename CanonicalOrbitalSpace<TArray>::Provider>(ref_wfn_);
+  bool has_canonical_orbs =
+      canonical_orbs_provider && canonical_orbs_provider->can_evaluate();
+
+  // these two will be computed if is not canonical
+  TArray local_to_canonical_occ;
+  TArray local_to_canonical_unocc;
+
+  EigenVector<numeric_type> energy_occ;
+  EigenVector<numeric_type> energy_unocc;
+  if (has_canonical_orbs) {
+    energy_occ = eps_o_;
+    energy_unocc = eps_v_;
+  } else {
+    auto f_pq =
+        df_ ? factory.compute(L"<p|F|q>[df]") : factory.compute(L"<p|F|q>");
+
+    auto f_eig = array_ops::array_to_eigen(f_pq);
+    Eigen::SelfAdjointEigenSolver<decltype(f_eig)> es(f_eig);
+    auto evals = es.eigenvalues();
+    auto C = es.eigenvectors();
+
+    energy_occ = evals.segment(n_frozen, n_i);
+    energy_unocc = evals.segment(n_m, n_a);
+
+    decltype(C) C_i = C.block(n_frozen, n_frozen, n_i, n_i);
+    decltype(C) C_a = C.block(n_m, n_m, n_a, n_a);
+
+    auto &tr_i = orbital_i.trange();
+    auto &tr_a = orbital_a.trange();
+    auto &world = f_pq.world();
+
+    local_to_canonical_occ =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_i, tr_i);
+    local_to_canonical_unocc =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_a, tr_a);
+  }
   // use f_ia for shape
   auto f_ia =
       df_ ? factory.compute(L"<i|F|a>[df]") : factory.compute(L"<i|F|a>");
@@ -434,8 +476,8 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     // TODO might want to parallel this section
     for (std::size_t i = 0; i < n_i; ++i) {
       for (std::size_t a = 0; a < n_a; ++a) {
-        index[i * n_a + a] = std::move(
-            detail::IndexSort<numeric_type>(i, a, eps_v_[a] - eps_o_[i]));
+        index[i * n_a + a] = std::move(detail::IndexSort<numeric_type>(
+            i, a, energy_unocc[a] - energy_occ[i]));
       }
     }
 
@@ -473,6 +515,11 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     }
 
     guess.truncate();
+    // convert to local basis
+    if (!has_canonical_orbs) {
+      guess("i,a") = guess("i1, a1") * local_to_canonical_occ("i,i1") *
+                     local_to_canonical_unocc("a,a1");
+    }
 
     guess_vector[i] = guess;
   }

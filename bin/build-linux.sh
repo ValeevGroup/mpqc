@@ -49,7 +49,7 @@ make -j1 check
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples
 cd mp2
-  cmake .
+  cmake . -DCMAKE_BUILD_TYPE=$BUILD_TYPE
   make mp2
   # prepend "setarch `uname -m` -R" if switched back to container builds
   ./mp2 ./mp2.json

@@ -1,7 +1,7 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 
-// set to 1, must have libint-2.4.0-beta.2
+// set to 1, must have libint-2.4.0-beta.2 or older
 #define PRODUCE_PNO_MOLDEN_FILES 0
 #if PRODUCE_PNO_MOLDEN_FILES
 #include "libint2/lcao/molden.h"

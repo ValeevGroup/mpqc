@@ -132,10 +132,7 @@ matrix:
            - g++-7
            - clang-5.0
   allow_failures:
-# 3 runtime failures in validation tests
-    - compiler: gcc
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-# this results in an ICE when compiling formio.cpp
+# this results in an ICE
     - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Debug
 
@@ -151,8 +148,8 @@ before_install:
 script: "travis_wait 80 ./bin/build-$TRAVIS_OS_NAME.sh"
 
 after_failure:
-- cat ./mpqc4_build/CMakeFiles/CMakeOutput.log
-- cat ./mpqc4_build/CMakeFiles/CMakeError.log
+- cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeOutput.log
+- cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeError.log
 
 notifications:
   slack:

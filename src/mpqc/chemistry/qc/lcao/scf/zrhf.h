@@ -37,6 +37,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   zRHF() = default;
 
+  // clang-format off
   /**
    * KeyVal constructor for zRHF
    *
@@ -44,14 +45,14 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
    * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
    * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap
-   * matrix |
+   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
+   * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
    *
    */
+  // clang-format on
   zRHF(const KeyVal& kv);
 
   ~zRHF() {}

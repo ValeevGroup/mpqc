@@ -55,6 +55,14 @@ std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
   return pao_factory;
 }
 
+/*!
+ * \brief Periodic Integral Class
+ *
+ * This class computes atomic integrals involved in periodic calculations using
+ * Formula
+ *
+ * compute(formula) returns TArray object
+ */
 template <typename Tile, typename Policy>
 class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
  public:
@@ -67,10 +75,40 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   PeriodicAOFactory(PeriodicAOFactory &&) = default;
   PeriodicAOFactory &operator=(PeriodicAOFactory &&) = default;
 
+  // clang-format off
   /*!
    * \brief KeyVal constructor for PeriodicAOFactory
-   * \param kv the KeyVal object
+   * \param kv The KeyVal object will be queried for all the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c rmax  | array<int, 3> | none | This gives range of expansion of Bloch Gaussians in AO Gaussians. |
+   *  |\c rdmax | array<int, 3> | none | This gives range of Coulomb operation. |
+   *  |\c rjmax | array<int, 3> | none | This gives range of density representation. |
+   *  |\c engine_precision | double | machine epsilon | This gives integral engine precision. |
+   *  |\c screen | string | schwarz | This gives method of screening, qqr or schwarz. |
+   *  |\c threshold | double | 1e-20 | This gives threshold for schwarz or qqr screening. |
+   *  |\c shell_pair_threshold | double | 1e-12 | This gives threshold for screeing non-negligible shell pairs. |
+   *  |\c density_threshold | double | sparse shape threshold | This gives threshold for screening density blocks in Fock build. |
+   *  |\c print_detail | bool | false | Print more details if true. |
+   *
+   *  example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn_world": {
+   *    "atoms" : "$:water",
+   *    "basis" : "$:basis",
+   *    "df_basis" : "$:dfbs",
+   *    "screen": "schwarz",
+   *    "threshold": 1.0e-20,
+   *    "shell_pair_threshold": 1.0e-20,
+   *    "density_threshold": 1.0e-10,
+   *    "rmax":  [0, 0, 10],
+   *    "rjmax": [0, 0, 10],
+   *    "rdmax": [0, 0, 10]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   PeriodicAOFactory(const KeyVal &kv)
       : PeriodicAOFactoryBase<Tile, Policy>(kv) {
     std::string prefix = "";
@@ -83,11 +121,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     dcell_ = unitcell_->dcell();
 
     R_max_ =
-        decltype(R_max_)(kv.value<std::vector<int>>(prefix + "rmax").data());
-    RD_max_ =
-        decltype(RD_max_)(kv.value<std::vector<int>>(prefix + "rdmax").data());
-    RJ_max_ =
-        decltype(RJ_max_)(kv.value<std::vector<int>>(prefix + "rjmax").data());
+        decltype(R_max_)(kv.value<std::array<int, 3>>(prefix + "rmax").data());
+    RD_max_ = decltype(RD_max_)(
+        kv.value<std::array<int, 3>>(prefix + "rdmax").data());
+    RJ_max_ = decltype(RJ_max_)(
+        kv.value<std::array<int, 3>>(prefix + "rjmax").data());
 
     using ::mpqc::lcao::detail::direct_ord_idx;
     R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
@@ -95,9 +133,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
     auto default_precision = std::numeric_limits<double>::epsilon();
-    precision_ = kv.value<double>(prefix + "precision", default_precision);
-    detail::integral_engine_precision = precision_;
-    ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
+    engine_precision_ =
+        kv.value<double>(prefix + "engine_precision", default_precision);
+    detail::integral_engine_precision = engine_precision_;
+    ExEnv::out0() << indent << "Engine precision = " << engine_precision_
+                  << "\n";
 
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-20);
@@ -340,7 +380,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   bool print_detail_;  ///> if true, print a lot more details
   std::string screen_;
-  double precision_;
+  double engine_precision_;
   double screen_threshold_;
   double shell_pair_threshold_;
   double density_threshold_;

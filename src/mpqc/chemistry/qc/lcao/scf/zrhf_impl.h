@@ -60,7 +60,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   RD_size_ = ao_factory.RD_size();
 
   // read # kpoints from keyval
-  nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
+  nk_ = decltype(nk_)(kv.value<std::array<int, 3>>("k_points").data());
   assert((nk_.array() > 0).all() &&
          "k_points cannot have zero or negative elements");
   k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);

@@ -33,6 +33,7 @@ class ExcitationEnergy : public WavefunctionProperty<std::vector<double>> {
    * keywords:
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
+   * | precision | double | 1.0e-6 | how tight to converge |
    * | n_roots | unsigned int | 3 | number of states to compute |
    * | n_guess | unsigned int | n_roots | number of guess states used to compute |
    * | singlets | bool | true | compute singlet excitation energy, only apply to closed-shell system|

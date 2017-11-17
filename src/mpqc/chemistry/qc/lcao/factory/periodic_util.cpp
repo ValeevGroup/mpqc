@@ -41,13 +41,14 @@ void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec) {
   eigVec = sortedEigVec;
 }
 
-Vector3d direct_vector(int64_t ord_idx, Vector3i const &latt_max,
+Vector3d direct_vector(int64_t ord_idx, Vector3i const &lattice_max,
                        Vector3d const &dcell) {
-  auto z = ord_idx % (2 * latt_max(2) + 1);
-  auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
-  auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
-  Vector3d result((x - latt_max(0)) * dcell(0), (y - latt_max(1)) * dcell(1),
-                  (z - latt_max(2)) * dcell(2));
+  auto z = ord_idx % (2 * lattice_max(2) + 1);
+  auto y = (ord_idx / (2 * lattice_max(2) + 1)) % (2 * lattice_max(1) + 1);
+  auto x = ord_idx / (2 * lattice_max(2) + 1) / (2 * lattice_max(1) + 1);
+  Vector3d result((x - lattice_max(0)) * dcell(0),
+                  (y - lattice_max(1)) * dcell(1),
+                  (z - lattice_max(2)) * dcell(2));
   return result;
 }
 
@@ -68,31 +69,32 @@ Vector3d k_vector(int64_t ord_idx, Vector3i const &nk, Vector3d const &dcell) {
   return result;
 }
 
-int64_t direct_ord_idx(Vector3i const &in_3D_idx, Vector3i const &latt_max) {
-  return direct_ord_idx(in_3D_idx(0), in_3D_idx(1), in_3D_idx(2), latt_max);
+int64_t direct_ord_idx(Vector3i const &in_3D_idx, Vector3i const &lattice_max) {
+  return direct_ord_idx(in_3D_idx(0), in_3D_idx(1), in_3D_idx(2), lattice_max);
 }
 
 int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z,
-                       Vector3i const &latt_max) {
-  if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0 &&
-      std::abs(x) <= latt_max(0) && std::abs(y) <= latt_max(1) &&
-      std::abs(z) <= latt_max(2)) {
-    int64_t idx =
-        (x + latt_max(0)) * (2 * latt_max(1) + 1) * (2 * latt_max(2) + 1) +
-        (y + latt_max(1)) * (2 * latt_max(2) + 1) + (z + latt_max(2));
+                       Vector3i const &lattice_max) {
+  if (lattice_max(0) >= 0 && lattice_max(1) >= 0 && lattice_max(2) >= 0 &&
+      std::abs(x) <= lattice_max(0) && std::abs(y) <= lattice_max(1) &&
+      std::abs(z) <= lattice_max(2)) {
+    int64_t idx = (x + lattice_max(0)) * (2 * lattice_max(1) + 1) *
+                      (2 * lattice_max(2) + 1) +
+                  (y + lattice_max(1)) * (2 * lattice_max(2) + 1) +
+                  (z + lattice_max(2));
     return idx;
   } else {
     throw "invalid lattice sum index/boundaries";
   }
 }
 
-Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &latt_max) {
-  if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0) {
-    auto z = ord_idx % (2 * latt_max(2) + 1);
-    auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
-    auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
+Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max) {
+  if (lattice_max(0) >= 0 && lattice_max(1) >= 0 && lattice_max(2) >= 0) {
+    auto z = ord_idx % (2 * lattice_max(2) + 1);
+    auto y = (ord_idx / (2 * lattice_max(2) + 1)) % (2 * lattice_max(1) + 1);
+    auto x = ord_idx / (2 * lattice_max(2) + 1) / (2 * lattice_max(1) + 1);
 
-    Vector3i result(x - latt_max(0), y - latt_max(1), z - latt_max(2));
+    Vector3i result(x - lattice_max(0), y - lattice_max(1), z - lattice_max(2));
     return result;
   } else {
     throw "invalid lattice boundaries";

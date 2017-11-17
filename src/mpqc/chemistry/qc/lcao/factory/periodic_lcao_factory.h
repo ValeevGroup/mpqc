@@ -108,7 +108,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
   TArray compute4(const Formula &formula_string);
 
   /// find the correct range of summation for σ in <μ0 νR|ρR_j σ(R_j+R)>
-  std::vector<int64_t> restricted_latt_range(int64_t R, int64_t RJ);
+  std::vector<int64_t> restricted_lattice_range(int64_t R, int64_t RJ);
 
   AOFactoryType &pao_factory_;
   std::shared_ptr<UnitCell> unitcell_;
@@ -458,7 +458,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
 
-      auto selected_RD_list = restricted_latt_range(R, RJ);
+      auto selected_RD_list = restricted_lattice_range(R, RJ);
       for (auto RD_idx = 0; RD_idx < selected_RD_list.size(); ++RD_idx) {
         auto RD = selected_RD_list[RD_idx];
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
@@ -552,8 +552,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-std::vector<int64_t> PeriodicLCAOFactory<Tile, Policy>::restricted_latt_range(
-    int64_t R, int64_t RJ) {
+std::vector<int64_t>
+PeriodicLCAOFactory<Tile, Policy>::restricted_lattice_range(int64_t R,
+                                                            int64_t RJ) {
   std::vector<int64_t> result;
   using ::mpqc::lcao::detail::direct_vector;
 

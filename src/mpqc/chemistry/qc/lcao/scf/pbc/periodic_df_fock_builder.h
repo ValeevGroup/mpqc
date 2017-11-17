@@ -42,12 +42,12 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                         bool) override {
     array_type G;
 
-    const auto J_latt_range = ao_factory_.R_max();
-    const auto K_latt_range = k_builder_->fock_latt_range();
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->fock_lattice_range();
     // the '-' sign is embeded in K builder
     G = ::mpqc::pbc::detail::add(compute_J(D, target_precision),
-                                 compute_K(D, target_precision), J_latt_range,
-                                 K_latt_range, 2.0, 1.0);
+                                 compute_K(D, target_precision),
+                                 J_lattice_range, K_lattice_range, 2.0, 1.0);
 
     return G;
   }
@@ -57,22 +57,22 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 
-  Vector3i fock_latt_range() override {
-    const auto J_latt_range = ao_factory_.R_max();
-    const auto K_latt_range = k_builder_->fock_latt_range();
-    if (J_latt_range(0) >= K_latt_range(0) &&
-        J_latt_range(1) >= K_latt_range(1) &&
-        J_latt_range(2) >= K_latt_range(2)) {
-      return J_latt_range;
-    } else if (J_latt_range(0) <= K_latt_range(0) &&
-               J_latt_range(1) <= K_latt_range(1) &&
-               J_latt_range(2) <= K_latt_range(2)) {
-      return K_latt_range;
+  Vector3i fock_lattice_range() override {
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->fock_lattice_range();
+    if (J_lattice_range(0) >= K_lattice_range(0) &&
+        J_lattice_range(1) >= K_lattice_range(1) &&
+        J_lattice_range(2) >= K_lattice_range(2)) {
+      return J_lattice_range;
+    } else if (J_lattice_range(0) <= K_lattice_range(0) &&
+               J_lattice_range(1) <= K_lattice_range(1) &&
+               J_lattice_range(2) <= K_lattice_range(2)) {
+      return K_lattice_range;
     } else {
       ExEnv::out0() << "\nLattice range of Coulomb: "
-                    << J_latt_range.transpose()
+                    << J_lattice_range.transpose()
                     << "\nLattice range of exchange: "
-                    << K_latt_range.transpose() << std::endl;
+                    << K_lattice_range.transpose() << std::endl;
       throw "Invalid lattice ranges!";
     }
   }

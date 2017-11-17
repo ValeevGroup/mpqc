@@ -153,8 +153,8 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
     // transform Fock from real to reciprocal space
     auto trans_start = mpqc::fenced_now(world);
-    const auto fock_latt_range = f_builder_->fock_latt_range();
-    Fk_ = transform_real2recip(F_, fock_latt_range, nk_);
+    const auto fock_lattice_range = f_builder_->fock_lattice_range();
+    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
@@ -320,24 +320,24 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
 template <typename Tile, typename Policy>
 typename zRHF<Tile, Policy>::array_type_z
 zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
-                                         const Vector3i& real_latt_range,
-                                         const Vector3i& recip_latt_range) {
+                                         const Vector3i& real_lattice_range,
+                                         const Vector3i& recip_lattice_range) {
   // Make sure range values are all positive
-  assert((real_latt_range.array() >= 0).all() &&
-         (recip_latt_range.array() > 0).all());
+  assert((real_lattice_range.array() >= 0).all() &&
+         (recip_lattice_range.array() > 0).all());
 
-  const auto real_latt_size =
-      1 + detail::direct_ord_idx(real_latt_range, real_latt_range);
-  const Vector3i k_end_3D_idx = (recip_latt_range.array() - 1).matrix();
-  const auto recip_latt_size =
-      1 + detail::k_ord_idx(k_end_3D_idx, recip_latt_range);
+  const auto real_lattice_size =
+      1 + detail::direct_ord_idx(real_lattice_range, real_lattice_range);
+  const Vector3i k_end_3D_idx = (recip_lattice_range.array() - 1).matrix();
+  const auto recip_lattice_size =
+      1 + detail::k_ord_idx(k_end_3D_idx, recip_lattice_range);
   const auto tiles_range = matrix.trange().tiles_range();
   assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
-  assert(real_latt_size == tiles_range.extent(1) / tiles_range.extent(0));
+  assert(real_lattice_size == tiles_range.extent(1) / tiles_range.extent(0));
 
   array_type_z result;
   auto tr0 = matrix.trange().data()[0];
-  auto tr1 = detail::extend_trange1(tr0, recip_latt_size);
+  auto tr1 = detail::extend_trange1(tr0, recip_lattice_size);
   auto& world = matrix.world();
 
   // Perform real->reciprocal transformation with Eigen
@@ -347,15 +347,15 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();
-  for (auto R = 0; R < real_latt_size; ++R) {
+  for (auto R = 0; R < real_lattice_size; ++R) {
     auto bmat =
         matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
     if (bmat.norm() < bmat.size() * threshold)
       continue;
     else {
-      auto vec_R = detail::direct_vector(R, real_latt_range, dcell_);
-      for (auto k = 0; k < recip_latt_size; ++k) {
-        auto vec_k = detail::k_vector(k, recip_latt_range, dcell_);
+      auto vec_R = detail::direct_vector(R, real_lattice_range, dcell_);
+      for (auto k = 0; k < recip_lattice_size; ++k) {
+        auto vec_k = detail::k_vector(k, recip_lattice_range, dcell_);
         auto exponent = std::exp(I * vec_k.dot(vec_R));
         result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
             bmat * exponent;
@@ -436,24 +436,25 @@ void zRHF<Tile, Policy>::evaluate(Energy* result) {
 template <typename Tile, typename Policy>
 double zRHF<Tile, Policy>::compute_energy() {
   array_type H_plus_F;
-  const auto fock_latt_range = f_builder_->fock_latt_range();
-  H_plus_F = ::mpqc::pbc::detail::add(H_, F_, R_max_, fock_latt_range);
-  Vector3i HpF_latt_range;
-  if (R_max_(0) >= fock_latt_range(0) && R_max_(1) >= fock_latt_range(1) &&
-      R_max_(2) >= fock_latt_range(2)) {
-    HpF_latt_range = R_max_;
-  } else if (R_max_(0) <= fock_latt_range(0) &&
-             R_max_(1) <= fock_latt_range(1) &&
-             R_max_(2) <= fock_latt_range(2)) {
-    HpF_latt_range = fock_latt_range;
+  const auto fock_lattice_range = f_builder_->fock_lattice_range();
+  H_plus_F = ::mpqc::pbc::detail::add(H_, F_, R_max_, fock_lattice_range);
+  Vector3i HpF_lattice_range;
+  if (R_max_(0) >= fock_lattice_range(0) &&
+      R_max_(1) >= fock_lattice_range(1) &&
+      R_max_(2) >= fock_lattice_range(2)) {
+    HpF_lattice_range = R_max_;
+  } else if (R_max_(0) <= fock_lattice_range(0) &&
+             R_max_(1) <= fock_lattice_range(1) &&
+             R_max_(2) <= fock_lattice_range(2)) {
+    HpF_lattice_range = fock_lattice_range;
   } else {
     ExEnv::out0() << "\nLattice range of H: " << R_max_.transpose()
-                  << "\nLattice range of Fock: " << fock_latt_range.transpose()
-                  << std::endl;
+                  << "\nLattice range of Fock: "
+                  << fock_lattice_range.transpose() << std::endl;
     throw "Invalid lattice ranges!";
   }
-  auto ezrhf =
-      ::mpqc::pbc::detail::dot_product(H_plus_F, D_, HpF_latt_range, RD_max_);
+  auto ezrhf = ::mpqc::pbc::detail::dot_product(H_plus_F, D_, HpF_lattice_range,
+                                                RD_max_);
   return ezrhf;
 }
 
@@ -467,8 +468,8 @@ void zRHF<Tile, Policy>::init_fock_builder() {
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::build_F() {
   auto G = f_builder_->operator()(D_);
-  const auto fock_latt_range = f_builder_->fock_latt_range();
-  F_ = ::mpqc::pbc::detail::add(H_, G, R_max_, fock_latt_range);
+  const auto fock_lattice_range = f_builder_->fock_lattice_range();
+  F_ = ::mpqc::pbc::detail::add(H_, G, R_max_, fock_lattice_range);
 }
 
 /**

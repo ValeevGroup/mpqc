@@ -44,11 +44,11 @@ void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec);
  * and returns the corresponding direct-space lattice vector
  *
  * \param ord_index the ordinal index of the lattice
- * \param latt_max the range of included lattices
+ * \param lattice_max the range of included lattices
  * \param dcell the direct unit cell params
  * \return the direct-space lattice vector
  */
-Vector3d direct_vector(int64_t ord_idx, Vector3i const &latt_max,
+Vector3d direct_vector(int64_t ord_idx, Vector3i const &lattice_max,
                        Vector3d const &dcell);
 
 /*!
@@ -67,10 +67,10 @@ Vector3d k_vector(int64_t ord_idx, Vector3i const &nk, Vector3d const &dcell);
  * and returns the corresponding ordinal index
  *
  * \param in_3D_idx input 3D index
- * \param latt_max the range of included lattices
+ * \param lattice_max the range of included lattices
  * \return the ordinal index in direct space
  */
-int64_t direct_ord_idx(Vector3i const &in_3D_idx, Vector3i const &latt_max);
+int64_t direct_ord_idx(Vector3i const &in_3D_idx, Vector3i const &lattice_max);
 
 /*!
  * \brief This takes the 3D index of a direct lattice
@@ -79,11 +79,11 @@ int64_t direct_ord_idx(Vector3i const &in_3D_idx, Vector3i const &latt_max);
  * \param x the direct lattice index on x axis
  * \param y the direct lattice index on y axis
  * \param z the direct lattice index on z axis
- * \param latt_max the range of included lattices
+ * \param lattice_max the range of included lattices
  * \return the ordinal index in direct space
  */
 int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z,
-                       Vector3i const &latt_max);
+                       Vector3i const &lattice_max);
 
 /*!
  * \brief This takes the 3D index of a reciprocal lattice
@@ -100,10 +100,10 @@ int64_t k_ord_idx(Vector3i const &in_3D_idx, Vector3i const &nk);
  * and returns the corresponding 3D index
  *
  * \param ord_idx the ordinal index in direct space
- * \param latt_max the range of included lattices
+ * \param lattice_max the range of included lattices
  * \return 3D index in direct space
  */
-Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &latt_max);
+Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max);
 
 /*!
  * \brief This takes the 3D index of a reciprocal lattice

@@ -172,7 +172,7 @@ class PeriodicCADFKBuilder
     auto &world = this->get_world();
 
     mpqc::time_point t0, t1;
-    const Vector3i ref_latt_range = {0, 0, 0};
+    const Vector3i ref_lattice_range = {0, 0, 0};
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
     using ::mpqc::lcao::detail::direct_3D_idx;
@@ -238,20 +238,20 @@ class PeriodicCADFKBuilder
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       C_bra_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc_, ref_latt_range,
+          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc_, ref_lattice_range,
           RJ_max_, RJ_max_);
     }
     t1 = mpqc::fenced_now(world);
     auto t_C_bra = mpqc::duration_in_s(t0, t1);
 
-    auto max_latt_range = [](Vector3i const &l, Vector3i const &r) {
+    auto max_lattice_range = [](Vector3i const &l, Vector3i const &r) {
       auto x = std::max(l(0), r(0));
       auto y = std::max(l(1), r(1));
       auto z = std::max(l(2), r(2));
       return Vector3i({x, y, z});
     };
 
-    RY_max_ = max_latt_range(R_max_, RJ_max_ + RD_max_);
+    RY_max_ = max_lattice_range(R_max_, RJ_max_ + RD_max_);
     Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RY_max_, dcell_);
 
     // compute M(X, Y)

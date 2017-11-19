@@ -97,7 +97,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     }
 
     solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
-    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "svo")
+    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "svo" && solver_str_ != "exact_pno")
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
@@ -205,7 +205,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                                          this->ao_factory(), this->is_df());
 
       // set up the solver
-      if (solver_str_ == "jacobi_diis") {
+      if (solver_str_ == "jacobi_diis" || solver_str_ == "exact_pno") {
         const auto n_occ = this->trange1_engine()->get_occ();
         const auto n_frozen = this->trange1_engine()->get_nfrozen();
         const auto n_act_occ = n_occ - n_frozen;
@@ -332,7 +332,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, r1, r2, dE);
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -361,6 +361,37 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
           auto duration = mpqc::duration_in_s(time0, time1);
           detail::print_ccsd(iter, dE, error, E1, duration);
         }
+
+        // When solver_str = exact_pno, switch to PNO solver after CCSD
+        // amplitudes are converged
+        if (solver_str_ == "exact_pno"){
+          ExEnv::out0() << "Switching now to PNO solver" << std::endl;
+          solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
+          assert(solver_);
+          solver_->update(t1, t2, r1, r2, dE);
+
+          // recompute tau
+          tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (verbose_) {
+            mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          }
+
+          ExEnv::out0() << "Recomputing energy after PNO compression" << std::endl;
+          E0 = E1;
+          E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+               TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
+                       2 * tau("a,b,i,j") - tau("b,a,i,j"));
+          dE = std::abs(E0 - E1);
+
+          time1 = mpqc::fenced_now(world);
+          if (world.rank() == 0) {
+            MPQC_ASSERT(iter > 0);
+            auto duration = mpqc::duration_in_s(time0, time1);
+            detail::print_ccsd(iter+1, dE, error, E1, duration);
+          }
+        } // end if solver_str_ == "exact_pno"
 
         break;
       }
@@ -685,7 +716,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, r1, r2, dE);
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -714,6 +745,37 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
           auto duration = mpqc::duration_in_s(time0, time1);
           detail::print_ccsd(iter, dE, error, E1, duration);
         }
+
+        // When solver_str = exact_pno, switch to PNO solver after CCSD
+        // amplitudes are converged
+        if (solver_str_ == "exact_pno"){
+          ExEnv::out0() << "Switching now to PNO solver" << std::endl;
+          solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
+          assert(solver_);
+          solver_->update(t1, t2, r1, r2, dE);
+
+          // recompute tau
+          tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (verbose_) {
+            mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          }
+
+          ExEnv::out0() << "Recomputing energy after PNO compression" << std::endl;
+          E0 = E1;
+          E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+               TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
+                       2 * tau("a,b,i,j") - tau("b,a,i,j"));
+          dE = std::abs(E0 - E1);
+
+          time1 = mpqc::fenced_now(world);
+          if (world.rank() == 0) {
+            MPQC_ASSERT(iter > 0);
+            auto duration = mpqc::duration_in_s(time0, time1);
+            detail::print_ccsd(iter+1, dE, error, E1, duration);
+          }
+        } // end if solver_str_ == "exact_pno"
 
         break;
       }
@@ -1037,7 +1099,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, r1, r2, dE);
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -1068,6 +1130,37 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
           detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
                                     duration_t);
         }
+
+        // When solver_str = exact_pno, switch to PNO solver after CCSD
+        // amplitudes are converged
+        if (solver_str_ == "exact_pno"){
+          ExEnv::out0() << "Switching now to PNO solver" << std::endl;
+          solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
+          assert(solver_);
+          solver_->update(t1, t2, r1, r2, dE);
+
+          // recompute tau
+          tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (verbose_) {
+            mpqc::utility::print_par(world, "Solver::update time: ", tmp_time, "\n");
+          }
+
+          ExEnv::out0() << "Recomputing energy after PNO compression" << std::endl;
+          E0 = E1;
+          E1 = 2.0 * TA::dot(f_ai("a,i") + r1("a,i"), t1("a,i")) +
+               TA::dot(g_abij("a,b,i,j") + r2("a,b,i,j"),
+                       2 * tau("a,b,i,j") - tau("b,a,i,j"));
+          dE = std::abs(E0 - E1);
+
+          time1 = mpqc::fenced_now(world);
+          if (world.rank() == 0) {
+            MPQC_ASSERT(iter > 0);
+            auto duration = mpqc::duration_in_s(time0, time1);
+            detail::print_ccsd(iter+1, dE, error, E1, duration);
+          }
+        } // end if solver_str_ == "exact_pno"
 
         break;
       }

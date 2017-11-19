@@ -30,7 +30,7 @@ class Solver {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  virtual void update(T1& t1, T2& t2, const T1& r1, const T2& r2) = 0;
+  virtual void update(T1& t1, T2& t2, const T1& r1, const T2& r2, double dE) = 0;
 
   /// Computes the error for the given residuals \c r1 and \c r2 .
 
@@ -84,8 +84,8 @@ class DIISSolver : public Solver<T1, T2> {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  void update(T1& t1, T2& t2, const T1& r1, const T2& r2) override {
-    update_only(t1, t2, r1, r2);
+  void update(T1& t1, T2& t2, const T1& r1, const T2& r2, double dE) override {
+    update_only(t1, t2, r1, r2, dE);
     T1 r1_copy = r1;
     T1 r2_copy = r2;
     T1T2<T1, T2> r(r1_copy, r2_copy);
@@ -105,7 +105,7 @@ class DIISSolver : public Solver<T1, T2> {
   ///          are congruent, but does not assume any particular structure.
   ///          Derived classes \em may impose additional assumptions on the
   ///          structure of the arguments.
-  virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2) {
+  virtual void update_only(T1& t1, T2& t2, const T1& r1, const T2& r2, double dE) {
     throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
                            __FILE__, __LINE__);
   }

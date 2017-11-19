@@ -905,7 +905,7 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T, T> {
   Eigen::Matrix<double, Eigen::Dynamic, 1> f_ii_;
   Eigen::Matrix<double, Eigen::Dynamic, 1> f_aa_;
 
-  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update_only(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
     t1("a,i") += detail::jacobi_update_t1_ai(r1, f_ii_, f_aa_)("a,i");
     t2("a,b,i,j") += detail::jacobi_update_t2_abij(r2, f_ii_, f_aa_)("a,b,i,j");
     t1.truncate();
@@ -952,7 +952,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         pno_update_interval_(kv.value<int>("pno_update_interval", 10)),
-        residual_thresh_(kv.value<double>("residual_thresh", 1e-10)){
+        residual_thresh_(kv.value<double>("residual_thresh", 1e-10)),
+        dE_thresh_(kv.value<double>("dE_thresh", 1e-06)),
+        target_in_row_(kv.value<int>("target_in_row", 2)),
+        solver_str_(kv.value<std::string>("solver", "pno")){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -972,6 +975,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     iter_count_ = 0;
 
+    // Set start_macro_ to false
+    start_macro_ = false;
+
+    // Set num_in_row_ to zero
+    num_in_row_ = 0;
+
     // Form Fock array
     auto F = fac.compute(L"<p|F|q>[df]");
 
@@ -989,6 +998,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     // Select just the unoccupied portion of the Fock matrix
     F_uocc_ = F_all.block(nocc, nocc, nuocc, nuocc);
+
 
     // Compute all K_aibj
     // auto K = fac.compute(L"(a b|G|i j)");
@@ -1146,29 +1156,31 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
 
-  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update_only(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
 
     T delta_t1_ai;
     T delta_t2_abij;
 
-    // Perform Jacobi update in full space when PNOs being recomputed
-    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0)) {
-      Vector ens_occ_act = F_occ_act_.diagonal();
-      Vector ens_uocc = F_uocc_.diagonal();
+   // Perform Jacobi update in full space when PNOs being recomputed
+   if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
+       || (solver_str_ == "exact_pno")) {
+     Vector ens_occ_act = F_occ_act_.diagonal();
+     Vector ens_uocc = F_uocc_.diagonal();
 
-      delta_t1_ai =
-          detail::jacobi_update_t1_ai(r1, ens_occ_act, ens_uocc);
-      delta_t2_abij =
-          detail::jacobi_update_t2_abij(r2, ens_occ_act, ens_uocc);
-    }
+     delta_t1_ai =
+         detail::jacobi_update_t1_ai(r1, ens_occ_act, ens_uocc);
+     delta_t2_abij =
+         detail::jacobi_update_t2_abij(r2, ens_occ_act, ens_uocc);
+   }
 
-    // Perform Jacobi update in PNO space on specified iterations
-    else {
-      delta_t1_ai =
-        detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-      delta_t2_abij =
-        detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
-    }
+   // Perform Jacobi update in PNO space on specified iterations
+   else {
+     delta_t1_ai =
+       detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+     delta_t2_abij =
+       detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+   }
+
 
     // Reblock delta_t1_ai and delta_t2_abij to match original tiling
     auto delta_t1 = detail::unblock_t1(delta_t1_ai, reblock_i_, reblock_a_);
@@ -1180,7 +1192,23 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
   }
 
-  void update(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
+
+    if (start_macro_ == true) {
+//      ExEnv::out0() << "At the start of the macro iterations, dE = " << dE << std::endl;
+      if (dE < dE_thresh_) {
+        num_in_row_ += 1;
+      }
+      else {
+        num_in_row_ = 0;
+      }
+      start_macro_ = false;
+
+      if (num_in_row_ >= target_in_row_) {
+        update_pno_ = false;  // once the specified number of macro iterations in a row have had dE < dE_thresh_, stop updating PNOs
+      }
+    }
+
 
     // Reblock r1 and r2
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
@@ -1188,10 +1216,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     // Whether or not Jacobi update is performed in PNO subspace
     // or full space will be determined within update_only
-    update_only(t1, t2, r1_reblock, r2_reblock);
+    update_only(t1, t2, r1_reblock, r2_reblock, dE);
+
 
     // Recompute PNOs as appropriate
-    if ((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0)) {
+    if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
+        || (solver_str_ == "exact_pno")) {
+
+//      ExEnv::out0() << "Right before recomputing PNOs, dE = " << dE << std::endl;
 
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
@@ -1209,6 +1241,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 //      t1 = t.t1;
 //      t2 = t.t2;
       iter_count_ += 1;
+      start_macro_ = true;  // set start_macro_ to true since next CCSD iter is start of macro iter
     }
 
     else {
@@ -1223,7 +1256,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
       t1 = t.t1;
       t2 = t.t2;
       iter_count_ += 1;
+//      start_macro_ = false; // set start_macro_ to false since subsequent CCSD iters are not start of macro iter
     }
+
+
+
+
+
   }
 
   // squared norm of 1-body residual in OSV subspace
@@ -1315,6 +1354,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
  private:
   Factory<T, DT>& factory_;
+  std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
   bool update_pno_;            //!< whether or not to update PNOs with at specified intervals
   double tpno_;                //!< the PNO truncation threshold
@@ -1346,6 +1386,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   std::vector<int> nosvs_;
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
+
+  bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
+  int num_in_row_;              //!< The number of macro iterations in a row in which the first dE is below dE_thresh_
+  double dE_thresh_;            //!< The threshold against which we compare dE at the start of a macro iteration
+  int target_in_row_;           //!< Our goal for the number of macro iters in a row for which the first dE is less than the dE_thresh_
 
 
 
@@ -1995,7 +2040,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   /// Overrides DIISSolver::update_only() .
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
-  void update_only(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update_only(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
     auto delta_t1_ai = jacobi_update_t1(r1, F_occ_act_, F_svo1_diag_, svo1s_);
     auto delta_t2_abij = jacobi_update_t2(r2, F_occ_act_, F_l_svo2_diag_,
                                           F_r_svo2_diag_, l_svo2s_, r_svo2s_);
@@ -2009,12 +2054,12 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     t2.truncate();
   }
 
-  void update(T& t1, T& t2, const T& r1, const T& r2) override {
+  void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
     // reblock r1 and r2
     T r2_reblock = reblock_r2(r2);
     T r1_reblock = reblock_r1(r1);
 
-    update_only(t1, t2, r1_reblock, r2_reblock);
+    update_only(t1, t2, r1_reblock, r2_reblock, dE);
     T r1_svo1 = svo_transform_ai(r1_reblock, svo1s_);
     T r2_svo2 = svo_transform_abij(r2_reblock, l_svo2s_, r_svo2s_);
     mpqc::cc::T1T2<T, T> r(r1_svo1, r2_svo2);

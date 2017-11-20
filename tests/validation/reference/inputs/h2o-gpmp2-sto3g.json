@@ -1,6 +1,6 @@
 {
   "units": "2010CODATA",
-  "unitcell": {
+  "water": {
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
@@ -9,10 +9,10 @@
   },
   "basis": {
     "name": "sto-3g",
-    "atoms": "$:unitcell"
+    "atoms": "$:water"
   },
   "wfn_world":{
-    "atoms" : "$:unitcell",
+    "atoms" : "$:water",
     "basis" : "$:basis",
     "screen": "schwarz",
     "threshold": 1.0e-20,
@@ -22,7 +22,7 @@
   },
   "scf":{
     "type": "zRHF",
-    "atoms" : "$:unitcell",
+    "atoms" : "$:water",
     "wfn_world": "$:wfn_world",
     "converge": 1.0e-11,
     "max_iter": 100,
@@ -32,7 +32,7 @@
   },
   "wfn":{
     "type": "GammaPointMP2",
-    "atoms" : "$:unitcell",
+    "atoms" : "$:water",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "occ_block_size": 2,

@@ -27,6 +27,7 @@ public:
   TPack(T &_t1, T &_t2, T &_t3) : std::vector<T>{_t1,_t2,_t3} {}
 
   TPack() = default;
+  TPack(std::size_t i) : std::vector<T>(i) {}
 };  // TPack<T>
 
 template <typename T>

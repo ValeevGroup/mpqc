@@ -37,6 +37,20 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
     vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+
+    // need to modify the method keyword, CIS only has standard and df
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    std::string original_method = kv.value<std::string>("method","");
+    std::string cis_method = (this->df_ ? "df" : "standard");
+    kv_nonconst.assign("method", cis_method);
+
+    // construct CIS Wavefunction
+    cis_guess_wfn_ = std::make_shared<CIS<Tile, Policy>>(kv);
+
+    // change method keyword back to original value
+    if(!original_method.empty()){
+      kv_nonconst.assign("method", original_method);
+    }
   }
 
   void obsolete() override {
@@ -121,6 +135,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector
+  std::shared_ptr<CIS<Tile,Policy>> cis_guess_wfn_; // CIS Wavefunction to provide guess to EOM-CCSD
 
   TArray g_ijab_;
 

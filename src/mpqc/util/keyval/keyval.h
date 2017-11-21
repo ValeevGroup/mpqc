@@ -682,7 +682,6 @@ class KeyVal {
     // otherwise, resolve the path and build the class (or pick up the cached
     // copy)
     auto abs_path = resolve_path(path);
-    std::cout << abs_path << std::endl;
 
     // if this class already exists, return the ptr
     if (!bypass_registry) {

@@ -552,9 +552,11 @@ class KeyVal {
   /// written to JSON/XML
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
-  KeyVal& assign(const key_type& path, const std::weak_ptr<T>& value) {
+  KeyVal& assign(const key_type& path, const std::shared_ptr<T>& value) {
+    auto dc_value = std::static_pointer_cast<DescribedClass>(value);
+    std::weak_ptr<DescribedClass> weak_value = dc_value;
     auto abs_path = to_absolute_path(path);
-    (*dc_registry_)[abs_path] = std::static_pointer_cast<DescribedClass>(value);
+    (*dc_registry_)[abs_path] = weak_value;
     return *this;
   }
 
@@ -680,6 +682,7 @@ class KeyVal {
     // otherwise, resolve the path and build the class (or pick up the cached
     // copy)
     auto abs_path = resolve_path(path);
+    std::cout << abs_path << std::endl;
 
     // if this class already exists, return the ptr
     if (!bypass_registry) {

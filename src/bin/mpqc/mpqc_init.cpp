@@ -224,6 +224,7 @@ void MPQCInit::set_basename(const std::string &input_filename,
   basename[nfilebase] = '\0';
   FormIO::set_default_basename(basename);
   free(input_copy);
+  delete[] basename;
 }
 
 std::shared_ptr<GetLongOpt> make_options() {

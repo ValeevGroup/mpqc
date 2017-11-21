@@ -55,6 +55,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
+    cis_guess_wfn_->obsolete();
     TArray g_ijab_ = TArray();
 
     TArray FAB_ = TArray();

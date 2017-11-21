@@ -39,9 +39,9 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   // clang-format off
   /**
-   * KeyVal constructor for zRHF
+   * \brief KeyVal constructor for zRHF
    *
-   * keywords: takes all keywords from PeriodicAOWavefunction
+   * \param kv The KeyVal object will take all keywords from PeriodicAOWavefunction, and the following keywords
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -50,7 +50,23 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * | print_detail | bool | false | if print extra computation&time info |
    * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
    * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
+   * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
    *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
   // clang-format on
   zRHF(const KeyVal& kv);
@@ -182,7 +198,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 };
 
 /*!
- * \brief DFzRHF class uses density fitting for Coulomb
+ * \brief DFzRHF class uses density fitting for Coulomb and 4-center-K for
+ * exchange.
  *
  * Refs: Burow, A. M.; Sierka, M.; Mohamed, F. JCP. 131, 214101 (2009)
  */
@@ -191,6 +208,27 @@ class DFzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  /**
+   * \brief KeyVal constructor for DFzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF.
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "DF-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   DFzRHF(const KeyVal& kv);
 
   ~DFzRHF() {}
@@ -207,6 +245,28 @@ class DFzRHF : public zRHF<Tile, Policy> {
 template <typename Tile, typename Policy>
 class FourCenterzRHF : public zRHF<Tile, Policy> {
  public:
+
+  /**
+   * \brief KeyVal constructor for FourCenterzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF.
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "FourCenter-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   FourCenterzRHF(const KeyVal& kv);
 
   ~FourCenterzRHF() {}
@@ -223,6 +283,31 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  /**
+   * \brief KeyVal constructor for RIJCADFKzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF, and the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c force_shape_threshold | double | 0.0 | This gives the threshold used to construct the shape of F(Υ, μ, ν) using the shape of Q(Y, ρ, ν). See periodic_cadf_k_builder.h for more details.|
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "RIJ-CADFK-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "force_shape_threshold": 1e-10,
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   RIJCADFKzRHF(const KeyVal& kv);
 
   ~RIJCADFKzRHF() {}
@@ -241,6 +326,31 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  /**
+   * \brief KeyVal constructor for FourCenterJCADFKzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF, and the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c force_shape_threshold | double | 0.0 | This gives the threshold used to construct the shape of F(Υ, μ, ν) using the shape of Q(Y, ρ, ν). See periodic_cadf_k_builder.h for more details.|
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "FourCenterJ-CADFK-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "force_shape_threshold": 1e-10,
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   FourCenterJCADFKzRHF(const KeyVal& kv);
 
   ~FourCenterJCADFKzRHF() {}

@@ -999,7 +999,6 @@ class PeriodicFourCenterFockBuilder
                     continue;
                   }
 
-                  task_id++;
                   if (task_id % nproc == me) {
                     // tile indices of F03 and F13
                     const std::array<long, 2> idx_F03{
@@ -1055,6 +1054,7 @@ class PeriodicFourCenterFockBuilder
                             {int64_t(uc_ord_F02), int64_t(uc_ord_F03),
                              int64_t(uc_ord_F12), int64_t(uc_ord_F13)}});
                   }
+                  task_id++;
                 }
               }
             }
@@ -1608,7 +1608,7 @@ class PeriodicFourCenterFockBuilder
     // note that basisR_ only contains half basis functions of |μ_R> (R >= 0)
     basisR_ =
         shift_basis_origin(*bra_basis_, zero_shift_base, R_max_, dcell_, true);
-    ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R> = "
+    ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
                   << R_max_.transpose() << std::endl;
 
     // compute significant shell pair list
@@ -1626,7 +1626,7 @@ class PeriodicFourCenterFockBuilder
     ref_R_ord_ = (R_size_ - 1) / 2;
     ref_RD_ord_ = (RD_size_ - 1) / 2;
 
-    // make a list of significant lattice vectors in |μ_0 ν_R> based on
+    // make a list of significant lattice vectors in |μ_0 ν_R) based on
     // significant shell pairs
     {
       const auto nshells_per_uc = bra_basis_->flattened_shells().size();
@@ -1649,7 +1649,7 @@ class PeriodicFourCenterFockBuilder
       }
     }
 
-    // renew the range of lattice sum for |μ_0 ν_R> based on the list of
+    // renew the range of lattice sum for |μ_0 ν_R) based on the list of
     // significant lattice vectors
     {
       auto x = 0;
@@ -1664,7 +1664,7 @@ class PeriodicFourCenterFockBuilder
       sig_lattice_size_ =
           direct_ord_idx(sig_lattice_max_, sig_lattice_max_) + 1;
       ref_sig_lattice_ord_ = (sig_lattice_size_ - 1) / 2;
-      ExEnv::out0() << "Updated range of lattice sum for |mu nu_R> = "
+      ExEnv::out0() << "Updated range of lattice sum for |mu nu_R) = "
                     << sig_lattice_max_.transpose() << std::endl;
     }
 

@@ -906,9 +906,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
 
-    // Determine value of tiling_method_
-    std::string tiling_method_ = (kv.value<std::string>("tiling_method"));
-
     // If tiling_method_ = rigid, employ original PNO code
     if (tiling_method_ == "rigid") {
       // Check that tiling is done appropriately
@@ -1522,9 +1519,6 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // compute and store SVO2s truncated with threshold t_svo2
     // compute and store SVO1s truncated with threshold t_svo1
-
-    // Determine value of tiling_method_
-    std::string tiling_method_ = (kv.value<std::string>("tiling_method"));
 
     // If tiling_method_ = rigid, employ original SVO code
     if (tiling_method_ == "rigid") {

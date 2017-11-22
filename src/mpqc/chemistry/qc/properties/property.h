@@ -83,10 +83,10 @@ class WavefunctionProperty
    */
   // clang-format on
   WavefunctionProperty(const KeyVal& kv, double default_precision)
-      : base_type(kv, (kv.class_ptr<MolecularCoordinates>("coord")
+      : base_type(kv, (kv.exists("coord")
                            ? kv.class_ptr<MolecularCoordinates>("coord")
                            : std::make_shared<CartMolecularCoordinates>(
-                                 kv.class_ptr<Wavefunction>("wfn")->atoms())),
+                                 kv.class_ptr<Molecule>("wfn:atoms"))),
                   default_precision) {
     wfn_ = kv.class_ptr<Wavefunction>("wfn");
     if (wfn_ == nullptr)

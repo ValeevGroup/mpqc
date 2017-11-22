@@ -232,7 +232,7 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
     // compute product of H with guess vector
-    std::vector<GuessVector> HC(dim);
+    std::vector<GuessVector> HC(dim, GuessVector(2));
     for (std::size_t i = 0; i < dim; ++i) {
       if (C_[i][0].is_initialized() && C_[i][0].is_initialized()) {
         HC[i][0] = compute_HSS_HSD_C(C_[i][0], C_[i][1]);
@@ -305,21 +305,16 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     std::vector<TArray> guess;
     {
-      // do not use cis direct method, not efficient
-      KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
-      std::string cis_method = (this->df_ ? "df" : "standard");
-      kv_nonconst.assign("method", cis_method);
-      auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
-      ::mpqc::evaluate(*ex_energy, cis);
-      guess = cis->eigen_vector();
-      kv_nonconst.assign("method", this->method_);
+      ::mpqc::evaluate(*ex_energy, cis_guess_wfn_);
+      guess = cis_guess_wfn_->eigen_vector();
     }
 
     this->init();
 
-    C_ = std::vector<GuessVector>(n_roots);
+    C_ = std::vector<GuessVector>(n_roots, GuessVector(2));
     auto t2 = this->t2();
     for (std::size_t i = 0; i < n_roots; i++) {
+      TA_ASSERT(guess[i].is_initialized());
       C_[i][0]("a,i") = guess[i]("i,a");
       C_[i][1] = TArray(t2.world(), t2.trange(), t2.shape());
       C_[i][1].fill(0.0);

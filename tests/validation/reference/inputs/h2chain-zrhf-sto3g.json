@@ -1,6 +1,6 @@
 {
   "units": "2006CODATA",
-  "unitcell": {
+  "h2": {
     "file_name": "h2.xyz",
     "sort_input": true,
     "n_cluster": 1,
@@ -8,10 +8,10 @@
   },
   "basis": {
     "name": "sto-3g",
-    "atoms": "$:unitcell"
+    "atoms": "$:h2"
   },
    "wfn_world":{
-     "atoms" : "$:unitcell",
+     "atoms" : "$:h2",
      "basis" : "$:basis",
      "screen": "schwarz",
      "threshold": 1.0e-20,
@@ -21,7 +21,7 @@
    },
    "wfn":{
      "type": "zRHF",
-     "atoms" : "$:unitcell",
+     "atoms" : "$:h2",
      "wfn_world": "$:wfn_world",
      "max_iter": 100,
      "soad_guess": true,

@@ -32,7 +32,7 @@ class PeriodicThreeCenterContractionBuilder
   using BasisVector = std::vector<Basis>;
   using Shell = typename ::mpqc::lcao::gaussian::Shell;
   using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
-  using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
+  using shellpair_list_t = std::vector<std::vector<size_t>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
@@ -923,7 +923,6 @@ class PeriodicThreeCenterContractionBuilder
         libint2::BraKet::x_x);
 
     auto &world = this->get_world();
-    std::mutex mx;
     shellpair_list_t result;
 
     const auto &shv1 = basis1.flattened_shells();
@@ -931,7 +930,9 @@ class PeriodicThreeCenterContractionBuilder
     const auto nsh1 = shv1.size();
     const auto nsh2 = shv2.size();
 
-    auto compute = [&](int64_t input_s1) {
+    result.reserve(nsh1);
+
+    auto compute = [&](size_t input_s1) {
 
       auto n1 = shv1[input_s1].size();
       const auto engine_precision = target_precision_;
@@ -939,7 +940,7 @@ class PeriodicThreeCenterContractionBuilder
       engine.set_precision(engine_precision);
       const auto &buf = engine.results();
 
-      for (auto s2 = 0l; s2 != nsh2; ++s2) {
+      for (auto s2 = 0ul; s2 != nsh2; ++s2) {
         auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
         bool significant = on_same_center;
         if (!on_same_center) {
@@ -951,15 +952,13 @@ class PeriodicThreeCenterContractionBuilder
         }
 
         if (significant) {
-          mx.lock();
           result[input_s1].emplace_back(s2);
-          mx.unlock();
         }
       }
     };
 
-    for (auto s1 = 0l; s1 != nsh1; ++s1) {
-      result.insert(std::make_pair(s1, std::vector<size_t>()));
+    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
+      result.emplace_back(std::vector<size_t>());
       world.taskq.add(compute, s1);
     }
     world.gop.fence();
@@ -967,7 +966,7 @@ class PeriodicThreeCenterContractionBuilder
     engine_pool.reset();
 
     // resort shell list in increasing order
-    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
       auto &list = result[s1];
       std::sort(list.begin(), list.end());
     }
@@ -1025,7 +1024,7 @@ class PeriodicThreeCenterContractionBuilder
 
     // compute non-negligible shell-pair list
     for (auto s1 = 0l, s12 = 0l; s1 != nsh1; ++s1) {
-      result.insert(std::make_pair(s1, std::vector<size_t>()));
+      result.emplace_back(std::vector<size_t>());
       auto n1 = shv1[s1].size();
 
       auto s2_max = shv1_equiv_shv2 ? s1 : nsh2 - 1;

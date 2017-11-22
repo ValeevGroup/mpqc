@@ -322,10 +322,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
     std::size_t dim = vec.size();
 
     // compute product of H with guess vector
-    std::vector<GuessVector> HC(dim);
+    std::vector<GuessVector> HC(dim, GuessVector(2));
     for (std::size_t i = 0; i < dim; ++i) {
       if (vec[i][0].is_initialized() && vec[i][1].is_initialized()) {
-        HC[i] = ::mpqc::cc::TPack<TArray>(2);
         HC[i][0] = compute_HSS_HSD_C(vec[i][0], vec[i][1], imds);
         HC[i][1] = compute_HDS_HDD_C(vec[i][0], vec[i][1], imds);
 
@@ -434,29 +433,21 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
     {
       auto n_guess = ex_energy->n_guess();
 
-      // do not use cis direct method, not efficient
-      KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
-      std::string cis_method = (this->df_ ? "df" : "standard");
-      kv_nonconst.assign("method", cis_method);
-
-      // create CIS class and evaluate
-      auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
-
       // compute number of guess CIS roots
       if (davidson_solver_ == "multi-state") {
         ex_energy->set_n_roots(n_guess);
       }
 
-      ::mpqc::evaluate(*ex_energy, cis);
+      ::mpqc::evaluate(*ex_energy, cis_guess_wfn_);
 
       ex_energy->set_n_roots(n_roots);
 
-      cis_vector = cis->eigen_vector();
-      cis_eig = cis->eigen_value();
+      cis_vector = cis_guess_wfn_->eigen_vector();
+      cis_eig = cis_guess_wfn_->eigen_value();
 
-      // change the method back
-      kv_nonconst.assign("method", this->method_);
     }
+
+    this->init();
 
     auto max_iter = this->max_iter_;
     auto result = eom_ccsd_davidson_solver(n_roots, cis_vector, cis_eig,

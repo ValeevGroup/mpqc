@@ -9,6 +9,7 @@
 
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_config.h"
+#include "mpqc/mpqc_init.h"
 #include "mpqc/mpqc_task.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
@@ -23,14 +24,24 @@
 #include "mpqc/util/options/GetLongOpt.h"
 
 // linkage files to force linking in of ALL Wavefunction-based classes
-// this list must be in sync with CMakeLists.txt
-#include "mpqc/chemistry/qc/lcao/cc/linkage.h"
-#include "mpqc/chemistry/qc/lcao/ci/linkage.h"
-#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
-#include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
-#include "mpqc/chemistry/qc/lcao/scf/linkage.h"
+// see MPQC_FEATURE_DEFINITIONS variable in CMakeLists.txt
+#if MPQC_INCLUDES_lcao_cc
+#  include "mpqc/chemistry/qc/lcao/cc/linkage.h"
+#endif  // MPQC_INCLUDES_lcao_cc
+#if MPQC_INCLUDES_lcao_ci
+#  include "mpqc/chemistry/qc/lcao/ci/linkage.h"
+#endif  // MPQC_INCLUDES_lcao_ci
+#if MPQC_INCLUDES_lcao_f12
+#  include "mpqc/chemistry/qc/lcao/f12/linkage.h"
+#endif  // MPQC_INCLUDES_lcao_cc
+#if MPQC_INCLUDES_lcao_mbpt
+#  include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
+#endif  // MPQC_INCLUDES_lcao_mbpt
+#if MPQC_INCLUDES_lcao_scf
+#  include "mpqc/chemistry/qc/lcao/scf/linkage.h"
+#endif  // MPQC_INCLUDES_lcao_scf
+// N.B. main always looks for a Property
 #include "mpqc/chemistry/qc/properties/linkage.h"
-#include "mpqc/mpqc_init.h"
 
 namespace mpqc {
 

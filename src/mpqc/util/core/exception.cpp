@@ -156,7 +156,7 @@ Exception::~Exception() MPQC__NOEXCEPT
 {
   try{ ExEnv::out0().flush(); ExEnv::err0().flush(); }
   catch(...) {}
-  delete elaboration_c_str_;
+  delete[] elaboration_c_str_;
 }
 
 const char* 

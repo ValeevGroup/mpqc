@@ -34,6 +34,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
 
   git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
+  # always compile Elemental in Release mode to avoid non-reentrancy problems
   cmake ta_src \
       -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
       -DCMAKE_CXX_COMPILER=$CXX \
@@ -44,7 +45,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
       -DCMAKE_CXX_FLAGS="${EXTRACXXFLAGS}" \
       -DENABLE_ELEMENTAL=ON \
-      -DMADNESS_CMAKE_EXTRA_ARGS="-DELEMENTAL_CMAKE_BUILD_TYPE=$BUILD_TYPE;-DELEMENTAL_MATH_LIBS='-L/usr/lib/libblas -L/usr/lib/lapack -lblas -llapack';-DELEMENTAL_CMAKE_EXTRA_ARGS=-DCMAKE_Fortran_COMPILER=$F77"
+      -DMADNESS_CMAKE_EXTRA_ARGS="-DELEMENTAL_CMAKE_BUILD_TYPE=Release;-DELEMENTAL_MATH_LIBS='-L/usr/lib/libblas -L/usr/lib/lapack -lblas -llapack';-DELEMENTAL_CMAKE_EXTRA_ARGS=-DCMAKE_Fortran_COMPILER=$F77"
 
   # Build all libraries, examples, and applications
   make -j2 VERBOSE=1

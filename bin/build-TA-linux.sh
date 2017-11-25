@@ -4,15 +4,16 @@
 set -ev
 
 # Environment variables
-export CXXFLAGS="-mno-avx"
-
 if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION
     export CXX=/usr/bin/g++-$GCC_VERSION
+    export EXTRACXXFLAGS="-mno-avx -fext-numeric-literals"
 else
     export CC=/usr/bin/clang-5.0
     export CXX=/usr/bin/clang++-5.0
+    export EXTRACXXFLAGS="-mno-avx"
 fi
+export F77=gfortran-$GCC_VERSION
 
 echo $($CC --version)
 echo $($CXX --version)
@@ -33,6 +34,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
 
   git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
+  # always compile Elemental in Release mode to avoid non-reentrancy problems
   cmake ta_src \
       -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
       -DCMAKE_CXX_COMPILER=$CXX \
@@ -40,7 +42,10 @@ if [ ! -d "${INSTALL_DIR}" ]; then
       -DMPI_CXX_COMPILER=$MPICXX \
       -DMPI_C_COMPILER=$MPICC \
       -DBUILD_SHARED_LIBS=OFF \
-      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+      -DCMAKE_CXX_FLAGS="${EXTRACXXFLAGS}" \
+      -DENABLE_ELEMENTAL=ON \
+      -DMADNESS_CMAKE_EXTRA_ARGS="-DELEMENTAL_CMAKE_BUILD_TYPE=Release;-DELEMENTAL_MATH_LIBS='-L/usr/lib/libblas -L/usr/lib/lapack -lblas -llapack';-DELEMENTAL_CMAKE_EXTRA_ARGS=-DCMAKE_Fortran_COMPILER=$F77"
 
   # Build all libraries, examples, and applications
   make -j2 VERBOSE=1

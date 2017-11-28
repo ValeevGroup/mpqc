@@ -76,13 +76,13 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
    * @param KeyVal
    *
    * KeyVal options
-   * @param accurate_time, if do fence when timing, default false
-   * @param keep_partial_transform, if use strength reduction, default false
+   * @param accurate_time if true, do fence when timing (default=false)
+   * @param keep_partial_transform if true, use strength reduction (default=false)
    *
    */
   LCAOFactory(const KeyVal& kv)
       : LCAOFactoryBase<Tile, Policy>(kv),
-        ao_factory_(*gaussian::construct_ao_factory<Tile, Policy>(kv)) {
+        ao_factory_(gaussian::construct_ao_factory<Tile, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";
@@ -94,7 +94,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
 
     this->set_orbital_registry(orbital_space_registry);
-    ao_factory_.set_orbital_registry(orbital_space_registry);
+    ao_factory_->set_orbital_registry(orbital_space_registry);
     ExEnv::out0() << "\nConstructing LCAOFactory: \n"
                   << indent << "Keep partial transform = "
                   << (keep_partial_transforms_ ? "true" : "false") << "\n"
@@ -109,11 +109,11 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
     // obsolete self
     LCAOFactoryBase<Tile, Policy>::obsolete();
     // obsolete AOFactory
-    ao_factory_.obsolete();
+    ao_factory_->obsolete();
   }
 
   /// return reference to AOFactory object
-  AOFactoryType& ao_factory() const { return ao_factory_; }
+  AOFactoryType& ao_factory() const { return *ao_factory_; }
 
   /// reports the partial tform flag; if true, partially-transformed integrals
   /// are stored
@@ -171,7 +171,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
       const Formula& formula);
 
  private:
-  AOFactoryType& ao_factory_;
+  std::shared_ptr<AOFactoryType> ao_factory_;
 
   bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints
                                   //!(false by default)
@@ -220,7 +220,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   // get AO
   auto ao_formula =
       detail::lcao_to_ao(formula_string, this->orbital_registry());
-  auto ao_factory = ao_factory_.compute(ao_formula);
+  auto ao_factory = ao_factory_->compute(ao_formula);
 
   time0 = mpqc::now(world, this->accurate_time_);
   // convert to MO
@@ -289,7 +289,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
       // get AO
       auto ao_formula =
           detail::lcao_to_ao(formula_string, this->orbital_registry());
-      auto ao_integral = ao_factory_.compute_direct(ao_formula);
+      auto ao_integral = ao_factory_->compute_direct(ao_formula);
 
       time0 = mpqc::now(world, this->accurate_time_);
 
@@ -341,14 +341,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
 
       // compute direct three center AO
       if (reduced_formula.is_ao() &&
-          !ao_factory_.registry().have(reduced_formula)) {
-        auto reduced_integral = ao_factory_.compute_direct(reduced_formula);
+          !ao_factory_->registry().have(reduced_formula)) {
+        auto reduced_integral = ao_factory_->compute_direct(reduced_formula);
         time0 = mpqc::now(world, this->accurate_time_);
         result(result_key) =
             reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
       } else {
         auto reduced_integral = reduced_formula.is_ao()
-                                    ? ao_factory_.compute(reduced_formula)
+                                    ? ao_factory_->compute(reduced_formula)
                                     : this->compute(reduced_formula);
         time0 = mpqc::now(world, this->accurate_time_);
         result(result_key) =
@@ -436,7 +436,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       if (iter != this->registry_.end()) {
         result = this->compute(half_transformed_formula);
       } else {
-        auto direct_ao = ao_factory_.compute_direct(ao_formula);
+        auto direct_ao = ao_factory_->compute_direct(ao_formula);
         auto& left1 = this->orbital_registry().retrieve(left_index1);
         result("i, rho, mu, nu") =
             left1("sigma, i") * direct_ao("sigma, rho, mu, nu");
@@ -458,7 +458,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       if (ao_formula.notation() == Formula::Notation::Physical) {
         ao_formula.set_notation(Formula::Notation::Chemical);
       }
-      auto direct_ao = ao_factory_.compute_direct(ao_formula);
+      auto direct_ao = ao_factory_->compute_direct(ao_formula);
       auto& left1 = this->orbital_registry().retrieve(left_index1);
       result("a, rho, mu, nu") =
           left1("sigma, a") * direct_ao("sigma, rho, mu, nu");

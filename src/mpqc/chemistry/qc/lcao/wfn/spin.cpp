@@ -31,7 +31,7 @@
 #include <ctype.h>
 
 #include "mpqc/util/misc/assert.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 constexpr unsigned int nspincases1(bool spin_polarized) {

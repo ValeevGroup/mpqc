@@ -20,15 +20,17 @@ template <typename Tile, typename Policy>
 ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     typename ESolveDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
-    int64_t nocc, int64_t nclusters, double TcutC,
-    std::string const &metric_decomp_type, double s_tolerance, bool localize)
+    int64_t nocc, int64_t ncore, int64_t nclusters, double TcutC,
+    std::string const &metric_decomp_type, double s_tolerance, bool localize, std::string localization_method)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
       localize_(localize),
+      localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
       metric_decomp_type_(metric_decomp_type),
-      nocc_(nocc) {
+      nocc_(nocc),
+      ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());
   if (metric_decomp_type_ == "cholesky_inverse") {
     M_inv_ = array_ops::cholesky_inverse(S_);
@@ -90,7 +92,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   if (localize_) {
     auto l0 = mpqc::fenced_now(world);
-    auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_);
+    auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
     C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 

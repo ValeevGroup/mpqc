@@ -37,6 +37,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   zRHF() = default;
 
+  // clang-format off
   /**
    * KeyVal constructor for zRHF
    *
@@ -44,14 +45,14 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
    * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
    * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap
-   * matrix |
+   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
+   * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
    *
    */
+  // clang-format on
   zRHF(const KeyVal& kv);
 
   ~zRHF() {}
@@ -88,10 +89,25 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \param real_lattice_range maximum unit cell index (n1, n2, n3) in lattice
+   * sum of \c R. n1, n2 and n3 are non-negative integers.
+   * \param recip_lattice_range number of k points (k1, k2, k3) in reciprocal
+   * space. k1, k2, and k3 are positive integers
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
    */
-  array_type_z transform_real2recip(array_type& matrix);
+  array_type_z transform_real2recip(const array_type& matrix,
+                                    const Vector3i& real_lattice_range,
+                                    const Vector3i& recip_lattice_range);
+
+  /*!
+   * \brief This transforms an integral matrix from real to reciprocal space
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
+   */
+  array_type_z transform_real2recip(const array_type& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value
@@ -173,9 +189,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 template <typename Tile, typename Policy>
 class DFzRHF : public zRHF<Tile, Policy> {
  public:
-  using array_type = typename zRHF<Tile, Policy>::array_type;
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
-  using DirectTArray = typename factory_type::DirectTArray;
 
   DFzRHF(const KeyVal& kv);
 
@@ -184,30 +198,10 @@ class DFzRHF : public zRHF<Tile, Policy> {
  private:
   /// initializes necessary arrays for DFzRHF Fock builder
   void init_fock_builder() override;
-
- private:
-  array_type M_;         // charge matrix of product density <μ|ν>
-  array_type n_;         // normalized charge vector <Κ>
-  double q_;             // total charge of auxiliary basis functions
-  array_type P_para_;    // projection matrix that projects X onto auxiliary
-                         // charge vector
-  array_type P_perp_;    // projection matrix that projects X onto the subspace
-                         // orthogonal to auxiliary charge vector
-  array_type V_;         // 2-center 2-electron integrals
-  array_type V_perp_;    // part of 2-center 2-electron integrals that is
-                         // orthogonal to auxiliary charge vector
-  array_type G_;         // 3-center 2-electron direct integrals contracted with
-                         // density matrix
-  array_type inv_;       // A inverse where A = V_perp + P_para
-  array_type identity_;  // idensity matrix
-  std::vector<DirectTArray> Gamma_vec_;  // vector of 3-center 2-electron direct
-                                         // integrals. vector size = RJ_size_
-  array_type CD_;                        // intermediate for C_Xμν D_μν
-  array_type IP_;                        // intermediate for inv_XY P_perp_YZ
 };
 
 /*!
- * \breif four-center zRHF class uses shell-level&screening 4-center Fock
+ * \brief four-center zRHF class uses shell-level&screening 4-center Fock
  * builder
  */
 template <typename Tile, typename Policy>
@@ -221,12 +215,49 @@ class FourCenterzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
 };
 
+/*!
+ * \brief RIJCADFKzRHF uses RI-J for coulomb and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class RIJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+
+  RIJCADFKzRHF(const KeyVal& kv);
+
+  ~RIJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  double force_shape_threshold_;
+};
+
+/*!
+ * \brief FourCenterJCADFKzRHF uses four-center-J for coulomb
+ * and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+
+  FourCenterJCADFKzRHF(const KeyVal& kv);
+
+  ~FourCenterJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  double force_shape_threshold_;
+};
+
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
 extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class FourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

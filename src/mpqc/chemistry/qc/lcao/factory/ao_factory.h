@@ -15,7 +15,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/misc/time.h"
 
 #include <madness/world/worldmem.h>

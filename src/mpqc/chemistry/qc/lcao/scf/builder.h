@@ -7,6 +7,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/expression/formula_registry.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace scf {
@@ -35,12 +36,23 @@ class FockBuilder {
                              FormulaRegistry<array_type> &) = 0;
 };
 
+/*!
+ * PeriodicFockBuilder computes the (2-e part of) the Fock matrix in periodic HF
+ * using the (1-particle) density matrix
+ */
 template <typename Tile, typename Policy>
 class PeriodicFockBuilder {
  public:
   using array_type = TA::DistArray<Tile, Policy>;
   virtual ~PeriodicFockBuilder() {}
 
+  /*!
+   * \brief This computes the 2-e part of the Fock matrix in periodic HF
+   * \param D the (1-particle) density matrix D(μ_0, ν_Rd)
+   * \param target_precision the target engine precision
+   * \param is_density_diagonal true if D only has a D(μ_0, ν_0) block
+   * \return Fock matrix
+   */
   virtual array_type operator()(
       array_type const &D,
       double target_precision = std::numeric_limits<double>::epsilon(),
@@ -48,6 +60,14 @@ class PeriodicFockBuilder {
 
   virtual void register_fock(const array_type &,
                              FormulaRegistry<array_type> &) = 0;
+
+  /*!
+   * \brief This returns the lattice range of Fock representation
+   * F(μ_0, ν_R)
+   * \return a vector of number of unit cells included in each positive
+   * direction
+   */
+  virtual Vector3i fock_lattice_range() = 0;
 };
 
 }  // namespace scf

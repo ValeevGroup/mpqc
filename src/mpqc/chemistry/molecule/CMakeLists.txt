@@ -2,6 +2,7 @@ set(sources
 atom_based_cluster_concept.h
 atom_based_cluster.cpp
 atom_based_cluster.h
+atomic_masses.h
 atomic_data.cpp
 atomic_data.h
 atom.cpp

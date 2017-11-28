@@ -279,7 +279,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
 
     auto two_center = formula_string;
     two_center.set_ket_indices(formula_string.bra_indices());
-    auto two_center_array = this->ao_factory_.compute(two_center);
+    auto two_center_array = this->ao_factory_->compute(two_center);
 
     time0 = mpqc::now(world, this->accurate_time_);
     result("K,i,j") = two_center_array("K,Q") * three_center_array("Q,i,j");

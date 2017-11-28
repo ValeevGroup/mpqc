@@ -71,7 +71,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 30 | maxmium iteration in CCSD |
    * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |
-   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
+   * | reduced_abcd_memory | bool | true | avoid store abcd term in df method by doing density-fitting on the fly |
    */
 
   // clang-format on
@@ -100,7 +100,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "svo")
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
 
-    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
+    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", true);
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());

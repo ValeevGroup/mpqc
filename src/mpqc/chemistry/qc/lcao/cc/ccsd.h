@@ -67,11 +67,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
-   * | max_iter | int | 30 | maxmium iteration in CCSD |
-   * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |
-   * | reduced_abcd_memory | bool | true | avoid store abcd term in df method by doing density-fitting on the fly |
+   * | @c ref | Wavefunction | @c none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | @c method | string | @c df if @c df_basis is provided, @c standard otherwise | method to compute the CCSD residual; valid choices are: @c standard (uses 4-index MO integrals throughout), @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals), @c df (approximates 4-index MO integrals using density fitting), @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
+   * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
+   * | @c verbose | bool | determined by factory.verbose() | if print more information in CCSD iteration |
+   * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    */
 
   // clang-format on

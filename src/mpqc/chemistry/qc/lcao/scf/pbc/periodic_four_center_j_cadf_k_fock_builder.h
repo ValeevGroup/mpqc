@@ -49,7 +49,7 @@ class PeriodicFourCenterJCADFKFockBuilder
     const auto K_lattice_range = k_builder_->K_lattice_range();
     G = ::mpqc::pbc::detail::add(compute_J(D, target_precision),
                                  compute_K(D, target_precision),
-                                 J_lattice_range, K_lattice_range, 2.0, -1.0);
+                                 J_lattice_range, K_lattice_range, 1.0, -1.0);
 
     return G;
   }

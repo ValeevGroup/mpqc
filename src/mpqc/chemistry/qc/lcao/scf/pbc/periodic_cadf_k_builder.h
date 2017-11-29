@@ -170,6 +170,7 @@ class PeriodicCADFKBuilder
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
+  Vector3i truncated_RD_max_;
   Vector3i Rrho_max_;
   Vector3i RX_max_;
   Vector3i RY_max_;
@@ -220,6 +221,7 @@ class PeriodicCADFKBuilder
   madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
   madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
   std::atomic<size_t> num_ints_computed_{0};
+  const Vector3d zero_shift_base_ = {0.0, 0.0, 0.0};
 
   const madness::cblas::CBLAS_TRANSPOSE trans_;
   const madness::cblas::CBLAS_TRANSPOSE notrans_;
@@ -230,7 +232,6 @@ class PeriodicCADFKBuilder
 
     mpqc::time_point t0, t1;
     const Vector3i ref_lattice_range = {0, 0, 0};
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
@@ -243,7 +244,7 @@ class PeriodicCADFKBuilder
     {
       // build a temp basisRJ using user-given RJ_max_
       auto basisRJ =
-          shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+          shift_basis_origin(*obs_, zero_shift_base_, RJ_max_, dcell_);
 
       // compute significant shell pair list
       sig_shellpair_list_ = parallel_compute_shellpair_list(
@@ -281,7 +282,7 @@ class PeriodicCADFKBuilder
       }
       RJ_max_ = Vector3i({x, y, z});
       RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
-      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base, RJ_max_, dcell_);
+      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base_, RJ_max_, dcell_);
       ExEnv::out0() << "Updated RJ_max = " << RJ_max_.transpose() << std::endl;
     }
     t1 = mpqc::fenced_now(world);
@@ -290,7 +291,7 @@ class PeriodicCADFKBuilder
     // compute C(X, μ_0, ρ_Rj)
     t0 = mpqc::fenced_now(world);
     {
-      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RJ_max_, dcell_);
+      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RJ_max_, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
@@ -309,14 +310,14 @@ class PeriodicCADFKBuilder
     };
 
     RY_max_ = max_lattice_range(R_max_, RJ_max_ + RD_max_);
-    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RY_max_, dcell_);
+    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
 
     // compute M(X, Y)
     t0 = mpqc::fenced_now(world);
     {
       RYmRX_max_ = RJ_max_ + RY_max_;
       auto shifted_Y_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base, RYmRX_max_, dcell_);
+          shift_basis_origin(*dfbs_, zero_shift_base_, RYmRX_max_, dcell_);
       M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
     }
     t1 = mpqc::fenced_now(world);
@@ -355,7 +356,7 @@ class PeriodicCADFKBuilder
     // Q(Y, rho, nu)
     t0 = mpqc::fenced_now(world);
     {
-      basisR_ = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+      basisR_ = shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
 
       // make TiledRange and Pmap of Exchange
       result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
@@ -368,10 +369,10 @@ class PeriodicCADFKBuilder
       RJmR_max_ = RJ_max_ + R_max_;
 
       // make basis of Q(Y, rho, nu)
-      Q_bs_Y_ = shift_basis_origin(*dfbs_, zero_shift_base, RYmR_max_, dcell_);
+      Q_bs_Y_ = shift_basis_origin(*dfbs_, zero_shift_base_, RYmR_max_, dcell_);
       Q_bs_rho_ = obs_;
-      Q_bs_nu_ = shift_basis_origin(*obs_, zero_shift_base, RJmR_max_, dcell_);
-      basisRD_ = shift_basis_origin(*obs_, zero_shift_base, RD_max_, dcell_);
+      Q_bs_nu_ = shift_basis_origin(*obs_, zero_shift_base_, RJmR_max_, dcell_);
+      basisRD_ = shift_basis_origin(*obs_, zero_shift_base_, RD_max_, dcell_);
 
       // make TiledRange and Pmap of Q(Y, rho, nu)
       Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
@@ -397,7 +398,6 @@ class PeriodicCADFKBuilder
 
     mpqc::time_point t0, t1;
     const Vector3i ref_lattice_range = {0, 0, 0};
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
@@ -410,7 +410,7 @@ class PeriodicCADFKBuilder
     {
       // make initial compound basis for basisR_ (basis for either ν_Rν or σ_Rσ)
       // based on user-specified R_max
-      basisR_ = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
+      basisR_ = shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
       ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
                     << R_max_.transpose() << std::endl;
 
@@ -458,12 +458,9 @@ class PeriodicCADFKBuilder
 
       // do not forget to renew basisR_ and significant shell pair list
       basisR_ =
-          shift_basis_origin(*obs_, zero_shift_base, sig_lattice_max_, dcell_);
+          shift_basis_origin(*obs_, zero_shift_base_, sig_lattice_max_, dcell_);
       sig_shellpair_list_ = parallel_compute_shellpair_list(
           *obs_, *basisR_, shell_pair_threshold_);
-      // compute lattice range for Rρ in |ρ_Rρ σ_(Rρ+Rσ))
-      Rrho_max_ = RD_max_ + 2 * sig_lattice_max_;
-      Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
     }
     t1 = mpqc::fenced_now(world);
     auto t_update_rmax = mpqc::duration_in_s(t0, t1);
@@ -474,7 +471,7 @@ class PeriodicCADFKBuilder
       // X is on the center of either μ_0 or ν_Rν. Thus X_Rx should have the
       // same lattice range as ν_Rν.
       RX_max_ = sig_lattice_max_;
-      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RX_max_, dcell_);
+      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RX_max_, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
@@ -485,85 +482,16 @@ class PeriodicCADFKBuilder
     t1 = mpqc::fenced_now(world);
     auto t_C_bra = mpqc::duration_in_s(t0, t1);
 
-    // compute M(X_Rx, Y_Ry) = M(X_0, Y_(Ry-Rx))
-    t0 = mpqc::fenced_now(world);
-    {
-      // Y is on the center of either ρ_Rρ or σ_(Rρ+Rσ). Thus Y_Ry should have
-      // the same lattice range as σ_(Rρ+Rσ).
-      RY_max_ = Rrho_max_ + sig_lattice_max_;
-      RY_size_ = 1 + direct_ord_idx(RY_max_, RY_max_);
-      RYmRX_max_ = RY_max_ + RX_max_;
-      auto shifted_Y_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base, RYmRX_max_, dcell_);
-      M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_M = mpqc::duration_in_s(t0, t1);
-
-    // make direct integral eri3_ = (μ_0 ν_Rν | Y_Ry)
-    t0 = mpqc::fenced_now(world);
-    {
-      Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base, RY_max_, dcell_);
-      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisR_);
-      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisR_}};
-
-      auto oper_type = libint2::Operator::coulomb;
-      auto screen_engine =
-          make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
-      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-          lcao::gaussian::create_schwarz_screener(
-              world, screen_engine, bs_vector, screen_threshold_));
-      auto engine =
-          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-
-      eri3_ = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                      std::move(screener));
-
-      // make TiledRange and Pamp of F(Y_Ry, μ_0, ν_Rν) (same as eri3)
-      F_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(bs_vector);
-      auto F_tvolume = F_trange_.tiles_range().volume();
-      F_pmap_ = Policy::default_pmap(world, F_tvolume);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_direct_eri3 = mpqc::duration_in_s(t0, t1);
-
-    // misc:
-    // 1. determine tiled ranges and pmap of the exchange term
-    // 2. determine translationally invariant basis, tiled ranges and pmap for
-    // Q(Y, rho, nu)
-    t0 = mpqc::fenced_now(world);
-    {
-      // make TiledRange and Pmap of exchange K(μ_0, ρ_Rρ)
-      auto basisRrho =
-          shift_basis_origin(*obs_, zero_shift_base, Rrho_max_, dcell_);
-      result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
-          lcao::gaussian::BasisVector{{*obs_, *basisRrho}});
-      auto tvolume = result_trange_.tiles_range().volume();
-      result_pmap_ = Policy::default_pmap(world, tvolume);
-
-      // make basis of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
-      R1m2_max_ = sig_lattice_max_ + Rrho_max_;
-      R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
-      auto Q_bs_Y = shift_basis_origin(*dfbs_, zero_shift_base, sig_lattice_max_, dcell_);
-      auto Q_bs_nu = shift_basis_origin(*obs_, zero_shift_base, R1m2_max_, dcell_);
-
-      // make TiledRange and Pmap of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
-      Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
-            lcao::gaussian::BasisVector{{*Q_bs_Y, *obs_, *Q_bs_nu}});
-      auto Q_tvolume = Q_trange_.tiles_range().volume();
-      Q_pmap_ = Policy::default_pmap(world, Q_tvolume);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_misc = mpqc::duration_in_s(t0, t1);
-
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
                     << "\tupdate R_max:        " << t_update_rmax << " s\n"
                     << "\tC(X_Rx, μ_0, ν_Rν):  " << t_C_bra << " s\n"
-                    << "\tM(X_0, Y_(Ry-Rx)):   " << t_M << " s\n"
-                    << "\tdirect ERI3:         " << t_direct_eri3 << " s\n"
-                    << "\tmisc:                " << t_misc << " s" << std::endl;
+                    << std::endl;
     }
+
+    truncated_RD_max_ = RD_max_;  // make them equal for initialization
+    // do not forget to update RD-dependent variables
+    update_RD_dependent_variables(RD_max_);
   }
 
   array_type compute_K(const array_type &D, double target_precision) {
@@ -572,6 +500,7 @@ class PeriodicCADFKBuilder
     auto t0_k = mpqc::fenced_now(world);
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::detail::direct_ord_idx;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
     array_type K;
@@ -584,6 +513,21 @@ class PeriodicCADFKBuilder
     double t_permute = 0.0;
     double t_K = 0.0;
     num_ints_computed_ = 0;
+
+    // Update lattice range of density representation
+    ExEnv::out0() << "\nTruncating lattice range of density representation\n";
+    Vector3i old_RD_max = truncated_RD_max_;
+    truncated_RD_max_ = truncate_lattice_range(D, RD_max_, density_threshold_);
+    // Update RD-dependent variables if RD_max is changed
+    if (truncated_RD_max_ != old_RD_max) {
+      ExEnv::out0() << "\nLattice range of density representation is changed. "
+                       "Update RD-dependent variables!" << std::endl;
+      update_RD_dependent_variables(truncated_RD_max_);
+    } else {
+      ExEnv::out0() << "\nLattice range of density representation is not "
+                       "changed. No need to update RD-dependent variables!"
+                    << std::endl;
+    }
 
     // try new method
     {
@@ -1013,7 +957,7 @@ class PeriodicCADFKBuilder
       for (auto R3_ord = int64_t(0); R3_ord != sig_lattice_size_; ++R3_ord) {
         const auto R3_3D = direct_3D_idx(R3_ord, sig_lattice_max_);
         const auto RD_3D = R3_3D - R1m2_3D;  // unit cell index for D: Rρ+Rσ-Rν
-        if (!is_in_lattice_range(RD_3D, RD_max_)) {
+        if (!is_in_lattice_range(RD_3D, truncated_RD_max_)) {
           continue;
         }
 
@@ -2277,6 +2221,160 @@ class PeriodicCADFKBuilder
       return true;
     else
       return false;
+  }
+
+  /*!
+   * \brief This truncates lattice range of an array D(μ, ν_R). If norms of all
+   * tiles within a unit cell are below \c threshold, this unit cell will be
+   * removed and the array size is shrinked.
+   * \param D Tiled array object
+   * \param RD_max the original lattice range of the input array
+   * \param threshold
+   * \return the updated lattice range
+   */
+  Vector3i truncate_lattice_range(const array_type &D, const Vector3i &RD_max, const double threshold) {
+
+    ExEnv::out0() << "\tUser specified lattice range = "
+                  << RD_max.transpose() << std::endl;
+
+    using ::mpqc::lcao::detail::direct_3D_idx;
+    using ::mpqc::lcao::detail::direct_ord_idx;
+
+    const auto &Dnorms = D.shape().data();
+    std::vector<Vector3i> sig_density_uc_list;
+    const auto RD_size = 1 + direct_ord_idx(RD_max, RD_max);
+
+    // determine significant unit cells
+    for (auto RD_ord = 0ul; RD_ord != RD_size; ++RD_ord) {
+      const auto RD_3D = direct_3D_idx(RD_ord, RD_max);
+      auto is_significant = false;
+      for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
+        for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
+          const auto nu_in_D = nu + RD_ord * ntiles_per_uc_;
+          std::array<size_t, 2> idx{{mu, nu_in_D}};
+          if (Dnorms(idx) >= threshold) {
+            is_significant = true;
+            sig_density_uc_list.emplace_back(RD_3D);
+            break;
+          }
+        }
+        if (is_significant) {
+          break;
+        }
+      }
+    }
+
+    // renew lattice range based on the list of significant unit cells
+    auto x = 0;
+    auto y = 0;
+    auto z = 0;
+    for (const auto &RD_3D : sig_density_uc_list) {
+      x = std::max(x, RD_3D(0));
+      y = std::max(y, RD_3D(1));
+      z = std::max(z, RD_3D(2));
+    }
+    Vector3i new_RD_max = {x, y, z};
+    ExEnv::out0() << "\tUpdated lattice range = "
+                  << new_RD_max.transpose() << std::endl;
+
+    return new_RD_max;
+  }
+
+  /*!
+   * \brief This updates RD-dependent variables
+   * \param RD_max
+   */
+  void update_RD_dependent_variables(const Vector3i &RD_max) {
+    if (print_detail_) {
+      ExEnv::out0() << "\nUpdating RD-dependent variables:" << std::endl;
+    }
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    auto &world = this->get_world();
+    time_point t0, t1;
+
+    // compute M(X_Rx, Y_Ry) = M(X_0, Y_(Ry-Rx))
+    t0 = mpqc::fenced_now(world);
+    {
+      // compute lattice range for Rρ in |ρ_Rρ σ_(Rρ+Rσ))
+      Rrho_max_ = RD_max + 2 * sig_lattice_max_;
+      Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
+      // Y is on the center of either ρ_Rρ or σ_(Rρ+Rσ). Thus Y_Ry should have
+      // the same lattice range as σ_(Rρ+Rσ).
+      RY_max_ = Rrho_max_ + sig_lattice_max_;
+      RY_size_ = 1 + direct_ord_idx(RY_max_, RY_max_);
+      RYmRX_max_ = RY_max_ + RX_max_;
+      auto shifted_Y_dfbs =
+          shift_basis_origin(*dfbs_, zero_shift_base_, RYmRX_max_, dcell_);
+      M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_M = mpqc::duration_in_s(t0, t1);
+
+    // make direct integral eri3_ = (μ_0 ν_Rν | Y_Ry)
+    t0 = mpqc::fenced_now(world);
+    {
+      Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
+      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisR_);
+      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisR_}};
+
+      auto oper_type = libint2::Operator::coulomb;
+      auto screen_engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
+      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
+          lcao::gaussian::create_schwarz_screener(
+              world, screen_engine, bs_vector, screen_threshold_));
+      auto engine =
+          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
+      eri3_ = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
+                                                      std::move(screener));
+
+      // make TiledRange and Pamp of F(Y_Ry, μ_0, ν_Rν) (same as eri3)
+      F_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(bs_vector);
+      auto F_tvolume = F_trange_.tiles_range().volume();
+      F_pmap_ = Policy::default_pmap(world, F_tvolume);
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_direct_eri3 = mpqc::duration_in_s(t0, t1);
+
+    // misc:
+    // 1. determine tiled ranges and pmap of the exchange term
+    // 2. determine translationally invariant basis, tiled ranges and pmap for
+    // Q(Y, rho, nu)
+    t0 = mpqc::fenced_now(world);
+    {
+      // make TiledRange and Pmap of exchange K(μ_0, ρ_Rρ)
+      auto basisRrho =
+          shift_basis_origin(*obs_, zero_shift_base_, Rrho_max_, dcell_);
+      result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
+          lcao::gaussian::BasisVector{{*obs_, *basisRrho}});
+      auto tvolume = result_trange_.tiles_range().volume();
+      result_pmap_ = Policy::default_pmap(world, tvolume);
+
+      // make basis of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
+      R1m2_max_ = sig_lattice_max_ + Rrho_max_;
+      R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
+      auto Q_bs_Y = shift_basis_origin(*dfbs_, zero_shift_base_, sig_lattice_max_, dcell_);
+      auto Q_bs_nu = shift_basis_origin(*obs_, zero_shift_base_, R1m2_max_, dcell_);
+
+      // make TiledRange and Pmap of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
+      Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
+            lcao::gaussian::BasisVector{{*Q_bs_Y, *obs_, *Q_bs_nu}});
+      auto Q_tvolume = Q_trange_.tiles_range().volume();
+      Q_pmap_ = Policy::default_pmap(world, Q_tvolume);
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_misc = mpqc::duration_in_s(t0, t1);
+
+    if (print_detail_) {
+      ExEnv::out0() << "\tM(X_0, Y_(Ry-Rx)):        " << t_M << " s\n"
+                    << "\tdirect ERI3:              " << t_direct_eri3 << " s\n"
+                    << "\tmisc:                     " << t_misc << " s"
+                    << std::endl;
+    }
+
   }
 };
 

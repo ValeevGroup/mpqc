@@ -189,7 +189,7 @@ TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::SparsePolicy
 fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
     Basis const &obs, TA::DistArray<Tile,Policy> const &H,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile, TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 
@@ -255,7 +255,7 @@ TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::DensePolicy>
 fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
     Basis const &obs, TA::DistArray<Tile,Policy> const &H,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile, TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 

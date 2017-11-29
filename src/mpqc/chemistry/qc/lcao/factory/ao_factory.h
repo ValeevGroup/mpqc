@@ -5,11 +5,11 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/factory/set_oper.h"
+#include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -28,8 +28,9 @@ template <typename Tile, typename Policy>
 class AOFactory;
 
 template <typename Tile, typename Policy>
-using AOFactoryBase =
-    Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>;
+using AOFactoryBase = Factory<
+    TA::DistArray<Tile, Policy>,
+    DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>>;
 
 template <typename Tile, typename Policy>
 std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
@@ -48,14 +49,20 @@ std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
 
 template <typename Tile, typename Policy>
 AOFactory<Tile, Policy>& to_ao_factory(
-    Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>& factory) {
+    Factory<TA::DistArray<Tile, Policy>,
+            DirectArray<Tile, Policy,
+                        DirectIntegralBuilder<Tile, libint2::Engine>>>&
+        factory) {
   return dynamic_cast<AOFactory<Tile, Policy>&>(factory);
 };
 
 template <typename Tile, typename Policy>
 std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
-    const std::shared_ptr<Factory<TA::DistArray<Tile, Policy>,
-                                  DirectArray<Tile, Policy>>>& factory) {
+    const std::shared_ptr<
+        Factory<TA::DistArray<Tile, Policy>,
+                DirectArray<Tile, Policy,
+                            DirectIntegralBuilder<Tile, libint2::Engine>>>>&
+        factory) {
   auto result = std::dynamic_pointer_cast<AOFactory<Tile, Policy>>(factory);
   TA_ASSERT(result != nullptr);
   return result;
@@ -75,7 +82,8 @@ template <typename Tile, typename Policy>
 class AOFactory : public AOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectTArray = DirectArray<Tile, Policy>;
+  using DirectTArray =
+      DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
   using gtg_params_t = std::vector<std::pair<double, double>>;
 
   /// Op is a function pointer that convert TA::Tensor to Tile
@@ -138,7 +146,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
 
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);
-  
+
   /// compute CADF fitting coefficients
   TArray compute_cadf_coeffs(const Formula& formula_string);
 
@@ -212,7 +220,8 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   template <typename U = Policy>
   DirectArray<Tile,
               typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
-                                      TA::SparsePolicy>::type>
+                                      TA::SparsePolicy>::type,
+              DirectIntegralBuilder<Tile, libint2::Engine>>
   compute_direct_integrals(madness::World& world,
                            ShrPool<libint2::Engine>& engine,
                            BasisVector const& bases,
@@ -220,7 +229,8 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                                std::make_shared<Screener>(Screener{}),
                            std::shared_ptr<const math::PetiteList> plist =
                                math::PetiteList::make_trivial()) {
-    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_, plist);
+    auto result =
+        direct_sparse_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 
@@ -228,7 +238,8 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
   template <typename U = Policy>
   DirectArray<Tile,
               typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
-                                      TA::DensePolicy>::type>
+                                      TA::DensePolicy>::type,
+              DirectIntegralBuilder<Tile, libint2::Engine>>
   compute_direct_integrals(madness::World& world,
                            ShrPool<libint2::Engine>& engine,
                            BasisVector const& bases,
@@ -236,7 +247,8 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                                std::make_shared<Screener>(Screener{}),
                            std::shared_ptr<const math::PetiteList> plist =
                                math::PetiteList::make_trivial()) {
-    auto result = direct_dense_integrals(world, engine, bases, p_screen, op_, plist);
+    auto result =
+        direct_dense_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 

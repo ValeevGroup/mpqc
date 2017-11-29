@@ -67,11 +67,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
-   * | max_iter | int | 30 | maxmium iteration in CCSD |
-   * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |
-   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
+   * | @c ref | Wavefunction | @c none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | @c method | string | @c df if @c df_basis is provided, @c standard otherwise | method to compute the CCSD residual; valid choices are: @c standard (uses 4-index MO integrals throughout), @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals), @c df (approximates 4-index MO integrals using density fitting), @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
+   * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
+   * | @c verbose | bool | determined by factory.verbose() | if print more information in CCSD iteration |
+   * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    */
 
   // clang-format on
@@ -86,7 +86,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     df_ = false;
     auto default_method =
-        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
+        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "direct";
     method_ = kv.value<std::string>("method", default_method);
     if (method_ != "df" && method_ != "direct" && method_ != "standard" &&
         method_ != "direct_df") {
@@ -100,7 +100,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" && solver_str_ != "svo")
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__, "solver");
 
-    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
+    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", true);
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());
@@ -619,20 +619,28 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     // get all two electron integrals
     TArray g_ijab = this->get_ijab();
     TArray g_ijkl = this->get_ijkl();
-    TArray g_abcd = this->get_abcd();
-
-    TArray X_ai = this->get_Xai();
     TArray g_iajb = this->get_iajb();
-    TArray g_iabc = this->get_iabc();
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
-    auto tmp_time1 = mpqc::now(world, accurate_time);
-    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
+
+    TArray g_abcd;
+    TArray g_iabc;
+    if (!reduced_abcd_memory_) {
+      g_abcd = this->get_abcd();
+      g_iabc = this->get_iabc();
+    }
+
+    TArray X_ai = this->get_Xai();
+    TArray X_ij = this->get_Xij();
+    TArray X_ab = this->get_Xab();
 
     TArray f_ai = this->get_fock_ai();
     TArray f_ij = this->get_fock_ij();
     TArray f_ab = this->get_fock_ab();
+
+    auto tmp_time1 = mpqc::now(world, accurate_time);
+    auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+    mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time, "\n");
 
     // initial guess = 0
     t1 = TArray(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
@@ -730,6 +738,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         // occ index i j k l
         TArray h_kc;
 
+        TArray X_ai_tau;
+
+        X_ai_tau("X,a,i") = 2.0*X_ai("X,b,j")*tau("a,b,i,j") - X_ai("X,b,j")*tau("a,b,j,i");
+
         // compute residual r1(n) (at convergence r1 = 0)
         // external index i and a
         tmp_time0 = mpqc::now(world, accurate_time);
@@ -737,15 +749,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
         {
           h_ac("a,c") =
-              f_ab("a,c") -
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("l,k,c,d")) * tau("a,d,k,l");
+              f_ab("a,c") - X_ai_tau("K,a,l") * X_ai("K,c,l");
           r1("a,i") += h_ac("a,c") * t1("c,i");
         }
 
         {
           h_ki("k,i") =
-              f_ij("k,i") +
-              (2.0 * g_ijab("k,l,c,d") - g_ijab("k,l,d,c")) * tau("c,d,i,l");
+              f_ij("k,i") + X_ai_tau("K,c,i")*X_ai("K,c,k");
           r1("a,i") -= t1("a,k") * h_ki("k,i");
         }
 
@@ -766,11 +776,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time0 = mpqc::now(world, accurate_time);
         r1("a,i") += (2.0 * g_ijab("k,i,c,a") - g_iajb("k,a,i,c")) * t1("c,k");
 
-        r1("a,i") +=
-            (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
+        r1("a,i") += X_ai_tau("K,c,i") * X_ab("K,a,c");
 
-        r1("a,i") -=
-            (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
+        r1("a,i") -= X_ai_tau("K,a,l") * X_ij("K,l,i");
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -794,9 +802,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       // permutation part
       tmp_time0 = mpqc::now(world, accurate_time);
 
+      TArray X_ab_t1;
+      X_ab_t1("K,a,i") = X_ab("K,a,b")*t1("b,i");
+
       {
         r2("a,b,i,j") =
-            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j") -
+            X_ab_t1("K,b,j") * (X_ai("K,a,i") - X_ij("K,k,i")*t1("a,k")) -
             (g_ijak("i,j,a,k") + g_ijab("i,k,a,c") * t1("c,j")) * t1("b,k");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -814,7 +825,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                       (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
         g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
-                      (2.0 * g_iabc("k,a,d,c") - g_iabc("k,a,c,d")) * t1("d,k");
+                      2.0 * X_ai("K,d,k") * t1("d,k") * X_ab("K,a,c") - X_ab_t1("K,a,k") * X_ai("K,c,k");
 
         r2("a,b,i,j") +=
             g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
@@ -840,7 +851,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
               - g_ijka("l,k,i,c") * t1("a,l")
 
-              + g_iabc("k,a,c,d") * t1("d,i")
+              + X_ab_t1("K,a,i") * X_ai("K,c,k")
 
               - X_ai("x,d,l") * T("d,a,i,l") * X_ai("x,c,k")
 
@@ -852,7 +863,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
                               - g_ijka("k,l,i,c") * t1("a,l")
 
-                              + g_iabc("k,a,d,c") * t1("d,i")
+                              + X_ai("K,d,k") * t1("d,i") * X_ab("K,a,c")
 
                               - g_ijab("k,l,d,c") * T("d,a,i,l");
           if (verbose_) {
@@ -865,8 +876,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
                          (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
 
-        r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                         k_kaic("k,b,i,c") * t2("a,c,k,j");
+        TArray tmp;
+        tmp("a,b,i,j") = k_kaic("k,a,i,c") * t2("c,b,j,k");
+        r2("a,b,i,j") -= 0.5 * tmp("a,b,i,j") + tmp("b,a,i,j");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
       tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -908,11 +920,27 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         // compute b intermediate
         // avoid store b_abcd
         TArray b_abij;
-        b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
+        if (!reduced_abcd_memory_) {
 
-        b_abij("a,b,i,j") -= g_iabc("k,a,d,c") * tau("c,d,i,j") * t1("b,k");
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd("a,b,c,d");
+          TArray tmp;
+          tmp("k,a,i,j") = g_iabc("k,a,c,d") * tau("c,d,i,j");
+          b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
 
-        b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
+          b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
+
+        } else {
+
+          TArray X_ab_t1;
+          X_ab_t1("K,a,b") = 0.5*X_ab("K,a,b") - X_ai("K,b,i")*t1("a,i");
+
+          auto g_abcd_iabc_direct = gaussian::df_direct_integrals(X_ab, X_ab_t1, Formula::Notation::Physical);
+
+          b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_iabc_direct("a,b,c,d");
+
+          b_abij("a,b,i,j") += b_abij("b,a,j,i");
+
+        }
 
         if (verbose_) {
           mpqc::detail::print_size_info(b_abij, "B_abij");
@@ -1265,8 +1293,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
           r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
                            (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
 
-          r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                           k_kaic("k,b,i,c") * t2("a,c,k,j");
+          TArray tmp;
+          tmp("a,b,i,j") = k_kaic("k,a,i,c") * t2("c,b,j,k");
+          r2("a,b,i,j") -= 0.5 * tmp("a,b,i,j") + tmp("b,a,i,j");
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -1365,29 +1394,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
   /// get three center integral (X|ab)
   const TArray get_Xab() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
-    result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|a b)[inv_sqr]");
   }
 
   /// get three center integral (X|ij)
   const TArray get_Xij() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|i j)");
-    result("K,i,j") = sqrt("K,Q") * three_center("Q,i,j");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|i j)[inv_sqr]");
   }
 
   /// get three center integral (X|ai)
   const TArray get_Xai() {
-    TArray result;
-    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
-    TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
-    result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
-    return result;
+    return this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
   }
 
   // get two electron integrals
@@ -1448,19 +1465,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   }
 
   /// <i|f|j>
-  const TArray get_fock_ij() {
+  virtual const TArray get_fock_ij() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i|F|j>" + postfix);
   }
 
   /// <a|f|b>
-  const TArray get_fock_ab() {
+  virtual const TArray get_fock_ab() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a|F|b>" + postfix);
   }
 
   /// <p|f|q>
-  const TArray get_fock_pq() {
+  virtual const TArray get_fock_pq() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<p|F|q>" + postfix);
   }

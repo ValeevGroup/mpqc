@@ -300,8 +300,8 @@ TA::DistArray<Tile, Policy> pno_transform_abij(
   auto tform = [&pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
 
     // determine i and j indices
-    const auto i = arg_tile.range().lobound()[2];
-    const auto j = arg_tile.range().lobound()[3];
+    const long i = arg_tile.range().lobound()[2];
+    const long j = arg_tile.range().lobound()[3];
 
     // Select appropriate matrix of PNOs
     const auto ij = i * nocc_act + j;
@@ -314,7 +314,10 @@ TA::DistArray<Tile, Policy> pno_transform_abij(
         pno_ij.transpose() * TA::eigen_map(arg_tile, nuocc, nuocc) * pno_ij;
 
     // Convert result_eig to tile and compute norm
-    result_tile = Tile(TA::Range{npno, npno, 1l, 1l});
+    result_tile = Tile(TA::Range({std::make_pair(0l,npno),
+                                  std::make_pair(0l,npno),
+                                  std::make_pair(i,i+1),
+                                  std::make_pair(j,j+1)}));
     typename Tile::scalar_type norm = 0.0;
     for (auto r = 0; r < npno; ++r) {
       for (auto c = 0; c < npno; ++c) {
@@ -507,6 +510,81 @@ TA::DistArray<Tile, Policy> unblock_t1(
 }
 
 /**
+  *
+  * @param K T2 like array wth dimension "a,b,i,j"
+  * @param t2 T2 like array with dimension "a,b,i,j"
+  * @return
+  */
+template <typename Tile, typename Policy>
+double compute_mp2(
+    const TA::DistArray<Tile, Policy>& K,
+    const TA::DistArray<Tile, Policy>& t2) {
+  // Compute the MP2 correlation energy
+  double e_mp2 = TA::dot(2*K("a,b,i,j") - K("b,a,i,j"), t2("a,b,i,j"));
+  return e_mp2;
+}
+
+// Form T from K
+template<typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> form_T_from_K (
+    const TA::DistArray<Tile, Policy>& K,
+    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
+    const RowMatrix<typename Tile::numeric_type>& F_uocc,
+    std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
+    int nocc_act) {
+
+  using Matrix = RowMatrix<typename Tile::numeric_type>;
+  using Vector = EigenVector<typename Tile::numeric_type>;
+
+  auto form_T = [&F_occ_act, &F_uocc, &pnos, nocc_act](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // determine i and j indices
+    const int i = arg_tile.range().lobound()[2];
+    const int j = arg_tile.range().lobound()[3];
+
+    Matrix pno_ij = pnos[i*nocc_act + j];
+    auto npno = pno_ij.cols();
+    Matrix F_pno = pno_ij.transpose() * F_uocc * pno_ij;
+
+    Vector eps_o = F_occ_act.diagonal();
+    Vector eps_v = F_pno.diagonal();
+
+    auto norm = 0.0;
+
+    const auto e_i = eps_o[i];
+    const auto e_j = eps_o[j];
+    const auto e_ij = -e_i - e_j;
+
+    // Loop over a and b indices to form T
+    for (int a = 0, tile_idx = 0; a != npno; ++a) {
+      const auto e_a = eps_v[a];
+
+      for (int b = 0; b != npno; ++b, ++tile_idx) {
+        const auto e_b = eps_v[b];
+        const auto e_ab = e_a + e_b;
+
+        const auto e_abij = e_ab + e_ij;
+        // const auto e_abij = e_a + e_b - e_i - e_j;
+        const auto K_abij = arg_tile[tile_idx];
+        const auto T_abij = -K_abij / e_abij;
+        const auto abs_result = std::abs(T_abij);
+        norm += abs_result * abs_result;
+        result_tile[tile_idx] = T_abij;
+
+      }      // b
+    }        // a
+    return std::sqrt(norm);
+  };  // form_T
+
+  auto T2 = TA::foreach(K, form_T);
+  T2.world().gop.fence();
+  return T2;
+};  // form T from K
+
+
+/**
  *
  * @param t2
  * @param pnos
@@ -517,7 +595,10 @@ TA::DistArray<Tile, Policy> unblock_t1(
 template <typename Tile, typename Policy>
 void construct_pno(
     const TA::DistArray<Tile, Policy>& t2,
+    TA::DistArray<Tile, Policy>& K_reblock,
+    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
     const RowMatrix<typename Tile::numeric_type>& F_uocc,
+    double exact_e_mp2,
     double tpno,
     double tosv,
     std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
@@ -692,7 +773,7 @@ void construct_pno(
   // world.gop.fence();
 
   // Lambda function to form PNOs; implement using a for_each
-  auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_uocc, &npnos,
+  auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_occ_act, &F_uocc, &npnos,
                    &nosvs, tpno, tosv, nuocc, nocc_act,
                    pno_canonical](Tile& result_tile, const Tile& arg_tile) {
 
@@ -874,7 +955,20 @@ void construct_pno(
                   << std::endl;
   }  // end if D_prime_.world == 0
 
+  // Form K_pno and T2_pno
+  const TA::DistArray<Tile, Policy>& K_pno = detail::pno_transform_abij(K_reblock, pnos);
+  const TA::DistArray<Tile, Policy>& T2_pno = detail::form_T_from_K(K_pno, F_occ_act, F_uocc, pnos, nocc_act);
+
+  // Compute the MP2 energy in the space of the truncated PNOs
+  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
+  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+
+  // Compute exact MP2 energy - PNO MP2 energy
+  auto mp2_correction = exact_e_mp2 - pno_e_mp2;
+  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+
 };  // construct_pno
+
 
 
 
@@ -972,7 +1066,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     auto nuocc = ofac.retrieve("a").rank();
     nuocc_ = nuocc;
     auto nfzc = nocc - nocc_act;
-
     iter_count_ = 0;
 
     // Set start_macro_ to false
@@ -1002,8 +1095,39 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 
     // Compute all K_aibj
     // auto K = fac.compute(L"(a b|G|i j)");
-    auto K = fac.compute(L"<a b|G|i j>[df]");
+    K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
+
+
+    // Create TiledRange1 objects for uocc transformation arrays
+    std::vector<std::size_t> uocc_blocks{0, nuocc};
+
+    const TA::TiledRange1 uocc_col =
+        TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
+    const TA::TiledRange1 uocc_row = ktrange.dim(0);
+
+    // Create TiledRange1 objects for occ transformation arrays
+    std::vector<std::size_t> occ_blocks;
+    for (std::size_t i = 0; i <= nocc_act_; ++i) {
+      occ_blocks.push_back(i);
+    }
+
+    const TA::TiledRange1 occ_col =
+        TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
+    const TA::TiledRange1 occ_row = ktrange.dim(3);
+
+    // Create transition arrays for reblocking
+    reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+        Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
+
+    reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+        Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
+
+
+    // Reblock all K_abij
+    K_reblock_ = detail::reblock_t2(K, reblock_i_, reblock_a_);
+
+
 
 #if PRODUCE_PNO_MOLDEN_FILES
       // prepare to Molden
@@ -1093,41 +1217,21 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     world.gop.fence();
     //      std::cout << "Successfully transformed K to T" << std::endl;
 
-    // Reblock T_ so that
-    // each occ dim has nocc_act tiles, each of which contains
-    // a single element and
-    // each uocc dim has single tile containing nuocc elements
+    // Form exact MP2 correlation energy for use in computing PNO incompleteness correction
+    exact_e_mp2_ = detail::compute_mp2(K, T2);
+    ExEnv::out0() << "Exact MP2 correlation energy: " << exact_e_mp2_ << std::endl;
 
-    // Create TiledRange1 objects for uocc transformation arrays
-    std::vector<std::size_t> uocc_blocks{0, nuocc};
-
-    const TA::TiledRange1 uocc_col =
-        TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
-    const TA::TiledRange1 uocc_row = ktrange.dim(0);
-
-    // Create TiledRange1 objects for occ transformation arrays
-    std::vector<std::size_t> occ_blocks;
-    for (std::size_t i = 0; i <= nocc_act_; ++i) {
-      occ_blocks.push_back(i);
-    }
-
-    const TA::TiledRange1 occ_col =
-        TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
-    const TA::TiledRange1 occ_row = ktrange.dim(3);
-
-    // Create transition arrays
-    reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
-        Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
-
-    reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
-        Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
     // Reblock T2
     T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
-    detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
+    // Construct PNOs and OSVs
+    detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
+                          exact_e_mp2_, tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+
+
 
 //    // Print out npno per pair
 //    ExEnv::out0() << "i\t" << "j\t"<< "npnos" << std::endl;
@@ -1195,7 +1299,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
 
     if (start_macro_ == true) {
-//      ExEnv::out0() << "At the start of the macro iterations, dE = " << dE << std::endl;
       if (dE < dE_thresh_) {
         num_in_row_ += 1;
       }
@@ -1223,10 +1326,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
     if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
         || (solver_str_ == "exact_pno")) {
 
-//      ExEnv::out0() << "Right before recomputing PNOs, dE = " << dE << std::endl;
-
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
-      detail::construct_pno(T_reblock, F_uocc_, tpno_, tosv_,
+      detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
+                            exact_e_mp2_, tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
@@ -1242,6 +1344,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
 //      t2 = t.t2;
       iter_count_ += 1;
       start_macro_ = true;  // set start_macro_ to true since next CCSD iter is start of macro iter
+
+      // Recompute and transform all K integrals to PNO space
+      using Matrix = RowMatrix<typename Tile::numeric_type>;
+      using Vector = EigenVector<typename Tile::numeric_type>;
     }
 
     else {
@@ -1372,8 +1478,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T, T>,
   T reblock_i_;
   T reblock_a_;
 
+  T K;                         //!< the T2 like array of eris; has dimensions "a,b,i,j"
+  T K_reblock_;                //!< the T2 like array of eris reblocked to have a single occupied elem per tile
   Matrix F_occ_act_;
   Matrix F_uocc_;
+
+  double exact_e_mp2_;         //!< the exact MP2 correlation energy
 
   // For storing PNOs and and the Fock matrix in the PNO basis
   std::vector<int> npnos_;

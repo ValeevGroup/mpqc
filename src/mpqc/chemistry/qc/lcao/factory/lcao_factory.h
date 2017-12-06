@@ -17,7 +17,8 @@ class LCAOFactory;
 template <typename Tile, typename Policy>
 using LCAOFactoryBase =
     Factory<TA::DistArray<Tile, Policy>,
-            TA::DistArray<gaussian::DirectDFTile<Tile, Policy>, Policy>>;
+            gaussian::DirectArray<
+                Tile, Policy, gaussian::DirectDFIntegralBuilder<Tile, Policy>>>;
 
 template <typename Tile, typename Policy>
 std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
@@ -63,7 +64,8 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray =
-      TA::DistArray<gaussian::DirectDFTile<Tile, Policy>, Policy>;
+      gaussian::DirectArray<Tile, Policy,
+                            gaussian::DirectDFIntegralBuilder<Tile, Policy>>;
   // for now hardwire to Gaussians
   // TODO generalize to non-gaussian AO operators
   using AOFactoryType = gaussian::AOFactory<Tile, Policy>;
@@ -680,7 +682,7 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
       ExEnv::out0() << indent;
       ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
                     << utility::to_string(formula.string());
-      double size = mpqc::detail::array_size(result);
+      double size = mpqc::detail::array_size(result.array());
       ExEnv::out0() << " Size: " << size << " GB\n";
     }
   } else {
@@ -702,7 +704,7 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
     ExEnv::out0() << indent;
     ExEnv::out0() << "Computed LCAO Direct Integral From Density-Fitting: "
                   << utility::to_string(formula.string());
-    double size = mpqc::detail::array_size(result);
+    double size = mpqc::detail::array_size(result.array());
     ExEnv::out0() << " Size: " << size << " GB"
                   << " Time: " << time << " s\n";
     ExEnv::out0() << decindent;

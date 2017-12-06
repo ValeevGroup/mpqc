@@ -7,6 +7,7 @@
 
 #include <tiledarray.h>
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_intermediates.h"
+#include "mpqc/chemistry/qc/lcao/integrals/direct_task_integrals.h"
 
 namespace mpqc {
 namespace lcao {
@@ -295,7 +296,9 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
  * @param t2 CCSD T2 amplitudes in T2("a,b,i,j")
  * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
  * @param ints cc::Integrals, requires Fia, FIJ, FAB, Xai, Xab, Xij, Gijab,
- * Giajb, Gijka, Gijkl  and  Giabc with Gabcd if u is not initialized
+ * Giajb, Gijka, Gijkl  and  Giabc with Gabcd
+ * if Giabc and Gabcd is not initialized, it will evaluated with lazy density-fitting
+ * if U is initialized, Giabc and Gabcd won't be used
  * @param u half transformed intermediates U("p,r,i,j") =
  * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
  * @return R2 residual
@@ -371,32 +374,32 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
 
     r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
   }
+
   {
     // compute b intermediate
     // avoid store b_abcd
     Array b_abij;
 
     if (!u.is_initialized()) {
-      //    if (!reduced_abcd_memory_) {
-      b_abij("a,b,i,j") = tau("c,d,i,j") * ints.Gabcd("a,b,c,d");
-      Array tmp;
-      tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
-      b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
-      b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
+      if (ints.Gabcd.is_initialized()) {
+        b_abij("a,b,i,j") = tau("c,d,i,j") * ints.Gabcd("a,b,c,d");
+        Array tmp;
+        tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
+        b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
+        b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
 
-      //    } else {
-      //      Array X_ab_t1;
-      //      X_ab_t1("K,a,b") = 0.5 * X_ab("K,a,b") - X_ai("K,b,i") *
-      //      t1("a,i");
+      } else {
+        Array X_ab_t1;
+        X_ab_t1("K,a,b") =
+            0.5 * ints.Xab("K,a,b") - ints.Xai("K,b,i") * t1("a,i");
 
-      //      auto g_abcd_iabc_direct = gaussian::df_direct_integrals(
-      //          X_ab, X_ab_t1, Formula::Notation::Physical);
+        auto g_abcd_iabc_direct = gaussian::df_direct_integrals(
+            ints.Xab, X_ab_t1, Formula::Notation::Physical);
 
-      //      b_abij("a,b,i,j") = tau("c,d,i,j") *
-      //      g_abcd_iabc_direct("a,b,c,d");
+        b_abij("a,b,i,j") = tau("c,d,i,j") * g_abcd_iabc_direct("a,b,c,d");
 
-      //      b_abij("a,b,i,j") += b_abij("b,a,j,i");
-      //    }
+        b_abij("a,b,i,j") += b_abij("b,a,j,i");
+      }
     } else {
       b_abij("a,b,i,j") =
           (u("p,r,i,j") * ints.Ca("r,b") -

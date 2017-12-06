@@ -480,13 +480,19 @@ class KeyVal {
   /// check whether the given class exists
   /// @param path the path
   /// @return true if \c path class exists
+  /// TODO rename to exists_class_ptr
   bool exists_class(const key_type& path) const {
-    bool exist_class = false;
+    bool exists_class_ptr = false;
     auto iter = dc_registry_->find(resolve_path(path));
     if (iter != dc_registry_->end()) {
-      exist_class = true;
+      auto weak_ptr = iter->second;
+      // if have unexpired cached ptr report true, otherwise false (and purge the expired ptr)
+      if (weak_ptr.expired())
+        dc_registry_->erase(iter);
+      else
+        exists_class_ptr = true;
     }
-    return exist_class;
+    return exists_class_ptr;
   }
 
   /// counts the number of children of the node at this path

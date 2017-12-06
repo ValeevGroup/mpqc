@@ -68,11 +68,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | direct or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
-   * | max_iter | int | 30 | maxmium iteration in CCSD |
-   * | verbose | bool | default is false | if print more information in CCSD iteration |
-   * | reduced_abcd_memory | bool | false | avoid store another abcd term in standard and df method |
+   * | @c ref | Wavefunction | @c none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | @c method | string | @c df if @c df_basis is provided, @c direct otherwise | method to compute the CCSD residual; valid choices are: @c standard (uses 4-index MO integrals throughout), @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals), @c df (approximates 4-index MO integrals using density fitting), @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
+   * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
+   * | @c verbose | bool | false | if print more information in CCSD iteration |
+   * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    */
 
   // clang-format on
@@ -103,7 +103,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__,
                        "solver");
 
-    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", false);
+    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", true);
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", false);
@@ -524,19 +524,19 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   }
 
   /// <i|f|j>
-  const TArray get_fock_ij() {
+  virtual const TArray get_fock_ij() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<i|F|j>" + postfix);
   }
 
   /// <a|f|b>
-  const TArray get_fock_ab() {
+  virtual const TArray get_fock_ab() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<a|F|b>" + postfix);
   }
 
   /// <p|f|q>
-  const TArray get_fock_pq() {
+  virtual const TArray get_fock_pq() {
     std::wstring postfix = df_ ? L"[df]" : L"";
     return this->lcao_factory().compute(L"<p|F|q>" + postfix);
   }

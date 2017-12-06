@@ -17,7 +17,7 @@ namespace gaussian {
 
 template <typename Tile, typename Policy>
 AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
-    : Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>(kv),
+    : AOFactoryBase<Tile,Policy>(kv),
       gtg_params_() {
   ExEnv::out0() << "\nConstructing AOFactory: \n";
   std::string prefix = "";

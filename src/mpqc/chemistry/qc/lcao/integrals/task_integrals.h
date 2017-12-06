@@ -11,6 +11,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_H_
 
 #include <TiledArray/tensor/tensor_map.h>
+#include <TiledArray/tile_op/noop.h>
 
 #include "mpqc/chemistry/qc/lcao/integrals/integral_builder.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
@@ -37,7 +38,7 @@ namespace gaussian {
 template <typename E, typename Tile = TA::TensorD>
 std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tiles_range = trange.tiles_range();
@@ -149,7 +150,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
 template <typename E, typename Tile = TA::TensorD>
 std::vector<TA::DistArray<Tile, TA::DensePolicy>> dense_xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tiles_range = trange.tiles_range();
@@ -239,7 +240,7 @@ std::vector<TA::DistArray<
                                   TA::DensePolicy>::type>>
 xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   return dense_xyz_integrals(world, shr_pool, bases, op);
 };
 
@@ -249,7 +250,7 @@ std::vector<TA::DistArray<
                                   TA::SparsePolicy>::type>>
 xyz_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   return sparse_xyz_integrals(world, shr_pool, bases, op);
 };
 
@@ -269,7 +270,7 @@ template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -333,7 +334,7 @@ template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, TA::DensePolicy> dense_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::detail::Noop<Tile,TA::TensorD, true>()) {
   TA::DistArray<Tile, TA::DensePolicy> out(world, detail::create_trange(bases));
 
   // Copy the Bases for the Integral Builder

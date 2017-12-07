@@ -1886,9 +1886,9 @@ class PeriodicCADFKBuilder
     const auto ext_C_jij = C_jij.range().extent();
     const auto ext_M_iij = M_iij.range().extent();
     const auto ext_M_jij = M_jij.range().extent();
-    assert(ext_C_iij[0] == ext_C_jij[0] && ext_C_iij[1] == ext_C_jij[1] && ext_C_iij[2] == ext_C_jij[2]);
-    assert(ext_M_iij[0] == ext_M_jij[0] && ext_M_iij[1] == ext_M_jij[1]);
-    assert(ext_M_iij[0] == ext_C_iij[0]);
+    assert(ext_C_iij[1] == ext_C_jij[1] && ext_C_iij[2] == ext_C_jij[2]);
+    assert(ext_M_iij[1] == ext_M_jij[1]);
+    assert(ext_M_iij[0] == ext_C_iij[0] && ext_M_jij[0] == ext_C_jij[0]);
 
     const auto tile_Y = idx_F[0];
     const auto tile_mu = idx_F[1];
@@ -1909,29 +1909,28 @@ class PeriodicCADFKBuilder
     const auto result_rng = TA::Range({rng_Y, rng_mu, rng_nu});
     Tile result_tile(result_rng, 0.0);
 
-    // set up gemm helper
-    TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
-                            M_iij.range().rank(), C_iij.range().rank());
+    auto add_to_result_tile = [&](Tile &C, Tile &M) {
+      // set up gemm helper
+      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
+                              M.range().rank(), C.range().rank());
 
-    int m, k, n;
-    gh.compute_matrix_sizes(m, n, k, M_iij.range(), C_iij.range());
-    const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
-    const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
+      int m, k, n;
+      gh.compute_matrix_sizes(m, n, k, M.range(), C.range());
+      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-    if (C_iij.norm() * M_iij.norm() >= target_precision_) {
       // Notice that we reversed notrans and trans. This is because Lapack
       // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M_iij.data(),
-                     lda, C_iij.data(), ldb, 1.0, result_tile.data(), n);
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M.data(),
+                     lda, C.data(), ldb, 1.0, result_tile.data(), n);
+    };
 
+    if (C_iij.norm() * M_iij.norm() >= target_precision_) {
+      add_to_result_tile(C_iij, M_iij);
     }
 
     if (C_jij.norm() * M_jij.norm() >= target_precision_) {
-      // Notice that we reversed notrans and trans. This is because Lapack
-      // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M_jij.data(),
-                     lda, C_jij.data(), ldb, 1.0, result_tile.data(), n);
-
+      add_to_result_tile(C_jij, M_jij);
     }
 
     const auto ntiles_mu = F_trange_.dim(1).tile_extent();

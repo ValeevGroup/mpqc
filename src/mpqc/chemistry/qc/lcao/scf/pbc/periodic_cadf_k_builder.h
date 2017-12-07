@@ -74,9 +74,7 @@ class PeriodicCADFKBuilder
     RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
-//    init();
-    // test
-    init_new();
+    init();
   }
 
   /*!
@@ -145,9 +143,7 @@ class PeriodicCADFKBuilder
     // by-cluster orbital basis and df basis
     assert(obs_->nclusters() == dfbs_->nclusters());
 
-//    init();
-    // test
-    init_new();
+    init();
   }
 
   ~PeriodicCADFKBuilder() {}
@@ -159,241 +155,59 @@ class PeriodicCADFKBuilder
   Vector3i K_lattice_range() { return Rrho_max_; }
 
  private:
+  // the following private member variables are set up by ctor
   Factory &ao_factory_;
-  bool print_detail_;
-  double force_shape_threshold_;
-  double target_precision_ = std::numeric_limits<double>::epsilon();
-  double shell_pair_threshold_;
-  double density_threshold_;
-  double screen_threshold_;
+  std::shared_ptr<Basis> obs_;
+  std::shared_ptr<Basis> dfbs_;
   Vector3d dcell_;
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+  size_t ntiles_per_uc_;
+  size_t natoms_per_uc_;
+  bool print_detail_;
+  double screen_threshold_;
+  double shell_pair_threshold_;
+  double density_threshold_;
+  double force_shape_threshold_;
+  double target_precision_ = std::numeric_limits<double>::epsilon();
+  const madness::cblas::CBLAS_TRANSPOSE trans_;
+  const madness::cblas::CBLAS_TRANSPOSE notrans_;
+
+  const Vector3d zero_shift_base_ = {0.0, 0.0, 0.0};
+  std::shared_ptr<Basis> basisR_;
   Vector3i truncated_RD_max_;
   Vector3i Rrho_max_;
   Vector3i RX_max_;
   Vector3i RY_max_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
+  Vector3i sig_lattice_max_;
+  Vector3i R1m2_max_;
+  Vector3i RYmRX_max_;
   int64_t Rrho_size_;
   int64_t RY_size_;
-  size_t ntiles_per_uc_;
-  size_t natoms_per_uc_;
+  int64_t sig_lattice_size_;
+  int64_t ref_sig_lattice_ord_;
+  int64_t R1m2_size_;
 
   array_type C_;
   array_type M_;
   DirectTArray eri3_;
 
-  shellpair_list_t sig_shellpair_list_;
-  std::vector<Vector3i> sig_lattice_list_;
-  Vector3i sig_lattice_max_;
-  int64_t sig_lattice_size_;
-  int64_t ref_sig_lattice_ord_;
-
-  std::shared_ptr<Basis> obs_;
-  std::shared_ptr<Basis> dfbs_;
-  std::shared_ptr<Basis> X_dfbs_;
-  std::shared_ptr<Basis> Y_dfbs_;
-  std::shared_ptr<Basis> basisRJ_;
-  std::shared_ptr<Basis> basisR_;
-  std::shared_ptr<Basis> basisRD_;
-
-  std::shared_ptr<Basis> Q_bs_Y_;
-  std::shared_ptr<Basis> Q_bs_rho_;
-  std::shared_ptr<Basis> Q_bs_nu_;
   TA::TiledRange Q_trange_;
-  std::shared_ptr<TA::Pmap> Q_pmap_;
-  Vector3i RYmR_max_;
-  Vector3i RJmR_max_;
-
-  Vector3i R1m2_max_;
-  int64_t R1m2_size_;
-
   TA::TiledRange F_trange_;
-  std::shared_ptr<TA::Pmap> F_pmap_;
-  Vector3i RYmRX_max_;
-
   TA::TiledRange result_trange_;
+  std::shared_ptr<TA::Pmap> Q_pmap_;
+  std::shared_ptr<TA::Pmap> F_pmap_;
   std::shared_ptr<TA::Pmap> result_pmap_;
 
   madness::ConcurrentHashMap<std::size_t, Tile> local_contr_tiles_;
   madness::ConcurrentHashMap<std::size_t, Tile> global_contr_tiles_;
-  std::atomic<size_t> num_ints_computed_{0};
-  const Vector3d zero_shift_base_ = {0.0, 0.0, 0.0};
-
-  const madness::cblas::CBLAS_TRANSPOSE trans_;
-  const madness::cblas::CBLAS_TRANSPOSE notrans_;
 
  private:
   void init() {
-    auto &world = this->get_world();
-
-    mpqc::time_point t0, t1;
-    const Vector3i ref_lattice_range = {0, 0, 0};
-
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
-
-    // determine max lattice range for product density |μ ρ_Rj)
-    t0 = mpqc::fenced_now(world);
-    {
-      // build a temp basisRJ using user-given RJ_max_
-      auto basisRJ =
-          shift_basis_origin(*obs_, zero_shift_base_, RJ_max_, dcell_);
-
-      // compute significant shell pair list
-      sig_shellpair_list_ = parallel_compute_shellpair_list(
-          *obs_, *basisRJ, shell_pair_threshold_);
-      // make a list of significant Rj's as in overlap between μ and ρ_Rj
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        const auto RJ_3D = direct_3D_idx(RJ, RJ_max_);
-        const auto nshells = obs_->flattened_shells().size();
-        const auto shell1_min = nshells * RJ;
-        const auto shell1_max = shell1_min + nshells;
-
-        auto is_significant = false;
-        for (auto shell0 = 0; shell0 != nshells; ++shell0) {
-          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
-            if (shell1 >= shell1_min && shell1 < shell1_max) {
-              is_significant = true;
-              sig_lattice_list_.emplace_back(RJ_3D);
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-
-      ExEnv::out0() << "\nUser specified RJ_max = " << RJ_max_.transpose()
-                    << std::endl;
-      // renew RJ_max_, RJ_size_, and basisRJ_
-      auto x = 0;
-      auto y = 0;
-      auto z = 0;
-      for (const auto &RJ_3D : sig_lattice_list_) {
-        x = std::max(x, RJ_3D(0));
-        y = std::max(y, RJ_3D(1));
-        z = std::max(z, RJ_3D(2));
-      }
-      RJ_max_ = Vector3i({x, y, z});
-      RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
-      basisRJ_ = shift_basis_origin(*obs_, zero_shift_base_, RJ_max_, dcell_);
-      ExEnv::out0() << "Updated RJ_max = " << RJ_max_.transpose() << std::endl;
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_update_rjmax = mpqc::duration_in_s(t0, t1);
-
-    // compute C(X, μ_0, ρ_Rj)
-    t0 = mpqc::fenced_now(world);
-    {
-      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RJ_max_, dcell_);
-      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
-      auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
-
-      C_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs_, *basisRJ_, *X_dfbs_, natoms_per_uc_, ref_lattice_range,
-          RJ_max_, RJ_max_);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_C_bra = mpqc::duration_in_s(t0, t1);
-
-    auto max_lattice_range = [](Vector3i const &l, Vector3i const &r) {
-      auto x = std::max(l(0), r(0));
-      auto y = std::max(l(1), r(1));
-      auto z = std::max(l(2), r(2));
-      return Vector3i({x, y, z});
-    };
-
-    RY_max_ = max_lattice_range(R_max_, RJ_max_ + RD_max_);
-    Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
-
-    // compute M(X, Y)
-    t0 = mpqc::fenced_now(world);
-    {
-      RYmRX_max_ = RJ_max_ + RY_max_;
-      auto shifted_Y_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base_, RYmRX_max_, dcell_);
-      M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_M = mpqc::duration_in_s(t0, t1);
-
-    // make direct integral E_ket_
-    t0 = mpqc::fenced_now(world);
-    {
-      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisRJ_);
-      auto bs_vector =
-          lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisRJ_}};
-
-      auto oper_type = libint2::Operator::coulomb;
-      auto screen_engine =
-          make_engine_pool(oper_type, bs_array, libint2::BraKet::xx_xx);
-      auto screener = std::make_shared<lcao::gaussian::SchwarzScreen>(
-          lcao::gaussian::create_schwarz_screener(
-              world, screen_engine, bs_vector, screen_threshold_));
-      auto engine =
-          make_engine_pool(oper_type, bs_array, libint2::BraKet::xs_xx);
-
-      eri3_ = lcao::gaussian::direct_sparse_integrals(world, engine, bs_vector,
-                                                      std::move(screener));
-
-      // make TiledRange and Pamp of F(Y_Ry, μ_0, ν_Rν) (same as eri3)
-      F_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(bs_vector);
-      auto F_tvolume = F_trange_.tiles_range().volume();
-      F_pmap_ = Policy::default_pmap(world, F_tvolume);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_direct_eri3 = mpqc::duration_in_s(t0, t1);
-
-    // misc:
-    // 1. determine tiled ranges and pmap of exchange term
-    // 2. determine translationally invariant basis, tiled ranges and pmap for
-    // Q(Y, rho, nu)
-    t0 = mpqc::fenced_now(world);
-    {
-      basisR_ = shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
-
-      // make TiledRange and Pmap of Exchange
-      result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
-          lcao::gaussian::BasisVector{{*obs_, *basisR_}});
-      auto tvolume = result_trange_.tiles_range().volume();
-      result_pmap_ = Policy::default_pmap(world, tvolume);
-
-      // determine lattice ranges of Q(Y, rho, nu) after translation
-      RYmR_max_ = RY_max_ + R_max_;
-      RJmR_max_ = RJ_max_ + R_max_;
-
-      // make basis of Q(Y, rho, nu)
-      Q_bs_Y_ = shift_basis_origin(*dfbs_, zero_shift_base_, RYmR_max_, dcell_);
-      Q_bs_rho_ = obs_;
-      Q_bs_nu_ = shift_basis_origin(*obs_, zero_shift_base_, RJmR_max_, dcell_);
-      basisRD_ = shift_basis_origin(*obs_, zero_shift_base_, RD_max_, dcell_);
-
-      // make TiledRange and Pmap of Q(Y, rho, nu)
-      Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
-          lcao::gaussian::BasisVector{{*Q_bs_Y_, *Q_bs_rho_, *Q_bs_nu_}});
-      auto Q_tvolume = Q_trange_.tiles_range().volume();
-      Q_pmap_ = Policy::default_pmap(world, Q_tvolume);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_misc = mpqc::duration_in_s(t0, t1);
-
-    if (print_detail_) {
-      ExEnv::out0() << "\nCADF-K init time decomposition:\n"
-                    << "\tupdate RJ_max:       " << t_update_rjmax << " s\n"
-                    << "\tC(X, μ_0, ρ_Rj):     " << t_C_bra << " s\n"
-                    << "\tM(X, Y):             " << t_M << " s\n"
-                    << "\tdirect ERI3:         " << t_direct_eri3 << " s\n"
-                    << "\tmisc:                " << t_misc << " s" << std::endl;
-    }
-  }
-
-  void init_new() {
     auto &world = this->get_world();
 
     mpqc::time_point t0, t1;
@@ -415,9 +229,10 @@ class PeriodicCADFKBuilder
                     << R_max_.transpose() << std::endl;
 
       // compute significant shell pair list
-      sig_shellpair_list_ = parallel_compute_shellpair_list(
+      auto sig_shellpair_list = parallel_compute_shellpair_list(
           *obs_, *basisR_, shell_pair_threshold_);
       // make a list of significant R's as in overlap between μ_0 and ν_R
+      std::vector<Vector3i> sig_lattice_list;
       const auto nshells_per_uc = obs_->flattened_shells().size();
       for (auto R_ord = 0; R_ord != R_size_; ++R_ord) {
         const auto R_3D = direct_3D_idx(R_ord, R_max_);
@@ -426,10 +241,10 @@ class PeriodicCADFKBuilder
 
         auto is_significant = false;
         for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
-          for (const auto &shell1 : sig_shellpair_list_[shell0]) {
+          for (const auto &shell1 : sig_shellpair_list[shell0]) {
             if (shell1 >= shell1_min && shell1 < shell1_max) {
               is_significant = true;
-              sig_lattice_list_.emplace_back(R_3D);
+              sig_lattice_list.emplace_back(R_3D);
               break;
             }
           }
@@ -443,7 +258,7 @@ class PeriodicCADFKBuilder
         auto x = 0;
         auto y = 0;
         auto z = 0;
-        for (const auto &R_3D : sig_lattice_list_) {
+        for (const auto &R_3D : sig_lattice_list) {
           x = std::max(x, R_3D(0));
           y = std::max(y, R_3D(1));
           z = std::max(z, R_3D(2));
@@ -456,11 +271,9 @@ class PeriodicCADFKBuilder
                       << sig_lattice_max_.transpose() << std::endl;
       }
 
-      // do not forget to renew basisR_ and significant shell pair list
+      // do not forget to renew basisR_
       basisR_ =
           shift_basis_origin(*obs_, zero_shift_base_, sig_lattice_max_, dcell_);
-      sig_shellpair_list_ = parallel_compute_shellpair_list(
-          *obs_, *basisR_, shell_pair_threshold_);
     }
     t1 = mpqc::fenced_now(world);
     auto t_update_rmax = mpqc::duration_in_s(t0, t1);
@@ -471,21 +284,22 @@ class PeriodicCADFKBuilder
       // X is on the center of either μ_0 or ν_Rν. Thus X_Rx should have the
       // same lattice range as ν_Rν.
       RX_max_ = sig_lattice_max_;
-      X_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RX_max_, dcell_);
-      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs_);
+      auto X_dfbs =
+          shift_basis_origin(*dfbs_, zero_shift_base_, RX_max_, dcell_);
+      const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
 
       C_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
-          M, *obs_, *basisR_, *X_dfbs_, natoms_per_uc_, ref_lattice_range,
+          M, *obs_, *basisR_, *X_dfbs, natoms_per_uc_, ref_lattice_range,
           sig_lattice_max_, RX_max_);
     }
     t1 = mpqc::fenced_now(world);
-    auto t_C_bra = mpqc::duration_in_s(t0, t1);
+    auto t_C = mpqc::duration_in_s(t0, t1);
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
                     << "\tupdate R_max:        " << t_update_rmax << " s\n"
-                    << "\tC(X_Rx, μ_0, ν_Rν):  " << t_C_bra << " s\n"
+                    << "\tC(X_Rx, μ_0, ν_Rν):  " << t_C << " s\n"
                     << std::endl;
     }
 
@@ -506,13 +320,12 @@ class PeriodicCADFKBuilder
     array_type K;
 
     time_point t0, t1;
-    double t_Qket = 0.0;
-    double t_eval_Eket = 0.0;
+    double t_Q = 0.0;
+    double t_eval_eri3 = 0.0;
     double t_CM = 0.0;
     double t_F = 0.0;
     double t_permute = 0.0;
     double t_K = 0.0;
-    num_ints_computed_ = 0;
 
     // Update lattice range of density representation
     ExEnv::out0() << "\nTruncating lattice range of density representation\n";
@@ -521,7 +334,8 @@ class PeriodicCADFKBuilder
     // Update RD-dependent variables if RD_max is changed
     if (truncated_RD_max_ != old_RD_max) {
       ExEnv::out0() << "\nLattice range of density representation is changed. "
-                       "Update RD-dependent variables!" << std::endl;
+                       "Update RD-dependent variables!"
+                    << std::endl;
       update_RD_dependent_variables(truncated_RD_max_);
     } else {
       ExEnv::out0() << "\nLattice range of density representation is not "
@@ -529,27 +343,24 @@ class PeriodicCADFKBuilder
                     << std::endl;
     }
 
-    // try new method
+    // compute exchange
     {
       t0 = mpqc::fenced_now(world);
-      // compute translational invariant Qket
+      // compute translational invariant Q
       // Q(Y, ν_R, ρ_Rj) = C(Y, ν_R, σ_(Rj+Rd)) D(ρ_0, σ_Rd)
-//      auto Q_ket = compute_Q_ket(C_, D);
-      // test
-      auto Q_ket = compute_Q_ket_new(C_, D);
+      auto Q = compute_Q(C_, D);
       t1 = mpqc::fenced_now(world);
-      t_Qket += mpqc::duration_in_s(t0, t1);
+      t_Q += mpqc::duration_in_s(t0, t1);
 
-      detail::print_size_info(Q_ket, "Q(Y,ν,ρ)");
+      detail::print_size_info(Q, "Q(Y,ν,ρ)");
 
       // compute F(Y, μ_0, ρ_Rj) = 2 * E(Y, μ_0, ρ_Rj) - C(X, μ_0, ρ_Rj) M(X, Y)
       t0 = mpqc::fenced_now(world);
       array_type F;
       {
         auto t0_eri3 = mpqc::fenced_now(world);
-//        auto forced_norms = force_F_norms(Q_ket.shape().data(), eri3_.array().shape().data());
-        // test
-        auto forced_norms = force_F_norms_new(Q_ket.shape().data(), eri3_.array().shape().data());
+        auto forced_norms =
+            force_F_norms(Q.shape().data(), eri3_.array().shape().data());
         auto trange = eri3_.array().trange();
         TA::SparseShape<float> forced_shape(world, forced_norms, trange);
 
@@ -558,12 +369,10 @@ class PeriodicCADFKBuilder
 
         F("Y, mu, nu") = 2.0 * F("Y, mu, nu");
         auto t1_eri3 = mpqc::fenced_now(world);
-        t_eval_Eket = mpqc::duration_in_s(t0_eri3, t1_eri3);
+        t_eval_eri3 = mpqc::duration_in_s(t0_eri3, t1_eri3);
 
         auto t0_CM = mpqc::fenced_now(world);
-//        F("Y, mu, nu") -= compute_contr_CM(C_, M_, forced_norms)("Y, mu, nu");
-        // test
-        F("Y, mu, nu") -= compute_contr_CM_new(C_, M_, forced_norms)("Y, mu, nu");
+        F("Y, mu, nu") -= compute_contr_CM(C_, M_, forced_norms)("Y, mu, nu");
         F.truncate();
 
         auto t1_CM = mpqc::fenced_now(world);
@@ -576,16 +385,14 @@ class PeriodicCADFKBuilder
 
       // permute basis indices
       t0 = mpqc::fenced_now(world);
-      Q_ket("Y, nu, rho") = Q_ket("Y, rho, nu");
+      Q("Y, nu, rho") = Q("Y, rho, nu");
       F("Y, nu, mu") = F("Y, mu, nu");
       t1 = mpqc::fenced_now(world);
       t_permute = mpqc::duration_in_s(t0, t1);
 
       // compute K(μ_0, ν_R) = F(Y, ρ_Rj, μ_0) Q(Y, ρ_Rj, ν_R)
       t0 = mpqc::fenced_now(world);
-//      K = compute_contr_FQ(F, Q_ket);
-      // test
-      K = compute_contr_FQ_new(F, Q_ket);
+      K = compute_contr_FQ(F, Q);
       t1 = mpqc::fenced_now(world);
       t_K = mpqc::duration_in_s(t0, t1);
     }
@@ -595,12 +402,12 @@ class PeriodicCADFKBuilder
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K time decomposition:\n"
-                    << "\tQ_ket(Y, ν_R, ρ_Rj) :     " << t_Qket << " s\n"
-                    << "\tF = 2 * E_ket - C M:      " << t_F << " s\n"
-                    << "\t  Eval E_ket(Y, μ_0, ρ):  " << t_eval_Eket << " s\n"
+                    << "\tQ(Y, ν_R, ρ_Rj) :         " << t_Q << " s\n"
+                    << "\tF = 2 * ERI3 - C M:       " << t_F << " s\n"
+                    << "\t  Eval E(Y, μ_0, ρ):      " << t_eval_eri3 << " s\n"
                     << "\t  Contract C M:           " << t_CM << " s\n"
-                    << "\tPermute F and Q_ket:      " << t_permute << " s\n"
-                    << "\tK = F Q_ket:              " << t_K << " s\n"
+                    << "\tPermute F and Q:          " << t_permute << " s\n"
+                    << "\tK = F Q:                  " << t_K << " s\n"
                     << "\nTotal K builder time:     " << t_tot << " s"
                     << std::endl;
     }
@@ -609,82 +416,8 @@ class PeriodicCADFKBuilder
   }
 
   /*!
-   * \brief This computes forced norms of F(Y, μ_0, ρ_Rj) based on the sparsity
-   * of Q(Y, ν_R, ρ_Rj).
-   *
-   * Note that K(μ_0, ν_R) = F(Y, μ_0, ρ_Rj) Q(Y, ν_R, ρ_Rj). For specific Y and
-   * ρ_Rj, no need to compute F(Y, μ_0, ρ_Rj) if all ν_R in Q(Y, ν_R, ρ_Rj)
-   * gives zero. Translational symmetry of Q is used.
-   *
-   * \param in_norms norms of Q(Y, ν_R, ρ_Rj)
-   * \param out_norms norms of F(Y, μ_0, ρ_Rj). Only correct ranges of F norms
-   * are needed.
-   * \return forced norms of F
-   */
-  TA::Tensor<float> force_F_norms(TA::Tensor<float> const &in_norms,
-                                  TA::Tensor<float> const &out_norms) {
-    const auto ntiles_Y = Y_dfbs_->nclusters();
-    const auto ntiles_rho = basisR_->nclusters();
-    const auto ntiles_nu = basisRJ_->nclusters();
-
-    using SigPair = std::pair<size_t, size_t>;
-    std::unordered_set<SigPair, boost::hash<SigPair>> Y_nu;
-    Y_nu.reserve(ntiles_Y * ntiles_nu);
-
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-
-    for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
-      const auto RY_ord = tile_Y / ntiles_per_uc_;
-      const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
-      const auto tile_Y_in_uc = tile_Y % ntiles_per_uc_;
-      for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
-        const auto RJ_ord = tile_nu / ntiles_per_uc_;
-        const auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
-        const auto tile_nu_in_uc = tile_nu % ntiles_per_uc_;
-
-        SigPair Y_nu_pair(tile_Y, tile_nu);
-        for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
-          const auto R_ord = tile_rho / ntiles_per_uc_;
-          const auto R_3D = direct_3D_idx(R_ord, R_max_);
-
-          const auto RYmR_3D = RY_3D - R_3D;
-          const auto RJmR_3D = RJ_3D - R_3D;
-
-          const auto RYmR_ord = direct_ord_idx(RYmR_3D, RYmR_max_);
-          const auto RJmR_ord = direct_ord_idx(RJmR_3D, RJmR_max_);
-
-          const auto shifted_Y = tile_Y_in_uc + RYmR_ord * ntiles_per_uc_;
-          const auto shifted_rho = tile_rho % ntiles_per_uc_;
-          const auto shifted_nu = tile_nu_in_uc + RJmR_ord * ntiles_per_uc_;
-
-          const auto val = in_norms(shifted_Y, shifted_rho, shifted_nu);
-          if (val > force_shape_threshold_) {
-            Y_nu.insert(Y_nu_pair);
-            break;
-          }
-        }
-      }
-    }
-
-    const auto &out_range = out_norms.range();
-    TA::Tensor<float> out(out_range, 0.0);
-
-    // F("X, mu, nu")
-    for (auto tile_mu = 0ul; tile_mu != ntiles_per_uc_; ++tile_mu) {
-      for (auto const &Y_nu_pair : Y_nu) {
-        const auto tile_Y = Y_nu_pair.first;
-        const auto tile_nu = Y_nu_pair.second;
-        out(tile_Y, tile_mu, tile_nu) = std::numeric_limits<float>::max();
-      }
-    }
-
-    return out;
-  }
-
-  /*!
-   * \brief This computes forced norms of F(Y_Ry, μ_0, ν_Rν) based on the sparsity
-   * of Q(Y_Ry, ρ_Rρ, ν_Rν).
+   * \brief This computes forced norms of F(Y_Ry, μ_0, ν_Rν) based on the
+   * sparsity of Q(Y_Ry, ρ_Rρ, ν_Rν).
    *
    * Note that K(μ_0, ρ_Rρ) = F(Y_Ry, μ_0, ν_Rν) Q(Y_Ry, ρ_Rρ, ν_Rν). For
    * specific Y_Ry and ν_Rν, no need to compute F(Y_Ry, μ_0, ν_Rν) if all ρ_Rρ
@@ -696,10 +429,11 @@ class PeriodicCADFKBuilder
    * norms are needed.
    * \return forced norms of F
    */
-  TA::Tensor<float> force_F_norms_new(TA::Tensor<float> const &in_norms,
-                                      TA::Tensor<float> const &out_norms) {
-    const auto ntiles_Y = Y_dfbs_->nclusters();
-    const auto ntiles_nu = basisR_->nclusters();
+  TA::Tensor<float> force_F_norms(TA::Tensor<float> const &in_norms,
+                                  TA::Tensor<float> const &out_norms) {
+    const auto ext_F = out_norms.range().extent();
+    const auto ntiles_Y = ext_F[0];
+    const auto ntiles_nu = ext_F[2];
 
     using SigPair = std::pair<size_t, size_t>;
     std::unordered_set<SigPair, boost::hash<SigPair>> Y_nu;
@@ -782,158 +516,19 @@ class PeriodicCADFKBuilder
   }
 
   /*!
-   * \brief This computes translationally invariant part of Q(Y_Ry, ν_R, ρ_Rj),
-   * i.e. Q(Y(Ry-R), ν_0, ρ_(Rj-R)).
-   *
-   * Note that Q(Y_Ry, ν_R, ρ_Rj) = C(Y_Ry, ν_R, σ_(Rj+Rd)) D(ρ_0, σ_Rd). Thus
-   * Q(Y(Ry-R), ν_0, ρ_(Rj-R)) = C(Y_(Ry-R), ν_0, σ_(Rj+Rd-R)) * D(ρ_0, σ_Rd).
-   * Translational symmetry of C is also used.
-   *
-   * \param C translationally invariant C, i.e. C(Y_(Ry-R), ν_0, σ_(Rj+Rd-R))
-   * \param D density matrix
-   * \return
-   */
-  array_type compute_Q_ket(const array_type &C, const array_type &D) {
-    auto &world = this->get_world();
-    const auto me = world.rank();
-    const auto nproc = world.nproc();
-
-    array_type C_repl, D_repl;
-    C_repl("Y, rho, sig") = C("Y, rho, sig");
-    D_repl("nu, sig") = D("nu, sig");
-    C_repl.make_replicated();
-    world.gop.fence();
-
-    D_repl.make_replicated();
-    // must wait till all replicating is finished
-    world.gop.fence();
-
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-
-    // # of tiles per basis
-    const auto ntiles_Y = Q_bs_Y_->nclusters();
-    const auto ntiles_rho = Q_bs_rho_->nclusters();
-    const auto ntiles_nu = Q_bs_nu_->nclusters();
-    const auto ntiles_sig = basisRD_->nclusters();
-
-    const auto Dtile_norms = D_repl.shape().data();
-    auto task_id = 0ul;
-    for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
-      const auto RYmR_ord = tile_Y / ntiles_per_uc_;
-      const auto RYmR_3D = direct_3D_idx(RYmR_ord, RYmR_max_);
-      if (!is_in_lattice_range(RYmR_3D, RJ_max_)) continue;
-
-      const auto RY_ord_in_C = direct_ord_idx(RYmR_3D, RJ_max_);
-      const auto Y_in_C =
-          tile_Y % ntiles_per_uc_ + RY_ord_in_C * ntiles_per_uc_;
-
-      for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
-        for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
-          const auto RJmR_ord = tile_nu / ntiles_per_uc_;
-          const auto RJmR_3D = direct_3D_idx(RJmR_ord, RJmR_max_);
-          const auto nu_in_D = tile_nu % ntiles_per_uc_;
-
-          for (auto tile_sig = 0ul; tile_sig != ntiles_sig; ++tile_sig) {
-            const auto RD_ord = tile_sig / ntiles_per_uc_;
-            const auto RD_3D = direct_3D_idx(RD_ord, RD_max_);
-            const auto RJmRpRD_3D = RJmR_3D + RD_3D;
-            if (!(RYmR_3D == Vector3i({0, 0, 0})) && !(RYmR_3D == RJmRpRD_3D))
-              continue;
-
-            if (!is_in_lattice_range(RJmRpRD_3D, RJ_max_)) continue;
-
-            if (std::find(sig_lattice_list_.begin(), sig_lattice_list_.end(),
-                          RJmRpRD_3D) == sig_lattice_list_.end())
-              continue;
-
-            const auto RJmRpRD_ord = direct_ord_idx(RJmRpRD_3D, RJ_max_);
-            const auto sig_in_C =
-                tile_sig % ntiles_per_uc_ + RJmRpRD_ord * ntiles_per_uc_;
-
-            // get future of tiles C and D
-            std::array<size_t, 3> idx_C = {{Y_in_C, tile_rho, sig_in_C}};
-            std::array<size_t, 2> idx_D = {{nu_in_D, tile_sig}};
-            if (C_repl.is_zero(idx_C) || D_repl.is_zero(idx_D)) continue;
-            if (Dtile_norms(nu_in_D, tile_sig) <= density_threshold_) continue;
-
-            if (task_id % nproc == me) {
-              auto C_tile = C_repl.find(idx_C);
-              auto D_tile = D_repl.find(idx_D);
-              WorldObject_::task(
-                  me, &PeriodicCADFKBuilder_::compute_Q_ket_task, C_tile,
-                  D_tile, std::array<size_t, 3>{{tile_Y, tile_rho, tile_nu}});
-            }
-            task_id++;
-          }
-        }
-      }
-    }
-
-    world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_Q_ket: " << task_id
-                    << std::endl;
-    }
-    // collect local tiles
-    for (const auto &local_tile : local_contr_tiles_) {
-      const auto tile_ord = local_tile.first;
-      const auto proc = Q_pmap_->owner(tile_ord);
-      WorldObject_::task(proc, &PeriodicCADFKBuilder_::accumulate_global_task,
-                         local_tile.second, tile_ord);
-    }
-    local_contr_tiles_.clear();
-    world.gop.fence();
-
-    typename Policy::shape_type shape;
-    // compute the shape, if sparse
-    if (!decltype(shape)::is_dense()) {
-      // extract local contribution to the shape of G, construct global shape
-      std::vector<std::pair<std::array<size_t, 3>, double>> global_tile_norms;
-      const auto i_stride = ntiles_rho * ntiles_nu;
-      const auto j_stride = ntiles_nu;
-      for (const auto &global_tile : global_contr_tiles_) {
-        const auto tile_ord = global_tile.first;
-        const auto i = tile_ord / i_stride;
-        const auto jk = tile_ord % i_stride;
-        const auto j = jk / j_stride;
-        const auto k = jk % j_stride;
-        const auto norm = global_tile.second.norm();
-        global_tile_norms.push_back(
-            std::make_pair(std::array<size_t, 3>{{i, j, k}}, norm));
-      }
-      shape = decltype(shape)(world, global_tile_norms, Q_trange_);
-    }
-
-    array_type result(world, Q_trange_, shape, Q_pmap_);
-    for (const auto &global_tile : global_contr_tiles_) {
-      if (!result.shape().is_zero(global_tile.first))
-        result.set(global_tile.first, global_tile.second);
-    }
-    result.fill_local(0.0, true);
-    global_contr_tiles_.clear();
-
-    return result;
-  }
-
-  /*!
    * \brief This computes translationally invariant part of Q(Y_Ry, ρ_Rρ, ν_Rν),
    * i.e. Q(Y_(Ry-Rρ), ρ_0, ν_(Rν-Rρ)).
    *
    * Note Q(Y_Ry, ρ_Rρ, ν_Rν) = C(Y_Ry, ρ_Rρ, σ_(Rρ+Rσ)) D(ν_Rν, σ_(Rρ+Rσ)),
-   * thus Q(Y_(Ry-Rρ), ρ_0, ν_(Rν-Rρ)) = C(Y_(Ry-Rρ), ρ_0, σ_Rσ) D(ν_0, σ_(Rρ+Rσ-Rν)).
-   * Translational symmetry of C is also used. Y is now on the center of either
-   * ρ_0 or σ_Rσ.
+   * thus Q(Y_(Ry-Rρ), ρ_0, ν_(Rν-Rρ)) = C(Y_(Ry-Rρ), ρ_0, σ_Rσ) D(ν_0,
+   * σ_(Rρ+Rσ-Rν)). Translational symmetry of C is also used. Y is now on the
+   * center of either ρ_0 or σ_Rσ.
    *
    * \param C translationally invariant C, i.e. C(Y_(Ry-Rρ), ρ_0, σ_Rσ)
    * \param D density matrix
    * \return
    */
-  array_type compute_Q_ket_new(const array_type &C, const array_type &D) {
+  array_type compute_Q(const array_type &C, const array_type &D) {
     auto &world = this->get_world();
     const auto me = world.rank();
     const auto nproc = world.nproc();
@@ -969,15 +564,19 @@ class PeriodicCADFKBuilder
             const auto sigma_in_D = sigma + RD_ord * ntiles_per_uc_;
             const auto Y_jij = sigma_in_C;
             for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
-              const std::array<size_t, 2> idx_D{{size_t(nu), size_t(sigma_in_D)}};
+              const std::array<size_t, 2> idx_D{
+                  {size_t(nu), size_t(sigma_in_D)}};
               if (Dnorms(idx_D) < density_threshold_) {
                 continue;
               }
 
               const auto nu_in_Q = nu + R1m2_ord * ntiles_per_uc_;
-              const std::array<size_t, 3> idx_C_jij{{size_t(Y_jij), size_t(rho), size_t(sigma_in_C)}};
-              const std::array<size_t, 3> idx_Q_iij{{size_t(Y_iij), size_t(rho), size_t(nu_in_Q)}};
-              const std::array<size_t, 3> idx_Q_jij{{size_t(Y_jij), size_t(rho), size_t(nu_in_Q)}};
+              const std::array<size_t, 3> idx_C_jij{
+                  {size_t(Y_jij), size_t(rho), size_t(sigma_in_C)}};
+              const std::array<size_t, 3> idx_Q_iij{
+                  {size_t(Y_iij), size_t(rho), size_t(nu_in_Q)}};
+              const std::array<size_t, 3> idx_Q_jij{
+                  {size_t(Y_jij), size_t(rho), size_t(nu_in_Q)}};
 
               if (rho == sigma && R3_ord == ref_sig_lattice_ord_) {
                 if (C_repl.is_zero(idx_C_jij)) {
@@ -987,13 +586,15 @@ class PeriodicCADFKBuilder
                 if (task_id % nproc == me) {
                   auto C_jij = C_repl.find(idx_C_jij);
                   auto D_tile = D_repl.find(idx_D);
-                  WorldObject_::task(me, &PeriodicCADFKBuilder_::compute_Q_ket_task, C_jij,
-                                    D_tile, idx_Q_jij);
+                  WorldObject_::task(me,
+                                     &PeriodicCADFKBuilder_::compute_Q_task_ii,
+                                     C_jij, D_tile, idx_Q_jij);
                 }
                 task_id++;
 
               } else {
-                const std::array<size_t, 3> idx_C_iij{{size_t(Y_iij), size_t(rho), size_t(sigma_in_C)}};
+                const std::array<size_t, 3> idx_C_iij{
+                    {size_t(Y_iij), size_t(rho), size_t(sigma_in_C)}};
                 if (C_repl.is_zero(idx_C_iij) && C_repl.is_zero(idx_C_jij)) {
                   continue;
                 }
@@ -1002,12 +603,12 @@ class PeriodicCADFKBuilder
                   auto C_iij = C_repl.find(idx_C_iij);
                   auto C_jij = C_repl.find(idx_C_jij);
                   auto D_tile = D_repl.find(idx_D);
-                  WorldObject_::task(me, &PeriodicCADFKBuilder_::compute_Q_ket_task_ij, C_iij, C_jij, D_tile,
-                                     idx_Q_iij, idx_Q_jij);
+                  WorldObject_::task(
+                      me, &PeriodicCADFKBuilder_::compute_Q_task_ij, C_iij,
+                      C_jij, D_tile, idx_Q_iij, idx_Q_jij);
                 }
                 task_id++;
               }
-
             }
           }
         }
@@ -1015,12 +616,6 @@ class PeriodicCADFKBuilder
     }
 
     world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_Q_ket: " << task_id
-                    << std::endl;
-    }
 
     const auto ntiles_rho = Q_trange_.dim(1).tile_extent();
     const auto ntiles_nu = Q_trange_.dim(2).tile_extent();
@@ -1095,7 +690,6 @@ class PeriodicCADFKBuilder
       local_contr_tiles_.clear();
 
       return result;
-
     }
   }
 
@@ -1105,8 +699,8 @@ class PeriodicCADFKBuilder
    * \param D_tile tile of D
    * \param tile_idx result index
    */
-  void compute_Q_ket_task(Tile C_tile, Tile D_tile,
-                          std::array<size_t, 3> tile_idx) {
+  void compute_Q_task_ii(Tile C_tile, Tile D_tile,
+                         std::array<size_t, 3> tile_idx) {
     const auto ext_C = C_tile.range().extent();
     const auto ext_D = D_tile.range().extent();
     assert(ext_C[2] == ext_D[1]);
@@ -1161,11 +755,14 @@ class PeriodicCADFKBuilder
    * \param idx_Q_iij result index of Q_iij
    * \param idx_Q_jij result index of Q_jij
    */
-  void compute_Q_ket_task_ij(Tile C_iij, Tile C_jij, Tile D_tile, std::array<size_t, 3> idx_Q_iij, std::array<size_t, 3> idx_Q_jij) {
+  void compute_Q_task_ij(Tile C_iij, Tile C_jij, Tile D_tile,
+                         std::array<size_t, 3> idx_Q_iij,
+                         std::array<size_t, 3> idx_Q_jij) {
     const auto ext_C_iij = C_iij.range().extent();
     const auto ext_C_jij = C_jij.range().extent();
     const auto ext_D = D_tile.range().extent();
-    assert(idx_Q_iij[0] != idx_Q_jij[0] && idx_Q_iij[1] == idx_Q_jij[1] && idx_Q_iij[2] == idx_Q_jij[2]);
+    assert(idx_Q_iij[0] != idx_Q_jij[0] && idx_Q_iij[1] == idx_Q_jij[1] &&
+           idx_Q_iij[2] == idx_Q_jij[2]);
     assert(ext_C_iij[2] == ext_D[1] && ext_C_jij[2] == ext_D[1]);
 
     auto create_Q_tile = [&](Tile &C, Tile &D, std::array<size_t, 3> &idx_Q) {
@@ -1198,8 +795,8 @@ class PeriodicCADFKBuilder
 
       // Notice that we reversed notrans and trans. This is because Lapack
       // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, C.data(),
-                     lda, D.data(), ldb, 0.0, result_tile.data(), n);
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, C.data(), lda,
+                     D.data(), ldb, 0.0, result_tile.data(), n);
 
       const auto ntiles_rho = Q_trange_.dim(1).tile_extent();
       const auto ntiles_nu = Q_trange_.dim(2).tile_extent();
@@ -1219,117 +816,6 @@ class PeriodicCADFKBuilder
   }
 
   /*!
-   * \brief This computes K(μ_0, ν_R) = F(Y, ρ_Rj, μ_0) Q(Y, ρ_Rj, ν_R).
-   * Translational symmetry of Q is used.
-   *
-   * \param F array F
-   * \param Q translationally invariant Q, i.e. Q(Y(Ry-R), ρ_(Rj-R), ν_0)
-   * \return
-   */
-  array_type compute_contr_FQ(const array_type &F, const array_type &Q) {
-    auto &world = this->get_world();
-    const auto me = world.rank();
-    const auto nproc = world.nproc();
-
-    // # of tiles per basis
-    const auto ntiles_Y = Y_dfbs_->nclusters();
-    const auto ntiles_nu = basisRJ_->nclusters();
-    const auto ntiles_rho = basisR_->nclusters();
-    const auto ntiles_mu = obs_->nclusters();
-
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-
-    auto task_id = 0ul;
-    for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
-      const auto RY_ord = tile_Y / ntiles_per_uc_;
-      const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
-      const auto tile_Y_in_uc = tile_Y % ntiles_per_uc_;
-
-      for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
-        const auto RJ_ord = tile_nu / ntiles_per_uc_;
-        const auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
-        const auto tile_nu_in_uc = tile_nu % ntiles_per_uc_;
-
-        for (auto tile_rho = 0ul; tile_rho != ntiles_rho; ++tile_rho) {
-          const auto R_ord = tile_rho / ntiles_per_uc_;
-          const auto R_3D = direct_3D_idx(R_ord, R_max_);
-
-          const auto RYmR_3D = RY_3D - R_3D;
-          const auto RJmR_3D = RJ_3D - R_3D;
-
-          const auto RYmR_ord = direct_ord_idx(RYmR_3D, RYmR_max_);
-          const auto RJmR_ord = direct_ord_idx(RJmR_3D, RJmR_max_);
-
-          const auto shifted_Y = tile_Y_in_uc + RYmR_ord * ntiles_per_uc_;
-          const auto shifted_nu = tile_nu_in_uc + RJmR_ord * ntiles_per_uc_;
-          const auto shifted_rho = tile_rho % ntiles_per_uc_;
-
-          std::array<size_t, 3> idx_Q = {{shifted_Y, shifted_nu, shifted_rho}};
-
-          for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
-            std::array<size_t, 3> idx_F = {{tile_Y, tile_nu, tile_mu}};
-            if (F.is_zero(idx_F) || Q.is_zero(idx_Q)) continue;
-
-            if (task_id % nproc == me) {
-              auto F_tile = F.find(idx_F);
-              auto Q_tile = Q.find(idx_Q);
-              WorldObject_::task(
-                  me, &PeriodicCADFKBuilder_::compute_contr_FQ_task, F_tile,
-                  Q_tile, std::array<size_t, 2>{{tile_mu, tile_rho}});
-            }
-            task_id++;
-          }
-        }
-      }
-    }
-
-    world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_contr_FQ: " << task_id
-                    << std::endl;
-    }
-
-    // collect local tiles
-    for (const auto &local_tile : local_contr_tiles_) {
-      const auto tile_ord = local_tile.first;
-      const auto proc = result_pmap_->owner(tile_ord);
-      WorldObject_::task(proc, &PeriodicCADFKBuilder_::accumulate_global_task,
-                         local_tile.second, tile_ord);
-    }
-    local_contr_tiles_.clear();
-    world.gop.fence();
-
-    typename Policy::shape_type shape;
-    // compute the shape, if sparse
-    if (!decltype(shape)::is_dense()) {
-      // extract local contribution to the shape of G, construct global shape
-      std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
-      for (const auto &global_tile : global_contr_tiles_) {
-        const auto tile_ord = global_tile.first;
-        const auto i = tile_ord / ntiles_rho;
-        const auto j = tile_ord % ntiles_rho;
-        const auto norm = global_tile.second.norm();
-        global_tile_norms.push_back(
-            std::make_pair(std::array<size_t, 2>{{i, j}}, norm));
-      }
-      shape = decltype(shape)(world, global_tile_norms, result_trange_);
-    }
-
-    array_type result(world, result_trange_, shape, result_pmap_);
-    for (const auto &global_tile : global_contr_tiles_) {
-      if (!result.shape().is_zero(global_tile.first))
-        result.set(global_tile.first, global_tile.second);
-    }
-    result.fill_local(0.0, true);
-    global_contr_tiles_.clear();
-
-    return result;
-  }
-
-  /*!
    * \brief This computes K(μ_0, ρ_Rρ) = F(Y_Ry, ν_Rν, μ_0) Q(Y_Ry, ν_Rν, ρ_Rρ).
    * Translational symmetry of Q is used.
    *
@@ -1337,7 +823,7 @@ class PeriodicCADFKBuilder
    * \param Q translationally invariant Q, i.e. Q(Y(Ry-Rρ), ν_(Rν-Rρ), ρ_0)
    * \return
    */
-  array_type compute_contr_FQ_new(const array_type &F, const array_type &Q) {
+  array_type compute_contr_FQ(const array_type &F, const array_type &Q) {
     auto &world = this->get_world();
     const auto me = world.rank();
     const auto nproc = world.nproc();
@@ -1356,7 +842,7 @@ class PeriodicCADFKBuilder
         }
 
         const auto RYm2_ord = direct_ord_idx(RYm2_3D, sig_lattice_max_);
-        for (auto R1_ord = int64_t(0); R1_ord != sig_lattice_size_; ++R1_ord ) {
+        for (auto R1_ord = int64_t(0); R1_ord != sig_lattice_size_; ++R1_ord) {
           const auto R1_3D = direct_3D_idx(R1_ord, sig_lattice_max_);
           const auto R1m2_3D = R1_3D - R2_3D;
           const auto R1m2_ord = direct_ord_idx(R1m2_3D, R1m2_max_);
@@ -1367,23 +853,26 @@ class PeriodicCADFKBuilder
               const auto nu_in_Q = nu + R1m2_ord * ntiles_per_uc_;
               const auto nu_in_F = nu + R1_ord * ntiles_per_uc_;
               for (auto rho = 0ul; rho != ntiles_per_uc_; ++rho) {
-                const std::array<size_t, 3> idx_Q{{size_t(Y_in_Q), size_t(nu_in_Q), size_t(rho)}};
+                const std::array<size_t, 3> idx_Q{
+                    {size_t(Y_in_Q), size_t(nu_in_Q), size_t(rho)}};
                 if (Q.is_zero(idx_Q)) {
                   continue;
                 }
                 const auto rho_in_K = rho + R2_ord * ntiles_per_uc_;
                 for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
-                  const std::array<size_t, 3> idx_F{{size_t(Y_in_F), size_t(nu_in_F), size_t(mu)}};
+                  const std::array<size_t, 3> idx_F{
+                      {size_t(Y_in_F), size_t(nu_in_F), size_t(mu)}};
                   if (F.is_zero(idx_F)) {
                     continue;
                   }
                   if (task_id % nproc == me) {
-                    const std::array<size_t, 2> idx_K{{size_t(mu), size_t(rho_in_K)}};
+                    const std::array<size_t, 2> idx_K{
+                        {size_t(mu), size_t(rho_in_K)}};
                     auto F_tile = F.find(idx_F);
                     auto Q_tile = Q.find(idx_Q);
                     WorldObject_::task(
-                        me, &PeriodicCADFKBuilder_::compute_contr_FQ_task, F_tile,
-                        Q_tile, idx_K);
+                        me, &PeriodicCADFKBuilder_::compute_contr_FQ_task,
+                        F_tile, Q_tile, idx_K);
                   }
                   task_id++;
                 }
@@ -1395,12 +884,6 @@ class PeriodicCADFKBuilder
     }
 
     world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_contr_FQ: " << task_id
-                    << std::endl;
-    }
 
     const auto ntiles_rho = result_trange_.dim(1).tile_extent();
     if (world.size() > 1) {
@@ -1466,7 +949,6 @@ class PeriodicCADFKBuilder
       local_contr_tiles_.clear();
 
       return result;
-
     }
   }
 
@@ -1520,7 +1002,7 @@ class PeriodicCADFKBuilder
   }
 
   /*!
-   * \brief This computes contraction C(X, μ_0, ρ_Rj) M(X_Rx, Y_Ry).
+   * \brief This computes contraction C(X_Rx, μ_0, ν_Rν) M(X_Rx, Y_Ry).
    * Translational symmetry of M is used.
    *
    * \param C array C
@@ -1530,132 +1012,6 @@ class PeriodicCADFKBuilder
    */
   array_type compute_contr_CM(const array_type &C, const array_type &M,
                               const TA::Tensor<float> &force_norms) {
-    auto &world = this->get_world();
-    const auto me = world.rank();
-    const auto nproc = world.nproc();
-
-    array_type C_repl, M_repl;
-    C_repl("X, mu, nu") = C("X, mu, nu");
-    M_repl("X, Y") = M("X, Y");
-    C_repl.make_replicated();
-    world.gop.fence();
-    M_repl.make_replicated();
-    world.gop.fence();  // must wait till all replicating is finished
-
-    // # of tiles per basis
-    const auto ntiles_X = X_dfbs_->nclusters();
-    const auto ntiles_Y = Y_dfbs_->nclusters();
-    const auto ntiles_nu = basisRJ_->nclusters();
-    const auto ntiles_mu = obs_->nclusters();
-
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    const Vector3i ref_uc = {0, 0, 0};
-    auto task_id = 0ul;
-    for (auto tile_X = 0ul; tile_X != ntiles_X; ++tile_X) {
-      const auto RX_ord = tile_X / ntiles_per_uc_;
-      const auto RX_3D = direct_3D_idx(RX_ord, RJ_max_);
-      const auto X_in_uc = tile_X % ntiles_per_uc_;
-
-      for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
-        const auto RY_ord = tile_Y / ntiles_per_uc_;
-        const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
-
-        const auto RYmRX_3D = RY_3D - RX_3D;
-        const auto RYmRX_ord = direct_ord_idx(RYmRX_3D, RYmRX_max_);
-        const auto Y_in_M =
-            tile_Y % ntiles_per_uc_ + RYmRX_ord * ntiles_per_uc_;
-
-        std::array<size_t, 2> idx_M = {{X_in_uc, Y_in_M}};
-        if (M_repl.is_zero(idx_M)) continue;
-        auto M_tile = M_repl.find(idx_M);
-
-        for (auto tile_mu = 0ul; tile_mu != ntiles_mu; ++tile_mu) {
-          for (auto tile_nu = 0ul; tile_nu != ntiles_nu; ++tile_nu) {
-            const auto RJ_ord = tile_nu / ntiles_per_uc_;
-            const auto RJ_3D = direct_3D_idx(RJ_ord, RJ_max_);
-            if (std::find(sig_lattice_list_.begin(), sig_lattice_list_.end(),
-                          RJ_3D) == sig_lattice_list_.end())
-              continue;
-
-            std::array<size_t, 3> idx_C = {{tile_X, tile_mu, tile_nu}};
-            if (C_repl.is_zero(idx_C) ||
-                force_norms(tile_Y, tile_mu, tile_nu) <
-                    force_shape_threshold_)
-              continue;
-
-            if (task_id % nproc == me) {
-              auto C_tile = C_repl.find(idx_C);
-              WorldObject_::task(
-                  me, &PeriodicCADFKBuilder_::compute_contr_CM_task, C_tile,
-                  M_tile, std::array<size_t, 3>{{tile_Y, tile_mu, tile_nu}});
-            }
-            task_id++;
-          }
-        }
-      }
-    }
-
-    world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_contr_CM: " << task_id
-                    << std::endl;
-    }
-
-    // collect local tiles
-    for (const auto &local_tile : local_contr_tiles_) {
-      const auto tile_ord = local_tile.first;
-      const auto proc = F_pmap_->owner(tile_ord);
-      WorldObject_::task(proc, &PeriodicCADFKBuilder_::accumulate_global_task,
-                         local_tile.second, tile_ord);
-    }
-    local_contr_tiles_.clear();
-    world.gop.fence();
-
-    typename Policy::shape_type shape;
-    // compute the shape, if sparse
-    if (!decltype(shape)::is_dense()) {
-      // extract local contribution to the shape of G, construct global shape
-      std::vector<std::pair<std::array<size_t, 3>, double>> global_tile_norms;
-      const auto i_stride = ntiles_mu * ntiles_nu;
-      const auto j_stride = ntiles_nu;
-      for (const auto &global_tile : global_contr_tiles_) {
-        const auto tile_ord = global_tile.first;
-        const auto i = tile_ord / i_stride;
-        const auto jk = tile_ord % i_stride;
-        const auto j = jk / j_stride;
-        const auto k = jk % j_stride;
-        const auto norm = global_tile.second.norm();
-        global_tile_norms.push_back(
-            std::make_pair(std::array<size_t, 3>{{i, j, k}}, norm));
-      }
-      shape = decltype(shape)(world, global_tile_norms, F_trange_);
-    }
-
-    array_type result(world, F_trange_, shape, F_pmap_);
-    for (const auto &global_tile : global_contr_tiles_) {
-      if (!result.shape().is_zero(global_tile.first))
-        result.set(global_tile.first, global_tile.second);
-    }
-    result.fill_local(0.0, true);
-    global_contr_tiles_.clear();
-
-    return result;
-  }
-
-  /*!
-   * \brief This computes contraction C(X_Rx, μ_0, ν_Rν) M(X_Rx, Y_Ry).
-   * Translational symmetry of M is used.
-   *
-   * \param C array C
-   * \param M translationally invariant M, i.e. M(X_0, Y_(Ry-Rx))
-   * \param force_norms forced norms of the result
-   * \return
-   */
-  array_type compute_contr_CM_new(const array_type &C, const array_type &M,
-                                  const TA::Tensor<float> &force_norms) {
     auto &world = this->get_world();
     const auto me = world.rank();
     const auto nproc = world.nproc();
@@ -1679,8 +1035,10 @@ class PeriodicCADFKBuilder
         for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
           const auto nu_R1 = nu + R1_ord * ntiles_per_uc_;
           const auto X_in_C_jij = nu_R1;
-          const std::array<size_t, 3> idx_C_iij{{size_t(X_in_C_iij), size_t(mu), size_t(nu_R1)}};
-          const std::array<size_t, 3> idx_C_jij{{size_t(X_in_C_jij), size_t(mu), size_t(nu_R1)}};
+          const std::array<size_t, 3> idx_C_iij{
+              {size_t(X_in_C_iij), size_t(mu), size_t(nu_R1)}};
+          const std::array<size_t, 3> idx_C_jij{
+              {size_t(X_in_C_jij), size_t(mu), size_t(nu_R1)}};
 
           for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
             const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
@@ -1689,15 +1047,18 @@ class PeriodicCADFKBuilder
             const auto RYm1_ord = direct_ord_idx(RYm1_3D, RYmRX_max_);
             for (auto Y = 0ul; Y != ntiles_per_uc_; ++Y) {
               const auto Y_in_F = Y + RY_ord * ntiles_per_uc_;
-              const std::array<size_t, 3> idx_F{{size_t(Y_in_F), size_t(mu), size_t(nu_R1)}};
+              const std::array<size_t, 3> idx_F{
+                  {size_t(Y_in_F), size_t(mu), size_t(nu_R1)}};
               if (force_norms(idx_F) < force_shape_threshold_) {
                 continue;
               }
 
               const auto Y_in_M_iij = Y + RY_ord_in_M * ntiles_per_uc_;
               const auto Y_in_M_jij = Y + RYm1_ord * ntiles_per_uc_;
-              const std::array<size_t, 2> idx_M_iij{{size_t(mu), size_t(Y_in_M_iij)}};
-              const std::array<size_t, 2> idx_M_jij{{size_t(nu), size_t(Y_in_M_jij)}};
+              const std::array<size_t, 2> idx_M_iij{
+                  {size_t(mu), size_t(Y_in_M_iij)}};
+              const std::array<size_t, 2> idx_M_jij{
+                  {size_t(nu), size_t(Y_in_M_jij)}};
 
               if (mu == nu && R1_ord == ref_sig_lattice_ord_) {
                 if (C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij)) {
@@ -1707,7 +1068,9 @@ class PeriodicCADFKBuilder
                 if (task_id % nproc == me) {
                   auto C_iij = C_repl.find(idx_C_iij);
                   auto M_iij = M_repl.find(idx_M_iij);
-                  WorldObject_::task(me, &PeriodicCADFKBuilder_::compute_contr_CM_task, C_iij, M_iij, idx_F);
+                  WorldObject_::task(
+                      me, &PeriodicCADFKBuilder_::compute_contr_CM_task_ii,
+                      C_iij, M_iij, idx_F);
                 }
                 task_id++;
               } else {
@@ -1721,11 +1084,12 @@ class PeriodicCADFKBuilder
                   auto C_jij = C_repl.find(idx_C_jij);
                   auto M_iij = M_repl.find(idx_M_iij);
                   auto M_jij = M_repl.find(idx_M_jij);
-                  WorldObject_::task(me, &PeriodicCADFKBuilder_::compute_contr_CM_task_ij, C_iij, C_jij, M_iij, M_jij, idx_F);
+                  WorldObject_::task(
+                      me, &PeriodicCADFKBuilder_::compute_contr_CM_task_ij,
+                      C_iij, C_jij, M_iij, M_jij, idx_F);
                 }
                 task_id++;
               }
-
             }
           }
         }
@@ -1733,12 +1097,6 @@ class PeriodicCADFKBuilder
     }
 
     world.gop.fence();
-
-    // test
-    {
-      ExEnv::out0() << "\n# of tasks in compute_contr_CM: " << task_id
-                    << std::endl;
-    }
 
     const auto ntiles_mu = F_trange_.dim(1).tile_extent();
     const auto ntiles_nu = F_trange_.dim(2).tile_extent();
@@ -1813,7 +1171,6 @@ class PeriodicCADFKBuilder
       local_contr_tiles_.clear();
 
       return result;
-
     }
   }
 
@@ -1823,8 +1180,8 @@ class PeriodicCADFKBuilder
    * \param M_tile tile of M
    * \param tile_idx result index
    */
-  void compute_contr_CM_task(Tile C_tile, Tile M_tile,
-                             std::array<size_t, 3> tile_idx) {
+  void compute_contr_CM_task_ii(Tile C_tile, Tile M_tile,
+                                std::array<size_t, 3> tile_idx) {
     const auto ext_C = C_tile.range().extent();
     const auto ext_M = M_tile.range().extent();
     assert(ext_M[0] == ext_C[0]);
@@ -1921,8 +1278,8 @@ class PeriodicCADFKBuilder
 
       // Notice that we reversed notrans and trans. This is because Lapack
       // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M.data(),
-                     lda, C.data(), ldb, 1.0, result_tile.data(), n);
+      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M.data(), lda,
+                     C.data(), ldb, 1.0, result_tile.data(), n);
     };
 
     if (C_iij.norm() * M_iij.norm() >= target_precision_) {
@@ -2231,10 +1588,10 @@ class PeriodicCADFKBuilder
    * \param threshold
    * \return the updated lattice range
    */
-  Vector3i truncate_lattice_range(const array_type &D, const Vector3i &RD_max, const double threshold) {
-
-    ExEnv::out0() << "\tUser specified lattice range = "
-                  << RD_max.transpose() << std::endl;
+  Vector3i truncate_lattice_range(const array_type &D, const Vector3i &RD_max,
+                                  const double threshold) {
+    ExEnv::out0() << "\tUser specified lattice range = " << RD_max.transpose()
+                  << std::endl;
 
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
@@ -2273,8 +1630,8 @@ class PeriodicCADFKBuilder
       z = std::max(z, RD_3D(2));
     }
     Vector3i new_RD_max = {x, y, z};
-    ExEnv::out0() << "\tUpdated lattice range = "
-                  << new_RD_max.transpose() << std::endl;
+    ExEnv::out0() << "\tUpdated lattice range = " << new_RD_max.transpose()
+                  << std::endl;
 
     return new_RD_max;
   }
@@ -2315,9 +1672,10 @@ class PeriodicCADFKBuilder
     // make direct integral eri3_ = (μ_0 ν_Rν | Y_Ry)
     t0 = mpqc::fenced_now(world);
     {
-      Y_dfbs_ = shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
-      auto bs_array = utility::make_array_of_refs(*Y_dfbs_, *obs_, *basisR_);
-      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs_, *obs_, *basisR_}};
+      auto Y_dfbs =
+          shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
+      auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs_, *basisR_);
+      auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs_, *basisR_}};
 
       auto oper_type = libint2::Operator::coulomb;
       auto screen_engine =
@@ -2355,12 +1713,14 @@ class PeriodicCADFKBuilder
       // make basis of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
       R1m2_max_ = sig_lattice_max_ + Rrho_max_;
       R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
-      auto Q_bs_Y = shift_basis_origin(*dfbs_, zero_shift_base_, sig_lattice_max_, dcell_);
-      auto Q_bs_nu = shift_basis_origin(*obs_, zero_shift_base_, R1m2_max_, dcell_);
+      auto Q_bs_Y = shift_basis_origin(*dfbs_, zero_shift_base_,
+                                       sig_lattice_max_, dcell_);
+      auto Q_bs_nu =
+          shift_basis_origin(*obs_, zero_shift_base_, R1m2_max_, dcell_);
 
       // make TiledRange and Pmap of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
       Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
-            lcao::gaussian::BasisVector{{*Q_bs_Y, *obs_, *Q_bs_nu}});
+          lcao::gaussian::BasisVector{{*Q_bs_Y, *obs_, *Q_bs_nu}});
       auto Q_tvolume = Q_trange_.tiles_range().volume();
       Q_pmap_ = Policy::default_pmap(world, Q_tvolume);
     }
@@ -2373,7 +1733,6 @@ class PeriodicCADFKBuilder
                     << "\tmisc:                     " << t_misc << " s"
                     << std::endl;
     }
-
   }
 };
 

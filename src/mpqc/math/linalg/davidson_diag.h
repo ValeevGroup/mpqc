@@ -137,7 +137,7 @@ class DavidsonDiag {
     EigenVector<element_type> eig = EigenVector<element_type>::Zero(n_roots_);
 
     while (iter < max_iter &&
-           (norm_r > convergence || norm_e > 10 * convergence) &&
+           (norm_r > 10 * convergence || norm_e > convergence) &&
            !guess.empty()) {
       auto time0 = mpqc::fenced_now(world);
 
@@ -492,7 +492,7 @@ class SingleStateDavidsonDiag : public DavidsonDiag<D> {
       EigenVector<element_type> eig = EigenVector<element_type>::Zero(1);
 
       while (iter < max_iter &&
-             (norm_r > convergence || norm_e > convergence) &&
+             (norm_r > 10 * convergence || norm_e > convergence) &&
              !guess_i.empty()) {
         auto time0 = mpqc::fenced_now(world);
 

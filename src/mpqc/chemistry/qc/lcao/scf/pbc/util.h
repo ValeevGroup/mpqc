@@ -185,6 +185,42 @@ TA::DistArray<Tile, Policy> add(TA::DistArray<Tile, Policy> const &L,
   return result;
 }
 
+/*!
+ * \brief This prints by-unit-cell Frobenius norms and Infinity norms of a
+ * matrix M(μ_0, ν_R).
+ *
+ * \param M_array a Tiled Array object
+ * \param max_lattice_range max range of lattice vector R, indicated by the
+ * index of the farthest unit cell (x, y, z) where x, y, and z are integers
+ * \param name name of the matrix
+ */
+template <typename Tile, typename Policy>
+void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
+                              Vector3i const &max_lattice_range,
+                              std::string const &name) {
+  using ::mpqc::lcao::detail::direct_3D_idx;
+  using ::mpqc::lcao::detail::direct_ord_idx;
+
+  const auto elements_range = M_array.trange().elements_range();
+  const auto ext0 = elements_range.extent(0);
+  const auto ext1 = elements_range.extent(1);
+  const auto max_lattice_size = 1 + direct_ord_idx(max_lattice_range, max_lattice_range);
+  assert(ext1 / ext0 == max_lattice_size);
+
+  const auto M_eigen = array_ops::array_to_eigen(M_array);
+  ExEnv::out0() << "\nNorms of matrix " << name << ":\n";
+  for (auto uc_ord = 0ul; uc_ord != max_lattice_size; ++uc_ord) {
+    const auto uc_3D = direct_3D_idx(uc_ord, max_lattice_range);
+    const auto block = M_eigen.block(0, uc_ord * ext0, ext0, ext0);
+    const auto norm_frobenius = block.template lpNorm<2>();
+    const auto norm_infty = block.template lpNorm<Eigen::Infinity>();
+    ExEnv::out0() << "unit cell (" << uc_3D.transpose()
+                  << "), Frobenius norm = " << norm_frobenius
+                  << ", Infinity norm = " << norm_infty
+                  << std::endl;
+  }
+}
+
 }  // namespace detail
 }  // namespace pbc
 }  // namespace mpqc

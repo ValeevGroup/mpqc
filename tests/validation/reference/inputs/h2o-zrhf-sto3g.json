@@ -1,0 +1,48 @@
+{
+  "units": "2006CODATA",
+  "water": {
+    "charge": 0,
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "n_cluster": 1,
+    "lattice_param": [0.0, 0.0, 2.672359]
+  },
+  "basis": {
+    "name": "sto-3g",
+    "atoms": "$:water"
+  },
+   "wfn_world":{
+     "atoms" : "$:water",
+     "basis" : "$:basis",
+     "screen": "schwarz",
+     "threshold": 1.0e-20,
+     "rmax": [0, 0, 0],
+     "rjmax": [0, 0, 0],
+     "rdmax": [0, 0, 0]
+   },
+   "wfn":{
+     "type": "zRHF",
+     "atoms" : "$:water",
+     "wfn_world": "$:wfn_world",
+     "max_iter": 100,
+     "soad_guess": true,
+     "print_detail": false,
+     "max_condition_num": 1e8,
+     "k_points": [1, 1, 1]
+   },
+   "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-11
+   },
+  "g09_input": [
+                "#P HF/sto-3g SCF=Tight",
+                "",
+                "molecule h2o, single point calculation",
+                "",
+                "0 1",
+                "O,   -0.702196054,  -0.056060256,   0.009942262",
+                "H,   -1.022193224,   0.846775782,  -0.011488714",
+                "H,    0.257521062,   0.042121496,   0.005218999"
+               ]
+}

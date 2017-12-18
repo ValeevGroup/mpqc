@@ -93,7 +93,6 @@ void cabs_basis_analysis(const Basis& basis, const Basis& dfbs,
   std::size_t n = range.elements_range().second;
   std::size_t v = n - o;
   std::size_t occ = o - nfr;
-  auto min_max = detail::minmax_blocksize(range);
 
   auto df_range = dfbs.create_trange1();
   std::size_t N = df_range.elements_range().second;
@@ -146,7 +145,7 @@ int try_main(int argc, char* argv[], madness::World& world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol = kv.class_ptr<Molecule>("molecule");
+  auto mol = kv.class_ptr<Molecule>("atoms");
 
   bool frozen_core = kv.value<bool>("frozen_core", true);
 

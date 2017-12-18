@@ -6,10 +6,15 @@ set(sources
         factory.cpp
         factory.h
         lcao_factory.h
-        periodic_ao_factory.cpp
+        linkage.cpp
+        linkage.h
         periodic_ao_factory.h
         periodic_lcao_factory.h
+        periodic_util.h
+        periodic_util.cpp
         set_oper.h
+        wfn_world.cpp
+        wfn_world.h
 )
 
 add_mpqc_library(lcao_factory sources sources "MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")

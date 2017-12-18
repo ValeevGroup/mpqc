@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # set to the release id of the required library
-export RELID=2.4.0-beta.3
+export RELID=2.4.1
 
 # Exit on error
 set -ev
@@ -28,20 +28,19 @@ $CXX --version
 ls 
 pwd
 
-# Make install directory for MPQC dependencies 
-mkdir -p /home/travis/build/ValeevGroup/_build
-mkdir -p /home/travis/build/ValeevGroup/_install
+# re-build if not in cache already ... must manualy wipe cache when need to bump version or update toolchain
+export INSTALL_DIR=${INSTALL_PREFIX}/libint
+if [ ! -d "${INSTALL_DIR}" ]; then
+  cd ${BUILD_PREFIX}
 
-cd /home/travis/build/ValeevGroup/_build
+  # download and unpack libint tarball
+  wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
+  tar -xvzf libint-$RELID-test-mpqc4.tgz
+  cd libint-$RELID/
 
-# download and unpack libint tarball
-wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
-tar -xvzf libint-$RELID-test-mpqc4.tgz
-cd libint-$RELID/
+  ./configure --prefix="${INSTALL_DIR}" \
+    --with-incdirs="-I/usr/include/eigen3" --disable-shared --enable-static
 
-./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
- --with-incdirs="-I/usr/include/eigen3"
-
-
-make -j2
-make install
+  make -j2
+  make install
+fi

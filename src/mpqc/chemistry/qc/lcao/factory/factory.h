@@ -6,7 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_H_
 
 #include "mpqc/chemistry/qc/lcao/expression/formula_registry.h"
-#include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
+#include "mpqc/chemistry/qc/lcao/factory/wfn_world.h"
 #include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {

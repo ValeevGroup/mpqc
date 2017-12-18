@@ -27,7 +27,7 @@
 
 #include "catch.hpp"
 
-#include "mpqc/util/misc/formio.h"
+#include "mpqc/util/core/formio.h"
 #include <sstream>
 
 using namespace std;

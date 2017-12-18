@@ -21,10 +21,10 @@ class TSPool {
     TSPool &operator=(TSPool &&) = default;
     TSPool(TSPool &&a) = default;
 
-    /// Initialize with a single \c item
+    /// Initializes the pool with a single @c Item
     explicit TSPool(Item e)
         : item_(std::move(e)), items_(item_) {}
-    /// Get reference to thread local engine.
+    /// @return reference to the thread-local @c Item instance.
     Item &local() { return items_.local(); }
 
   private:

@@ -6,7 +6,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/math/groups/petite_list.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 #include <tiledarray.h>
 

@@ -480,13 +480,19 @@ class KeyVal {
   /// check whether the given class exists
   /// @param path the path
   /// @return true if \c path class exists
+  /// TODO rename to exists_class_ptr
   bool exists_class(const key_type& path) const {
-    bool exist_class = false;
-    auto cptr = dc_registry_->find(resolve_path(path));
-    if (cptr != dc_registry_->end()) {
-      exist_class = true;
+    bool exists_class_ptr = false;
+    auto iter = dc_registry_->find(resolve_path(path));
+    if (iter != dc_registry_->end()) {
+      auto weak_ptr = iter->second;
+      // if have unexpired cached ptr report true, otherwise false (and purge the expired ptr)
+      if (weak_ptr.expired())
+        dc_registry_->erase(iter);
+      else
+        exists_class_ptr = true;
     }
-    return exist_class;
+    return exists_class_ptr;
   }
 
   /// counts the number of children of the node at this path
@@ -544,8 +550,7 @@ class KeyVal {
   }
 
   /// assign the given pointer to a DescribedClass object at the given path
-  /// (overwrite,
-  /// if necessary)
+  /// (overwrite, if necessary)
   /// @tparam T a class directly derived from DescribedClass
   /// @param path the path to \c value
   /// @param value the object pointer to assign to path \c path
@@ -554,8 +559,10 @@ class KeyVal {
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   KeyVal& assign(const key_type& path, const std::shared_ptr<T>& value) {
+    auto dc_value = std::static_pointer_cast<DescribedClass>(value);
+    std::weak_ptr<DescribedClass> weak_value = dc_value;
     auto abs_path = to_absolute_path(path);
-    (*dc_registry_)[abs_path] = std::static_pointer_cast<DescribedClass>(value);
+    (*dc_registry_)[abs_path] = weak_value;
     return *this;
   }
 
@@ -669,9 +676,13 @@ class KeyVal {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
     if (!bypass_registry) {
-      auto cptr = dc_registry_->find(path);
-      if (cptr != dc_registry_->end())
-        return std::dynamic_pointer_cast<T>(cptr->second);
+      auto it = dc_registry_->find(path);
+      if (it != dc_registry_->end()) {
+        // if have unexpired weak ptr, convert to shared and return
+        auto weak_ptr = it->second;
+        if (!weak_ptr.expired())
+          return std::dynamic_pointer_cast<T>(weak_ptr.lock());
+      }
     }
 
     // otherwise, resolve the path and build the class (or pick up the cached
@@ -680,9 +691,13 @@ class KeyVal {
 
     // if this class already exists, return the ptr
     if (!bypass_registry) {
-      auto cptr = dc_registry_->find(abs_path);
-      if (cptr != dc_registry_->end())
-        return std::dynamic_pointer_cast<T>(cptr->second);
+      auto it = dc_registry_->find(abs_path);
+      if (it != dc_registry_->end()) {
+        // if have unexpired weak ptr, convert to shared and return
+        auto weak_ptr = it->second;
+        if (!weak_ptr.expired())
+          return std::dynamic_pointer_cast<T>(weak_ptr.lock());
+      }
     }
 
     // return nullptr if the path does not exist
@@ -771,7 +786,7 @@ class KeyVal {
   std::shared_ptr<ptree> top_tree_;
   // 'dc' = DescribedClass
   using dc_registry_type =
-      std::map<std::string, std::shared_ptr<DescribedClass>>;
+      std::map<std::string, std::weak_ptr<DescribedClass>>;
   std::shared_ptr<dc_registry_type> dc_registry_;
   const key_type path_;  //!< path from the top of \c top_tree_ to this subtree
 

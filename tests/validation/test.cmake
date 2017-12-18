@@ -13,13 +13,14 @@ set(ENV{MAD_NUM_THREADS} 2)
 if (1)
 
   set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
-  set(MPQC_ARGS "-p" "${srcDir}/reference/inputs"
-  "${srcDir}/reference/inputs/${testName}.json")
+  set(MPQC_ARGS "-D" "-p" "${srcDir}/reference/inputs"
+  "-i" "${srcDir}/reference/inputs/${testName}.json")
   execute_process(COMMAND
                   ${mpiExec}
                   ${mpiNPFlags}
                   ${mpiNProc}
                   ${mpiPre}
+                  $ENV{MPQC_PRE_CMD}
                   ${MPQC_CMD} ${MPQC_ARGS}
                   ${mpiPost}
                   OUTPUT_FILE "${OUTPUT_FILE_NAME}"

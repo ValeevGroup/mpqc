@@ -1,9 +1,10 @@
 #ifndef SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS
 #define SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS
 
-#include <type_traits>
+#include "type_traits.h"
 
-namespace std {
+namespace mpqc {
+namespace meta {
 
 // C++17 features
 #if __cplusplus <= 201402L
@@ -24,6 +25,7 @@ using void_t = typename make_void<Ts...>::type;
 
 #endif  // C++17 features
 
-}  // namespace std
+}  // namespace meta
+}  // namespace mpqc
 
 #endif  // SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS

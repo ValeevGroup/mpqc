@@ -84,7 +84,7 @@ Debugger::Debugger(const KeyVal &keyval) {
 
 Debugger::~Debugger() {
   for (int i = 0; i < NSIG; i++) {
-    if (mysigs_[i]) signals[i] = 0;
+    if (mysigs_[i]) signals[i] = nullptr;
   }
   delete[] mysigs_;
 }
@@ -102,7 +102,7 @@ void Debugger::init() {
 
   mysigs_ = new int[NSIG];
   for (int i = 0; i < NSIG; i++) {
-    mysigs_[i] = nullptr;
+    mysigs_[i] = 0;
   }
 }
 

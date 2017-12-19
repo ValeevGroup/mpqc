@@ -109,7 +109,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     E_clr_sizes_ = detail::array_storage(dE_);
     if (dE_.world().rank() == 0) {
-      std::cout << "E with clr storage:\n"
+      ExEnv::out0() << indent << "E with clr storage:\n"
                 << "\tDense  " << E_clr_sizes_[0] << "\n"
                 << "\tSparse " << E_clr_sizes_[1] << "\n"
                 << "\tCLR    " << E_clr_sizes_[2] << std::endl;

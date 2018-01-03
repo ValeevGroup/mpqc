@@ -108,7 +108,7 @@ int64_t k_ord_idx(Vector3i const &in_3D_idx, Vector3i const &nk) {
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i const &nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {
-    int64_t idx = x * nk(0) * nk(1) + y * nk(1) + z;
+    int64_t idx = x * nk(1) * nk(2) + y * nk(2) + z;
     return idx;
   } else {
     throw "invalid k-space index/boundaries";

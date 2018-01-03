@@ -128,9 +128,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
         kv.value<std::array<int, 3>>(prefix + "rjmax").data());
 
     using ::mpqc::lcao::detail::direct_ord_idx;
-    R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
+    RD_size_ = 1 + direct_ord_idx(RD_max_, RD_max_);
 
     auto default_precision = std::numeric_limits<double>::epsilon();
     engine_precision_ =

@@ -916,9 +916,6 @@ class PeriodicFourCenterFockBuilder
         const auto uc_ord_F12 = is_in_lattice_range(R2p1_3D, RF_max_)
                                     ? direct_ord_idx(R2p1_3D, RF_max_)
                                     : -1;
-        const auto dist02 = R2_3D.norm();
-        const auto dist12 = R2p1_3D.norm();
-        const auto max_dist012 = dist02 >= dist12 ? 0 : 1;
 
         for (auto R3_ord = ref_sig_lattice_ord_; R3_ord != sig_lattice_size_;
              ++R3_ord) {
@@ -942,11 +939,6 @@ class PeriodicFourCenterFockBuilder
             continue;
           }
 
-          const auto dist03 = R2p3_3D.norm();
-          const auto dist13 = R2p3m1_3D.norm();
-          const auto max_dist013 = dist03 >= dist13 ? 2 : 3;
-          const auto max_dist0123 = std::max(max_dist012, max_dist013);
-
           for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
             for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
               if (R1_ord == ref_sig_lattice_ord_ && tile1 < tile0) {
@@ -966,6 +958,11 @@ class PeriodicFourCenterFockBuilder
                     {long(tile0), long(tile2 + uc_ord_F02 * ntiles_per_uc_)}};
                 const std::array<long, 2> idx_F12{
                     {long(tile1), long(tile2 + uc_ord_F12 * ntiles_per_uc_)}};
+
+                const auto Dnorm02 = uc_ord_D02 < 0 ? 0.0 : Dnorm(idx_D02);
+                const auto Dnorm12 = uc_ord_D12 < 0 ? 0.0 : Dnorm(idx_D12);
+                const auto Dnorm012 = std::max(Dnorm02, Dnorm12);
+
                 for (auto tile3 = 0ul; tile3 != ntiles; ++tile3) {
                   if (R3_ord == ref_sig_lattice_ord_ && tile3 < tile2) {
                     continue;
@@ -977,25 +974,12 @@ class PeriodicFourCenterFockBuilder
                   const std::array<long, 2> idx_D13{
                       {long(tile1), long(tile3 + uc_ord_D13 * ntiles_per_uc_)}};
 
-                  auto min_Dnorm = 0.0;
-                  switch (max_dist0123) {
-                    case 0:
-                      min_Dnorm = Dnorm(idx_D02);
-                      break;
-                    case 1:
-                      min_Dnorm = Dnorm(idx_D03);
-                      break;
-                    case 2:
-                      min_Dnorm = Dnorm(idx_D12);
-                      break;
-                    case 3:
-                      min_Dnorm = Dnorm(idx_D13);
-                      break;
+                  const auto Dnorm03 = uc_ord_D03 < 0 ? 0.0 : Dnorm(idx_D03);
+                  const auto Dnorm13 = uc_ord_D13 < 0 ? 0.0 : Dnorm(idx_D13);
+                  const auto Dnorm013 = std::max(Dnorm03, Dnorm13);
+                  const auto max_Dnorm = std::max(Dnorm012, Dnorm013);
 
-                    default:
-                      throw "unknown index for max D distance";
-                  }
-                  if (min_Dnorm < density_threshold_) {
+                  if (max_Dnorm < density_threshold_) {
                     continue;
                   }
 
@@ -1021,19 +1005,19 @@ class PeriodicFourCenterFockBuilder
                                    ? empty
                                    : D_repl.find(idx_D13);
                     // grap future of shell block norms of D tiles
-                    auto norm_D02 =
+                    auto shblk_norm_D02 =
                         (uc_ord_D02 < 0 || shblk_norm_D.is_zero(idx_D02))
                             ? empty
                             : shblk_norm_D.find(idx_D02);
-                    auto norm_D03 =
+                    auto shblk_norm_D03 =
                         (uc_ord_D03 < 0 || shblk_norm_D.is_zero(idx_D03))
                             ? empty
                             : shblk_norm_D.find(idx_D03);
-                    auto norm_D12 =
+                    auto shblk_norm_D12 =
                         (uc_ord_D12 < 0 || shblk_norm_D.is_zero(idx_D12))
                             ? empty
                             : shblk_norm_D.find(idx_D12);
-                    auto norm_D13 =
+                    auto shblk_norm_D13 =
                         (uc_ord_D13 < 0 || shblk_norm_D.is_zero(idx_D13))
                             ? empty
                             : shblk_norm_D.find(idx_D13);
@@ -1042,8 +1026,8 @@ class PeriodicFourCenterFockBuilder
                         me,
                         &PeriodicFourCenterFockBuilder_::compute_k_task_aaaa,
                         std::array<Tile, 4>{{D02, D03, D12, D13}},
-                        std::array<Tile, 4>{
-                            {norm_D02, norm_D03, norm_D12, norm_D13}},
+                        std::array<Tile, 4>{{shblk_norm_D02, shblk_norm_D03,
+                                             shblk_norm_D12, shblk_norm_D13}},
                         std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
                         std::array<int64_t, 3>{{int64_t(R1_ord),
                                                 int64_t(R2_ord),

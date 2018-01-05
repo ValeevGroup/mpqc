@@ -1,5 +1,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
 
+#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
+#include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
+
 namespace mpqc {
 namespace lcao {
 
@@ -190,6 +193,65 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
   Basis result(vec_of_shells);
   auto result_ptr = std::make_shared<Basis>(result);
   return result_ptr;
+}
+
+std::vector<std::vector<size_t>> parallel_compute_shellpair_list(
+    madness::World &world, const Basis &basis1, const Basis &basis2,
+    double threshold, double engine_precision) {
+
+  using ::mpqc::lcao::gaussian::make_engine_pool;
+  using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+  // initialize engine
+  auto engine_pool = make_engine_pool(
+      libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+      libint2::BraKet::x_x);
+
+  const auto &shv1 = basis1.flattened_shells();
+  const auto &shv2 = basis2.flattened_shells();
+  const auto nsh1 = shv1.size();
+  const auto nsh2 = shv2.size();
+
+  std::vector<std::vector<size_t>> result;
+  result.reserve(nsh1);
+
+  auto compute = [&](size_t input_s1) {
+    auto engine = engine_pool->local();
+    engine.set_precision(engine_precision);
+    const auto &buf = engine.results();
+
+    auto n1 = shv1[input_s1].size();
+    for (auto s2 = 0ul; s2 != nsh2; ++s2) {
+      auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
+      bool significant = on_same_center;
+      if (!on_same_center) {
+        auto n2 = shv2[s2].size();
+        engine.compute1(shv1[input_s1], shv2[s2]);
+        Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+        auto norm = buf_mat.norm();
+        significant = (norm >= threshold);
+      }
+
+      if (significant) {
+        result[input_s1].emplace_back(s2);
+      }
+    }
+  };
+
+  for (auto s1 = 0ul; s1 != nsh1; ++s1) {
+    result.emplace_back(std::vector<size_t>());
+    world.taskq.add(compute, s1);
+  }
+  world.gop.fence();
+
+  engine_pool.reset();
+
+  // resort shell list in increasing order
+  for (auto s1 = 0ul; s1 != nsh1; ++s1) {
+    auto &list = result[s1];
+    std::sort(list.begin(), list.end());
+  }
+
+  return result;
 }
 
 }  // namespace detail

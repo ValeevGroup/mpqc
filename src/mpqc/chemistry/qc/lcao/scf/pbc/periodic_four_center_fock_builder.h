@@ -891,7 +891,6 @@ class PeriodicFourCenterFockBuilder
       num_ints_computed_ = 0;
     }
 
-    using ::mpqc::lcao::detail::direct_vector;
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
 

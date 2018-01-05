@@ -162,6 +162,22 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3d &dcell,
                                           const bool is_half_range = false);
 
+/*!
+ * \brief This computes non-negligible shell pair list; shells \c i and \c j
+ * form a non-negligible pair if they share a center or the Frobenius norm of
+ * their overlap is greater than threshold
+ * \param basis1 a basis
+ * \param basis2 a basis
+ * \param threshold
+ *
+ * \return a list of pairs with
+ * key: shell index
+ * mapped value: a vector of shell indices
+ */
+std::vector<std::vector<size_t>> parallel_compute_shellpair_list(
+    madness::World &world, const Basis &basis1, const Basis &basis2,
+    double threshold = 1e-12, double engine_precision = 0.0);
+
 }  // namespace detail
 }  // namespace gaussian
 

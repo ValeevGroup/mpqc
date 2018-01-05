@@ -69,6 +69,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorD &&)>;
+  using shellpair_list_t = std::vector<std::vector<size_t>>;
 
  public:
   PeriodicAOFactory() = default;
@@ -166,6 +167,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
 
     this->set_orbital_registry(orbital_space_registry);
+
+    // Since R_max_ is only used in |μ_0 ν_R) related ints, it is reasonable to
+    // recalculate R_max_ based on the range of significant shell pairs
+    renew_overlap_lattice_range();
   }
 
   ~PeriodicAOFactory() noexcept {}
@@ -276,6 +281,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return density matrix
   TArray get_density() { return D_; }
 
+  /// @return significant shell pairs
+  const shellpair_list_t &sigificant_shell_pairs() {
+    return sig_shellpair_list_;
+  }
+
  private:
   /// compute integrals that has two dimensions for periodic systems
   TArray compute2(const Formula &formula);
@@ -359,6 +369,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
                                                std::shared_ptr<Screener> screen,
                                                Op op);
 
+  /// This renews R_max_ and R_size_ based on the range of significant shell
+  /// pairs
+  void renew_overlap_lattice_range();
+
  private:
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
 
@@ -387,6 +401,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
+  shellpair_list_t sig_shellpair_list_;
 };
 
 template <typename Tile, typename Policy>
@@ -1269,6 +1284,65 @@ std::ostream &operator<<(std::ostream &os,
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
   return os;
+}
+
+template <typename Tile, typename Policy>
+void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
+  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+  using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
+  using ::mpqc::lcao::detail::direct_3D_idx;
+  using ::mpqc::lcao::detail::direct_ord_idx;
+  Vector3d zero_shift_base(0.0, 0.0, 0.0);
+
+  ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
+                << R_max_.transpose() << std::endl;
+
+  // compute significant shell pair list
+  auto basis_ptr = this->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  auto basisR_ptr = shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
+  sig_shellpair_list_ = parallel_compute_shellpair_list(
+      this->world(), *basis_ptr, *basisR_ptr, shell_pair_threshold_, engine_precision_);
+
+  // make a list of significant R's as in overlap between μ_0 and ν_R
+  std::vector<Vector3i> sig_lattice_list;
+  const auto nshells_per_uc = basis_ptr->flattened_shells().size();
+  for (auto R_ord = 0; R_ord != R_size_; ++R_ord) {
+    const auto R_3D = direct_3D_idx(R_ord, R_max_);
+    const auto shell1_min = nshells_per_uc * R_ord;
+    const auto shell1_max = shell1_min + nshells_per_uc;
+
+    auto is_significant = false;
+    for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
+      for (const auto &shell1 : sig_shellpair_list_[shell0]) {
+        if (shell1 >= shell1_min && shell1 < shell1_max) {
+          is_significant = true;
+          sig_lattice_list.emplace_back(R_3D);
+          break;
+        }
+      }
+      if (is_significant) break;
+    }
+  }
+
+  // renew the range of lattice sum for |μ_0 ν_Rν) based on the list of
+  // significant lattice vectors
+  auto x = 0;
+  auto y = 0;
+  auto z = 0;
+  for (const auto &R_3D : sig_lattice_list) {
+    x = std::max(x, R_3D(0));
+    y = std::max(y, R_3D(1));
+    z = std::max(z, R_3D(2));
+  }
+  R_max_ = Vector3i({x, y, z});
+  R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
+  ExEnv::out0() << "Updated range of lattice sum for |mu nu_R) = "
+                << R_max_.transpose() << std::endl;
+
+  // do not forget to recompute significant shell pairs using new R_max_
+  basisR_ptr = shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
+  sig_shellpair_list_ = parallel_compute_shellpair_list(
+      this->world(), *basis_ptr, *basisR_ptr, shell_pair_threshold_, engine_precision_);
 }
 
 #if TA_DEFAULT_POLICY == 1

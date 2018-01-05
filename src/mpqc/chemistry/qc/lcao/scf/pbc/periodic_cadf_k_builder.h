@@ -52,7 +52,6 @@ class PeriodicCADFKBuilder
 
     print_detail_ = ao_factory_.print_detail();
     screen_threshold_ = ao_factory_.screen_threshold();
-    shell_pair_threshold_ = ao_factory_.shell_pair_threshold();
     density_threshold_ = ao_factory_.density_threshold();
     force_shape_threshold_ = force_shape_threshold;
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
@@ -108,7 +107,7 @@ class PeriodicCADFKBuilder
       std::shared_ptr<Basis> dfbs, const Vector3d &dcell, const Vector3i &R_max,
       const Vector3i &RJ_max, const Vector3i &RD_max, const int64_t R_size,
       const int64_t RJ_size, const int64_t RD_size, const size_t ntiles_per_uc,
-      const size_t natoms_per_uc, const double shell_pair_threshold = 1.0e-12,
+      const size_t natoms_per_uc,
       const double screen_threshold = 1.0e-20,
       const double density_threshold = Policy::shape_type::threshold(),
       const double target_precision = std::numeric_limits<double>::epsilon(),
@@ -128,7 +127,6 @@ class PeriodicCADFKBuilder
         natoms_per_uc_(natoms_per_uc),
         print_detail_(print_detail),
         screen_threshold_(screen_threshold),
-        shell_pair_threshold_(shell_pair_threshold),
         density_threshold_(density_threshold),
         force_shape_threshold_(force_shape_threshold),
         target_precision_(target_precision),
@@ -170,7 +168,6 @@ class PeriodicCADFKBuilder
   size_t natoms_per_uc_;
   bool print_detail_;
   double screen_threshold_;
-  double shell_pair_threshold_;
   double density_threshold_;
   double force_shape_threshold_;
   double target_precision_ = std::numeric_limits<double>::epsilon();
@@ -183,14 +180,12 @@ class PeriodicCADFKBuilder
   Vector3i Rrho_max_;
   Vector3i RX_max_;
   Vector3i RY_max_;
-  Vector3i sig_lattice_max_;
   Vector3i R1m2_max_;
   Vector3i RYmRX_max_;
   int64_t Rrho_size_;
   int64_t RY_size_;
-  int64_t sig_lattice_size_;
-  int64_t ref_sig_lattice_ord_;
   int64_t R1m2_size_;
+  int64_t ref_uc_ord_;
 
   array_type C_;
   array_type M_;
@@ -211,94 +206,36 @@ class PeriodicCADFKBuilder
     auto &world = this->get_world();
 
     mpqc::time_point t0, t1;
-    const Vector3i ref_lattice_range = {0, 0, 0};
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    using ::mpqc::lcao::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
 
-    // determine max lattice range for product density |μ_0 ν_Rν) or |ρ_0 σ_Rσ)
-    t0 = mpqc::fenced_now(world);
-    {
-      // make initial compound basis for basisR_ (basis for either ν_Rν or σ_Rσ)
-      // based on user-specified R_max
-      basisR_ = shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
-      ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
-                    << R_max_.transpose() << std::endl;
-
-      // compute significant shell pair list
-      auto sig_shellpair_list = parallel_compute_shellpair_list(
-          *obs_, *basisR_, shell_pair_threshold_);
-      // make a list of significant R's as in overlap between μ_0 and ν_R
-      std::vector<Vector3i> sig_lattice_list;
-      const auto nshells_per_uc = obs_->flattened_shells().size();
-      for (auto R_ord = 0; R_ord != R_size_; ++R_ord) {
-        const auto R_3D = direct_3D_idx(R_ord, R_max_);
-        const auto shell1_min = nshells_per_uc * R_ord;
-        const auto shell1_max = shell1_min + nshells_per_uc;
-
-        auto is_significant = false;
-        for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
-          for (const auto &shell1 : sig_shellpair_list[shell0]) {
-            if (shell1 >= shell1_min && shell1 < shell1_max) {
-              is_significant = true;
-              sig_lattice_list.emplace_back(R_3D);
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-
-      // renew the range of lattice sum for |μ_0 ν_Rν) based on the list of
-      // significant lattice vectors
-      {
-        auto x = 0;
-        auto y = 0;
-        auto z = 0;
-        for (const auto &R_3D : sig_lattice_list) {
-          x = std::max(x, R_3D(0));
-          y = std::max(y, R_3D(1));
-          z = std::max(z, R_3D(2));
-        }
-        sig_lattice_max_ = Vector3i({x, y, z});
-        sig_lattice_size_ =
-            1 + direct_ord_idx(sig_lattice_max_, sig_lattice_max_);
-        ref_sig_lattice_ord_ = (sig_lattice_size_ - 1) / 2;
-        ExEnv::out0() << "Updated range of lattice sum for |mu nu_R) = "
-                      << sig_lattice_max_.transpose() << std::endl;
-      }
-
-      // do not forget to renew basisR_
-      basisR_ =
-          shift_basis_origin(*obs_, zero_shift_base_, sig_lattice_max_, dcell_);
-    }
-    t1 = mpqc::fenced_now(world);
-    auto t_update_rmax = mpqc::duration_in_s(t0, t1);
+    // ordinal # of the reference unit cell in R_max_ lattice range
+    ref_uc_ord_ = (R_size_ - 1) / 2;
+    // make compound basis for ν in product density |μ_0 ν_Rν)
+    basisR_ =
+        shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
 
     // compute C(X_Rx, μ_0, ν_Rν)
     t0 = mpqc::fenced_now(world);
     {
       // X is on the center of either μ_0 or ν_Rν. Thus X_Rx should have the
       // same lattice range as ν_Rν.
-      RX_max_ = sig_lattice_max_;
+      RX_max_ = R_max_;
       auto X_dfbs =
           shift_basis_origin(*dfbs_, zero_shift_base_, RX_max_, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
+      const Vector3i ref_lattice_range = {0, 0, 0};
 
       C_ = lcao::cadf_fitting_coefficients<Tile, Policy>(
           M, *obs_, *basisR_, *X_dfbs, natoms_per_uc_, ref_lattice_range,
-          sig_lattice_max_, RX_max_);
+          R_max_, RX_max_);
     }
     t1 = mpqc::fenced_now(world);
     auto t_C = mpqc::duration_in_s(t0, t1);
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
-                    << "\tupdate R_max:        " << t_update_rmax << " s\n"
                     << "\tC(X_Rx, μ_0, ν_Rν):  " << t_C << " s\n"
                     << std::endl;
     }
@@ -447,8 +384,8 @@ class PeriodicCADFKBuilder
       const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
       for (auto Y = 0ul; Y != ntiles_per_uc_; ++Y) {
         const size_t Y_in_F = Y + RY_ord * ntiles_per_uc_;
-        for (auto R1_ord = int64_t(0); R1_ord != sig_lattice_size_; ++R1_ord) {
-          const auto R1_3D = direct_3D_idx(R1_ord, sig_lattice_max_);
+        for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
+          const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
           for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
             const size_t nu_in_F = nu + R1_ord * ntiles_per_uc_;
 
@@ -457,13 +394,13 @@ class PeriodicCADFKBuilder
             for (auto R2_ord = int64_t(0); R2_ord != Rrho_size_; ++R2_ord) {
               const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
               const auto RYm2_3D = RY_3D - R2_3D;
-              if (!is_in_lattice_range(RYm2_3D, sig_lattice_max_)) {
+              if (!is_in_lattice_range(RYm2_3D, R_max_)) {
                 continue;
               }
 
               const auto R1m2_3D = R1_3D - R2_3D;
               const auto R1m2_ord = direct_ord_idx(R1m2_3D, R1m2_max_);
-              const auto RYm2_ord = direct_ord_idx(RYm2_3D, sig_lattice_max_);
+              const auto RYm2_ord = direct_ord_idx(RYm2_3D, R_max_);
               const size_t Y_in_Q = Y + RYm2_ord * ntiles_per_uc_;
               const size_t nu_in_Q = nu + R1m2_ord * ntiles_per_uc_;
               for (auto rho = 0ul; rho != ntiles_per_uc_; ++rho) {
@@ -549,8 +486,8 @@ class PeriodicCADFKBuilder
     auto task_id = 0ul;
     for (auto R1m2_ord = int64_t(0); R1m2_ord != R1m2_size_; ++R1m2_ord) {
       const auto R1m2_3D = direct_3D_idx(R1m2_ord, R1m2_max_);
-      for (auto R3_ord = int64_t(0); R3_ord != sig_lattice_size_; ++R3_ord) {
-        const auto R3_3D = direct_3D_idx(R3_ord, sig_lattice_max_);
+      for (auto R3_ord = int64_t(0); R3_ord != R_size_; ++R3_ord) {
+        const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
         const auto RD_3D = R3_3D - R1m2_3D;  // unit cell index for D: Rρ+Rσ-Rν
         if (!is_in_lattice_range(RD_3D, truncated_RD_max_)) {
           continue;
@@ -558,7 +495,7 @@ class PeriodicCADFKBuilder
 
         const auto RD_ord = direct_ord_idx(RD_3D, RD_max_);
         for (auto rho = 0ul; rho != ntiles_per_uc_; ++rho) {
-          const auto Y_iij = rho + ref_sig_lattice_ord_ * ntiles_per_uc_;
+          const auto Y_iij = rho + ref_uc_ord_ * ntiles_per_uc_;
           for (auto sigma = 0ul; sigma != ntiles_per_uc_; ++sigma) {
             const auto sigma_in_C = sigma + R3_ord * ntiles_per_uc_;
             const auto sigma_in_D = sigma + RD_ord * ntiles_per_uc_;
@@ -578,7 +515,7 @@ class PeriodicCADFKBuilder
               const std::array<size_t, 3> idx_Q_jij{
                   {size_t(Y_jij), size_t(rho), size_t(nu_in_Q)}};
 
-              if (rho == sigma && R3_ord == ref_sig_lattice_ord_) {
+              if (rho == sigma && R3_ord == ref_uc_ord_) {
                 if (C_repl.is_zero(idx_C_jij)) {
                   continue;
                 }
@@ -837,13 +774,13 @@ class PeriodicCADFKBuilder
       for (auto R2_ord = int64_t(0); R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
         const auto RYm2_3D = RY_3D - R2_3D;
-        if (!is_in_lattice_range(RYm2_3D, sig_lattice_max_)) {
+        if (!is_in_lattice_range(RYm2_3D, R_max_)) {
           continue;
         }
 
-        const auto RYm2_ord = direct_ord_idx(RYm2_3D, sig_lattice_max_);
-        for (auto R1_ord = int64_t(0); R1_ord != sig_lattice_size_; ++R1_ord) {
-          const auto R1_3D = direct_3D_idx(R1_ord, sig_lattice_max_);
+        const auto RYm2_ord = direct_ord_idx(RYm2_3D, R_max_);
+        for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
+          const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
           const auto R1m2_3D = R1_3D - R2_3D;
           const auto R1m2_ord = direct_ord_idx(R1m2_3D, R1m2_max_);
           for (auto Y = 0ul; Y != ntiles_per_uc_; ++Y) {
@@ -1028,10 +965,10 @@ class PeriodicCADFKBuilder
     using ::mpqc::lcao::detail::direct_ord_idx;
     auto task_id = 0ul;
 
-    for (auto R1_ord = int64_t(0); R1_ord != sig_lattice_size_; ++R1_ord) {
-      const auto R1_3D = direct_3D_idx(R1_ord, sig_lattice_max_);
+    for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
+      const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
       for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
-        const auto X_in_C_iij = mu + ref_sig_lattice_ord_ * ntiles_per_uc_;
+        const auto X_in_C_iij = mu + ref_uc_ord_ * ntiles_per_uc_;
         for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
           const auto nu_R1 = nu + R1_ord * ntiles_per_uc_;
           const auto X_in_C_jij = nu_R1;
@@ -1060,7 +997,7 @@ class PeriodicCADFKBuilder
               const std::array<size_t, 2> idx_M_jij{
                   {size_t(nu), size_t(Y_in_M_jij)}};
 
-              if (mu == nu && R1_ord == ref_sig_lattice_ord_) {
+              if (mu == nu && R1_ord == ref_uc_ord_) {
                 if (C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij)) {
                   continue;
                 }
@@ -1655,11 +1592,11 @@ class PeriodicCADFKBuilder
     t0 = mpqc::fenced_now(world);
     {
       // compute lattice range for Rρ in |ρ_Rρ σ_(Rρ+Rσ))
-      Rrho_max_ = RD_max + 2 * sig_lattice_max_;
+      Rrho_max_ = RD_max + 2 * R_max_;
       Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
       // Y is on the center of either ρ_Rρ or σ_(Rρ+Rσ). Thus Y_Ry should have
       // the same lattice range as σ_(Rρ+Rσ).
-      RY_max_ = Rrho_max_ + sig_lattice_max_;
+      RY_max_ = Rrho_max_ + R_max_;
       RY_size_ = 1 + direct_ord_idx(RY_max_, RY_max_);
       RYmRX_max_ = RY_max_ + RX_max_;
       auto shifted_Y_dfbs =
@@ -1711,10 +1648,10 @@ class PeriodicCADFKBuilder
       result_pmap_ = Policy::default_pmap(world, tvolume);
 
       // make basis of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
-      R1m2_max_ = sig_lattice_max_ + Rrho_max_;
+      R1m2_max_ = R_max_ + Rrho_max_;
       R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
       auto Q_bs_Y = shift_basis_origin(*dfbs_, zero_shift_base_,
-                                       sig_lattice_max_, dcell_);
+                                       R_max_, dcell_);
       auto Q_bs_nu =
           shift_basis_origin(*obs_, zero_shift_base_, R1m2_max_, dcell_);
 

@@ -81,7 +81,7 @@ class PeriodicThreeCenterContractionBuilder
         R_size_(ao_factory.R_size()),
         RJ_size_(ao_factory.RJ_size()),
         RD_size_(ao_factory.RD_size()),
-        sig_shellpair_list_(ao_factory.sigificant_shell_pairs()) {
+        sig_shellpair_list_(ao_factory.significant_shell_pairs()) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
     // WorldObject mandates this is called from the ctor

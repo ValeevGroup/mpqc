@@ -282,7 +282,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   TArray get_density() { return D_; }
 
   /// @return significant shell pairs
-  const shellpair_list_t &sigificant_shell_pairs() {
+  const shellpair_list_t &significant_shell_pairs() {
     return sig_shellpair_list_;
   }
 
@@ -1299,9 +1299,11 @@ void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
 
   // compute significant shell pair list
   auto basis_ptr = this->basis_registry()->retrieve(OrbitalIndex(L"λ"));
-  auto basisR_ptr = shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
-  sig_shellpair_list_ = parallel_compute_shellpair_list(
-      this->world(), *basis_ptr, *basisR_ptr, shell_pair_threshold_, engine_precision_);
+  auto basisR_ptr =
+      shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
+  sig_shellpair_list_ =
+      parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
+                                      shell_pair_threshold_, engine_precision_);
 
   // make a list of significant R's as in overlap between μ_0 and ν_R
   std::vector<Vector3i> sig_lattice_list;
@@ -1341,8 +1343,9 @@ void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
 
   // do not forget to recompute significant shell pairs using new R_max_
   basisR_ptr = shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
-  sig_shellpair_list_ = parallel_compute_shellpair_list(
-      this->world(), *basis_ptr, *basisR_ptr, shell_pair_threshold_, engine_precision_);
+  sig_shellpair_list_ =
+      parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
+                                      shell_pair_threshold_, engine_precision_);
 }
 
 #if TA_DEFAULT_POLICY == 1

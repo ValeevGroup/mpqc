@@ -855,18 +855,19 @@ class PeriodicFourCenterFockBuilder
 
   array_type compute_K_aaaa(array_type const &D, double target_precision,
                             bool is_density_diagonal) const {
-    // Copy D and make it replicated.
-    array_type D_repl;
-    D_repl("i,j") = D("i,j");
-    D_repl.make_replicated();
-    repl_pmap_D_ = D_repl.pmap();
-    trange_D_ = D_repl.trange();
-
-    // prepare input data
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
+
+    // Copy D and make it replicated.
+    array_type D_repl;
+    D_repl("i,j") = D("i,j");
+    D_repl.make_replicated();
+    compute_world.gop.fence();
+
+    repl_pmap_D_ = D_repl.pmap();
+    trange_D_ = D_repl.trange();
 
     // # of tiles per unit cell
     assert(bra_basis_ == ket_basis_);
@@ -897,9 +898,8 @@ class PeriodicFourCenterFockBuilder
     const auto &Dnorm = D_repl.shape().data();
     auto empty = TA::Future<Tile>(Tile());
     auto task_id = 0ul;
-    for (auto R1_ord = ref_sig_lattice_ord_; R1_ord != sig_lattice_size_;
-         ++R1_ord) {
-      const auto R1_3D = direct_3D_idx(R1_ord, sig_lattice_max_);
+    for (auto R1_ord = ref_R_ord_; R1_ord != R_size_; ++R1_ord) {
+      const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
         const auto R2p1_3D = R2_3D - R1_3D;
@@ -916,9 +916,8 @@ class PeriodicFourCenterFockBuilder
                                     ? direct_ord_idx(R2p1_3D, RF_max_)
                                     : -1;
 
-        for (auto R3_ord = ref_sig_lattice_ord_; R3_ord != sig_lattice_size_;
-             ++R3_ord) {
-          const auto R3_3D = direct_3D_idx(R3_ord, sig_lattice_max_);
+        for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
+          const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
           const auto R2p3_3D = R2_3D + R3_3D;
           const auto R2p3m1_3D = R2p3_3D - R1_3D;
           const auto uc_ord_D03 = is_in_lattice_range(R2p3_3D, RD_max_)
@@ -940,7 +939,7 @@ class PeriodicFourCenterFockBuilder
 
           for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
             for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
-              if (R1_ord == ref_sig_lattice_ord_ && tile1 < tile0) {
+              if (R1_ord == ref_R_ord_ && tile1 < tile0) {
                 continue;
               }
               for (auto tile2 = 0ul; tile2 != ntiles; ++tile2) {
@@ -963,7 +962,7 @@ class PeriodicFourCenterFockBuilder
                 const auto Dnorm012 = std::max(Dnorm02, Dnorm12);
 
                 for (auto tile3 = 0ul; tile3 != ntiles; ++tile3) {
-                  if (R3_ord == ref_sig_lattice_ord_ && tile3 < tile2) {
+                  if (R3_ord == ref_R_ord_ && tile3 < tile2) {
                     continue;
                   }
 
@@ -1187,6 +1186,7 @@ class PeriodicFourCenterFockBuilder
   mutable std::map<int64_t, int64_t> translation_map_;
   mutable bool is_density_diagonal_;
 
+  mutable shellpair_list_t sig_shpair_list_;
   mutable shellpair_list_t sig_j_bra_shellpair_list_;
   mutable shellpair_list_t sig_j_ket_shellpair_list_;
   mutable shellpair_list_t sig_k_bra_shellpair_list_;
@@ -1207,7 +1207,6 @@ class PeriodicFourCenterFockBuilder
   mutable shellpair_list_t k_sig_k_bra_shellpair_list_;
   size_t ntiles_per_uc_;
 
-  mutable shellpair_list_t sig_shpair_list_;
   mutable std::vector<Vector3i> sig_lattice_list_;
   mutable Vector3i sig_lattice_max_;
   mutable int64_t sig_lattice_size_;
@@ -1585,21 +1584,6 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::lcao::detail::direct_3D_idx;
     using ::mpqc::lcao::detail::direct_ord_idx;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    const auto basis0 = *bra_basis_;
-
-    // make initial compound basis set for basisR_ based on user-specified R_max
-    // note that basisR_ only contains half basis functions of |μ_R> (R >= 0)
-    basisR_ =
-        shift_basis_origin(*bra_basis_, zero_shift_base, R_max_, dcell_, true);
-    ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
-                  << R_max_.transpose() << std::endl;
-
-    // compute significant shell pair list
-    {
-      const auto basisR = *basisR_;
-      sig_shpair_list_ = parallel_compute_shellpair_list(basis0, basisR,
-                                                         shell_pair_threshold_);
-    }
 
     // locate the ordinal index of the reference lattice in R, RJ, and RD
     // vectors
@@ -1609,57 +1593,19 @@ class PeriodicFourCenterFockBuilder
     ref_R_ord_ = (R_size_ - 1) / 2;
     ref_RD_ord_ = (RD_size_ - 1) / 2;
 
-    // make a list of significant lattice vectors in |μ_0 ν_R) based on
-    // significant shell pairs
-    {
-      const auto nshells_per_uc = bra_basis_->flattened_shells().size();
-      for (auto R_ord = ref_R_ord_; R_ord != R_size_; ++R_ord) {
-        const auto R_3D = direct_3D_idx(R_ord, R_max_);
-        const auto shell1_min = nshells_per_uc * (R_ord - ref_R_ord_);
-        const auto shell1_max = shell1_min + nshells_per_uc;
+    // make compound basis set for ν_R in |μ_0 ν_R)
+    // note that ν_R only contains half basis functions of |μ_R> (R >= 0)
+    basisR_ =
+        shift_basis_origin(*bra_basis_, zero_shift_base, R_max_, dcell_, true);
 
-        auto is_significant = false;
-        for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
-          for (const auto &shell1 : sig_shpair_list_[shell0]) {
-            if (shell1 >= shell1_min && shell1 < shell1_max) {
-              is_significant = true;
-              sig_lattice_list_.emplace_back(R_3D);
-              break;
-            }
-          }
-          if (is_significant) break;
-        }
-      }
-    }
-
-    // renew the range of lattice sum for |μ_0 ν_R) based on the list of
-    // significant lattice vectors
-    {
-      auto x = 0;
-      auto y = 0;
-      auto z = 0;
-      for (const auto &R_3D : sig_lattice_list_) {
-        x = std::max(x, R_3D(0));
-        y = std::max(y, R_3D(1));
-        z = std::max(z, R_3D(2));
-      }
-      sig_lattice_max_ = Vector3i({x, y, z});
-      sig_lattice_size_ =
-          direct_ord_idx(sig_lattice_max_, sig_lattice_max_) + 1;
-      ref_sig_lattice_ord_ = (sig_lattice_size_ - 1) / 2;
-      ExEnv::out0() << "Updated range of lattice sum for |mu nu_R) = "
-                    << sig_lattice_max_.transpose() << std::endl;
-    }
-
-    // do not forget to renew basisR_ and significant shell pair list
-    basisR_ = shift_basis_origin(*bra_basis_, zero_shift_base, sig_lattice_max_,
-                                 dcell_, true);
+    const auto basis0 = *bra_basis_;
     const auto basisR = *basisR_;
+
     sig_shpair_list_ =
         parallel_compute_shellpair_list(basis0, basisR, shell_pair_threshold_);
 
     // renew lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    Rrho_max_ = sig_lattice_max_ + RD_max_;
+    Rrho_max_ = R_max_ + RD_max_;
     Rrho_size_ = direct_ord_idx(Rrho_max_, Rrho_max_) + 1;
     ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
 
@@ -1677,8 +1623,8 @@ class PeriodicFourCenterFockBuilder
       auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
       // make compound basis sets for ket0 and ket1
       basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
-      basis_Rsigma_.emplace_back(shift_basis_origin(
-          *ket_basis_, vec_Rrho, sig_lattice_max_, dcell_, true));
+      basis_Rsigma_.emplace_back(
+          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
     }
 
     // initialize screener
@@ -1698,7 +1644,7 @@ class PeriodicFourCenterFockBuilder
 
     // make TiledRange of Fock using initial full basisR
     {
-      RF_max_ = RD_max_ + 2 * sig_lattice_max_;
+      RF_max_ = RD_max_ + 2 * R_max_;
       auto full_basisR =
           shift_basis_origin(*bra_basis_, zero_shift_base, RF_max_, dcell_);
       trange_fock_ = ::mpqc::lcao::gaussian::detail::create_trange(
@@ -2782,10 +2728,8 @@ class PeriodicFourCenterFockBuilder
     const auto &basis3 = basis_Rsigma_[R2_ord - ref_Rrho_ord_];
 
     // translate tile indices by unit cell indices
-    const auto tile1_R1 =
-        tile1 + (R1_ord - ref_sig_lattice_ord_) * ntiles_per_uc_;
-    const auto tile3_R3 =
-        tile3 + (R3_ord - ref_sig_lattice_ord_) * ntiles_per_uc_;
+    const auto tile1_R1 = tile1 + (R1_ord - ref_R_ord_) * ntiles_per_uc_;
+    const auto tile3_R3 = tile3 + (R3_ord - ref_R_ord_) * ntiles_per_uc_;
 
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];

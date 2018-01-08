@@ -198,7 +198,6 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
 std::vector<std::vector<size_t>> parallel_compute_shellpair_list(
     madness::World &world, const Basis &basis1, const Basis &basis2,
     double threshold, double engine_precision) {
-
   using ::mpqc::lcao::gaussian::make_engine_pool;
   using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
   // initialize engine

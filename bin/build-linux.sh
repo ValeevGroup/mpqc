@@ -1,5 +1,9 @@
 #! /bin/sh
 
+${TRAVIS_BUILD_DIR}/bin/build-mpich-$TRAVIS_OS_NAME.sh
+${TRAVIS_BUILD_DIR}/bin/build-libint-$TRAVIS_OS_NAME.sh
+${TRAVIS_BUILD_DIR}/bin/build-TA-$TRAVIS_OS_NAME.sh
+
 # Exit on error
 set -ev
 

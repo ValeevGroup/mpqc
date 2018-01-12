@@ -50,7 +50,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
   PeriodicLCAOFactory(const KeyVal &kv)
       : PeriodicLCAOFactoryBase<Tile, Policy>(kv),
         pao_factory_(
-            *gaussian::construct_periodic_ao_factory<TA::TensorD, Policy>(kv)) {
+            gaussian::construct_periodic_ao_factory<TA::TensorD, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -61,12 +61,12 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
 
     dcell_ = unitcell_->dcell();
 
-    R_max_ = pao_factory_.R_max();
-    RJ_max_ = pao_factory_.RJ_max();
-    RD_max_ = pao_factory_.RD_max();
-    R_size_ = pao_factory_.R_size();
-    RJ_size_ = pao_factory_.RJ_size();
-    RD_size_ = pao_factory_.RD_size();
+    R_max_ = pao_factory_->R_max();
+    RJ_max_ = pao_factory_->RJ_max();
+    RD_max_ = pao_factory_->RD_max();
+    R_size_ = pao_factory_->R_size();
+    RJ_size_ = pao_factory_->RJ_size();
+    RD_size_ = pao_factory_->RD_size();
 
     // seperate k_points from zRHF::k_points
     nk_ = decltype(nk_)(kv.value<std::vector<int>>("ref:k_points").data());
@@ -93,7 +93,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
   using PeriodicLCAOFactoryBase<Tile, Policy>::compute_direct;
 
   /// return reference to PeriodicAOFactory object
-  AOFactoryType &pao_factory() const { return pao_factory_; }
+  AOFactoryType &pao_factory() const { return *pao_factory_; }
 
  private:
   /// compute integrals that has two dimensions
@@ -110,7 +110,7 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
   /// find the correct range of summation for σ in <μ0 νR|ρR_j σ(R_j+R)>
   std::vector<int64_t> restricted_lattice_range(int64_t R, int64_t RJ);
 
-  AOFactoryType &pao_factory_;
+  std::shared_ptr<AOFactoryType> pao_factory_;
   std::shared_ptr<UnitCell> unitcell_;
 
   /// unitcell and pbc information
@@ -174,7 +174,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   auto bra_index = ao_formula.bra_indices()[0];
   auto ket_index = ao_formula.ket_indices()[0];
 
-  const auto &basis_registry = *pao_factory_.basis_registry();
+  const auto &basis_registry = *pao_factory_->basis_registry();
 
   auto bra_basis = gaussian::detail::index_to_basis(basis_registry, bra_index);
   auto ket_basis = gaussian::detail::index_to_basis(basis_registry, ket_index);
@@ -223,7 +223,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
-      auto ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
+      auto ao_int = pao_factory_->compute_integrals(world, engine_pool, bases);
 
       if (R == 0)
         pao_ints("p, q") = ao_int("p, q");
@@ -301,7 +301,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
-      ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
+      ao_int = pao_factory_->compute_integrals(world, engine_pool, bases);
 
     } else if (ao_formula.oper().type() == Operator::Type::Nuclear) {
       auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
@@ -314,15 +314,15 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
             to_libint2_operator_params(ao_formula.oper().type(), *shifted_mol));
         if (RJ == 0)
-          ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
+          ao_int = pao_factory_->compute_integrals(world, engine_pool, bases);
         else
           ao_int("p, q") +=
-              pao_factory_.compute_integrals(world, engine_pool, bases)("p, q");
+              pao_factory_->compute_integrals(world, engine_pool, bases)("p, q");
       }
     } else if (ao_formula.oper().type() == Operator::Type::J) {
       // change operator type to Coulomb for computing integrals
       ao_formula.set_operator_type(Operator::Type::Coulomb);
-      auto D = pao_factory_.get_density();
+      auto D = pao_factory_->get_density();
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -341,11 +341,11 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            world, engine_pool, bases, pao_factory_.screen(),
-            pao_factory_.screen_threshold());
+            world, engine_pool, bases, pao_factory_->screen(),
+            pao_factory_->screen_threshold());
 
         // compute AO-based integrals
-        auto J = pao_factory_.compute_integrals(world, engine_pool, bases,
+        auto J = pao_factory_->compute_integrals(world, engine_pool, bases,
                                                 p_screener);
         // sum over RJ
         if (RJ == 0)
@@ -359,7 +359,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
     } else if (ao_formula.oper().type() == Operator::Type::K) {
       // change operator type to Coulomb for computing integrals
       ao_formula.set_operator_type(Operator::Type::Coulomb);
-      auto D = pao_factory_.get_density();
+      auto D = pao_factory_->get_density();
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -378,11 +378,11 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            world, engine_pool, bases, pao_factory_.screen(),
-            pao_factory_.screen_threshold());
+            world, engine_pool, bases, pao_factory_->screen(),
+            pao_factory_->screen_threshold());
 
         // compute AO-based integrals
-        auto K = pao_factory_.compute_integrals(world, engine_pool, bases,
+        auto K = pao_factory_->compute_integrals(world, engine_pool, bases,
                                                 p_screener);
         // sum over RJ
         if (RJ == 0)
@@ -425,7 +425,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   auto ket_index0 = ao_formula.ket_indices()[0];
   auto ket_index1 = ao_formula.ket_indices()[1];
 
-  const auto &basis_registry = *pao_factory_.basis_registry();
+  const auto &basis_registry = *pao_factory_->basis_registry();
 
   auto bra_basis0 =
       gaussian::detail::index_to_basis(basis_registry, bra_index0);
@@ -479,11 +479,11 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            world, engine_pool, bases, pao_factory_.screen(),
-            pao_factory_.screen_threshold());
+            world, engine_pool, bases, pao_factory_->screen(),
+            pao_factory_->screen_threshold());
 
         // compute AO-based integrals
-        auto ao_int = pao_factory_.compute_integrals(world, engine_pool, bases,
+        auto ao_int = pao_factory_->compute_integrals(world, engine_pool, bases,
                                                      p_screener);
         auto t_pao1 = mpqc::now(world, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);

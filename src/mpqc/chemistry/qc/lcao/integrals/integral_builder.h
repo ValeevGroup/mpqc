@@ -30,8 +30,7 @@ namespace gaussian {
  * ```
  */
 template <typename Tile, typename Engine = libint2::Engine>
-class IntegralBuilder
-    : public std::enable_shared_from_this<IntegralBuilder<Tile, Engine>> {
+class IntegralBuilder {
  public:
   using Op = std::function<Tile(TA::TensorD &&)>;
 
@@ -69,7 +68,7 @@ class IntegralBuilder
     TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
 
-  virtual ~IntegralBuilder() { }
+  virtual ~IntegralBuilder() {}
 
   Tile operator()(std::vector<std::size_t> const &idx, TA::Range range) {
     return op_(integrals(idx, std::move(range)));
@@ -120,7 +119,9 @@ class IntegralBuilder
 };
 
 template <typename Tile, typename Engine = libint2::Engine>
-class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
+class DirectIntegralBuilder
+    : public IntegralBuilder<Tile, Engine>,
+      public std::enable_shared_from_this<DirectIntegralBuilder<Tile, Engine>> {
  public:
   using Op = typename IntegralBuilder<Tile, Engine>::Op;
 
@@ -130,6 +131,9 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
                         std::shared_ptr<const math::PetiteList> plist)
       : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op, plist),
         id_(world.register_ptr(this)) {}
+
+  DirectIntegralBuilder(const DirectIntegralBuilder& builder) = delete;
+  DirectIntegralBuilder& operator=(const DirectIntegralBuilder& builder) = delete;
 
   madness::uniqueidT id() const { return id_; }
 
@@ -146,6 +150,42 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
 
  private:
   madness::uniqueidT id_;
+};
+
+template<typename Tile>
+struct DFTaskGemm {
+  typedef Tile result_type;
+  typedef Tile first_argument_type;
+  typedef Tile second_argument_type;
+
+  TA::Range range;
+  TA::math::GemmHelper gemm_helper;
+
+  DFTaskGemm(const TA::Range &range, const TA::math::GemmHelper &helper)
+      : range(range), gemm_helper(helper) {}
+
+  result_type operator()() const { return Tile(range, 0.0); }
+
+  const result_type &operator()(const result_type &result) const {
+    return result;
+  }
+
+  void add(result_type &result, const result_type &arg) const {
+    TA::math::inplace_vector_op_serial(
+        [](TA::detail::numeric_t<Tile> &l,
+           const TA::detail::numeric_t<Tile> r) { l += r; },
+        result.range().volume(), result.data(), arg.data());
+  }
+
+  void operator()(result_type &result, const result_type &arg) const {
+    add(result, arg);
+  }
+
+  void operator()(result_type &result, const first_argument_type &first,
+                  const second_argument_type &second) const {
+    Tile tmp = first.gemm(second, 1.0, gemm_helper);
+    add(result, tmp);
+  }
 };
 
 template <typename Tile, typename Policy>
@@ -169,7 +209,9 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     TA_ASSERT(df_upbound_ == ket_.trange().data().front().tiles_range().second);
   }
 
-  DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = default;
+  DirectDFIntegralBuilder(DirectDFIntegralBuilder &&) = delete;
+  DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = delete;
+  DirectDFIntegralBuilder& operator=(const DirectDFIntegralBuilder & ) = delete;
 
   ~DirectDFIntegralBuilder() {
     if (madness::initialized()) {
@@ -180,49 +222,10 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
 
   madness::uniqueidT id() const { return id_; }
 
-  struct TaskGemm {
-    typedef Tile result_type;
-    typedef Tile first_argument_type;
-    typedef Tile second_argument_type;
-
-    TA::Range range;
-    TA::math::GemmHelper gemm_helper;
-
-    TaskGemm(const TA::Range &range, const TA::math::GemmHelper &helper)
-        : range(range), gemm_helper(helper) {}
-
-    result_type operator()() const { return Tile(range, 0.0); }
-
-    const result_type &operator()(const result_type &result) const {
-      return result;
-    }
-
-    void add(result_type &result, const result_type &arg) const {
-      TA::math::inplace_vector_op_serial(
-          [](TA::detail::numeric_t<Tile> &l,
-             const TA::detail::numeric_t<Tile> r) { l += r; },
-          result.range().volume(), result.data(), arg.data());
-    }
-
-    void operator()(result_type &result, const result_type &arg) const {
-      add(result, arg);
-    }
-
-    void operator()(result_type &result, const first_argument_type &first,
-                    const second_argument_type &second) const {
-      Tile tmp = first.gemm(second, 1.0, gemm_helper);
-      add(result, tmp);
-    }
-  };
-
-  // permute function
-  static Tile permute(const Tile &tile) {
-    return tile.permute(TA::Permutation({0, 2, 1, 3}));
-  }
 
   // compute Tile for particular block
   madness::Future<Tile> operator()(const std::vector<std::size_t> &idx,
-                                   const TA::Range &range) {
+                                   const TA::Range &range) const {
     TA_ASSERT(idx.size() == 4);
 
     auto &world = bra_.world();
@@ -253,7 +256,7 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
       this_range = range;
     }
 
-    TaskGemm task_gemm(this_range, gemm_helper);
+    DFTaskGemm<Tile> task_gemm(this_range, gemm_helper);
 
     TA::detail::ReducePairTask<decltype(task_gemm)> reduce_pair_task(world,
                                                                      task_gemm);
@@ -267,10 +270,15 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
       reduce_pair_task.add(future_bra_tile, future_ket_tile);
     }
 
+    // permute function
+    auto permute = [](const Tile &tile) {
+      return tile.permute(TA::Permutation({0, 2, 1, 3}));
+    };
+
     if (notation_ == Formula::Notation::Chemical) {
       return reduce_pair_task.submit();
     } else {
-      return world.taskq.add(this->permute, reduce_pair_task.submit());
+      return world.taskq.add(permute, reduce_pair_task.submit());
     }
   }
 

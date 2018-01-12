@@ -188,13 +188,6 @@ class PeriodicRIJBuilder {
     auto t1_j_builder = mpqc::fenced_now(world);
     auto t_tot = mpqc::duration_in_s(t0_j_builder, t1_j_builder);
 
-    // test
-    {
-      using ::mpqc::pbc::detail::print_norms_by_unit_cell;
-      auto R_max = ao_factory_.R_max();
-      print_norms_by_unit_cell(J, R_max, "Coulomb");
-    }
-
     if (this->print_detail_) {
       ExEnv::out0() << "\nRI-J time decomposition:\n"
                     << "\tSum_RJ (X|μν) D_μν:   " << t_3c_d_contr << " s\n"

@@ -128,6 +128,28 @@ int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i const &nk);
 std::shared_ptr<Molecule> shift_mol_origin(Molecule const &mol,
                                            Vector3d const &shift);
 
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> slice_array_at_k(
+    const TA::DistArray<Tile, Policy> &M, const size_t k_ord,
+    const Vector3i &nk) {
+  const auto k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
+  assert(k_ord >= 0 && k_ord < k_size && "ordinal # of k is out of range");
+
+  auto tr0 = M.trange().data()[0];
+  auto tr1 = M.trange().data()[1];
+  assert(tr1.extent() == tr0.extent() * k_size);
+
+  const auto tr0_upper = tr0.tiles_range().second;
+
+  typedef std::vector<size_t> block;
+  block low{0, tr0_upper * k_ord};
+  block up{tr0_upper, tr0_upper * (k_ord + 1)};
+
+  TA::DistArray<Tile, Policy> result;
+  result("i, j") = M("i, j").block(low, up);
+  return result;
+}
+
 }  // namespace detail
 
 namespace gaussian {

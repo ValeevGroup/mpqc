@@ -31,6 +31,8 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   print_detail_ = kv.value<bool>("print_detail", false);
   print_max_item_ = kv.value<int64_t>("print_max_item", 100);
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
+  fmix_ = kv.value<double>("fock_mixing", 0.0);
+  diis_ = kv.value<std::string>("diis", "none");
 
   auto& ao_factory = this->ao_factory();
   // retrieve world from periodic ao_factory
@@ -64,6 +66,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   assert((nk_.array() > 0).all() &&
          "k_points cannot have zero or negative elements");
   k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
                 << nk_.transpose() << "]" << std::endl;
@@ -90,7 +93,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   }
 
   S_ = ao_factory.compute(L"<κ|λ>");  // Overlap in real space
-  Sk_ = transform_real2recip(S_);     // Overlap in reciprocal space
+  Sk_ = transform_real2recip(S_);  // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -109,7 +112,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_,
                                            print_max_item_);
   // compute guess density
-  D_ = compute_density();
+  std::tie(D_, Dk_) = compute_density();
 
   init_fock_builder();
 
@@ -135,12 +138,15 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   ExEnv::out0() << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
+  TiledArray::DIIS<array_type_z> diis_gamma_point, diis_allk;
+
   do {
     auto iter_start = mpqc::fenced_now(world);
 
     // Save a copy of energy and density
     auto ezrhf_old = ezrhf;
     auto D_old = D_;
+    array_type_z Fk_old = Fk_;
 
     if (print_detail_) {
       ExEnv::out0() << "\nIteration: " << iter << "\n";
@@ -161,9 +167,39 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     // compute zRHF energy
     ezrhf = compute_energy();
 
+    // DIIS
+    if (diis_ != "none") {
+      if (diis_ == "gamma_point") {
+        assert(k_size_ >= 1 && k_size_ % 2 == 1);
+        const auto k_ord_gamma_point = (k_size_ - 1) / 2;
+        auto D_gp = detail::slice_array_at_k(Dk_, k_ord_gamma_point, nk_);
+        auto F_gp = detail::slice_array_at_k(Fk_, k_ord_gamma_point, nk_);
+        auto S_gp = detail::slice_array_at_k(Sk_, k_ord_gamma_point, nk_);
+
+        array_type_z grad_gp;
+        grad_gp("i, j") = F_gp("i, k") * D_gp("k, l") * S_gp("l, j") -
+                          S_gp("i, k") * D_gp("k, l") * F_gp("l, j");
+        diis_gamma_point.extrapolate(F_gp, grad_gp);
+        const auto diis_coeffs = diis_gamma_point.get_coeffs();
+        const auto diis_nskip = diis_gamma_point.get_nskip();
+
+        auto F_allk_diis = Fk_;
+        diis_allk.extrapolate(F_allk_diis, diis_coeffs, diis_nskip);
+        Fk_ = F_allk_diis;
+      } else {
+        throw InputError("Currently only Gamma-point DIIS is implemented",
+                         __FILE__, __LINE__, "diis");
+      }
+    }
+
+    // mixing of Fock matrices in reciprocal space
+    if (fmix_ > 0.0) {
+      Fk_("mu, nu") = (1.0 - fmix_) * Fk_("mu, nu") + fmix_ * Fk_old("mu, nu");
+    }
+
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-    D_ = compute_density();
+    std::tie(D_, Dk_) = compute_density();
     // update density in periodic ao_factory
     ao_factory.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
@@ -256,7 +292,9 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 }
 
 template <typename Tile, typename Policy>
-typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
+std::pair<typename zRHF<Tile, Policy>::array_type,
+          typename zRHF<Tile, Policy>::array_type_z>
+zRHF<Tile, Policy>::compute_density() {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
@@ -265,7 +303,8 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
 
   auto tr0 = Fk_.trange().data()[0];
   using ::mpqc::lcao::detail::extend_trange1;
-  auto tr1 = extend_trange1(tr0, RD_size_);
+  auto tr1_real = extend_trange1(tr0, RD_size_);
+  auto tr1_recip = extend_trange1(tr0, k_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
@@ -296,25 +335,32 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
     C_[k] = X * Ctemp;
   }
 
-  Matrix result_eig(tr0.extent(), tr1.extent());
-  result_eig.setZero();
-  for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
-    for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = detail::k_vector(k, nk_, dcell_);
-      auto C_occ = C_[k].leftCols(docc_);
-      auto D_real = C_occ.conjugate() * C_occ.transpose();
+  const auto ext0 = tr0.extent();
+  Matrix result_real_eig(ext0, tr1_real.extent());
+  MatrixZ result_recip_eig(ext0, tr1_recip.extent());
+  result_real_eig.setZero();
+  result_recip_eig.setZero();
+
+  for (auto k = 0; k < k_size_; ++k) {
+    auto vec_k = detail::k_vector(k, nk_, dcell_);
+    auto C_occ = C_[k].leftCols(docc_);
+    auto D_k = C_occ.conjugate() * C_occ.transpose();
+    result_recip_eig.block(0, k * ext0, ext0, ext0) = D_k;
+    for (auto R = 0; R < RD_size_; ++R) {
+      auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
       auto exponent =
           std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-      auto D_comp = exponent * D_real;
-      result_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent()) +=
-          D_comp.real();
+      auto D_RD_contr = exponent * D_k;
+      result_real_eig.block(0, R * ext0, ext0, ext0) += D_RD_contr.real();
     }
   }
 
-  auto result = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(
-      world, result_eig, tr0, tr1);
-  return result;
+  auto result_real = array_ops::eigen_to_array<Tile, Policy>(
+      world, result_real_eig, tr0, tr1_real);
+  auto result_recip = array_ops::eigen_to_array<TA::TensorZ, Policy>(
+      world, result_recip_eig, tr0, tr1_recip);
+
+  return std::make_pair(result_real, result_recip);
 }
 
 template <typename Tile, typename Policy>

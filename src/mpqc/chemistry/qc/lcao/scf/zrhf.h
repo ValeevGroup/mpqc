@@ -51,6 +51,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
    * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
    * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
+   * | fock_mixing | double | 0.0 | mixing of Fock matrices in reciprocal space |
+   * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
    *
    * example input:
    *
@@ -101,7 +103,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \brief This diagonalizes Fock matrix in reciprocal space and
    * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
    */
-  array_type compute_density();
+  std::pair<array_type, array_type_z> compute_density();
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
@@ -142,12 +144,13 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
  private:
   array_type T_;
   array_type V_;
-  array_type_z Sk_;
   array_type H_;
   array_type J_;
   array_type K_;
   array_type F_;
+  array_type_z Sk_;
   array_type_z Fk_;
+  array_type_z Dk_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -159,6 +162,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   const KeyVal kv_;
   int64_t maxiter_;
   double max_condition_num_;
+  double fmix_;
+  std::string diis_;
 
   Vector3i R_max_;
   Vector3i RJ_max_;

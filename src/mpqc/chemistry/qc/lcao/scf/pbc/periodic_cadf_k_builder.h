@@ -232,6 +232,8 @@ class PeriodicCADFKBuilder
     t1 = mpqc::fenced_now(world);
     auto t_C = mpqc::duration_in_s(t0, t1);
 
+    detail::print_size_info(C_, "C(X,μ,ν)");
+
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
                     << "\tC(X_Rx, μ_0, ν_Rν):  " << t_C << " s\n"
@@ -397,6 +399,10 @@ class PeriodicCADFKBuilder
               }
 
               const auto R1m2_3D = R1_3D - R2_3D;
+              if (!is_in_lattice_range(R1m2_3D, R1m2_max_)) {
+                continue;
+              }
+
               const auto R1m2_ord = direct_ord_idx(R1m2_3D, R1m2_max_);
               const auto RYm2_ord = direct_ord_idx(RYm2_3D, R_max_);
               const size_t Y_in_Q = Y + RYm2_ord * ntiles_per_uc_;
@@ -780,6 +786,10 @@ class PeriodicCADFKBuilder
         for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
           const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
           const auto R1m2_3D = R1_3D - R2_3D;
+          if (!is_in_lattice_range(R1m2_3D, R1m2_max_)) {
+            continue;
+          }
+
           const auto R1m2_ord = direct_ord_idx(R1m2_3D, R1m2_max_);
           for (auto Y = 0ul; Y != ntiles_per_uc_; ++Y) {
             const auto Y_in_Q = Y + RYm2_ord * ntiles_per_uc_;
@@ -979,6 +989,10 @@ class PeriodicCADFKBuilder
             const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
             const auto RY_ord_in_M = direct_ord_idx(RY_3D, RYmRX_max_);
             const auto RYm1_3D = RY_3D - R1_3D;
+            if (!is_in_lattice_range(RYm1_3D, RYmRX_max_)) {
+              continue;
+            }
+
             const auto RYm1_ord = direct_ord_idx(RYm1_3D, RYmRX_max_);
             for (auto Y = 0ul; Y != ntiles_per_uc_; ++Y) {
               const auto Y_in_F = Y + RY_ord * ntiles_per_uc_;
@@ -1594,9 +1608,9 @@ class PeriodicCADFKBuilder
       Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
       // Y is on the center of either ρ_Rρ or σ_(Rρ+Rσ). Thus Y_Ry should have
       // the same lattice range as σ_(Rρ+Rσ).
-      RY_max_ = Rrho_max_ + R_max_;
+      RY_max_ = Rrho_max_;
       RY_size_ = 1 + direct_ord_idx(RY_max_, RY_max_);
-      RYmRX_max_ = RY_max_ + RX_max_;
+      RYmRX_max_ = Rrho_max_;
       auto shifted_Y_dfbs =
           shift_basis_origin(*dfbs_, zero_shift_base_, RYmRX_max_, dcell_);
       M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
@@ -1646,7 +1660,7 @@ class PeriodicCADFKBuilder
       result_pmap_ = Policy::default_pmap(world, tvolume);
 
       // make basis of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
-      R1m2_max_ = R_max_ + Rrho_max_;
+      R1m2_max_ = RD_max + R_max_;
       R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
       auto Q_bs_Y =
           shift_basis_origin(*dfbs_, zero_shift_base_, R_max_, dcell_);

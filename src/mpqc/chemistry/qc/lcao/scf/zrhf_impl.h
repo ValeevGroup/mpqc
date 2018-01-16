@@ -179,12 +179,23 @@ void zRHF<Tile, Policy>::solve(double thresh) {
         array_type_z grad_gp;
         grad_gp("i, j") = F_gp("i, k") * D_gp("k, l") * S_gp("l, j") -
                           S_gp("i, k") * D_gp("k, l") * F_gp("l, j");
-        diis_gamma_point.extrapolate(F_gp, grad_gp);
-        const auto diis_coeffs = diis_gamma_point.get_coeffs();
-        const auto diis_nskip = diis_gamma_point.get_nskip();
 
+        diis_gamma_point.compute_extrapolation_parameters(grad_gp, true);
+
+        const auto param_computed = diis_gamma_point.parameters_computed();
+
+        using EigenVectorX = typename TiledArray::DIIS<array_type_z>::EigenVectorX;
+
+        auto diis_coeffs = EigenVectorX();
+        unsigned int diis_nskip = 0;
         auto F_allk_diis = Fk_;
-        diis_allk.extrapolate(F_allk_diis, diis_coeffs, diis_nskip);
+        if (!param_computed) {
+          diis_allk.extrapolate(F_allk_diis, diis_coeffs, diis_nskip, true);
+        } else {
+          diis_coeffs = diis_gamma_point.get_coeffs();
+          diis_nskip = diis_gamma_point.get_nskip();
+          diis_allk.extrapolate(F_allk_diis, diis_coeffs, diis_nskip, true);
+        }
         Fk_ = F_allk_diis;
       } else {
         throw InputError("Currently only Gamma-point DIIS is implemented",

@@ -64,7 +64,7 @@ MOLDEN_ExternReadMOInfo::MOLDEN_ExternReadMOInfo(const std::string & filename)
     in.getline(skipline, nline);
   }
 
-  // the format: H1 sequence# charge x xy z
+  // the format: H1 sequence# charge x y z
   for (int i = 0; i < natoms; ++i)
   {
     std::string atom;

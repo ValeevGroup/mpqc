@@ -4,7 +4,7 @@
 #include <libint2/chemistry/sto3g_atomic_density.h>
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/molecule/unit_cell.h"
+#include "mpqc/chemistry/molecule/lattice/unit_cell.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"

@@ -6,7 +6,7 @@
 #define MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
-#include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
+#include "mpqc/chemistry/molecule/lattice/util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/direct_task_integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h"
@@ -567,8 +567,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
   using DirectTile = typename ArrayType::value_type;
   using Tile = TA::Tensor<double>;
 
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
   auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
                                 Vector3i const &center) {
     if (in_idx(0) <= center(0) + range(0) &&

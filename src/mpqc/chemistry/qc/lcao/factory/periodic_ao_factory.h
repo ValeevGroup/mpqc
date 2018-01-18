@@ -7,8 +7,9 @@
 #include <iosfwd>
 #include <vector>
 
-#include "mpqc/chemistry/molecule/unit_cell.h"
-#include "mpqc/chemistry/qc/lcao/factory/periodic_util.h"
+#include "mpqc/chemistry/molecule/lattice/unit_cell.h"
+#include "mpqc/chemistry/molecule/lattice/util.h"
+#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -127,7 +128,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     RJ_max_ = decltype(RJ_max_)(
         kv.value<std::array<int, 3>>(prefix + "rjmax").data());
 
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_ord_idx;
     R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
@@ -469,8 +470,8 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     result = compute_integrals(world, engine_pool, bs_array);
   } else if (formula.oper().type() == Operator::Type::Nuclear) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
-      using ::mpqc::lcao::detail::shift_mol_origin;
+      using ::mpqc::detail::direct_vector;
+      using ::mpqc::detail::shift_mol_origin;
       auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
       auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
       parse_one_body_two_center_periodic(formula, engine_pool, bs_array,
@@ -483,7 +484,7 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     }
   } else if (formula.oper().type() == Operator::Type::Coulomb) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_two_center_periodic(formula, engine_pool, bs_array,
                                          vec_RJ);
@@ -522,7 +523,7 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
   auto time0 = mpqc::now(world, this->accurate_time());
   if (formula.oper().type() == Operator::Type::Coulomb) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
 
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
@@ -574,7 +575,7 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     j_formula.set_operator_type(Operator::Type::Coulomb);
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_four_center_periodic(j_formula, engine_pool, bs_array,
                                           vec_RJ, true, p_screener);
@@ -602,7 +603,7 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     auto k_formula = formula;
     k_formula.set_operator_type(Operator::Type::Coulomb);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_four_center_periodic(k_formula, engine_pool, bs_array,
                                           vec_RJ, false, p_screener);
@@ -703,7 +704,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct_vector(const Formula &formula) {
                   << utility::to_string(formula.string()) << std::endl;
     if (formula.oper().type() == Operator::Type::Coulomb) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        using ::mpqc::lcao::detail::direct_vector;
+        using ::mpqc::detail::direct_vector;
 
         DirectTArray &g = result[RJ];
         if (!g.array().is_initialized()) {
@@ -756,7 +757,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct3(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       DirectTArray &g = g_3idx_[RJ];
 
       if (!g.array().is_initialized()) {
@@ -826,7 +827,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
 
       DirectTArray &g = gj_[RJ];
       if (!g.array().is_initialized()) {
@@ -863,7 +864,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       DirectTArray &g = gk_[RJ];
       if (!g.array().is_initialized()) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);

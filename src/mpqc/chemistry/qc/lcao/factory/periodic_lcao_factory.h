@@ -13,7 +13,6 @@ template <typename Tile, typename Policy>
 using PeriodicLCAOFactoryBase =
     Factory<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>;
 
-namespace detail {
 /*!
  * \brief This constructs a PeriodicLCAOFactory object
  */
@@ -34,8 +33,6 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
   }
   return periodic_lcao_factory;
 }
-
-}  // namespace detail
 
 template <typename Tile, typename Policy>
 class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
@@ -69,8 +66,9 @@ class PeriodicLCAOFactory : public PeriodicLCAOFactoryBase<Tile, Policy> {
     RD_size_ = pao_factory_->RD_size();
 
     // seperate k_points from zRHF::k_points
+    using ::mpqc::detail::k_ord_idx;
     nk_ = decltype(nk_)(kv.value<std::vector<int>>("ref:k_points").data());
-    k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+    k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
     auto orbital_space_registry =
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
@@ -203,7 +201,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     // Symmetrize AO fock
     pao_ints("p, q") = 0.5 * (pao_ints("p, q") + pao_ints("q, p"));
   } else {
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
@@ -280,8 +278,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
   TArray result_ta;
   TArray ao_int;
 
-  using ::mpqc::lcao::detail::direct_vector;
-  using ::mpqc::lcao::detail::shift_mol_origin;
+  using ::mpqc::detail::direct_vector;
+  using ::mpqc::detail::shift_mol_origin;
   using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
   using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
   using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
@@ -441,7 +439,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   TA_ASSERT(ket_basis0 != nullptr);
   TA_ASSERT(ket_basis1 != nullptr);
 
-  using ::mpqc::lcao::detail::direct_vector;
+  using ::mpqc::detail::direct_vector;
   using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
   using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
   using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
@@ -556,7 +554,7 @@ std::vector<int64_t>
 PeriodicLCAOFactory<Tile, Policy>::restricted_lattice_range(int64_t R,
                                                             int64_t RJ) {
   std::vector<int64_t> result;
-  using ::mpqc::lcao::detail::direct_vector;
+  using ::mpqc::detail::direct_vector;
 
   auto vec_max = direct_vector(RJ_size_ - 1, RJ_max_, dcell_);
   auto distance_max = vec_max.norm();

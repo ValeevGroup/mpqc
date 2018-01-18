@@ -428,7 +428,7 @@ class PeriodicThreeCenterContractionBuilder
   void init() {
     trange1_aux_ = aux_basis_->create_trange1();
 
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::make_screener;

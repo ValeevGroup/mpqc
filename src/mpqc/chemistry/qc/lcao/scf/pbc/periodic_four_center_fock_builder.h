@@ -4,6 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
+#include "mpqc/math/external/tiledarray/util.h"
+
 #include <mutex>
 
 namespace mpqc {
@@ -441,9 +443,9 @@ class PeriodicFourCenterFockBuilder
 
     auto empty = TA::Future<Tile>(Tile());
 
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     const auto Dtile_norms = D_repl.shape().data();
     const auto Dshblk_norms = shblk_norm_D.shape().data();
@@ -618,9 +620,9 @@ class PeriodicFourCenterFockBuilder
       num_ints_computed_ = 0;
     }
 
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
     assert(R_max_ == RD_max_);  // Let's assume this is true for now
     auto empty = TA::Future<Tile>(Tile());
     for (auto tile0 = 0ul, tile0123 = 0ul; tile0 != ntiles02; ++tile0) {
@@ -892,8 +894,8 @@ class PeriodicFourCenterFockBuilder
       num_ints_computed_ = 0;
     }
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     const auto &Dnorm = D_repl.shape().data();
     auto empty = TA::Future<Tile>(Tile());
@@ -1231,11 +1233,11 @@ class PeriodicFourCenterFockBuilder
     assert(bra_basis_->nclusters() == ket_basis_->nclusters());
     ntiles_per_uc_ = bra_basis_->nclusters();
 
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     // make compound basis set for bra1
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
@@ -1450,11 +1452,11 @@ class PeriodicFourCenterFockBuilder
     ntiles_per_uc_ = bra_basis_->nclusters();
     auto &world = this->get_world();
 
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
     const auto basis0 = *bra_basis_;
 
@@ -1578,11 +1580,11 @@ class PeriodicFourCenterFockBuilder
     ntiles_per_uc_ = bra_basis_->nclusters();
     auto &world = this->get_world();
 
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
     // locate the ordinal index of the reference lattice in R, RJ, and RD
@@ -3093,7 +3095,7 @@ class PeriodicFourCenterFockBuilder
     };
 
     const auto tr0 = make_shblk_trange1(bs0);
-    const auto tr1 = ::mpqc::lcao::detail::extend_trange1(tr0, size);
+    const auto tr1 = ::mpqc::detail::extend_trange1(tr0, size);
 
     auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
     // compute shell block norms
@@ -3347,8 +3349,8 @@ class PeriodicFourCenterFockBuilder
    * \return a map of original unit cell idx to translated unit cell idx
    */
   std::map<int64_t, int64_t> compute_translation_map(Vector3i max_uc) const {
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     std::map<int64_t, int64_t> result;
     for (auto R = 0; R != R_size_; ++R) {

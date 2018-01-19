@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "mpqc/math/external/tiledarray/util.h"
 
 namespace mpqc {
 namespace pbc {
@@ -27,9 +28,9 @@ TA::DistArray<Tile, Policy> reduced_size_array(
          arg_range(2) >= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::lcao::detail::direct_ord_idx;
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
   const auto arg_range_size =
@@ -83,9 +84,9 @@ TA::DistArray<Tile, Policy> enlarged_size_array(
          arg_range(2) <= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::lcao::detail::direct_ord_idx;
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
   const auto arg_range_size = 1 + direct_ord_idx(arg_range, arg_range);
@@ -198,8 +199,8 @@ template <typename Tile, typename Policy>
 void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
                               Vector3i const &max_lattice_range,
                               std::string const &name) {
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
 
   const auto elements_range = M_array.trange().elements_range();
   const auto ext0 = elements_range.extent(0);
@@ -219,6 +220,40 @@ void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
                   << ", Infinity norm = " << norm_infty
                   << std::endl;
   }
+}
+
+/*!
+ * \brief This extracts a sliced matrix at k = \c k_ord from a large matrix
+ * \c M (μ, ν; k). Note that \c M is stored as a 2d array with \cnrows =
+ * \c size(obs) and \c ncols = \c size(obs) * \c size(k_points).
+ *
+ * \param M a Tiled Array object M(μ, ν; k=all)
+ * \param k_ord the ordinal number of a specific k point
+ * \param nk the total number of k points in each direction
+ * \return a Tiled Array object M(μ, ν; k=k_ord)
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> slice_array_at_k(
+    const TA::DistArray<Tile, Policy> &M, const size_t k_ord,
+    const Vector3i &nk) {
+  using ::mpqc::detail::k_ord_idx;
+
+  const auto k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
+  assert(k_ord >= 0 && k_ord < k_size && "ordinal # of k is out of range");
+
+  auto tr0 = M.trange().data()[0];
+  auto tr1 = M.trange().data()[1];
+  assert(tr1.extent() == tr0.extent() * k_size);
+
+  const auto tr0_upper = tr0.tiles_range().second;
+
+  typedef std::vector<size_t> block;
+  block low{0, tr0_upper * k_ord};
+  block up{tr0_upper, tr0_upper * (k_ord + 1)};
+
+  TA::DistArray<Tile, Policy> result;
+  result("i, j") = M("i, j").block(low, up);
+  return result;
 }
 
 }  // namespace detail

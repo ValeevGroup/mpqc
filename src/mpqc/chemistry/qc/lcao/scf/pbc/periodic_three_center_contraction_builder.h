@@ -177,8 +177,8 @@ class PeriodicThreeCenterContractionBuilder
           libint2::BraKet::xs_xx);
     }
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     const auto &Dnorm = D_repl.shape().data();
     auto task_id = 0ul;
@@ -469,7 +469,7 @@ class PeriodicThreeCenterContractionBuilder
     trange1_aux_ = aux_basis_->create_trange1();
     auto &world = this->get_world();
 
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::make_screener;

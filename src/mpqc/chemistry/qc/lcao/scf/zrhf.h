@@ -13,6 +13,9 @@
 #include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 
+// constant: imaginary unit i
+const std::complex<double> I(0.0, 1.0);
+
 namespace mpqc {
 namespace lcao {
 
@@ -66,6 +69,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    *    "print_detail": true,
    *    "max_condition_num": 1e8,
    *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
    *    "k_points": [1, 1, 11]
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
@@ -230,6 +235,8 @@ class DFzRHF : public zRHF<Tile, Policy> {
    *    "print_detail": true,
    *    "max_condition_num": 1e8,
    *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
    *    "k_points": [1, 1, 11]
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
@@ -268,6 +275,8 @@ class FourCenterzRHF : public zRHF<Tile, Policy> {
    *    "print_detail": true,
    *    "max_condition_num": 1e8,
    *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
    *    "k_points": [1, 1, 11]
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
@@ -309,6 +318,8 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
    *    "max_condition_num": 1e8,
    *    "print_max_item": 100,
    *    "force_shape_threshold": 1e-10,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
    *    "k_points": [1, 1, 11]
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
@@ -352,6 +363,8 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
    *    "max_condition_num": 1e8,
    *    "print_max_item": 100,
    *    "force_shape_threshold": 1e-10,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
    *    "k_points": [1, 1, 11]
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~

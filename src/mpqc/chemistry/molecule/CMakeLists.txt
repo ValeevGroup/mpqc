@@ -24,8 +24,10 @@ linkage.h
 molecule_fwd.h
 molecule.cpp
 molecule.h
-unit_cell.h
-unit_cell.cpp
+lattice/unit_cell.h
+lattice/unit_cell.cpp
+lattice/util.h
+lattice/util.cpp
 )
 
 add_mpqc_library(molecule sources sources "MPQCutil_mad;MPQCunits" "mpqc/chemistry/molecule")

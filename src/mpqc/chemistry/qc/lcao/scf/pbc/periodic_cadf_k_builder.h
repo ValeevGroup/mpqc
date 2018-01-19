@@ -3,7 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 
@@ -249,10 +249,6 @@ class PeriodicCADFKBuilder
     auto &world = this->get_world();
 
     auto t0_k = mpqc::fenced_now(world);
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
 
     array_type K;
 
@@ -376,8 +372,8 @@ class PeriodicCADFKBuilder
     std::unordered_set<SigPair, boost::hash<SigPair>> Y_nu;
     Y_nu.reserve(ntiles_Y * ntiles_nu);
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     // determine Y-ν pairs that are necessary to compute in F(Y_Ry, μ_0, ν_Rν)
     for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
@@ -482,9 +478,9 @@ class PeriodicCADFKBuilder
     world.gop.fence();  // must wait till all replicating is finished
 
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     const auto Dnorms = D_repl.shape().data();
     auto task_id = 0ul;
@@ -769,8 +765,8 @@ class PeriodicCADFKBuilder
     const auto me = world.rank();
     const auto nproc = world.nproc();
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     auto task_id = 0ul;
     for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
@@ -969,10 +965,10 @@ class PeriodicCADFKBuilder
     M_repl.make_replicated();
     world.gop.fence();  // must wait till all replicating is finished
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    auto task_id = 0ul;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
+    auto task_id = 0ul;
     for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
       const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
       for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
@@ -1542,8 +1538,8 @@ class PeriodicCADFKBuilder
     ExEnv::out0() << "\tUser specified lattice range = " << RD_max.transpose()
                   << std::endl;
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     const auto &Dnorms = D.shape().data();
     std::vector<Vector3i> sig_density_uc_list;
@@ -1594,8 +1590,8 @@ class PeriodicCADFKBuilder
       ExEnv::out0() << "\nUpdating RD-dependent variables:" << std::endl;
     }
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_ord_idx;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     auto &world = this->get_world();
     time_point t0, t1;

@@ -82,12 +82,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
         << std::endl;
     auto t0 = mpqc::fenced_now(world);
     using Builder = scf::PeriodicTwoCenterBuilder<Tile, Policy>;
-    auto basis =
-        this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
-    auto shell_pair_threshold = ao_factory.shell_pair_threshold();
-    auto two_center_builder = std::make_unique<Builder>(
-        world, basis, std::make_shared<const UnitCell>(unitcell), dcell_,
-        R_max_, RJ_max_, R_size_, RJ_size_, shell_pair_threshold);
+    auto two_center_builder = std::make_unique<Builder>(ao_factory);
     V_ = two_center_builder->eval(Operator::Type::Nuclear);
     auto t1 = mpqc::fenced_now(world);
     auto dur = mpqc::duration_in_s(t0, t1);

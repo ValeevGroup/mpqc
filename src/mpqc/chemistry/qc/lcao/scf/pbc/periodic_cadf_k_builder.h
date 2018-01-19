@@ -3,7 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 
@@ -374,6 +374,7 @@ class PeriodicCADFKBuilder
 
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
 
     // determine Y-ν pairs that are necessary to compute in F(Y_Ry, μ_0, ν_Rν)
     for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
@@ -481,6 +482,7 @@ class PeriodicCADFKBuilder
     using ::mpqc::detail::direct_vector;
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
 
     const auto Dnorms = D_repl.shape().data();
     auto task_id = 0ul;
@@ -767,6 +769,7 @@ class PeriodicCADFKBuilder
 
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
 
     auto task_id = 0ul;
     for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
@@ -967,6 +970,7 @@ class PeriodicCADFKBuilder
 
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
 
     auto task_id = 0ul;
     for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
@@ -1429,99 +1433,6 @@ class PeriodicCADFKBuilder
         }
       }
     }
-  }
-
-  /*!
-   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
-   * form a non-negligible pair if they share a center or the Frobenius norm of
-   * their overlap is greater than threshold
-   * \param basis1 a basis
-   * \param basis2 a basis
-   * \param threshold
-   *
-   * \return a list of pairs with
-   * key: shell index
-   * mapped value: a vector of shell indices
-   */
-  shellpair_list_t parallel_compute_shellpair_list(
-      const Basis &basis1, const Basis &basis2,
-      double threshold = 1e-12) const {
-    using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
-    // initialize engine
-    auto engine_pool = make_engine_pool(
-        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
-        libint2::BraKet::x_x);
-
-    auto &world = this->get_world();
-    shellpair_list_t result;
-
-    const auto &shv1 = basis1.flattened_shells();
-    const auto &shv2 = basis2.flattened_shells();
-    const auto nsh1 = shv1.size();
-    const auto nsh2 = shv2.size();
-
-    result.reserve(nsh1);
-
-    auto compute = [&](size_t input_s1) {
-
-      auto n1 = shv1[input_s1].size();
-      const auto engine_precision = target_precision_;
-      auto engine = engine_pool->local();
-      engine.set_precision(engine_precision);
-      const auto &buf = engine.results();
-
-      for (auto s2 = 0ul; s2 != nsh2; ++s2) {
-        auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
-        bool significant = on_same_center;
-        if (!on_same_center) {
-          auto n2 = shv2[s2].size();
-          engine.compute1(shv1[input_s1], shv2[s2]);
-          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
-          auto norm = buf_mat.norm();
-          significant = (norm >= threshold);
-        }
-
-        if (significant) {
-          result[input_s1].emplace_back(s2);
-        }
-      }
-    };
-
-    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
-      result.emplace_back(std::vector<size_t>());
-      world.taskq.add(compute, s1);
-    }
-    world.gop.fence();
-
-    engine_pool.reset();
-
-    // resort shell list in increasing order
-    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
-      auto &list = result[s1];
-      std::sort(list.begin(), list.end());
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This determines if a unit cell is included by the give lattice range
-   * \param in_idx 3D index of a unit cell
-   * \param range lattice range
-   * \param center center of \range
-   * \return
-   */
-  bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
-                           Vector3i const &center = {0, 0, 0}) {
-    if (in_idx(0) <= center(0) + range(0) &&
-        in_idx(0) >= center(0) - range(0) &&
-        in_idx(1) <= center(1) + range(1) &&
-        in_idx(1) >= center(1) - range(1) &&
-        in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
-      return true;
-    else
-      return false;
   }
 
   /*!

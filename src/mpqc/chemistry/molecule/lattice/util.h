@@ -97,6 +97,16 @@ Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max);
 std::shared_ptr<Molecule> shift_mol_origin(Molecule const &mol,
                                            Vector3d const &shift);
 
+/*!
+ * \brief This determines if a unit cell is included by the give lattice range
+ * \param in_idx 3D index of a unit cell
+ * \param range lattice range
+ * \param center center of \range
+ * \return
+ */
+bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
+                         Vector3i const &center = {0, 0, 0});
+
 }  // namespace detail
 }  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LATTICE_UTIL_H_

@@ -9,7 +9,7 @@
 
 #include "mpqc/chemistry/molecule/lattice/unit_cell.h"
 #include "mpqc/chemistry/molecule/lattice/util.h"
-#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"

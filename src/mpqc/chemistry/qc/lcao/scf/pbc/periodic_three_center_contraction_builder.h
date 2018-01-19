@@ -157,8 +157,9 @@ class PeriodicThreeCenterContractionBuilder
     auto ntiles = basis0_->nclusters();
 
     // make shell block norm of D
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
+    Vector3d zero_shift_base(0.0, 0.0, 0.0);
     auto basis1 =
         shift_basis_origin(*basis0_, zero_shift_base, RD_max_, dcell_);
     auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basis1, D_repl);
@@ -179,6 +180,7 @@ class PeriodicThreeCenterContractionBuilder
 
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
 
     const auto &Dnorm = D_repl.shape().data();
     auto task_id = 0ul;
@@ -471,6 +473,7 @@ class PeriodicThreeCenterContractionBuilder
 
     using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::detail::compute_shell_offset;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::make_screener;
 
@@ -595,6 +598,8 @@ class PeriodicThreeCenterContractionBuilder
     assert(norm_D01_ptr != nullptr);
 
     const auto nbf_aux_per_uc = basis_aux->nfunctions();
+
+    using ::mpqc::lcao::gaussian::detail::compute_func_offset_list;
 
     // compute contributions to all result matrices
     {
@@ -748,6 +753,8 @@ class PeriodicThreeCenterContractionBuilder
 
     const auto nbf_aux_per_uc = basis_aux->nfunctions();
 
+    using ::mpqc::lcao::gaussian::detail::compute_func_offset_list;
+
     // TODO: check the sparsity of X. Will screening (X|mu) M_X be useful?
     {
       // index of first shell in this cluster
@@ -857,276 +864,6 @@ class PeriodicThreeCenterContractionBuilder
     }
   }
 
-  /*!
-   * \brief This computes shell-block norm of density matrix \c D
-   * \param bs Basis
-   * \param D density matrix
-   * \return
-   */
-  array_type compute_shellblock_norm(const Basis &bs0, const Basis &bs1,
-                                     const array_type &D) const {
-    auto &world = this->get_world();
-    // make trange1
-    auto make_shblk_trange1 = [](const Basis &bs) {
-      const auto &shells_Vec = bs.cluster_shells();
-      auto blocking = std::vector<int64_t>{0};
-      for (const auto &shells : shells_Vec) {
-        const auto nshell = shells.size();
-        auto next = blocking.back() + nshell;
-        blocking.emplace_back(next);
-      }
-      return TA::TiledRange1(blocking.begin(), blocking.end());
-    };
-
-    const auto tr0 = make_shblk_trange1(bs0);
-    const auto tr1 = make_shblk_trange1(bs1);
-
-    auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
-    // compute shell block norms
-    const auto shells0 = bs0.flattened_shells();
-    const auto shells1 = bs1.flattened_shells();
-    const auto nshell0 = shells0.size();
-    const auto nshell1 = shells1.size();
-    RowMatrixXd norm_D(nshell0, nshell1);
-    for (auto sh0 = 0, sh0_first = 0; sh0 != nshell0; ++sh0) {
-      const auto sh0_size = shells0[sh0].size();
-      for (auto sh1 = 0, sh1_first = 0; sh1 != nshell1; ++sh1) {
-        const auto sh1_size = shells1[sh1].size();
-
-        norm_D(sh0, sh1) = eig_D.block(sh0_first, sh1_first, sh0_size, sh1_size)
-                               .template lpNorm<Eigen::Infinity>();
-
-        sh1_first += sh1_size;
-      }
-
-      sh0_first += sh0_size;
-    }
-
-    return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
-  }
-
-  /*!
-   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
-   * form a non-negligible pair if they share a center or the Frobenius norm of
-   * their overlap is greater than threshold
-   * \param basis1 a basis
-   * \param basis2 a basis
-   * \param threshold
-   *
-   * \return a list of pairs with
-   * key: shell index
-   * mapped value: a vector of shell indices
-   */
-  shellpair_list_t parallel_compute_shellpair_list(
-      const Basis &basis1, const Basis &basis2,
-      double threshold = 1e-12) const {
-    using ::mpqc::lcao::gaussian::make_engine_pool;
-    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
-    // initialize engine
-    auto engine_pool = make_engine_pool(
-        libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
-        libint2::BraKet::x_x);
-
-    auto &world = this->get_world();
-    shellpair_list_t result;
-
-    const auto &shv1 = basis1.flattened_shells();
-    const auto &shv2 = basis2.flattened_shells();
-    const auto nsh1 = shv1.size();
-    const auto nsh2 = shv2.size();
-
-    result.reserve(nsh1);
-
-    auto compute = [&](size_t input_s1) {
-
-      auto n1 = shv1[input_s1].size();
-      const auto engine_precision = target_precision_;
-      auto engine = engine_pool->local();
-      engine.set_precision(engine_precision);
-      const auto &buf = engine.results();
-
-      for (auto s2 = 0ul; s2 != nsh2; ++s2) {
-        auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
-        bool significant = on_same_center;
-        if (!on_same_center) {
-          auto n2 = shv2[s2].size();
-          engine.compute1(shv1[input_s1], shv2[s2]);
-          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
-          auto norm = buf_mat.norm();
-          significant = (norm >= threshold);
-        }
-
-        if (significant) {
-          result[input_s1].emplace_back(s2);
-        }
-      }
-    };
-
-    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
-      result.emplace_back(std::vector<size_t>());
-      world.taskq.add(compute, s1);
-    }
-    world.gop.fence();
-
-    engine_pool.reset();
-
-    // resort shell list in increasing order
-    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
-      auto &list = result[s1];
-      std::sort(list.begin(), list.end());
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
-   * form a non-negligible pair if they share a center or the Frobenius norm of
-   * their overlap isgreater than threshold
-   * \param shv1 a cluster (a.k.a. std::vector<Shell>)
-   * \param shv2 a cluster (a.k.a. std::vector<Shell>)
-   * \param threshold
-   *
-   * \return a list of pairs with
-   * key: shell index
-   * mapped value: a vector of shell indices
-   */
-  shellpair_list_t compute_shellpair_list(
-      const ShellVec &shv1,
-      const ShellVec &_shv2 = std::vector<Shell>({Shell()}),
-      double threshold = 1e-12) const {
-    const ShellVec &shv2 =
-        ((_shv2.size() == 1 && _shv2[0] == Shell()) ? shv1 : _shv2);
-    const auto nsh1 = shv1.size();
-    const auto nsh2 = shv2.size();
-    const auto shv1_equiv_shv2 = (&shv1 == &shv2);
-
-    // determine max # of primitives in a shell cluster
-    auto max_nprim = [](const ShellVec &shv) {
-      size_t n = 0;
-      for (auto shell : shv) n = std::max(shell.nprim(), n);
-      return n;
-    };
-    const auto max_nprim_1 = max_nprim(shv1);
-    const auto max_nprim_2 = max_nprim(shv2);
-
-    // determine max angular momentum of a shell cluster
-    auto max_l = [](const ShellVec &shv) {
-      int l = 0;
-      for (auto shell : shv)
-        for (auto c : shell.contr) l = std::max(c.l, l);
-      return l;
-    };
-    const auto max_l_1 = max_l(shv1);
-    const auto max_l_2 = max_l(shv2);
-
-    // initialize libint2 engine
-    auto engine = libint2::Engine(libint2::Operator::overlap,
-                                  std::max(max_nprim_1, max_nprim_2),
-                                  std::max(max_l_1, max_l_2), 0);
-    const auto &buf = engine.results();
-    shellpair_list_t result;
-
-    // compute non-negligible shell-pair list
-    for (auto s1 = 0l, s12 = 0l; s1 != nsh1; ++s1) {
-      result.emplace_back(std::vector<size_t>());
-      auto n1 = shv1[s1].size();
-
-      auto s2_max = shv1_equiv_shv2 ? s1 : nsh2 - 1;
-      for (auto s2 = 0l; s2 <= s2_max; ++s2, ++s12) {
-        auto on_same_center = (shv1[s1].O == shv2[s2].O);
-        bool significant = on_same_center;
-        if (!on_same_center) {
-          auto n2 = shv2[s2].size();
-          engine.compute(shv1[s1], shv2[s2]);
-          Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
-          auto norm = buf_mat.norm();
-          significant = (norm >= threshold);
-        }
-
-        if (significant) result[s1].emplace_back(s2);
-      }
-    }
-
-    // resort shell list in increasing order
-    for (auto s1 = 0l; s1 != nsh1; ++s1) {
-      auto &list = result[s1];
-      std::sort(list.begin(), list.end());
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This computes basis function offsets for every shell in a cluster
-   * \param cluster a cluster (a.k.a. std::vector<Shell>)
-   * \param bf_first basis function index of the first function in this \c
-   * cluster
-   *
-   * \return a list of <key, mapped value> pairs with
-   * key: shell index
-   * mapped value: {cluster function offset, basis function offset} tuple
-   */
-  func_offset_list compute_func_offset_list(const ShellVec &cluster,
-                                            const size_t bf_first) const {
-    func_offset_list result;
-
-    auto cf_offset = 0;
-    auto bf_offset = bf_first;
-
-    const auto nshell = cluster.size();
-    for (auto s = 0; s != nshell; ++s) {
-      const auto &shell = cluster[s];
-      const auto nf = shell.size();
-      result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
-      bf_offset += nf;
-      cf_offset += nf;
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This computes shell offsets for every cluster in a basis
-   * \param basis
-   * \return a list of <key, mapped value> pairs with
-   * key: cluster index
-   * mapped value: index of first shell in a cluster
-   */
-  std::unordered_map<size_t, size_t> compute_shell_offset(
-      const Basis &basis) const {
-    std::unordered_map<size_t, size_t> result;
-
-    auto shell_offset = 0;
-    const auto &cluster_shells = basis.cluster_shells();
-    const auto nclusters = cluster_shells.size();
-    for (auto c = 0; c != nclusters; ++c) {
-      const auto nshells = cluster_shells[c].size();
-      result.insert(std::make_pair(c, shell_offset));
-      shell_offset += nshells;
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This determines if a unit cell is included by the give lattice range
-   * \param in_idx 3D index of a unit cell
-   * \param range lattice range
-   * \param center center of \range
-   * \return
-   */
-  bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
-                           Vector3i const &center = {0, 0, 0}) const {
-    if (in_idx(0) <= center(0) + range(0) &&
-        in_idx(0) >= center(0) - range(0) &&
-        in_idx(1) <= center(1) + range(1) &&
-        in_idx(1) >= center(1) - range(1) &&
-        in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
-      return true;
-    else
-      return false;
-  }
 };
 
 }  // namespace scf

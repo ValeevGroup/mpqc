@@ -569,17 +569,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   using ::mpqc::detail::direct_3D_idx;
   using ::mpqc::detail::direct_ord_idx;
-  auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
-                                Vector3i const &center) {
-    if (in_idx(0) <= center(0) + range(0) &&
-        in_idx(0) >= center(0) - range(0) &&
-        in_idx(1) <= center(1) + range(1) &&
-        in_idx(1) >= center(1) - range(1) &&
-        in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
-      return true;
-    else
-      return false;
-  };
+  using ::mpqc::detail::is_in_lattice_range;
 
   for (auto i = 0ul; i < natoms0; ++i) {
     const auto uc0_ord = i / natoms_per_uc;

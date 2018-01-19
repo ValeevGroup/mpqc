@@ -96,5 +96,22 @@ std::shared_ptr<Molecule> shift_mol_origin(Molecule const &mol,
   return result_ptr;
 }
 
+/*!
+ * \brief This determines if a unit cell is included by the give lattice range
+ * \param in_idx 3D index of a unit cell
+ * \param range lattice range
+ * \param center center of \range
+ * \return
+ */
+bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
+                         Vector3i const &center) {
+  if (in_idx(0) <= center(0) + range(0) && in_idx(0) >= center(0) - range(0) &&
+      in_idx(1) <= center(1) + range(1) && in_idx(1) >= center(1) - range(1) &&
+      in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
+    return true;
+  else
+    return false;
+}
+
 }  // namespace detail
 }  // namespace mpqc

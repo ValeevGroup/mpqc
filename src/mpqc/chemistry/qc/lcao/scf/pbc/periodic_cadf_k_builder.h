@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 #include "mpqc/chemistry/qc/lcao/basis/util.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
@@ -263,6 +264,8 @@ class PeriodicCADFKBuilder
     // Update lattice range of density representation
     ExEnv::out0() << "\nTruncating lattice range of density representation\n";
     Vector3i old_RD_max = truncated_RD_max_;
+
+    using ::mpqc::pbc::detail::truncate_lattice_range;
     truncated_RD_max_ = truncate_lattice_range(D, RD_max_, density_threshold_);
     // Update RD-dependent variables if RD_max is changed
     if (truncated_RD_max_ != old_RD_max) {
@@ -1433,63 +1436,6 @@ class PeriodicCADFKBuilder
         }
       }
     }
-  }
-
-  /*!
-   * \brief This truncates lattice range of an array D(μ, ν_R). If norms of all
-   * tiles within a unit cell are below \c threshold, this unit cell will be
-   * removed and the array size is shrinked.
-   * \param D Tiled array object
-   * \param RD_max the original lattice range of the input array
-   * \param threshold
-   * \return the updated lattice range
-   */
-  Vector3i truncate_lattice_range(const array_type &D, const Vector3i &RD_max,
-                                  const double threshold) {
-    ExEnv::out0() << "\tUser specified lattice range = " << RD_max.transpose()
-                  << std::endl;
-
-    using ::mpqc::detail::direct_3D_idx;
-    using ::mpqc::detail::direct_ord_idx;
-
-    const auto &Dnorms = D.shape().data();
-    std::vector<Vector3i> sig_density_uc_list;
-    const auto RD_size = 1 + direct_ord_idx(RD_max, RD_max);
-
-    // determine significant unit cells
-    for (auto RD_ord = 0ul; RD_ord != RD_size; ++RD_ord) {
-      const auto RD_3D = direct_3D_idx(RD_ord, RD_max);
-      auto is_significant = false;
-      for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
-        for (auto nu = 0ul; nu != ntiles_per_uc_; ++nu) {
-          const auto nu_in_D = nu + RD_ord * ntiles_per_uc_;
-          std::array<size_t, 2> idx{{mu, nu_in_D}};
-          if (Dnorms(idx) >= threshold) {
-            is_significant = true;
-            sig_density_uc_list.emplace_back(RD_3D);
-            break;
-          }
-        }
-        if (is_significant) {
-          break;
-        }
-      }
-    }
-
-    // renew lattice range based on the list of significant unit cells
-    auto x = 0;
-    auto y = 0;
-    auto z = 0;
-    for (const auto &RD_3D : sig_density_uc_list) {
-      x = std::max(x, RD_3D(0));
-      y = std::max(y, RD_3D(1));
-      z = std::max(z, RD_3D(2));
-    }
-    Vector3i new_RD_max = {x, y, z};
-    ExEnv::out0() << "\tUpdated lattice range = " << new_RD_max.transpose()
-                  << std::endl;
-
-    return new_RD_max;
   }
 
   /*!

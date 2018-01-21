@@ -5,6 +5,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
 #include "mpqc/math/external/tiledarray/util.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 #include <mutex>
 
@@ -867,20 +868,35 @@ class PeriodicFourCenterFockBuilder
     const auto nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
+    auto t0 = mpqc::fenced_now(compute_world);
+
     // Copy D and make it replicated.
     array_type D_repl;
     D_repl("i,j") = D("i,j");
     D_repl.make_replicated();
     compute_world.gop.fence();
 
-    repl_pmap_D_ = D_repl.pmap();
-    trange_D_ = D_repl.trange();
-
     // # of tiles per unit cell
     assert(bra_basis_ == ket_basis_);
     auto ntiles = bra_basis_->nclusters();
 
-    auto t0 = mpqc::fenced_now(compute_world);
+    // Update lattice range of density representation
+    ExEnv::out0() << "\nTruncating lattice range of density representation\n";
+    Vector3i old_RD_max = truncated_RD_max_;
+
+    using ::mpqc::pbc::detail::truncate_lattice_range;
+    truncated_RD_max_ = truncate_lattice_range(D_repl, RD_max_, density_threshold_);
+    // Update RD-dependent variables if RD_max is changed
+    if (truncated_RD_max_ != old_RD_max) {
+      ExEnv::out0() << "\nLattice range of density representation is changed. "
+                       "Update RD-dependent variables!"
+                    << std::endl;
+      update_RD_dependent_variables(truncated_RD_max_);
+    } else {
+      ExEnv::out0() << "\nLattice range of density representation is not "
+                       "changed. No need to update RD-dependent variables!"
+                    << std::endl;
+    }
 
     // make shell block norm of D
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -915,10 +931,10 @@ class PeriodicFourCenterFockBuilder
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
         const auto R2p1_3D = R2_3D - R1_3D;
-        const auto uc_ord_D02 = is_in_lattice_range(R2_3D, RD_max_)
+        const auto uc_ord_D02 = is_in_lattice_range(R2_3D, truncated_RD_max_)
                                     ? direct_ord_idx(R2_3D, RD_max_)
                                     : -1;
-        const auto uc_ord_D12 = is_in_lattice_range(R2p1_3D, RD_max_)
+        const auto uc_ord_D12 = is_in_lattice_range(R2p1_3D, truncated_RD_max_)
                                     ? direct_ord_idx(R2p1_3D, RD_max_)
                                     : -1;
         const auto uc_ord_F02 = is_in_lattice_range(R2_3D, RF_max_)
@@ -932,10 +948,10 @@ class PeriodicFourCenterFockBuilder
           const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
           const auto R2p3_3D = R2_3D + R3_3D;
           const auto R2p3m1_3D = R2p3_3D - R1_3D;
-          const auto uc_ord_D03 = is_in_lattice_range(R2p3_3D, RD_max_)
+          const auto uc_ord_D03 = is_in_lattice_range(R2p3_3D, truncated_RD_max_)
                                       ? direct_ord_idx(R2p3_3D, RD_max_)
                                       : -1;
-          const auto uc_ord_D13 = is_in_lattice_range(R2p3m1_3D, RD_max_)
+          const auto uc_ord_D13 = is_in_lattice_range(R2p3m1_3D, truncated_RD_max_)
                                       ? direct_ord_idx(R2p3m1_3D, RD_max_)
                                       : -1;
           const auto uc_ord_F03 = is_in_lattice_range(R2p3_3D, RF_max_)
@@ -1074,7 +1090,7 @@ class PeriodicFourCenterFockBuilder
     ExEnv::out0() << std::endl;
 
     const auto ntiles1_fock = trange_fock_.dim(1).tile_extent();
-    if (repl_pmap_D_->is_replicated() && compute_world.size() > 1) {
+    if (D_repl.pmap()->is_replicated() && compute_world.size() > 1) {
       for (const auto &local_tile : local_fock_tiles_) {
         const auto ij = local_tile.first;
         const auto proc01 = dist_pmap_fock_->owner(ij);
@@ -1237,6 +1253,8 @@ class PeriodicFourCenterFockBuilder
   mutable std::vector<std::shared_ptr<Basis>> basis_Rrho_;
   mutable std::vector<std::shared_ptr<Basis>> basis_Rsigma_;
   mutable Vector3i RF_max_;
+  mutable Vector3i truncated_RD_max_;
+  mutable Vector3i truncated_RD_size_;
 
   void init() {
     assert(bra_basis_->nclusters() == ket_basis_->nclusters());
@@ -1596,7 +1614,6 @@ class PeriodicFourCenterFockBuilder
     ntiles_per_uc_ = bra_basis_->nclusters();
     auto &world = this->get_world();
 
-    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shell_offset;
     using ::mpqc::lcao::gaussian::make_engine_pool;
@@ -1604,13 +1621,9 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::detail::direct_ord_idx;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
-    // locate the ordinal index of the reference lattice in R, RJ, and RD
-    // vectors
+    // locate the ordinal index of the reference lattice in R vectors
     assert(R_size_ > 0 && R_size_ % 2 == 1);
-    assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
-    assert(RD_size_ > 0 && RD_size_ % 2 == 1);
     ref_R_ord_ = (R_size_ - 1) / 2;
-    ref_RD_ord_ = (RD_size_ - 1) / 2;
 
     // make compound basis set for ν_R in |μ_0 ν_R)
     // note that ν_R only contains half basis functions of |μ_R> (R >= 0)
@@ -1626,11 +1639,6 @@ class PeriodicFourCenterFockBuilder
     sig_shpair_list_ =
         parallel_compute_shellpair_list(world, basis0, basisR, shell_pair_threshold_, eng_precision);
 
-    // renew lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    Rrho_max_ = R_max_ + RD_max_;
-    Rrho_size_ = direct_ord_idx(Rrho_max_, Rrho_max_) + 1;
-    ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
-
     // create a TiledRange for four-center ERIs
     trange_eri4_ = ::mpqc::lcao::gaussian::detail::create_trange(
         BasisVector{{basis0, basisR, basis0, basisR}});
@@ -1639,15 +1647,6 @@ class PeriodicFourCenterFockBuilder
     // for a given cluster
     basis0_shell_offset_map_ = compute_shell_offset(basis0);
     basisR_shell_offset_map_ = compute_shell_offset(basisR);
-
-    // make basisRJ_ and basisRD_
-    for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord < Rrho_size_; ++Rrho_ord) {
-      auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
-      // make compound basis sets for ket0 and ket1
-      basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
-      basis_Rsigma_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
-    }
 
     // initialize screener
     if (screen_ == "schwarz") {
@@ -1664,16 +1663,9 @@ class PeriodicFourCenterFockBuilder
       throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
     }
 
-    // make TiledRange of Fock using initial full basisR
-    {
-      RF_max_ = RD_max_ + 2 * R_max_;
-      auto full_basisR =
-          shift_basis_origin(*bra_basis_, zero_shift_base, RF_max_, dcell_);
-      trange_fock_ = ::mpqc::lcao::gaussian::detail::create_trange(
-          BasisVector{{basis0, *full_basisR}});
-      const auto tvolume = trange_fock_.tiles_range().volume();
-      dist_pmap_fock_ = Policy::default_pmap(world, tvolume);
-    }
+    truncated_RD_max_ = RD_max_;  // make them equal for initialization
+    // do not forget to update RD-dependent variables
+    update_RD_dependent_variables(truncated_RD_max_);
   }
 
   void accumulate_global_task(Tile arg_tile, long tile01) {
@@ -3120,6 +3112,47 @@ class PeriodicFourCenterFockBuilder
     F_symm.truncate();
     return F_symm;
   }
+
+  /*!
+   * \brief This updates RD-dependent variables
+   * \param RD_max
+   */
+  void update_RD_dependent_variables(const Vector3i &RD_max) const {
+    auto &world = this->get_world();
+
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+
+    // renew lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
+    Rrho_max_ = R_max_ + RD_max;
+    Rrho_size_ = direct_ord_idx(Rrho_max_, Rrho_max_) + 1;
+    ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
+
+    // make basis ρ and basis σ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
+    for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord < Rrho_size_; ++Rrho_ord) {
+      auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
+      // make compound basis sets for ket0 and ket1
+      basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
+      basis_Rsigma_.emplace_back(
+          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
+    }
+
+    // make TiledRange of Fock using initial full basisR
+    {
+      RF_max_ = RD_max + 2 * R_max_;
+      Vector3d zero_shift_base(0.0, 0.0, 0.0);
+      const auto basis0 = *bra_basis_;
+      auto full_basisR =
+          shift_basis_origin(basis0, zero_shift_base, RF_max_, dcell_);
+      trange_fock_ = ::mpqc::lcao::gaussian::detail::create_trange(
+          BasisVector{{basis0, *full_basisR}});
+      const auto tvolume = trange_fock_.tiles_range().volume();
+      dist_pmap_fock_ = Policy::default_pmap(world, tvolume);
+    }
+
+  }
+
 };
 
 }  // namespace scf

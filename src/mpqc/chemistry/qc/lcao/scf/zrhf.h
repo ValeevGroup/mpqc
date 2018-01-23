@@ -56,6 +56,12 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
    * | fock_mixing | double | 0.0 | mixing of Fock matrices in reciprocal space |
    * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
+   * | diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
+   * | diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
+   * | diis_damping | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
+   * | diis_mixing | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
+   * | diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
+   * | diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
    *
    * example input:
    *
@@ -168,7 +174,14 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   int64_t maxiter_;
   double max_condition_num_;
   double fmix_;
+
   std::string diis_;
+  unsigned int diis_start_;
+  unsigned int diis_num_vecs_;
+  double diis_damping_;
+  double diis_mixing_;
+  unsigned int diis_num_iters_group_;
+  unsigned int diis_num_extrap_group_;
 
   Vector3i R_max_;
   Vector3i RJ_max_;

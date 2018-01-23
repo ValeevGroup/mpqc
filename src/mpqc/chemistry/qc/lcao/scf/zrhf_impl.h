@@ -34,7 +34,14 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   print_max_item_ = kv.value<int64_t>("print_max_item", 100);
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
   fmix_ = kv.value<double>("fock_mixing", 0.0);
+
   diis_ = kv.value<std::string>("diis", "none");
+  diis_start_ = kv.value<unsigned int>("diis_start", 1);
+  diis_num_vecs_ = kv.value<unsigned int>("diis_num_vecs", 5);
+  diis_damping_ = kv.value<double>("diis_damping", 0.0);
+  diis_mixing_ = kv.value<double>("diis_mixing", 0.0);
+  diis_num_iters_group_ = kv.value<unsigned int>("diis_num_iters_group", 1);
+  diis_num_extrap_group_ = kv.value<unsigned int>("diis_num_extrap_group", 1);
 
   auto& ao_factory = this->ao_factory();
   // retrieve world from periodic ao_factory
@@ -90,7 +97,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   }
 
   S_ = ao_factory.compute(L"<κ|λ>");  // Overlap in real space
-  Sk_ = transform_real2recip(S_);  // Overlap in reciprocal space
+  Sk_ = transform_real2recip(S_);     // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -135,7 +142,12 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   ExEnv::out0() << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
-  TiledArray::DIIS<array_type_z> diis_gamma_point, diis_allk;
+  TiledArray::DIIS<array_type_z> diis_gamma_point(
+      diis_start_, diis_num_vecs_, diis_damping_, diis_num_iters_group_,
+      diis_num_extrap_group_, diis_mixing_);
+  TiledArray::DIIS<array_type_z> diis_allk(
+      diis_start_, diis_num_vecs_, diis_damping_, diis_num_iters_group_,
+      diis_num_extrap_group_, diis_mixing_);
 
   do {
     auto iter_start = mpqc::fenced_now(world);
@@ -182,11 +194,15 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
         const auto param_computed = diis_gamma_point.parameters_computed();
 
-        using EigenVectorX = typename TiledArray::DIIS<array_type_z>::EigenVectorX;
+        using EigenVectorX =
+            typename TiledArray::DIIS<array_type_z>::EigenVectorX;
 
         auto diis_coeffs = EigenVectorX();
         unsigned int diis_nskip = 0;
         auto F_allk_diis = Fk_;
+        if (iter == 0) {
+          diis_allk.reinitialize(&F_allk_diis);
+        }
         if (!param_computed) {
           diis_allk.extrapolate(F_allk_diis, diis_coeffs, diis_nskip, true);
         } else {

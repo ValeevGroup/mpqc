@@ -132,8 +132,16 @@ template <typename Tile, typename Policy>
 double dot_product(TA::DistArray<Tile, Policy> const &L,
                    TA::DistArray<Tile, Policy> const &R,
                    Vector3i const &L_range, Vector3i const &R_range) {
-  double result;
 
+  using ::mpqc::detail::direct_ord_idx;
+  auto L_size = 1 + direct_ord_idx(L_range, L_range);
+  auto R_size = 1 + direct_ord_idx(R_range, R_range);
+  auto L_tiles_range = L.trange().tiles_range();
+  auto R_tiles_range = R.trange().tiles_range();
+  assert(L_tiles_range.extent(1) == L_tiles_range.extent(0) * L_size);
+  assert(R_tiles_range.extent(1) == R_tiles_range.extent(0) * R_size);
+
+  double result;
   if (L_range == R_range) {
     result = L("m, n") * R("m, n");
   } else if (L_range(0) <= R_range(0) && L_range(1) <= R_range(1) &&
@@ -144,9 +152,15 @@ double dot_product(TA::DistArray<Tile, Policy> const &L,
              L_range(2) >= R_range(2)) {
     auto reduced_L = reduced_size_array(L, L_range, R_range);
     result = reduced_L("m, n") * R("m, n");
-  } else
-    throw "invalid lattice ranges";
-
+  } else {
+    auto x = std::min(L_range(0), R_range(0));
+    auto y = std::min(L_range(1), R_range(1));
+    auto z = std::min(L_range(2), R_range(2));
+    Vector3i min_range(x, y, z);
+    auto reduced_L = reduced_size_array(L, L_range, min_range);
+    auto reduced_R = reduced_size_array(R, R_range, min_range);
+    result = reduced_L("m, n") * reduced_R("m, n");
+  }
   return result;
 }
 
@@ -168,6 +182,14 @@ TA::DistArray<Tile, Policy> add(TA::DistArray<Tile, Policy> const &L,
                                 Vector3i const &R_range,
                                 const double preL = 1.0,
                                 const double preR = 1.0) {
+  using ::mpqc::detail::direct_ord_idx;
+  auto L_size = 1 + direct_ord_idx(L_range, L_range);
+  auto R_size = 1 + direct_ord_idx(R_range, R_range);
+  auto L_tiles_range = L.trange().tiles_range();
+  auto R_tiles_range = R.trange().tiles_range();
+  assert(L_tiles_range.extent(1) == L_tiles_range.extent(0) * L_size);
+  assert(R_tiles_range.extent(1) == R_tiles_range.extent(0) * R_size);
+
   TA::DistArray<Tile, Policy> result;
   if (L_range == R_range) {
     result("m, n") = preL * L("m, n") + preR * R("m, n");
@@ -180,7 +202,13 @@ TA::DistArray<Tile, Policy> add(TA::DistArray<Tile, Policy> const &L,
     auto enlarged_R = enlarged_size_array(R, R_range, L_range);
     result("m, n") = preL * L("m, n") + preR * enlarged_R("m, n");
   } else {
-    throw "invalid lattice ranges";
+    auto x = std::max(L_range(0), R_range(0));
+    auto y = std::max(L_range(1), R_range(1));
+    auto z = std::max(L_range(2), R_range(2));
+    Vector3i max_range(x, y, z);
+    auto enlarged_L = enlarged_size_array(L, L_range, max_range);
+    auto enlarged_R = enlarged_size_array(R, R_range, max_range);
+    result("m, n") = preL * enlarged_L("m, n") + preR * enlarged_R("m, n");
   }
 
   return result;

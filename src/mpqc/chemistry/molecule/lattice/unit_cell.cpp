@@ -1,8 +1,8 @@
-#include "mpqc/chemistry/molecule/unit_cell.h"
+#include "mpqc/chemistry/molecule/lattice/unit_cell.h"
 
 #include <libint2/atom.h>
 
-#include "atomic_data.h"
+#include "mpqc/chemistry/molecule/atomic_data.h"
 #include "mpqc/chemistry/molecule/clustering_functions.h"
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/molecule/molecule.h"
@@ -19,7 +19,7 @@ UnitCell::UnitCell(const KeyVal &kv) : Molecule(kv) {
   dcell_ *= angstrom_to_bohr;
 }
 
-double UnitCell::nuclear_repulsion_energy(Vector3i RJ_max) const {
+double UnitCell::nuclear_repulsion_energy(const Vector3i &RJ_max) const {
   auto const &atoms = this->atoms();
   double enuc = 0.0;
   for (auto nx = -RJ_max(0); nx <= RJ_max(0); ++nx) {

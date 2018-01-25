@@ -73,8 +73,11 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   // read # kpoints from keyval
   using ::mpqc::detail::k_ord_idx;
   nk_ = decltype(nk_)(kv.value<std::array<int, 3>>("k_points").data());
-  assert((nk_.array() > 0).all() &&
-         "k_points cannot have zero or negative elements");
+  MPQC_ASSERT((nk_.array() > 0).all() &&
+              "k_points cannot have zero or negative elements");
+  // assume odd number of k points in each direction, i.e. uniformly spaced k
+  MPQC_ASSERT((nk_(0) % 2 == 1) && (nk_(1) % 2 == 1) && (nk_(2) % 2 == 1));
+
   k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
@@ -179,7 +182,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     // DIIS
     if (diis_ != "none") {
       if (diis_ == "gamma_point") {
-        assert(k_size_ >= 1 && k_size_ % 2 == 1);
+        MPQC_ASSERT(k_size_ >= 1 && k_size_ % 2 == 1);
         using ::mpqc::pbc::detail::slice_array_at_k;
         const auto k_ord_gamma_point = (k_size_ - 1) / 2;
         auto D_gp = slice_array_at_k(Dk_, k_ord_gamma_point, nk_);
@@ -244,19 +247,18 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
     // Print out information
     if (print_detail_) {
-      if (world.rank() == 0) {
-        std::cout << "\nzRHF Energy: " << ezrhf << "\n"
-                  << "Total Energy: " << ezrhf + erep << "\n"
-                  << "Delta(E): " << ediff << "\n"
-                  << "RMS(D): " << rms << "\n"
-                  << "Fock Build Time: " << mpqc::duration_in_s(f_start, f_end)
-                  << " s\n"
-                  << "Transform Fock (Real->Recip) Time: "
-                  << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
-                  << "Density Time: " << mpqc::duration_in_s(d_start, d_end)
-                  << " s\n"
-                  << "Iteration Time: " << iter_duration << " s\n";
-      }
+      ExEnv::out0() << "\nzRHF Energy: " << ezrhf << "\n"
+                << "Total Energy: " << ezrhf + erep << "\n"
+                << "Delta(E): " << ediff << "\n"
+                << "RMS(D): " << rms << "\n"
+                << "Fock Build Time: " << mpqc::duration_in_s(f_start, f_end)
+                << " s\n"
+                << "Transform Fock (Real->Recip) Time: "
+                << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
+                << "Density Time: " << mpqc::duration_in_s(d_start, d_end)
+                << " s\n"
+                << "Iteration Time: " << iter_duration << " s\n";
+      print_band_gaps();
     } else {
       std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
@@ -285,6 +287,9 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   } else {
     ExEnv::out0() << "\nPeriodic Hartree-Fock iterations have converged!\n";
   }
+
+  // print out band gap information
+  print_band_gaps();
 
   // store fock matrix in registry
   auto& registry = this->ao_factory().registry();
@@ -398,8 +403,8 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
                                          const Vector3i& real_lattice_range,
                                          const Vector3i& recip_lattice_range) {
   // Make sure range values are all positive
-  assert((real_lattice_range.array() >= 0).all() &&
-         (recip_lattice_range.array() > 0).all());
+  MPQC_ASSERT((real_lattice_range.array() >= 0).all() &&
+              (recip_lattice_range.array() > 0).all());
 
   using ::mpqc::detail::direct_vector;
   using ::mpqc::detail::k_vector;
@@ -413,8 +418,9 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   const auto recip_lattice_size =
       1 + k_ord_idx(k_end_3D_idx, recip_lattice_range);
   const auto tiles_range = matrix.trange().tiles_range();
-  assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
-  assert(real_lattice_size == tiles_range.extent(1) / tiles_range.extent(0));
+  MPQC_ASSERT(tiles_range.extent(1) % tiles_range.extent(0) == 0);
+  MPQC_ASSERT(real_lattice_size ==
+              tiles_range.extent(1) / tiles_range.extent(0));
 
   array_type_z result;
   auto tr0 = matrix.trange().data()[0];
@@ -457,8 +463,8 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
   using ::mpqc::detail::k_ord_idx;
 
   const Vector3i k_end_3D_idx = (nk_.array() - 1).matrix();
-  assert(k_size_ == 1 + k_ord_idx(k_end_3D_idx, nk_));
-  assert(R_size_ == 1 + direct_ord_idx(R_max_, R_max_));
+  MPQC_ASSERT(k_size_ == 1 + k_ord_idx(k_end_3D_idx, nk_));
+  MPQC_ASSERT(R_size_ == 1 + direct_ord_idx(R_max_, R_max_));
   return transform_real2recip(matrix, R_max_, nk_);
 }
 
@@ -494,6 +500,67 @@ MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(MatrixZ& mat0) {
   }
 
   return result;
+}
+
+template <typename Tile, typename Policy>
+void zRHF<Tile, Policy>::print_band_gaps() {
+  MPQC_ASSERT(eps_.size() == k_size_);
+
+  VectorD hoco(k_size_), luco(k_size_), direct_gap(k_size_);
+
+  for (auto k = 0; k != k_size_; ++k) {
+    const auto homo = eps_[k](docc_ - 1);
+    const auto lumo = eps_[k](docc_);
+    hoco(k) = homo;
+    luco(k) = lumo;
+    direct_gap(k) = lumo - homo;
+  }
+
+  using ::mpqc::detail::k_3D_idx;
+
+  VectorD::Index k_ord_direct_max;
+  const auto direct_gap_max = direct_gap.maxCoeff(&k_ord_direct_max);
+  const auto k_3D_direct_max = k_3D_idx(k_ord_direct_max, nk_);
+
+  VectorD::Index k_ord_direct_min;
+  const auto direct_gap_min = direct_gap.minCoeff(&k_ord_direct_min);
+  const auto k_3D_direct_min = k_3D_idx(k_ord_direct_min, nk_);
+
+  VectorD::Index k_ord_luco_max;
+  const auto luco_max = luco.maxCoeff(&k_ord_luco_max);
+  const auto k_3D_luco_max = k_3D_idx(k_ord_luco_max, nk_);
+
+  VectorD::Index k_ord_luco_min;
+  const auto luco_min = luco.minCoeff(&k_ord_luco_min);
+  const auto k_3D_luco_min = k_3D_idx(k_ord_luco_min, nk_);
+
+  VectorD::Index k_ord_hoco_max;
+  const auto hoco_max = hoco.maxCoeff(&k_ord_hoco_max);
+  const auto k_3D_hoco_max = k_3D_idx(k_ord_hoco_max, nk_);
+
+  VectorD::Index k_ord_hoco_min;
+  const auto hoco_min = hoco.minCoeff(&k_ord_hoco_min);
+  const auto k_3D_hoco_min = k_3D_idx(k_ord_hoco_min, nk_);
+
+  const auto indirect_gap = luco_min - hoco_max;
+
+  auto unit_factory = UnitFactory::get_default();
+  auto hartree2ev = unit_factory->make_unit("eV").from_atomic_units();
+
+  ExEnv::out0() << "\nMax LUCO: " << luco_max * hartree2ev << " eV at k = ("
+                << k_3D_luco_max.transpose() << ")"
+                << "\nMin LUCO: " << luco_min * hartree2ev << " eV at k = ("
+                << k_3D_luco_min.transpose() << ")"
+                << "\nMax HOCO: " << hoco_max * hartree2ev << " eV at k = ("
+                << k_3D_hoco_max.transpose() << ")"
+                << "\nMin HOCO: " << hoco_min * hartree2ev << " eV at k = ("
+                << k_3D_hoco_min.transpose() << ")"
+                << "\nIndirect band gap: " << indirect_gap * hartree2ev << " eV"
+                << "\nMax direct band gap: " << direct_gap_max * hartree2ev
+                << " eV at k = (" << k_3D_direct_max.transpose() << ")"
+                << "\nMin direct band gap: " << direct_gap_min * hartree2ev
+                << " eV at k = (" << k_3D_direct_min.transpose() << ")"
+                << std::endl;
 }
 
 template <typename Tile, typename Policy>
@@ -535,7 +602,7 @@ double zRHF<Tile, Policy>::compute_energy() {
     ExEnv::out0() << "\nLattice range of H: " << R_max_.transpose()
                   << "\nLattice range of Fock: "
                   << fock_lattice_range.transpose() << std::endl;
-    throw "Invalid lattice ranges!";
+    throw ProgrammingError("Invalid lattice ranges!", __FILE__, __LINE__);
   }
   auto ezrhf = ::mpqc::pbc::detail::dot_product(H_plus_F, D_, HpF_lattice_range,
                                                 RD_max_);

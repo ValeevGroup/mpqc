@@ -87,6 +87,15 @@ int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i const &nk);
 Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max);
 
 /*!
+ * \brief This takes the ordinal index of a reciprocal lattice and returns the
+ * corresponding 3D index
+ * \param ord_idx the ordinal index in reciprocal space
+ * \param nk number of k points in each direction
+ * \return the 3D index in reciprocal space
+ */
+Vector3i k_3D_idx(const int64_t ord_idx, Vector3i const &nk);
+
+/*!
  * \brief This shifts the position of a Molecule object
  *
  * \note All atom positions will be shifted

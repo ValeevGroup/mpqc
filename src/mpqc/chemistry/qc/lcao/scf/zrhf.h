@@ -145,6 +145,11 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    */
   MatrixZ reverse_phase_factor(MatrixZ& mat0);
 
+  /*!
+   * \brief This prints direct and indirect band gaps
+   */
+  void print_band_gaps();
+
  protected:
   array_type S_;
   array_type D_;

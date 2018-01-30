@@ -34,6 +34,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   print_max_item_ = kv.value<int64_t>("print_max_item", 100);
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
   fmix_ = kv.value<double>("fock_mixing", 0.0);
+  level_shift_ = kv.value<double>("level_shift", 0.0);
 
   diis_ = kv.value<std::string>("diis", "none");
   diis_start_ = kv.value<unsigned int>("diis_start", 1);
@@ -42,6 +43,8 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   diis_mixing_ = kv.value<double>("diis_mixing", 0.0);
   diis_num_iters_group_ = kv.value<unsigned int>("diis_num_iters_group", 1);
   diis_num_extrap_group_ = kv.value<unsigned int>("diis_num_extrap_group", 1);
+
+  iter_ = 0;
 
   auto& ao_factory = this->ao_factory();
   // retrieve world from periodic ao_factory
@@ -82,6 +85,9 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
                 << nk_.transpose() << "]" << std::endl;
+
+  eps_.resize(k_size_);
+  C_.resize(k_size_);
 
   T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
 
@@ -134,7 +140,6 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
-  auto iter = 0;
   auto rms = 0.0;
   array_type Ddiff;
   auto converged = false;
@@ -155,13 +160,15 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   do {
     auto iter_start = mpqc::fenced_now(world);
 
+    iter_++;
+
     // Save a copy of energy and density
     auto ezrhf_old = ezrhf;
     auto D_old = D_;
     array_type_z Fk_old = Fk_;
 
     if (print_detail_) {
-      ExEnv::out0() << "\nIteration: " << iter << "\n";
+      ExEnv::out0() << "\nIteration: " << iter_ << "\n";
     }
 
     // F = H + 2J - K
@@ -203,7 +210,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
         auto diis_coeffs = EigenVectorX();
         unsigned int diis_nskip = 0;
         auto F_allk_diis = Fk_;
-        if (iter == 0) {
+        if (iter_ == 1) {
           diis_allk.reinitialize(&F_allk_diis);
         }
         if (!param_computed) {
@@ -262,17 +269,16 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     } else {
       std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
-      if (iter == 0)
+      if (iter_ == 1)
         ExEnv::out0() << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
                                       niter.c_str(), nEle.c_str(), nTot.c_str(),
                                       nDel.c_str(), nRMS.c_str(), nT.c_str());
       ExEnv::out0() << mpqc::printf(
-          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
+          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf,
           ezrhf + erep, ediff, rms, iter_duration);
     }
-    ++iter;
 
-  } while ((iter < maxiter_) && (!converged));
+  } while ((iter_ <= maxiter_) && (!converged));
 
   // save total energy to energy no matter if zRHF converges
   energy_ = ezrhf + erep;
@@ -328,9 +334,6 @@ zRHF<Tile, Policy>::compute_density() {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
-  eps_.resize(k_size_);
-  C_.resize(k_size_);
-
   using ::mpqc::detail::extend_trange1;
 
   auto tr0 = Fk_.trange().data()[0];
@@ -339,6 +342,7 @@ zRHF<Tile, Policy>::compute_density() {
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
+
     // Get orthogonalizer
     auto X = X_[k];
     // Symmetrize Fock
@@ -349,21 +353,46 @@ zRHF<Tile, Policy>::compute_density() {
       F_twice = reverse_phase_factor(F_twice);
     F = 0.5 * F_twice;
 
-    // Orthogonalize Fock matrix: F' = Xt * F * X
-    MatrixZ Xt = X.transpose().conjugate();
-    auto XtF = Xt * F;
-    auto Ft = XtF * X;
+    if (level_shift_ > 0.0 && iter_ > 0) {
+      // transform Fock from AO to CO basis
+      MatrixZ C = C_[k];
+      MatrixZ Ct = C.transpose().conjugate();
+      MatrixZ FCO = Ct * F * C;
+      // add energy level shift to diagonal elements of unoccupied orbitals
+      auto nobs = FCO.cols();
+      for (auto a = docc_; a != nobs; ++a) {
+        FCO(a, a) += level_shift_;
+      }
+      // diagonalize Fock in CO basis
+      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
+      VectorD eps = comp_eig_solver_fco.eigenvalues();
+      MatrixZ Ctemp = comp_eig_solver_fco.eigenvectors();
+      // when k=0 (gamma point), reverse phase factor of complex eigenvectors
+      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
+        Ctemp = reverse_phase_factor(Ctemp);
+      // transform eigenvectors back to CO coefficients
+      C_[k] = C * Ctemp;
+      // remove energy level shift from eigenvalues
+      for (auto p = 0; p != nobs; ++p) {
+        eps_[k](p) = (p < docc_) ? eps(p) : eps(p) - level_shift_;
+      }
+    } else {
+      // Orthogonalize Fock matrix: F' = Xt * F * X
+      MatrixZ Xt = X.transpose().conjugate();
+      auto XtF = Xt * F;
+      auto Ft = XtF * X;
 
-    // Diagonalize F'
-    Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
-    eps_[k] = comp_eig_solver.eigenvalues();
-    MatrixZ Ctemp = comp_eig_solver.eigenvectors();
+      // Diagonalize F'
+      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
+      eps_[k] = comp_eig_solver.eigenvalues();
+      MatrixZ Ctemp = comp_eig_solver.eigenvectors();
 
-    // When k=0 (gamma point), reverse phase factor of complex eigenvectors
-    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-      Ctemp = reverse_phase_factor(Ctemp);
+      // When k=0 (gamma point), reverse phase factor of complex eigenvectors
+      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
+        Ctemp = reverse_phase_factor(Ctemp);
 
-    C_[k] = X * Ctemp;
+      C_[k] = X * Ctemp;
+    }
   }
 
   using ::mpqc::detail::direct_vector;

@@ -55,6 +55,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
    * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
    * | fock_mixing | double | 0.0 | mixing of Fock matrices in reciprocal space |
+   * | level_shift | double | 0.0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
    * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
    * | diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
    * | diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
@@ -179,6 +180,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   int64_t maxiter_;
   double max_condition_num_;
   double fmix_;
+  int64_t iter_;
 
   std::string diis_;
   unsigned int diis_start_;
@@ -187,6 +189,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   double diis_mixing_;
   unsigned int diis_num_iters_group_;
   unsigned int diis_num_extrap_group_;
+
+  double level_shift_;
 
   Vector3i R_max_;
   Vector3i RJ_max_;

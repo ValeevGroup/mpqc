@@ -319,6 +319,7 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  // clang-format off
   /**
    * \brief KeyVal constructor for RIJCADFKzRHF
    *
@@ -346,6 +347,7 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   RIJCADFKzRHF(const KeyVal& kv);
 
   ~RIJCADFKzRHF() {}
@@ -364,6 +366,7 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  // clang-format off
   /**
    * \brief KeyVal constructor for FourCenterJCADFKzRHF
    *
@@ -391,6 +394,7 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
    *  }
    * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   FourCenterJCADFKzRHF(const KeyVal& kv);
 
   ~FourCenterJCADFKzRHF() {}

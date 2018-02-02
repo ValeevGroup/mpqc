@@ -390,7 +390,6 @@ class PeriodicTwoCenterBuilder
       PeriodicTwoCenterBuilder_::accumulate_local_task(result_tile, tile0R);
     }
   }
-
 };
 
 }  // namespace scf

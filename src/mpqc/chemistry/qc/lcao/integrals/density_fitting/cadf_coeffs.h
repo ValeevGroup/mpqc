@@ -5,8 +5,8 @@
 #ifndef MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 #define MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 
-#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/molecule/lattice/util.h"
+#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/direct_task_integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h"

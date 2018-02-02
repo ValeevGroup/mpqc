@@ -68,7 +68,8 @@ template <typename Tile, typename Policy>
 class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectTArray = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
+  using DirectTArray =
+      DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
   using Op = std::function<Tile(TA::TensorD &&)>;
   using shellpair_list_t = std::vector<std::vector<size_t>>;
 
@@ -1246,7 +1247,8 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
                                               std::move(shr_bases),
                                               std::move(screen), std::move(op));
 
-  auto direct_array = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, E>>(std::move(builder));
+  auto direct_array = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, E>>(
+      std::move(builder));
   auto builder_ptr = direct_array.builder();
   using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, E>>;
 

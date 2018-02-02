@@ -1,10 +1,10 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CADF_K_BUILDER_H_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CADF_K_BUILDER_H_H_
 
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
-#include "mpqc/chemistry/qc/lcao/basis/util.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 

@@ -484,10 +484,8 @@ class ExactKDiagonalBuilder
                 sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
             const auto sh12 =
                 sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-            const auto Dnorm12 =
-                (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
-            const auto Dnorm02 =
-                (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
+            const auto Dnorm12 = (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
+            const auto Dnorm02 = (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
             const auto Dnorm012 = std::max({Dnorm02, Dnorm12});
 
             for (const auto& sh3 : ket_shellpair_list[sh2]) {
@@ -504,10 +502,8 @@ class ExactKDiagonalBuilder
                   sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
               const auto sh13 =
                   sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
-              const auto Dnorm03 =
-                  (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
-              const auto Dnorm13 =
-                  (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
+              const auto Dnorm03 = (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
+              const auto Dnorm13 = (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
               const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm012});
 
               if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
@@ -678,7 +674,6 @@ class ExactKDiagonalBuilder
 
     return result;
   }
-
 };
 
 }  // namespace scf

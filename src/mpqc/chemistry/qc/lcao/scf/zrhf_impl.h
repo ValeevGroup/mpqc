@@ -255,16 +255,16 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     // Print out information
     if (print_detail_) {
       ExEnv::out0() << "\nzRHF Energy: " << ezrhf << "\n"
-                << "Total Energy: " << ezrhf + erep << "\n"
-                << "Delta(E): " << ediff << "\n"
-                << "RMS(D): " << rms << "\n"
-                << "Fock Build Time: " << mpqc::duration_in_s(f_start, f_end)
-                << " s\n"
-                << "Transform Fock (Real->Recip) Time: "
-                << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
-                << "Density Time: " << mpqc::duration_in_s(d_start, d_end)
-                << " s\n"
-                << "Iteration Time: " << iter_duration << " s\n";
+                    << "Total Energy: " << ezrhf + erep << "\n"
+                    << "Delta(E): " << ediff << "\n"
+                    << "RMS(D): " << rms << "\n"
+                    << "Fock Build Time: "
+                    << mpqc::duration_in_s(f_start, f_end) << " s\n"
+                    << "Transform Fock (Real->Recip) Time: "
+                    << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
+                    << "Density Time: " << mpqc::duration_in_s(d_start, d_end)
+                    << " s\n"
+                    << "Iteration Time: " << iter_duration << " s\n";
       print_band_gaps();
     } else {
       std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
@@ -342,7 +342,6 @@ zRHF<Tile, Policy>::compute_density() {
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
-
     // Get orthogonalizer
     auto X = X_[k];
     // Symmetrize Fock

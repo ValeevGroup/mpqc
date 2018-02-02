@@ -863,7 +863,6 @@ class PeriodicThreeCenterContractionBuilder
                                                                     tile01);
     }
   }
-
 };
 
 }  // namespace scf

@@ -129,7 +129,6 @@ std::shared_ptr<Basis> index_to_basis(
 }
 
 std::array<std::wstring, 2> get_df_formula(const Formula &formula) {
-
   TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
 
   std::array<std::wstring, 2> result;
@@ -242,7 +241,7 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
   Formula h(formula);
   h.set_operator(Operator(L"H"));
   // H doesn't need DF
-  if(formula.has_option(Formula::Option::DensityFitting)){
+  if (formula.has_option(Formula::Option::DensityFitting)) {
     h.remove_option(Formula::Option::DensityFitting);
   }
   decltype(h) j(formula);

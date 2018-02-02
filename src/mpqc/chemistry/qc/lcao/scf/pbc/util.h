@@ -2,8 +2,8 @@
 #define PQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_UTIL_H_
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
-#include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/math/external/tiledarray/util.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
 namespace pbc {
@@ -132,7 +132,6 @@ template <typename Tile, typename Policy>
 double dot_product(TA::DistArray<Tile, Policy> const &L,
                    TA::DistArray<Tile, Policy> const &R,
                    Vector3i const &L_range, Vector3i const &R_range) {
-
   using ::mpqc::detail::direct_ord_idx;
   auto L_size = 1 + direct_ord_idx(L_range, L_range);
   auto R_size = 1 + direct_ord_idx(R_range, R_range);
@@ -233,7 +232,8 @@ void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
   const auto elements_range = M_array.trange().elements_range();
   const auto ext0 = elements_range.extent(0);
   const auto ext1 = elements_range.extent(1);
-  const auto max_lattice_size = 1 + direct_ord_idx(max_lattice_range, max_lattice_range);
+  const auto max_lattice_size =
+      1 + direct_ord_idx(max_lattice_range, max_lattice_range);
   assert(ext1 / ext0 == max_lattice_size);
 
   const auto M_eigen = array_ops::array_to_eigen(M_array);
@@ -245,8 +245,7 @@ void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
     const auto norm_infty = block.template lpNorm<Eigen::Infinity>();
     ExEnv::out0() << "unit cell (" << uc_3D.transpose()
                   << "), Frobenius norm = " << norm_frobenius
-                  << ", Infinity norm = " << norm_infty
-                  << std::endl;
+                  << ", Infinity norm = " << norm_infty << std::endl;
   }
 }
 

@@ -4,8 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
-#include "mpqc/math/external/tiledarray/util.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
+#include "mpqc/math/external/tiledarray/util.h"
 
 #include <mutex>
 
@@ -608,7 +608,8 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    auto basisRD = shift_basis_origin(*ket_basis_, zero_shift_base, RD_max_, dcell_);
+    auto basisRD =
+        shift_basis_origin(*ket_basis_, zero_shift_base, RD_max_, dcell_);
     auto shblk_norm_D = compute_shellblock_norm(*ket_basis_, *basisRD, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
@@ -885,7 +886,8 @@ class PeriodicFourCenterFockBuilder
     Vector3i old_RD_max = truncated_RD_max_;
 
     using ::mpqc::pbc::detail::truncate_lattice_range;
-    truncated_RD_max_ = truncate_lattice_range(D_repl, RD_max_, density_threshold_);
+    truncated_RD_max_ =
+        truncate_lattice_range(D_repl, RD_max_, density_threshold_);
     // Update RD-dependent variables if RD_max is changed
     if (truncated_RD_max_ != old_RD_max) {
       ExEnv::out0() << "\nLattice range of density representation is changed. "
@@ -902,7 +904,8 @@ class PeriodicFourCenterFockBuilder
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    auto basisRD = shift_basis_origin(*ket_basis_, zero_shift_base, RD_max_, dcell_);
+    auto basisRD =
+        shift_basis_origin(*ket_basis_, zero_shift_base, RD_max_, dcell_);
     auto shblk_norm_D = compute_shellblock_norm(*ket_basis_, *basisRD, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
@@ -948,12 +951,14 @@ class PeriodicFourCenterFockBuilder
           const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
           const auto R2p3_3D = R2_3D + R3_3D;
           const auto R2p3m1_3D = R2p3_3D - R1_3D;
-          const auto uc_ord_D03 = is_in_lattice_range(R2p3_3D, truncated_RD_max_)
-                                      ? direct_ord_idx(R2p3_3D, RD_max_)
-                                      : -1;
-          const auto uc_ord_D13 = is_in_lattice_range(R2p3m1_3D, truncated_RD_max_)
-                                      ? direct_ord_idx(R2p3m1_3D, RD_max_)
-                                      : -1;
+          const auto uc_ord_D03 =
+              is_in_lattice_range(R2p3_3D, truncated_RD_max_)
+                  ? direct_ord_idx(R2p3_3D, RD_max_)
+                  : -1;
+          const auto uc_ord_D13 =
+              is_in_lattice_range(R2p3m1_3D, truncated_RD_max_)
+                  ? direct_ord_idx(R2p3m1_3D, RD_max_)
+                  : -1;
           const auto uc_ord_F03 = is_in_lattice_range(R2p3_3D, RF_max_)
                                       ? direct_ord_idx(R2p3_3D, RF_max_)
                                       : -1;
@@ -1289,7 +1294,8 @@ class PeriodicFourCenterFockBuilder
     // compute significant shell pair list
     {
       using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
-      const auto eng_precision = ::mpqc::lcao::gaussian::detail::integral_engine_precision;
+      const auto eng_precision =
+          ::mpqc::lcao::gaussian::detail::integral_engine_precision;
 
       basis0_shell_offset_map_ = compute_shell_offset(basis0);
       if (compute_J_) {
@@ -1306,7 +1312,8 @@ class PeriodicFourCenterFockBuilder
           const auto tmp_basis = *(
               shift_basis_origin(ket_basis, zero_shift_base, RD_max_, dcell_));
           sig_j_ket_shellpair_list_ = parallel_compute_shellpair_list(
-              world, ket_basis, tmp_basis, shell_pair_threshold_, eng_precision);
+              world, ket_basis, tmp_basis, shell_pair_threshold_,
+              eng_precision);
           j_basisRJ_shell_offset_map_ = compute_shell_offset(ket_basis);
           j_basisRD_shell_offset_map_ = compute_shell_offset(tmp_basis);
         }
@@ -1501,11 +1508,12 @@ class PeriodicFourCenterFockBuilder
 
     // compute significant shell pair list
     using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
-    const auto eng_precision = ::mpqc::lcao::gaussian::detail::integral_engine_precision;
+    const auto eng_precision =
+        ::mpqc::lcao::gaussian::detail::integral_engine_precision;
     {
       const auto basisR = *basisR_;
-      sig_shpair_list_ = parallel_compute_shellpair_list(world, basis0, basisR,
-                                                         shell_pair_threshold_, eng_precision);
+      sig_shpair_list_ = parallel_compute_shellpair_list(
+          world, basis0, basisR, shell_pair_threshold_, eng_precision);
     }
 
     // locate the ordinal index of the reference lattice in R, RJ, and RD
@@ -1562,8 +1570,8 @@ class PeriodicFourCenterFockBuilder
     basisR_ = shift_basis_origin(*bra_basis_, zero_shift_base, sig_lattice_max_,
                                  dcell_, true);
     const auto basisR = *basisR_;
-    sig_shpair_list_ =
-        parallel_compute_shellpair_list(world, basis0, basisR, shell_pair_threshold_, eng_precision);
+    sig_shpair_list_ = parallel_compute_shellpair_list(
+        world, basis0, basisR, shell_pair_threshold_, eng_precision);
 
     // create a TiledRange for four-center ERIs
     trange_eri4_ = ::mpqc::lcao::gaussian::detail::create_trange(
@@ -1634,10 +1642,11 @@ class PeriodicFourCenterFockBuilder
     const auto basisR = *basisR_;
 
     using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
-    const auto eng_precision = ::mpqc::lcao::gaussian::detail::integral_engine_precision;
+    const auto eng_precision =
+        ::mpqc::lcao::gaussian::detail::integral_engine_precision;
 
-    sig_shpair_list_ =
-        parallel_compute_shellpair_list(world, basis0, basisR, shell_pair_threshold_, eng_precision);
+    sig_shpair_list_ = parallel_compute_shellpair_list(
+        world, basis0, basisR, shell_pair_threshold_, eng_precision);
 
     // create a TiledRange for four-center ERIs
     trange_eri4_ = ::mpqc::lcao::gaussian::detail::create_trange(
@@ -3150,9 +3159,7 @@ class PeriodicFourCenterFockBuilder
       const auto tvolume = trange_fock_.tiles_range().volume();
       dist_pmap_fock_ = Policy::default_pmap(world, tvolume);
     }
-
   }
-
 };
 
 }  // namespace scf

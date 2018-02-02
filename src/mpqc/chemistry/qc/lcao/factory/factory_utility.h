@@ -19,9 +19,9 @@
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/meta/make_array.h"
 #include "mpqc/util/misc/pool.h"
-#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
 namespace lcao {
@@ -162,8 +162,8 @@ TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
 }
 
 template <typename Tile, typename Policy>
-TA::DistArray<Tile, Policy> compute_shellblock_norm(const Basis &bs0, const Basis &bs1,
-                                                    const TA::DistArray<Tile, Policy> &D) {
+TA::DistArray<Tile, Policy> compute_shellblock_norm(
+    const Basis &bs0, const Basis &bs1, const TA::DistArray<Tile, Policy> &D) {
   auto &world = D.world();
   // make trange1
   auto make_shblk_trange1 = [](const Basis &bs) {
@@ -276,7 +276,7 @@ bool if_all_lcao(const Formula &formula);
 
 /// check if all index in formula are in AO
 bool if_all_ao(const Formula &formula);
-}
+}  // namespace detail
 
 }  // namespace lcao
 }  // namespace mpqc

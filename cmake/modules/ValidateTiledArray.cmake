@@ -27,7 +27,7 @@ macro (validate_tiledarray)
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TILEDARRAY_OLDEST_REVISION 27622cca)
+  set (TILEDARRAY_OLDEST_REVISION 7dc782a5ab8fda91d2ef769e9ae480c0f0ac0983)
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>

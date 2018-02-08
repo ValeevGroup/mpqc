@@ -23,7 +23,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
 
-#include "mpqc/util/external/c++/type_traits"
 #include "mpqc/util/meta/predicates.h"
 
 // serialize all pointers as void*

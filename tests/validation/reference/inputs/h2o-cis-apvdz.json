@@ -5,33 +5,32 @@
     "n_roots" : 4,
     "triplets" : true
   },
-  "molecule": {
+  "atoms": {
     "file_name": "h2o.xyz",
     "attach_hydrogen": false,
     "n_cluster": 2
   },
   "basis": {
     "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "wfn_world":{
-    "type" : "WfnWorld",
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "basis" : "$:basis"
   },
   "scf":{
     "type": "RHF",
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "CIS",
     "wfn_world": "$:wfn_world",
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "frozen_core" : true,
     "ref": "$:scf",
     "method" : "standard",
-    "occ_block_size": 8,
-    "unocc_block_size":8
+    "occ_block_size": 4,
+    "unocc_block_size": 4
   }
 }

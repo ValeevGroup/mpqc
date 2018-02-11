@@ -87,7 +87,7 @@ class Molecule : virtual public DescribedClass,
    *  "molecule": {
    *    "atoms" : [
    *      { "element" : "O", "xyz" : [0.0,  0.0, 0.0] },
-   *      { "element" : "H", "xyz" : [0.0,  1.0, 1.0] }
+   *      { "element" : "H", "xyz" : [0.0,  1.0, 1.0] },
    *      { "element" : "H", "xyz" : [0.0, -1.0, 1.0] }
    *    ]
    *    "n_cluster": 1

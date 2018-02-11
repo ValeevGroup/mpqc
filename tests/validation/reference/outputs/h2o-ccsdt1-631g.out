@@ -1,0 +1,561 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 50cab724034613a0982a47e8ba59f39c2b3040b6
+
+  Machine:          Darwin-16.6.0-x86_64
+  User:             varunris@varuns-MacBook-Pro.local
+  Start Time:       Sat Oct 21 00:27:35 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSDT-1",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "diis_start": "3",
+        "occ_block_size": "4",
+        "unocc_block_size": "4",
+        "Expected T1a energy": "-0.135915834821"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-11",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 6-31G
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization. 
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 50.5531878082312
+
+Starting SCF:
+	Threshold: 1e-13
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -75.9699257743243
+	abs(Energy Change): 0.0765048650677613
+	(Gradient Norm)/n^2: 0.000965436190405684
+	Scf Time: 0.006778125
+		Density Time: 0.002998882
+		Fock Build Time: 0.002786099
+iteration: 1
+	Energy: -75.9822616080134
+	abs(Energy Change): 0.0123358336890789
+	(Gradient Norm)/n^2: 0.000334573850429697
+	Scf Time: 0.004281126
+		Density Time: 0.001686843
+		Fock Build Time: 0.001453774
+iteration: 2
+	Energy: -75.983362349906
+	abs(Energy Change): 0.00110074189267095
+	(Gradient Norm)/n^2: 0.000130506281947782
+	Scf Time: 0.004416771
+		Density Time: 0.001588922
+		Fock Build Time: 0.001462447
+iteration: 3
+	Energy: -75.9835444012106
+	abs(Energy Change): 0.000182051304520314
+	(Gradient Norm)/n^2: 1.47101948292997e-05
+	Scf Time: 0.004167277
+		Density Time: 0.00157444
+		Fock Build Time: 0.00132672
+iteration: 4
+	Energy: -75.9835501088065
+	abs(Energy Change): 5.70759597451342e-06
+	(Gradient Norm)/n^2: 2.94888267035634e-06
+	Scf Time: 0.005635574
+		Density Time: 0.002234156
+		Fock Build Time: 0.001953878
+iteration: 5
+	Energy: -75.9835503009751
+	abs(Energy Change): 1.92168513990509e-07
+	(Gradient Norm)/n^2: 3.14441458553364e-07
+	Scf Time: 0.004474217
+		Density Time: 0.001558559
+		Fock Build Time: 0.001323752
+iteration: 6
+	Energy: -75.9835503023532
+	abs(Energy Change): 1.37818290113501e-09
+	(Gradient Norm)/n^2: 4.9779839686999e-08
+	Scf Time: 0.006278889
+		Density Time: 0.003592842
+		Fock Build Time: 0.00130133
+iteration: 7
+	Energy: -75.9835503024017
+	abs(Energy Change): 4.84163820146932e-11
+	(Gradient Norm)/n^2: 1.14278676251765e-08
+	Scf Time: 0.004901417
+		Density Time: 0.002008375
+		Fock Build Time: 0.001392215
+iteration: 8
+	Energy: -75.9835503024051
+	abs(Energy Change): 3.45323769579409e-12
+	(Gradient Norm)/n^2: 2.29411767217128e-09
+	Scf Time: 0.004924134
+		Density Time: 0.001642642
+		Fock Build Time: 0.001632076
+iteration: 9
+	Energy: -75.9835503024051
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 8.0969611776537e-10
+	Scf Time: 0.008525866
+		Density Time: 0.001763416
+		Fock Build Time: 0.001486185
+iteration: 10
+	Energy: -75.9835503024051
+	abs(Energy Change): 2.8421709430404e-14
+	(Gradient Norm)/n^2: 1.14670364691004e-10
+	Scf Time: 0.005419107
+		Density Time: 0.002086725
+		Fock Build Time: 0.001456217
+iteration: 11
+	Energy: -75.9835503024053
+	abs(Energy Change): 1.84741111297626e-13
+	(Gradient Norm)/n^2: 4.5375868283696e-11
+	Scf Time: 0.004398278
+		Density Time: 0.001600355
+		Fock Build Time: 0.001347066
+iteration: 12
+	Energy: -75.9835503024053
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 1.86614942140338e-11
+	Scf Time: 0.004246959
+		Density Time: 0.001562682
+		Fock Build Time: 0.001289906
+iteration: 13
+	Energy: -75.9835503024051
+	abs(Energy Change): 1.27897692436818e-13
+	(Gradient Norm)/n^2: 9.6654759645345e-12
+	Scf Time: 0.005364301
+		Density Time: 0.001842744
+		Fock Build Time: 0.001856757
+iteration: 14
+	Energy: -75.9835503024051
+	abs(Energy Change): 0
+	(Gradient Norm)/n^2: 4.41258743020653e-12
+	Scf Time: 0.005026782
+		Density Time: 0.001867911
+		Fock Build Time: 0.001426178
+iteration: 15
+	Energy: -75.9835503024052
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 2.58075155768151e-12
+	Scf Time: 0.00460058
+		Density Time: 0.001607118
+		Fock Build Time: 0.001564276
+iteration: 16
+	Energy: -75.9835503024051
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 1.32171872544675e-12
+	Scf Time: 0.004466839
+		Density Time: 0.001658305
+		Fock Build Time: 0.00134904
+iteration: 17
+	Energy: -75.9835503024052
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 7.96054211449548e-13
+	Scf Time: 0.005428397
+		Density Time: 0.001611087
+		Fock Build Time: 0.00226368
+iteration: 18
+	Energy: -75.9835503024052
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 4.40903432761161e-13
+	Scf Time: 0.004748419
+		Density Time: 0.00185823
+		Fock Build Time: 0.00136245
+iteration: 19
+	Energy: -75.9835503024051
+	abs(Energy Change): 7.105427357601e-14
+	(Gradient Norm)/n^2: 2.64714959894055e-13
+	Scf Time: 0.011276597
+		Density Time: 0.001707661
+		Fock Build Time: 0.007926051
+iteration: 20
+	Energy: -75.9835503024052
+	abs(Energy Change): 1.4210854715202e-13
+	(Gradient Norm)/n^2: 1.52478129195558e-13
+	Scf Time: 0.0046734
+		Density Time: 0.001592599
+		Fock Build Time: 0.001633129
+iteration: 21
+	Energy: -75.9835503024052
+	abs(Energy Change): 7.105427357601e-14
+	(Gradient Norm)/n^2: 9.09650274018245e-14
+	Scf Time: 0.004438133
+		Density Time: 0.001738881
+		Fock Build Time: 0.001324821
+  Frozen Core: 2 electrons
+Occ Range
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+ActiveOcc Range
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Unocc Range
+( tiles = [ 0, 2 ), elements = [ 0, 8 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Obs Range
+( tiles = [ 0, 3 ), elements = [ 0, 13 ) )
+Min and Max block size: 4 5
+Average: 4
+
+Use Conventional CCSDT-1 Compute
+    Waring! Transformation creates large intermediate:  ( a κ1 |G| κ2 κ3 ) Size: 0.000130951404571533 GB
+Integral Prepare Time: 0.149175087
+Beginning of the iteration 0
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+MP2 Energy      -0.128204487191067
+Start Iteration
+Max Iteration: 30
+Target precision: 1e-11
+AccurateTime: 0
+PrintDetail: 0
+Reduced ABCD Memory Approach: No
+At the beginning of iter #0
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+iter 	     deltaE 	   residual 	          energy 	 total time/s 
+  0 	 2.37051e-03 	 4.74365e-06 	 -0.130575000184 	        0.0 
+At the beginning of iter #1
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.014454225063784
+T2 amplitudes norm = 0.183605878997589
+T3 amplitudes norm = 0.0281561279039069
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.014454225063784
+T2 amplitudes norm = 0.183605878997589
+T3 amplitudes norm = 0.0281561279039069
+  1 	 4.68572e-03 	 1.14472e-06 	 -0.135260718040 	        0.0 
+At the beginning of iter #2
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0147751829976932
+T2 amplitudes norm = 0.19322065655981
+T3 amplitudes norm = 0.0306032553580793
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0147751829976932
+T2 amplitudes norm = 0.19322065655981
+T3 amplitudes norm = 0.0306032553580793
+  2 	 5.12549e-04 	 4.72913e-07 	 -0.135773267193 	        0.0 
+At the beginning of iter #3
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0164530375590634
+T2 amplitudes norm = 0.196073727606386
+T3 amplitudes norm = 0.0328419609302629
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0164530375590634
+T2 amplitudes norm = 0.196073727606386
+T3 amplitudes norm = 0.0328419609302629
+  3 	 1.22995e-04 	 1.80945e-07 	 -0.135896261749 	        0.0 
+At the beginning of iter #4
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0171181769024209
+T2 amplitudes norm = 0.198309550814588
+T3 amplitudes norm = 0.0337533248317207
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0171181769024209
+T2 amplitudes norm = 0.198309550814588
+T3 amplitudes norm = 0.0337533248317207
+  4 	 1.97113e-05 	 2.98045e-08 	 -0.135915973039 	        0.0 
+At the beginning of iter #5
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0172544352623248
+T2 amplitudes norm = 0.198508012135022
+T3 amplitudes norm = 0.0338154678376655
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0172544352623248
+T2 amplitudes norm = 0.198508012135022
+T3 amplitudes norm = 0.0338154678376655
+  5 	 5.71171e-07 	 7.77422e-09 	 -0.135915401868 	        0.0 
+At the beginning of iter #6
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173048694755915
+T2 amplitudes norm = 0.19852620399008
+T3 amplitudes norm = 0.0338336136744545
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173048694755915
+T2 amplitudes norm = 0.19852620399008
+T3 amplitudes norm = 0.0338336136744545
+  6 	 2.99482e-07 	 2.88746e-09 	 -0.135915701350 	        0.0 
+At the beginning of iter #7
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173241839868248
+T2 amplitudes norm = 0.198527084184551
+T3 amplitudes norm = 0.0338406277995567
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173241839868248
+T2 amplitudes norm = 0.198527084184551
+T3 amplitudes norm = 0.0338406277995567
+  7 	 1.22671e-07 	 7.78748e-10 	 -0.135915824021 	        0.0 
+At the beginning of iter #8
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173318885480063
+T2 amplitudes norm = 0.198528088979009
+T3 amplitudes norm = 0.0338425853603568
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173318885480063
+T2 amplitudes norm = 0.198528088979009
+T3 amplitudes norm = 0.0338425853603568
+  8 	 5.33437e-09 	 2.22109e-10 	 -0.135915829355 	        0.0 
+At the beginning of iter #9
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.01733378770169
+T2 amplitudes norm = 0.198528064041624
+T3 amplitudes norm = 0.0338432864245598
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.01733378770169
+T2 amplitudes norm = 0.198528064041624
+T3 amplitudes norm = 0.0338432864245598
+  9 	 9.22034e-09 	 6.88806e-11 	 -0.135915838576 	        0.0 
+At the beginning of iter #10
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173343239962692
+T2 amplitudes norm = 0.198528150429137
+T3 amplitudes norm = 0.0338433899644757
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173343239962692
+T2 amplitudes norm = 0.198528150429137
+T3 amplitudes norm = 0.0338433899644757
+ 10 	 2.42772e-09 	 1.88433e-11 	 -0.135915836148 	        0.0 
+At the beginning of iter #11
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173344837859027
+T2 amplitudes norm = 0.198528147757186
+T3 amplitudes norm = 0.0338434421614795
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173344837859027
+T2 amplitudes norm = 0.198528147757186
+T3 amplitudes norm = 0.0338434421614795
+ 11 	 4.10610e-10 	 6.66524e-12 	 -0.135915836559 	        0.0 
+At the beginning of iter #12
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173344923107078
+T2 amplitudes norm = 0.198528139059505
+T3 amplitudes norm = 0.0338434323647747
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173344923107078
+T2 amplitudes norm = 0.198528139059505
+T3 amplitudes norm = 0.0338434323647747
+ 12 	 2.71210e-10 	 2.06197e-12 	 -0.135915836287 	        0.0 
+At the beginning of iter #13
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173345048151471
+T2 amplitudes norm = 0.198528132245915
+T3 amplitudes norm = 0.0338434340971669
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173345048151471
+T2 amplitudes norm = 0.198528132245915
+T3 amplitudes norm = 0.0338434340971669
+ 13 	 7.65429e-11 	 7.50172e-13 	 -0.135915836364 	        0.0 
+At the beginning of iter #14
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173345032580377
+T2 amplitudes norm = 0.198528130048665
+T3 amplitudes norm = 0.0338434318286552
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+After the call to the solver 
+T1 amplitudes norm = 0.0173345032580377
+T2 amplitudes norm = 0.198528130048665
+T3 amplitudes norm = 0.0338434318286552
+ 14 	 2.09735e-11 	 2.87575e-13 	 -0.135915836343 	        0.0 
+At the beginning of iter #15
+T1 amplitudes norm = 1.10468865283941e-15
+T2 amplitudes norm = 0.170872691953488
+T3 amplitudes norm = 1.88761123881143e-16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+T1 amplitudes norm = 0.0173345028336897
+T2 amplitudes norm = 0.1985281287591
+T3 amplitudes norm = 0.033843431381291
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checkpoint at the end of T3 amplitude calculation
+ 15 	 7.27934e-12 	 1.53955e-13 	 -0.135915836350 	        0.0 
+CCSDT-1 Energy  -0.135915836350156
+CCSD Time in CCSD: 0.656691352 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSDT-1",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "diis_start": "3",
+        "occ_block_size": "4",
+        "unocc_block_size": "4",
+        "Expected T1a energy": "-0.135915834821"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-11",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-76.119466138755314"
+        }
+    }
+}
+

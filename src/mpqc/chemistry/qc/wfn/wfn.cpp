@@ -1,6 +1,6 @@
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc{
 

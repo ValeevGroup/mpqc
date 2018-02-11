@@ -55,6 +55,62 @@ void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
 }
 
 template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+TA::DistArray<Tile, Policy> d_abcijk(
+    TA::DistArray<Tile, Policy> &abcijk, const EigenVectorX &ens,
+    std::size_t n_occ, std::size_t n_frozen) {
+  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile,
+                                         const Tile &arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto b0 = result_tile.range().lobound()[1];
+    const auto bn = result_tile.range().upbound()[1];
+    const auto c0 = result_tile.range().lobound()[2];
+    const auto cn = result_tile.range().upbound()[2];
+    const auto i0 = result_tile.range().lobound()[3];
+    const auto in = result_tile.range().upbound()[3];
+    const auto j0 = result_tile.range().lobound()[4];
+    const auto jn = result_tile.range().upbound()[4];
+    const auto k0 = result_tile.range().lobound()[5];
+    const auto kn = result_tile.range().upbound()[5];
+
+    auto tile_idx = 0;
+    typename Tile::scalar_type norm = 0.0;
+    for (auto a = a0; a < an; ++a) {
+      const auto e_a = ens[a + n_occ];
+      for (auto b = b0; b < bn; ++b) {
+        const auto e_b = ens[b + n_occ];
+        for (auto c = c0; c < cn; ++c) {
+          const auto e_c = ens[c + n_occ];
+          for (auto i = i0; i < in; ++i) {
+            const auto e_i = ens[i + n_frozen];
+              for (auto j = j0; j < jn; ++j) {
+                const auto e_j = ens[j + n_frozen];
+                for (auto k = k0; k < kn; ++k, ++tile_idx) {
+                  const auto e_k = ens[k + n_frozen];
+                  const auto e_iajbkc = e_i + e_j +e_k - e_a - e_b- e_c;
+                  const auto old = arg_tile[tile_idx];
+                  const auto result_abcijk = old / (e_iajbkc);
+                  norm += std::abs(result_abcijk) * std::abs(result_abcijk);
+                  result_tile[tile_idx] = result_abcijk;
+          }
+         }
+         }
+        }
+      }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach (abcijk, convert);
+  abcijk.world().gop.fence();
+  return result;
+}
+
+template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<Tile, Policy> d_abij(
     TA::DistArray<Tile, Policy> &abij, const EigenVectorX &ens,
     std::size_t n_occ, std::size_t n_frozen) {
@@ -110,7 +166,7 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
             std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord,
+  auto make_tile = [&ens, n_occ, n_frozen](const range_type &range, std::size_t ord,
                                            Tile *out_tile, TA::TensorF *norms) {
 
     auto result_tile = Tile(range);
@@ -120,13 +176,13 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
     const auto in = result_tile.range().upbound()[1];
 
     auto ai = 0;
-    typename Tile::value_type tmp = 1.0;
+    const typename Tile::value_type identity = 1.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens[a + n_occ];
       for (auto i = i0; i < in; ++i, ++ai) {
         const auto e_i = ens[i + n_frozen];
         const auto e_ia = e_i - e_a;
-        const auto result_ai = tmp / (e_ia);
+        const auto result_ai = identity / (e_ia);
         result_tile[ai] = result_ai;
       }
     }
@@ -178,7 +234,7 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
             std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
+  auto make_tile = [&ens, n_occ, n_frozen](const range_type &range) {
 
     auto result_tile = Tile(range);
     const auto a0 = result_tile.range().lobound()[0];
@@ -187,13 +243,13 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
     const auto in = result_tile.range().upbound()[1];
 
     auto ai = 0;
-    typename Tile::value_type tmp = 1.0;
+    const typename Tile::value_type identity = 1.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens[a + n_occ];
       for (auto i = i0; i < in; ++i, ++ai) {
         const auto e_i = ens[i + n_frozen];
         const auto e_ia = e_i - e_a;
-        const auto result_ai = tmp / (e_ia);
+        const auto result_ai = identity / (e_ia);
         result_tile[ai] = result_ai;
       }
     }

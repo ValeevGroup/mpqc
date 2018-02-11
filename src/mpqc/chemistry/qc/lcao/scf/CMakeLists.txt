@@ -1,6 +1,9 @@
 set(sources
 builder.h
 cadf_builder.h
+cadf_builder_forced_shape.h
+cadf_fitting_coeffs.h
+cadf_helper_functions.h
 clr_cadf_builder.h
 clusterd_coeffs.h
 density_builder.h
@@ -14,6 +17,7 @@ orbital_localization.cpp
 orbital_localization.h
 purification_density_build.h
 purification_density_build_impl.h
+purification/purification_devel.h
 rhf.cpp
 rhf.h
 rhf_impl.h
@@ -37,7 +41,11 @@ list(APPEND sources
         pbc/periodic_two_center_builder.h
         pbc/periodic_three_center_contraction_builder.h
         pbc/periodic_four_center_fock_builder.h
+        pbc/periodic_ri_j_builder.h
         pbc/periodic_df_fock_builder.h
+        pbc/periodic_cadf_k_builder.h
+        pbc/periodic_ri_j_cadf_k_fock_builder.h
+        pbc/periodic_four_center_j_cadf_k_fock_builder.h
         pbc/util.h
         )
 endif()

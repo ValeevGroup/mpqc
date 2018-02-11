@@ -19,7 +19,7 @@ inline void set_oper(std::function<Tile(TA::TensorD &&)> &op) {}
 /// specilazation when Tile=TA::TensorD
 template <>
 inline void set_oper(std::function<TA::TensorD(TA::TensorD &&)> &op) {
-  op = TA::Noop<TA::TensorD, true>();
+  op = TA::detail::Noop<TA::TensorD, TA::TensorD, true>();
 }
 
 }  // namespace detail

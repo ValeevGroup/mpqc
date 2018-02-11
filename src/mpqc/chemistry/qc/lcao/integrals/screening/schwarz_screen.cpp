@@ -1,7 +1,7 @@
 #include "schwarz_screen.h"
 
 #include "mpqc/math/groups/petite_list.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 namespace lcao {
@@ -102,7 +102,7 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
       const float a_val = Ta(a);
       for (auto b = 0ul; b < Tbc.rows(); ++b) {
         for (auto c = 0ul; c < Tbc.cols(); ++c, ++ord) {
-          if (pmap.is_local(ord)) {
+          if (pmap.is_local(ord)){
             norms[ord] = std::sqrt(a_val * Tbc(b, c));
           }
         }

@@ -50,20 +50,23 @@ std::shared_ptr<Basis> index_to_basis(
 /// Functions to generate formula
 ///
 
+// clang-format off
 /**
   * Given Formula with rank = 4, return DensityFitting formula
   *
   * This function is also used in LCAOFactory density fitting formula
   *parsing
   *
-  * @param formula that has string format (in1 in2 | oper | in3 in4 ) or <in1
-  *in2 | oper | in3 in4 >
+  * @param formula that has string format (in1 in2 | oper | in3 in4 ) or <in1 in2 | oper | in3 in4 >
   * @return array of wstring with length 3
-  *         - string0 ( dfbs | oper | in1 in2 )  or ( dfbs |oper | in1 in3 )
-  *         - string1 ( dfbs | oper | dfbs )[inv]
-  *         - string2 ( dfbs | oper | in3 in4 )  or ( dfbs | oper | in2 in4 )
-  */
-std::array<std::wstring, 3> get_df_formula(const Formula &formula);
+  *         - string0 ( dfbs | oper | in1 in2 )[inv_sqr]  or ( dfbs |oper | in1 in3 ) [inv_sqr]
+  *         - string1 ( dfbs | oper | in3 in4 )[inv_sqr]  or ( dfbs | oper | in2 in4 )[inv_sqr]
+  *
+  *         where ( dfbs | oper | in1 in2 )[inv_sqr]  = ( dfbs | oper | dfbs )[inv_sqr] * ( dfbs | oper | in1 in2 )
+  *
+  **/
+// clang-format on
+std::array<std::wstring, 2> get_df_formula(const Formula &formula);
 
 // clang-format off
 /**

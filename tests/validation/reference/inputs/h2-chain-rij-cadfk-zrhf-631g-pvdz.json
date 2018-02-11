@@ -1,0 +1,46 @@
+{
+  "units": "2006CODATA",
+  "h2": {
+    "charge": 0,
+    "file_name": "h2.xyz",
+    "sort_input": false,
+    "n_cluster": 1,
+    "lattice_param": [0.0, 0.0, 3.7]
+  },
+  "basis": {
+    "name": "6-31g",
+    "atoms": "$:h2"
+  },
+  "dfbs": {
+    "name": "cc-pvdz",
+    "atoms": "$:h2"
+  },
+   "wfn_world":{
+    "atoms" : "$:h2",
+    "basis" : "$:basis",
+    "df_basis" : "$:dfbs",
+    "screen": "schwarz",
+    "threshold": 1.0e-20,
+    "shell_pair_threshold": 1.0e-12,
+    "rmax":  [0, 0, 5],
+    "rjmax": [0, 0, 5],
+    "rdmax": [0, 0, 5]
+   },
+   "wfn":{
+    "type": "RIJ-CADFK-zRHF",
+    "atoms" : "$:h2",
+    "wfn_world": "$:wfn_world",
+    "max_iter": 100,
+    "soad_guess": true,
+    "print_detail": true,
+    "max_condition_num": 1e8,
+    "force_shape_threshold": 1.0e-8,
+    "k_points": [1, 1, 11]
+   },
+   "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-9
+   }
+}
+

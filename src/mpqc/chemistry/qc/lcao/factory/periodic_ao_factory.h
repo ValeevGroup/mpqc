@@ -7,7 +7,9 @@
 #include <iosfwd>
 #include <vector>
 
-#include "mpqc/chemistry/molecule/unit_cell.h"
+#include "mpqc/chemistry/molecule/lattice/unit_cell.h"
+#include "mpqc/chemistry/molecule/lattice/util.h"
+#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -18,105 +20,8 @@
 #include <mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
-typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-                      Eigen::RowMajor>
-    MatrixZ;
-typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> VectorZ;
-typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorD;
-
-// constant
-const std::complex<double> I(0.0, 1.0);
-
 namespace mpqc {
 namespace lcao {
-
-namespace detail {
-/*!
- * \brief This extends 1D tiled range by repeating it multiple times
- *
- * \param tr0 the original TiledRange1 object
- * \param size the number of times for repeating
- * \return the extended TiledRange1 object
- */
-TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
-
-/*!
- * \brief This sorts eigenvalues and eigenvectors
- * in ascending order of the real parts of eigenvalues
- *
- * \param eigVal the vector of complex eigenvalues
- * \param eigVec the complex matrix consisting of complex eigenvectors
- */
-void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec);
-
-/*!
- * \brief This takes the ordinal index of a lattice
- * and returns the corresponding direct-space lattice vector
- *
- * \param ord_index the ordinal index of the lattice
- * \param latt_max the range of included lattices
- * \param dcell the direct unit cell params
- * \return the direct-space lattice vector
- */
-Vector3d direct_vector(int64_t ord_idx, Vector3i latt_max, Vector3d dcell);
-
-/*!
- * \brief This takes the ordinal index of a k-space (reciprocal-space) lattice
- * and returns the corresponding k-space lattice vector
- *
- * \param ord_idx the ordinal index of the reciprocal lattice
- * \param nk the range of included k points
- * \param dcell the direct unit cell params
- * \return the k-space lattice vector
- */
-Vector3d k_vector(int64_t ord_idx, Vector3i nk, Vector3d dcell);
-
-/*!
- * \brief This takes the 3D index of a direct lattice
- * and returns the corresponding ordinal index
- *
- * \param x the direct lattice index on x axis
- * \param y the direct lattice index on y axis
- * \param z the direct lattice index on z axis
- * \param latt_max the range of included lattices
- * \return the ordinal index in direct space
- */
-int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max);
-
-/*!
- * \brief This takes the ordinal index of a direct lattice
- * and returns the corresponding 3D index
- *
- * \param ord_idx the ordinal index in direct space
- * \param latt_max the range of included lattices
- * \return 3D index in direct space
- */
-Vector3i direct_3D_idx(const int64_t ord_idx, const Vector3i &latt_max);
-
-/*!
- * \brief This takes the 3D index of a reciprocal lattice
- * and returns the corresponding ordinal index
- *
- * \param x the reciprocal lattice index on x' axis
- * \param y the reciprocal lattice index on y' axis
- * \param z the reciprocal lattice index on z' axis
- * \param nk the range of included k points
- * \return the ordinal index in k space
- */
-int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk);
-
-/*!
- * \brief This shifts the position of a Molecule object
- *
- * \note All atom positions will be shifted
- * \param mol the Molecule object
- * \param shift the 3D vector of the shift
- * \return the shared pointer of the shifted Molecule object
- */
-std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
-
-}  // namespace mpqc::lcao::detail
-
 namespace gaussian {
 
 template <typename Tile, typename Policy>
@@ -151,41 +56,19 @@ std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
   return pao_factory;
 }
 
-namespace detail {
-
 /*!
- * \brief This shifts the origin of a Basis object
+ * \brief Periodic Integral Class
  *
- * \note All functions in the basis will be shifted
- * \param basis the original Basis object
- * \param shift the 3D vector of the shift
- * \return the shared pointer of shifted Basis object
- */
-std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
-                                          const Vector3d &shift);
-
-/*!
- * \brief This shifts the origin of a Basis object by multiple vectors,
- * and returns a compound Basis that combines all shifted bases
+ * This class computes atomic integrals involved in periodic calculations using
+ * Formula
  *
- * \param basis the original Basis object
- * \param shift_base the base position where all shifting vectors start
- * \param nshift the range of included lattices
- * \param dcell the direct unit cell params
- * \return the shared pointer of the compound Basis object
+ * compute(formula) returns TArray object
  */
-std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
-                                          const Vector3d &shift_base,
-                                          const Vector3i &nshift,
-                                          const Vector3d &dcell);
-
-}  // namespace detail
-
 template <typename Tile, typename Policy>
 class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectTArray = DirectArray<Tile, Policy>;
+  using DirectTArray = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
   using Op = std::function<Tile(TA::TensorD &&)>;
 
  public:
@@ -193,10 +76,40 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   PeriodicAOFactory(PeriodicAOFactory &&) = default;
   PeriodicAOFactory &operator=(PeriodicAOFactory &&) = default;
 
+  // clang-format off
   /*!
    * \brief KeyVal constructor for PeriodicAOFactory
-   * \param kv the KeyVal object
+   * \param kv The KeyVal object will be queried for all the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c rmax  | array<int, 3> | none | This gives range of expansion of Bloch Gaussians in AO Gaussians. |
+   *  |\c rdmax | array<int, 3> | none | This gives range of Coulomb operation. |
+   *  |\c rjmax | array<int, 3> | none | This gives range of density representation. |
+   *  |\c engine_precision | double | machine epsilon | This gives integral engine precision. |
+   *  |\c screen | string | schwarz | This gives method of screening, qqr or schwarz. |
+   *  |\c threshold | double | 1e-20 | This gives threshold for schwarz or qqr screening. |
+   *  |\c shell_pair_threshold | double | 1e-12 | This gives threshold for screeing non-negligible shell pairs. |
+   *  |\c density_threshold | double | sparse shape threshold | This gives threshold for screening density blocks in Fock build. |
+   *  |\c print_detail | bool | false | Print more details if true. |
+   *
+   *  example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn_world": {
+   *    "atoms" : "$:water",
+   *    "basis" : "$:basis",
+   *    "df_basis" : "$:dfbs",
+   *    "screen": "schwarz",
+   *    "threshold": 1.0e-20,
+   *    "shell_pair_threshold": 1.0e-20,
+   *    "density_threshold": 1.0e-10,
+   *    "rmax":  [0, 0, 10],
+   *    "rjmax": [0, 0, 10],
+   *    "rdmax": [0, 0, 10]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   PeriodicAOFactory(const KeyVal &kv)
       : PeriodicAOFactoryBase<Tile, Policy>(kv) {
     std::string prefix = "";
@@ -205,25 +118,27 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
     // Molecule was already created at this path, bypass registry and construct
     // UnitCell
-    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
+    unitcell_ = kv.class_ptr<UnitCell>(prefix + "atoms", true);
     dcell_ = unitcell_->dcell();
 
     R_max_ =
-        decltype(R_max_)(kv.value<std::vector<int>>(prefix + "rmax").data());
-    RD_max_ =
-        decltype(RD_max_)(kv.value<std::vector<int>>(prefix + "rdmax").data());
-    RJ_max_ =
-        decltype(RJ_max_)(kv.value<std::vector<int>>(prefix + "rjmax").data());
+        decltype(R_max_)(kv.value<std::array<int, 3>>(prefix + "rmax").data());
+    RD_max_ = decltype(RD_max_)(
+        kv.value<std::array<int, 3>>(prefix + "rdmax").data());
+    RJ_max_ = decltype(RJ_max_)(
+        kv.value<std::array<int, 3>>(prefix + "rjmax").data());
 
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_ord_idx;
     R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
     auto default_precision = std::numeric_limits<double>::epsilon();
-    precision_ = kv.value<double>(prefix + "precision", default_precision);
-    detail::integral_engine_precision = precision_;
-    ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
+    engine_precision_ =
+        kv.value<double>(prefix + "engine_precision", default_precision);
+    detail::integral_engine_precision = engine_precision_;
+    ExEnv::out0() << indent << "Engine precision = " << engine_precision_
+                  << "\n";
 
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-20);
@@ -231,6 +146,12 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
         kv.value<double>(prefix + "shell_pair_threshold", 1.0e-12);
     ExEnv::out0() << indent << "Non-negligible shell-pair threshold = "
                   << shell_pair_threshold_ << "\n";
+
+    density_threshold_ = kv.value<double>(prefix + "density_threshold",
+                                          Policy::shape_type::threshold());
+    ExEnv::out0() << indent
+                  << "Density sparse threshold = " << density_threshold_
+                  << "\n";
 
     // This functor converts TensorD to TensorZ
     // Uncomment if \tparam Tile = TensorZ
@@ -298,8 +219,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// This computes sparse complex array using integral direct
   DirectTArray compute_direct_integrals(
       madness::World &world, ShrPool<libint2::Engine> &engine,
-      BasisVector const &bases, std::shared_ptr<Screener> p_screen =
-                                    std::make_shared<Screener>(Screener{})) {
+      BasisVector const &bases,
+      std::shared_ptr<Screener> p_screen =
+          std::make_shared<Screener>(Screener{})) {
     auto result =
         direct_sparse_complex_integrals(world, engine, bases, p_screen, op_);
     return result;
@@ -317,6 +239,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   /// @return shell pair threshold
   double shell_pair_threshold() const { return shell_pair_threshold_; }
+
+  /// @return density sparsity threshold
+  double density_threshold() const { return density_threshold_; }
 
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }
@@ -456,9 +381,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
 
   bool print_detail_;  ///> if true, print a lot more details
   std::string screen_;
-  double precision_;
+  double engine_precision_;
   double screen_threshold_;
   double shell_pair_threshold_;
+  double density_threshold_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
@@ -544,8 +470,8 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     result = compute_integrals(world, engine_pool, bs_array);
   } else if (formula.oper().type() == Operator::Type::Nuclear) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
-      using ::mpqc::lcao::detail::shift_mol_origin;
+      using ::mpqc::detail::direct_vector;
+      using ::mpqc::detail::shift_mol_origin;
       auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
       auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
       parse_one_body_two_center_periodic(formula, engine_pool, bs_array,
@@ -558,7 +484,7 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     }
   } else if (formula.oper().type() == Operator::Type::Coulomb) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_two_center_periodic(formula, engine_pool, bs_array,
                                          vec_RJ);
@@ -597,7 +523,7 @@ PeriodicAOFactory<Tile, Policy>::compute3(const Formula &formula) {
   auto time0 = mpqc::now(world, this->accurate_time());
   if (formula.oper().type() == Operator::Type::Coulomb) {
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
 
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_three_center_periodic(formula, engine_pool, bs_array,
@@ -649,7 +575,7 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     j_formula.set_operator_type(Operator::Type::Coulomb);
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_four_center_periodic(j_formula, engine_pool, bs_array,
                                           vec_RJ, true, p_screener);
@@ -677,7 +603,7 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     auto k_formula = formula;
     k_formula.set_operator_type(Operator::Type::Coulomb);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
       parse_two_body_four_center_periodic(k_formula, engine_pool, bs_array,
                                           vec_RJ, false, p_screener);
@@ -778,7 +704,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct_vector(const Formula &formula) {
                   << utility::to_string(formula.string()) << std::endl;
     if (formula.oper().type() == Operator::Type::Coulomb) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        using ::mpqc::lcao::detail::direct_vector;
+        using ::mpqc::detail::direct_vector;
 
         DirectTArray &g = result[RJ];
         if (!g.array().is_initialized()) {
@@ -831,7 +757,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct3(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       DirectTArray &g = g_3idx_[RJ];
 
       if (!g.array().is_initialized()) {
@@ -901,7 +827,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
 
       DirectTArray &g = gj_[RJ];
       if (!g.array().is_initialized()) {
@@ -938,7 +864,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     }
 
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
+      using ::mpqc::detail::direct_vector;
       DirectTArray &g = gk_[RJ];
       if (!g.array().is_initialized()) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -1305,9 +1231,9 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
                                               std::move(shr_bases),
                                               std::move(screen), std::move(op));
 
-  auto direct_array = DirectArray<Tile, Policy, E>(std::move(builder));
+  auto direct_array = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, E>>(std::move(builder));
   auto builder_ptr = direct_array.builder();
-  using DirectTileType = DirectTile<Tile, E>;
+  using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, E>>;
 
   auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng) {
 

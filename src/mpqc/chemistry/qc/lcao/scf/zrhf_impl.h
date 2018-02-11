@@ -7,9 +7,13 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
+
+#include "mpqc/math/external/tiledarray/util.h"
 
 namespace mpqc {
 namespace lcao {
@@ -58,8 +62,11 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   RD_size_ = ao_factory.RD_size();
 
   // read # kpoints from keyval
-  nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
-  k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+  using ::mpqc::detail::k_ord_idx;
+  nk_ = decltype(nk_)(kv.value<std::array<int, 3>>("k_points").data());
+  assert((nk_.array() > 0).all() &&
+         "k_points cannot have zero or negative elements");
+  k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
                 << nk_.transpose() << "]" << std::endl;
@@ -91,15 +98,16 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
   // compute density matrix using soad/core guess
+  array_type F_init;
   if (!soad_guess) {
     ExEnv::out0() << "\nUsing CORE guess for initial Fock ..." << std::endl;
-    F_ = H_;
+    F_init = H_;
   } else {
-    F_ = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
+    F_init = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
   }
 
   // transform Fock from real to reciprocal space
-  Fk_ = transform_real2recip(F_);
+  Fk_ = transform_real2recip(F_init);
   // compute orthogonalizer matrix
   X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_,
                                            print_max_item_);
@@ -128,8 +136,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
   // compute nuclear-repulsion energy
   const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
-  if (world.rank() == 0)
-    std::cout << "\nNuclear Repulsion Energy: " << erep << std::endl;
+  ExEnv::out0() << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
   do {
     auto iter_start = mpqc::fenced_now(world);
@@ -138,8 +145,9 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     auto ezrhf_old = ezrhf;
     auto D_old = D_;
 
-    if (print_detail_)
-      if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
+    if (print_detail_) {
+      ExEnv::out0() << "\nIteration: " << iter << "\n";
+    }
 
     // F = H + 2J - K
     auto f_start = mpqc::fenced_now(world);
@@ -148,7 +156,8 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
     // transform Fock from real to reciprocal space
     auto trans_start = mpqc::fenced_now(world);
-    Fk_ = transform_real2recip(F_);
+    const auto fock_lattice_range = f_builder_->fock_lattice_range();
+    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
@@ -258,7 +267,7 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
   C_.resize(k_size_);
 
   auto tr0 = Fk_.trange().data()[0];
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::extend_trange1;
   auto tr1 = extend_trange1(tr0, RD_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
@@ -292,10 +301,13 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
 
   Matrix result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
+
+  using ::mpqc::detail::direct_vector;
+  using ::mpqc::detail::k_vector;
   for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
+    auto vec_R = direct_vector(R, RD_max_, dcell_);
     for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = detail::k_vector(k, nk_, dcell_);
+      auto vec_k = k_vector(k, nk_, dcell_);
       auto C_occ = C_[k].leftCols(docc_);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =
@@ -313,10 +325,31 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
 
 template <typename Tile, typename Policy>
 typename zRHF<Tile, Policy>::array_type_z
-zRHF<Tile, Policy>::transform_real2recip(array_type& matrix) {
+zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
+                                         const Vector3i& real_lattice_range,
+                                         const Vector3i& recip_lattice_range) {
+  // Make sure range values are all positive
+  assert((real_lattice_range.array() >= 0).all() &&
+         (recip_lattice_range.array() > 0).all());
+
+  using ::mpqc::detail::direct_vector;
+  using ::mpqc::detail::k_vector;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::extend_trange1;
+
+  const auto real_lattice_size =
+      1 + direct_ord_idx(real_lattice_range, real_lattice_range);
+  const Vector3i k_end_3D_idx = (recip_lattice_range.array() - 1).matrix();
+  const auto recip_lattice_size =
+      1 + k_ord_idx(k_end_3D_idx, recip_lattice_range);
+  const auto tiles_range = matrix.trange().tiles_range();
+  assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
+  assert(real_lattice_size == tiles_range.extent(1) / tiles_range.extent(0));
+
   array_type_z result;
   auto tr0 = matrix.trange().data()[0];
-  auto tr1 = detail::extend_trange1(tr0, k_size_);
+  auto tr1 = extend_trange1(tr0, recip_lattice_size);
   auto& world = matrix.world();
 
   // Perform real->reciprocal transformation with Eigen
@@ -326,15 +359,15 @@ zRHF<Tile, Policy>::transform_real2recip(array_type& matrix) {
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();
-  for (auto R = 0; R < R_size_; ++R) {
+  for (auto R = 0; R < real_lattice_size; ++R) {
     auto bmat =
         matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
     if (bmat.norm() < bmat.size() * threshold)
       continue;
     else {
-      auto vec_R = detail::direct_vector(R, R_max_, dcell_);
-      for (auto k = 0; k < k_size_; ++k) {
-        auto vec_k = detail::k_vector(k, nk_, dcell_);
+      auto vec_R = direct_vector(R, real_lattice_range, dcell_);
+      for (auto k = 0; k < recip_lattice_size; ++k) {
+        auto vec_k = k_vector(k, recip_lattice_range, dcell_);
         auto exponent = std::exp(I * vec_k.dot(vec_R));
         result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
             bmat * exponent;
@@ -346,6 +379,18 @@ zRHF<Tile, Policy>::transform_real2recip(array_type& matrix) {
       world, result_eig, tr0, tr1);
 
   return result;
+}
+
+template <typename Tile, typename Policy>
+typename zRHF<Tile, Policy>::array_type_z
+zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::k_ord_idx;
+
+  const Vector3i k_end_3D_idx = (nk_.array() - 1).matrix();
+  assert(k_size_ == 1 + k_ord_idx(k_end_3D_idx, nk_));
+  assert(R_size_ == 1 + direct_ord_idx(R_max_, R_max_));
+  return transform_real2recip(matrix, R_max_, nk_);
 }
 
 template <typename Tile, typename Policy>
@@ -406,8 +451,25 @@ void zRHF<Tile, Policy>::evaluate(Energy* result) {
 template <typename Tile, typename Policy>
 double zRHF<Tile, Policy>::compute_energy() {
   array_type H_plus_F;
-  H_plus_F("mu, nu") = H_("mu, nu") + F_("mu, nu");
-  auto ezrhf = ::mpqc::pbc::detail::dot_product(H_plus_F, D_, R_max_, RD_max_);
+  const auto fock_lattice_range = f_builder_->fock_lattice_range();
+  H_plus_F = ::mpqc::pbc::detail::add(H_, F_, R_max_, fock_lattice_range);
+  Vector3i HpF_lattice_range;
+  if (R_max_(0) >= fock_lattice_range(0) &&
+      R_max_(1) >= fock_lattice_range(1) &&
+      R_max_(2) >= fock_lattice_range(2)) {
+    HpF_lattice_range = R_max_;
+  } else if (R_max_(0) <= fock_lattice_range(0) &&
+             R_max_(1) <= fock_lattice_range(1) &&
+             R_max_(2) <= fock_lattice_range(2)) {
+    HpF_lattice_range = fock_lattice_range;
+  } else {
+    ExEnv::out0() << "\nLattice range of H: " << R_max_.transpose()
+                  << "\nLattice range of Fock: "
+                  << fock_lattice_range.transpose() << std::endl;
+    throw "Invalid lattice ranges!";
+  }
+  auto ezrhf = ::mpqc::pbc::detail::dot_product(H_plus_F, D_, HpF_lattice_range,
+                                                RD_max_);
   return ezrhf;
 }
 
@@ -421,7 +483,8 @@ void zRHF<Tile, Policy>::init_fock_builder() {
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::build_F() {
   auto G = f_builder_->operator()(D_);
-  F_("mu, nu") = H_("mu, nu") + G("mu, nu");
+  const auto fock_lattice_range = f_builder_->fock_lattice_range();
+  F_ = ::mpqc::pbc::detail::add(H_, G, R_max_, fock_lattice_range);
 }
 
 /**
@@ -449,25 +512,44 @@ FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
 
 template <typename Tile, typename Policy>
 void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
-  auto& factory = this->ao_factory();
-  auto& world = factory.world();
-  auto screen = factory.screen();
-  auto screen_threshold = factory.screen_threshold();
-  auto basis =
-      this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
-  auto dcell = factory.unitcell().dcell();
-  auto R_max = factory.R_max();
-  auto RJ_max = factory.RJ_max();
-  auto RD_max = factory.RD_max();
-  auto R_size = factory.R_size();
-  auto RJ_size = factory.RJ_size();
-  auto RD_size = factory.RD_size();
-  auto shell_pair_threshold = factory.shell_pair_threshold();
-
   using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(
-      world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-      RD_size, true, true, screen, screen_threshold, shell_pair_threshold);
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), true, true);
+}
+
+/**
+ *  RIJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+RIJCADFKzRHF<Tile, Policy>::RIJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+}
+
+template <typename Tile, typename Policy>
+void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicRIJCADFKFockBuilder<
+      Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
+  this->f_builder_ =
+      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+}
+
+/**
+ *  FourCenterJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+FourCenterJCADFKzRHF<Tile, Policy>::FourCenterJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+}
+
+template <typename Tile, typename Policy>
+void FourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicFourCenterJCADFKFockBuilder<
+      Tile, Policy, FourCenterJCADFKzRHF<Tile, Policy>::factory_type>;
+  this->f_builder_ =
+      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
 }
 
 }  // namespace lcao

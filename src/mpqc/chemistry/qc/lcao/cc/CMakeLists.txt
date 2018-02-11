@@ -4,12 +4,29 @@ set(sources
         ccsd.cpp
         ccsd_t.h
         ccsd_t.cpp
+        ccsdt1.h
+        ccsdt1.cpp
+        solvers.h
+        ccsdt1b.h
+        ccsdt1b.cpp
+        ccsdt2.h
+        ccsdt2.cpp
+        ccsdt3.h
+        ccsdt3.cpp
+        ccsdt4.h
+        ccsdt4.cpp
+        ccsdt.h
+        ccsdt.cpp
+        cc3.h
+        cc3.cpp
         eom/eom_ccsd.h
         eom/eom_ccsd_impl.h
         eom/eom_ccsd.cpp
         gamma_point_ccsd.h
         gamma_point_ccsd.cpp
+        laplace_transform.h
         linkage.h
+        solvers.h
         )
 
 add_mpqc_library(lcao_cc sources sources "MPQCcc;MPQClcao_scf;MPQCutil_misc;MPQCmath_quadrature" "mpqc/chemistry/qc/lcao/cc")

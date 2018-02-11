@@ -1,0 +1,34 @@
+{
+  "units": "2010CODATA",
+  "atoms": {
+    "type": "Molecule",
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 1
+  },
+  "obs": {
+    "name": "3-21g",
+    "atoms": "$:atoms"
+  },
+  "dfbs": {
+    "name": "cc-pVDZ",
+    "atoms": "$:atoms"
+  },
+  "wfn_world":{
+    "atoms" : "$:atoms",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "screen": "schwarz"
+  },
+  "wfn":{
+    "type": "CADF-RHF",
+    "wfn_world": "$:wfn_world",
+    "atoms" : "$:atoms",
+    "secadf" : true
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  }
+}

@@ -160,12 +160,12 @@ class RIRHF : public RHF<Tile, Policy> {
 };
 
 /**
- * CadfRHF class, using direct traditional density fitting for J and the
- * Concentric Atomic Density Fitting Approach for K.
+ * CADFRHF class, using direct traditional density fitting for J and the
+ * O(N) Concentric Atomic Density Fitting Approach for K.
  *
  */
 template <typename Tile, typename Policy>
-class CadfRHF : public RHF<Tile, Policy> {
+class CADFRHF : public RHF<Tile, Policy> {
  public:
   /*!
    * Parameter tcutc can be set to truncate elements of the molecular orbitals,
@@ -177,7 +177,7 @@ class CadfRHF : public RHF<Tile, Policy> {
    * Finally if force_shape_threshold != 0 then tcutc will be defaulted to 1e-4,
    * but will still be settable by the user.
    */
-  CadfRHF(const KeyVal& kv);
+  CADFRHF(const KeyVal& kv);
 
  private:
   void init_fock_builder() override;
@@ -230,13 +230,13 @@ extern template class RHF<TA::TensorD, TA::DensePolicy>;
 extern template class RIRHF<TA::TensorD, TA::DensePolicy>;
 extern template class DirectRHF<TA::TensorD, TA::DensePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::DensePolicy>;
-extern template class CadfRHF<TA::TensorD, TA::DensePolicy>;
+extern template class CADFRHF<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 extern template class RHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
-extern template class CadfRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class CADFRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 

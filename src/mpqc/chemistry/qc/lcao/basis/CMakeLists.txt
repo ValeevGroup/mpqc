@@ -8,6 +8,8 @@ cluster_shells.h
 linkage.h
 shell_vec_functions.cpp
 shell_vec_functions.h
+shift_basis.h
+shift_basis.cpp
 )
 
 add_mpqc_library(lcao_basis sources sources "MPQCmolecule;MPQClcao_expression;MPQCmath_ta" "mpqc/chemistry/qc/lcao/basis")

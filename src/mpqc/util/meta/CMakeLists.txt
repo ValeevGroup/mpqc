@@ -5,6 +5,7 @@ set(public_headers
     predicates.h
     sfinae.h
     store_variadic_pack.h
+    type_traits.h
    )
    
 add_mpqc_hdr_library(util_meta public_headers "" "mpqc/util/meta")

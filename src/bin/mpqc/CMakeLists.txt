@@ -20,7 +20,7 @@ target_compile_definitions(MPQCmpqc PUBLIC ${LIBINT2_EXTRA_DEFINITIONS})
 # N.B. due to transitive dependencies this could be shortened to: set (mpqc_features "lcao_f12;lcao_ci")
 #      *but* this would break introspection of MPQC capabilities later (e.g. in validation suite)
 #      that may actually be *the* desired behavior; by adding only lcao_cc you will skip all non-CC tests
-set(mpqc_features "lcao_f12;lcao_cc;lcao_mbpt;lcao_ci;lcao_scf")
+set(mpqc_features "lcao_f12;lcao_ccsdt;lcao_cc;lcao_mbpt;lcao_ci;lcao_scf")
 # N.B. developers will want to trim this list down to the minimum needed, e.g. down to "lcao_scf" to test HF only
 #set (mpqc_features "lcao_scf" )
 set(MPQC_FEATURES ${mpqc_features} CACHE STRING

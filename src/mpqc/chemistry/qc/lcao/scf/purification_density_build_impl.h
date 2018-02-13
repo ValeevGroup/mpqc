@@ -83,15 +83,18 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
   auto Cao =
-      array_ops::eigen_to_array<Tile,Policy>(D.world(), D_eig, tr_ao, tr_occ);
+      array_ops::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localize_) {
-	  if((localization_method_ == "RRQR")|| (localization_method_ == "RRQR(valence)")){
-      auto U = mpqc::scf::RRQRLocalization{}(Cao, S_, (localization_method_ == "RRQR(valence)" ? ncore_ : 0) );
-	  Cao("mu,i") = Cao("mu,k") * U("k,i");
+    if ((localization_method_ == "rrqr") ||
+        (localization_method_ == "rrqr(valence)")) {
+      auto U = mpqc::scf::RRQRLocalization{}(
+          Cao, S_, (localization_method_ == "rrqr(valence)" ? ncore_ : 0));
+      Cao("mu,i") = Cao("mu,k") * U("k,i");
     } else {
-      auto U = mpqc::scf::FosterBoysLocalization{}(Cao, r_xyz_ints_,
-                                                   (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+      auto U = mpqc::scf::FosterBoysLocalization{}(
+          Cao, r_xyz_ints_,
+          (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
       Cao("mu,i") = Cao("mu,k") * U("k,i");
       auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
       scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);

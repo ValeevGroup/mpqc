@@ -21,7 +21,8 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     typename ESolveDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
     int64_t nocc, int64_t ncore, int64_t nclusters, double TcutC,
-    std::string const &metric_decomp_type, double s_tolerance, bool localize, std::string localization_method)
+    std::string const &metric_decomp_type, double s_tolerance, bool localize,
+    std::string localization_method)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
@@ -37,8 +38,7 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
   } else if (metric_decomp_type_ == "inverse_sqrt") {
     M_inv_ = array_ops::inverse_sqrt(S_);
   } else if (metric_decomp_type_ == "conditioned") {
-    M_inv_ = array_ops::conditioned_orthogonalizer(
-        S_, s_tolerance);
+    M_inv_ = array_ops::conditioned_orthogonalizer(S_, s_tolerance);
   } else {
     throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";
@@ -91,12 +91,16 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   density_storages_.push_back(detail::array_storage(D));
 
   if (localize_) {
-    if((localization_method_ == "RRQR")|| (localization_method_ == "RRQR(valence)")){
-	  auto U = mpqc::scf::RRQRLocalization{}(C_occ_ao, S_, (localization_method_ == "RRQR(valence)" ? ncore_ : 0) );
-	  C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
+    if ((localization_method_ == "rrqr") ||
+        (localization_method_ == "rrqr(valence)")) {
+      auto U = mpqc::scf::RRQRLocalization{}(
+          C_occ_ao, S_, (localization_method_ == "rrqr(valence)" ? ncore_ : 0));
+      C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     } else {
       auto l0 = mpqc::fenced_now(world);
-      auto U = mpqc::scf::FosterBoysLocalization{}(C_occ_ao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+      auto U = mpqc::scf::FosterBoysLocalization{}(
+          C_occ_ao, r_xyz_ints_,
+          (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
       C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
       auto l1 = mpqc::fenced_now(world);
 

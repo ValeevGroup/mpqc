@@ -1,0 +1,42 @@
+{
+  "units": "2010CODATA",
+  "atoms": {
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 1,
+    "reblock" : 4
+  },
+  "obs": {
+    "name": "6-31G",
+    "atoms": "$:atoms"
+  },
+  "dfbs": {
+    "name": "cc-pVDZ",
+    "atoms": "$:atoms"
+  },
+  "wfn_world":{
+    "atoms" : "$:atoms",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "screen": "schwarz"
+  },
+  "scf":{
+    "type": "RI-RHF",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "CCSD",
+    "wfn_world": "$:wfn_world",
+    "atoms" : "$:atoms",
+    "ref": "$:scf",
+    "method" : "direct_df",
+    "occ_block_size" : 4,
+    "unocc_block_size" : 4
+  },
+  "property" : {
+    "type" : "Energy",
+    "precision" : "1e-11",
+    "wfn" : "$:wfn"
+  }
+}

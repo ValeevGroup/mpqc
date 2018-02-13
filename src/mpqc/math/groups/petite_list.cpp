@@ -19,7 +19,7 @@
 
 #include "mpqc/math/groups/petite_list.h"
 
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace math {

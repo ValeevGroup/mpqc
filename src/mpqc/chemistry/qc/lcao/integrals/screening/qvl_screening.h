@@ -75,7 +75,7 @@ struct init_qvl_screen {
                    Basis const &dfbs, Basis const &bs,
                    double threshold = 1e-10) {
         auto schwarz_screen
-              = init_schwarz_screen{threshold}(world, engs, dfbs, bs);
+              = create_schwarz_screener(world, engs, {dfbs, bs, bs}, threshold);
         return QVl(std::move(schwarz_screen), dfbs.flattened_shells(),
                    bs.flattened_shells());
     }

@@ -49,7 +49,7 @@
 
 // throw
 #if MPQC_ASSERT_MODE == 2
-#  include "mpqc/util/misc/exception.h"
+#  include "mpqc/util/core/exception.h"
 #  define MPQC_ASSERT( a ) ((not (a)) ? throw mpqc::Exception("assertion failed", __FILE__, __LINE__) : 1)
 #endif
 

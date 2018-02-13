@@ -1,6 +1,6 @@
 {
   "units": "2006CODATA",
-  "unitcell": {
+  "water": {
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
@@ -8,14 +8,14 @@
   },
   "basis": {
     "name": "6-31g",
-    "molecule": "$:unitcell"
+    "atoms": "$:water"
   },
   "dfbs": {
     "name": "cc-pvdz",
-    "molecule": "$:unitcell"
+    "atoms": "$:water"
   },
   "wfn_world":{
-    "molecule" : "$:unitcell",
+    "atoms" : "$:water",
     "basis" : "$:basis",
     "df_basis" :"$:dfbs",
     "screen": "schwarz",
@@ -26,7 +26,7 @@
   },
   "wfn":{
     "type": "DF-zRHF",
-    "molecule" : "$:unitcell",
+    "atoms" : "$:water",
     "wfn_world": "$:wfn_world",
     "max_iter": 100,
     "soad_guess": true,
@@ -40,4 +40,3 @@
     "precision" : 1.0e-9
   }
 }
-

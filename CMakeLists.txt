@@ -58,7 +58,7 @@ if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 endif()
 
-set(TA_POLICY sparse CACHE STRING "Set to TA::DensePolicy(dense) or TA::SparsePolicy(sparse)")
+set(TA_POLICY sparse CACHE STRING "Set to \"dense\" (to default to TA::DensePolicy) or \"sparse\" (to default to TA::SparsePolicy)")
 # convert string value of TA_POLICY to numerical values as TA_DEFAULT_POLICY
 set(TA_DEFAULT_POLICY 1)
 if(TA_POLICY STREQUAL sparse)
@@ -94,17 +94,30 @@ endif()
 # How to compile
 ###############################################################################
 
-if(BUILD_SHARED_LIBS)
-  set(BLA_STATIC FALSE)
-  set(CMAKE_MACOSX_RPATH TRUE)
-else()
-  set(BLA_STATIC TRUE)
-  set(CMAKE_MACOSX_RPATH FALSE)
-endif()
-
+### RPATH config to ensure full path is used
+### see https://cmake.org/Wiki/CMake_RPATH_handling#Always_full_RPATH
+set(CMAKE_MACOSX_RPATH FALSE)
+# use RPATH if possible
 set(CMAKE_SKIP_RPATH FALSE)
+# use, i.e. don't skip the full RPATH for the build tree
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+if("${isSystemDir}" STREQUAL "-1")
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif("${isSystemDir}" STREQUAL "-1")
+
+# MacOS specific
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "-Wl,-rpath,")
   # look for frameworks and appbundles last
@@ -124,6 +137,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
     "MinSizeRel" "RelWithDebInfo")
+endif()
+
+# by default, use same type of BLAS/LAPACK libs (shared/static) as we are using for MPQC
+if(BUILD_SHARED_LIBS)
+  set(BLA_STATIC FALSE)
+else()
+  set(BLA_STATIC TRUE)
 endif()
 
 # look for ccache
@@ -154,6 +174,7 @@ check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
 check_include_files(sys/resource.h       HAVE_SYS_RESOURCE_H)
 check_include_files(pwd.h                HAVE_PWD_H)
 check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
+check_include_files(execinfo.h           HAVE_EXECINFO_H)
 check_include_files(fenv.h               HAVE_FENV_H)
 include(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)
@@ -177,7 +198,7 @@ if (HAVE_EXECINFO_H)
   CHECK_FUNCTION_EXISTS (backtrace               HAVE_BACKTRACE_FN)
   CHECK_FUNCTION_EXISTS (backtrace_symbols       HAVE_BACKTRACE_SYMBOLS_FN)
   if (HAVE_BACKTRACE_FN AND HAVE_BACKTRACE_SYMBOLS_FN)
-    set (HAVE_BACKTRACE)
+    set (HAVE_BACKTRACE 1)
   endif()
 else (HAVE_EXECINFO_H)
   #find_package(ExecInfo)

@@ -4,7 +4,7 @@
 
 #include "catch.hpp"
 #include "mpqc/chemistry/units/units.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 #include <memory>
 

@@ -77,6 +77,17 @@ TA::TiledRange cadf_trange(gaussian::Basis const &obs_by_atom,
   return TA::TiledRange(trange1s.begin(), trange1s.end());
 }
 
+TA::TiledRange cadf_trange(gaussian::Basis const &bs0_by_atom,
+                           gaussian::Basis const &bs1_by_atom,
+                           gaussian::Basis const &dfbs_by_atom) {
+  std::vector<TA::TiledRange1> trange1s;
+  trange1s.emplace_back(dfbs_by_atom.create_trange1());
+  trange1s.emplace_back(bs0_by_atom.create_trange1());
+  trange1s.emplace_back(bs1_by_atom.create_trange1());
+
+  return TA::TiledRange(trange1s.begin(), trange1s.end());
+}
+
 TA::SparseShape<float> cadf_shape(madness::World &world,
                                   TA::TiledRange const &trange) {
   auto &tiles = trange.tiles_range();
@@ -144,6 +155,20 @@ std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
       gaussian::create_schwarz_screener(world, eng4, three_array, threshold));
 }
 
+std::shared_ptr<gaussian::SchwarzScreen> cadf_by_atom_screener(
+    madness::World &world, gaussian::Basis const &bs0,
+    gaussian::Basis const &bs1, gaussian::Basis const &dfbs, double threshold) {
+  const auto three_ref_array = utility::make_array_of_refs(dfbs, bs0, bs1);
+
+  const auto three_array = gaussian::BasisVector{{dfbs, bs0, bs1}};
+
+  auto eng4 = make_engine_pool(libint2::Operator::coulomb, three_ref_array,
+                               libint2::BraKet::xx_xx);
+
+  return std::make_shared<gaussian::SchwarzScreen>(
+      gaussian::create_schwarz_screener(world, eng4, three_array, threshold));
+}
+
 TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
     madness::World &world, gaussian::Basis const &by_cluster_obs,
     gaussian::Basis const &by_cluster_dfbs) {
@@ -200,6 +225,87 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
                                       std::move(screener));
 
   return cadf_by_atom_array(M, eri3, detail::cadf_trange(obs, dfbs));
+}
+
+TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
+    const TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> &M,
+    gaussian::Basis const &by_cluster_bs0,
+    gaussian::Basis const &by_cluster_bs1,
+    gaussian::Basis const &by_cluster_dfbs, size_t const &natoms_per_uc,
+    Vector3i const &lattice_range0,
+    Vector3i const &lattice_range1,
+    Vector3i const &lattice_range_df,
+    Vector3i const &lattice_center0,
+    Vector3i const &lattice_center1,
+    Vector3i const &lattice_center_df) {
+  auto &world = M.world();
+
+  auto bs0 = detail::by_center_basis(by_cluster_bs0);
+  auto bs1 = detail::by_center_basis(by_cluster_bs1);
+  auto dfbs = detail::by_center_basis(by_cluster_dfbs);
+
+  auto screener = detail::cadf_by_atom_screener(world, bs0, bs1, dfbs, 1e-12);
+
+  auto eng3 = make_engine_pool(libint2::Operator::coulomb,
+                               utility::make_array_of_refs(dfbs, bs0, bs1),
+                               libint2::BraKet::xs_xx);
+
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
+
+  auto eri3_norms = [&](TA::Tensor<float> const &in) {
+    const auto thresh = screener->skip_threshold();
+
+    auto const &range = in.range();
+    auto ext = range.extent_data();
+
+    std::vector<std::pair<std::array<int, 3>, float>> norms;
+    norms.reserve(ext[1] * ext[2]);
+
+    using idx_type = std::array<int, 3>;
+    auto val_max = std::numeric_limits<float>::max();
+    for (auto a = 0; a < ext[1]; ++a) {
+      const auto uc0_ord = a / natoms_per_uc;
+      const Vector3i uc0_3D = direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
+      const auto uc0_ord_in_df = direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
+      const auto a_in_df = uc0_ord_in_df * natoms_per_uc + a % natoms_per_uc;
+
+      for (auto b = 0; b < ext[2]; ++b) {
+        const auto uc1_ord = b / natoms_per_uc;
+        const Vector3i uc1_3D = direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;
+        const auto uc1_ord_in_df = direct_ord_idx(uc1_3D - lattice_center_df, lattice_range_df);
+        const auto b_in_df = uc1_ord_in_df * natoms_per_uc + b % natoms_per_uc;
+
+        auto in_val = std::max(in(a_in_df, a, b), in(b_in_df, a, b));
+
+        if (in_val >= thresh) {
+          norms.emplace_back(
+              std::make_pair(idx_type{{int(a_in_df), a, b}}, val_max));
+          norms.emplace_back(
+              std::make_pair(idx_type{{int(b_in_df), a, b}}, val_max));
+        }
+      }
+    }
+
+    return norms;
+  };
+
+  auto three_array = std::vector<gaussian::Basis>{dfbs, bs0, bs1};
+
+  auto trange = gaussian::detail::create_trange(three_array);
+  auto pmap =
+      TA::SparsePolicy::default_pmap(world, trange.tiles_range().volume());
+
+  bool replicate = true;
+  auto norms =
+      eri3_norms(screener->norm_estimate(world, three_array, *pmap, replicate));
+
+  auto eri3 = direct_sparse_integrals(world, eng3, three_array, norms,
+                                      std::move(screener));
+
+  return cadf_by_atom_array(M, eri3, detail::cadf_trange(bs0, bs1, dfbs), natoms_per_uc,
+                            lattice_range0, lattice_range1, lattice_range_df,
+                            lattice_center0, lattice_center1, lattice_center_df);
 }
 
 }  // namespace detail

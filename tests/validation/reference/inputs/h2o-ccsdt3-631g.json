@@ -1,0 +1,43 @@
+{
+  "units": "2010CODATA",
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 1,
+    "reblock" : 4
+  },
+  "obs": {
+    "type": "Basis",
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "screen": "schwarz"
+  },
+  "scf":{
+    "type": "RHF",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "CCSDT-3",
+    "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
+    "ref": "$:scf",
+    "method" : "standard",
+    "diis_start" : 2,
+    "occ_block_size" : 4,
+    "unocc_block_size" : 4,
+    "Expected T-3 energy" : -0.135818926201 
+  },
+  "property" : {
+    "type" : "Energy",
+    "precision" : "1e-11",
+    "wfn" : "$:wfn"
+  }
+}

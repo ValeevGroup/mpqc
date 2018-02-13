@@ -97,7 +97,7 @@ in a few lines of CMake code. This file, located at
 The CMakeLists.txt file how to compile the \c mp2.cpp source and use it to create
 the \c mp2 executable by linking against MPQC libraries. Note that
 the MPQC library names do not appear explicitly: instead we use their CMake target
-names \c MPQCmain and \c libmpqc .
+\c MPQCmain .
 
 \include mp2/CMakeLists.txt
 

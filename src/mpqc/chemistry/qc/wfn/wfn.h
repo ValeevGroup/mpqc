@@ -9,7 +9,7 @@
 #define SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {

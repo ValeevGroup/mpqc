@@ -17,7 +17,7 @@ template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using GuessVector = ::mpqc::cc::T1T2<TArray, TArray>;
+  using GuessVector = ::mpqc::cc::TPack<TArray>;
   using numeric_type = typename Tile::numeric_type;
 
  public:
@@ -37,10 +37,25 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
     vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+
+    // need to modify the method keyword, CIS only has standard and df
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    std::string original_method = kv.value<std::string>("method","");
+    std::string cis_method = (this->df_ ? "df" : "standard");
+    kv_nonconst.assign("method", cis_method);
+
+    // construct CIS Wavefunction
+    cis_guess_wfn_ = std::make_shared<CIS<Tile, Policy>>(kv);
+
+    // change method keyword back to original value
+    if(!original_method.empty()){
+      kv_nonconst.assign("method", original_method);
+    }
   }
 
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
+    cis_guess_wfn_->obsolete();
     TArray g_ijab_ = TArray();
 
     TArray FAB_ = TArray();
@@ -112,15 +127,16 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
         return std::sqrt(norm);
       };
 
-      TA::foreach_inplace(guess.t1, task1);
-      TA::foreach_inplace(guess.t2, task2);
+      TA::foreach_inplace(guess.at(0), task1);
+      TA::foreach_inplace(guess.at(1), task2);
 
-      guess.t1.world().gop.fence();
+      guess.at(0).world().gop.fence();
     }
   };
 
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector
+  std::shared_ptr<CIS<Tile,Policy>> cis_guess_wfn_; // CIS Wavefunction to provide guess to EOM-CCSD
 
   TArray g_ijab_;
 

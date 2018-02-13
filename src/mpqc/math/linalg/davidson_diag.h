@@ -11,8 +11,8 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/gram_schmidt.h"
 #include "mpqc/util/misc/assert.h"
-#include "mpqc/util/misc/exception.h"
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exception.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 

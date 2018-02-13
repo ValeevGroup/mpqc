@@ -22,7 +22,6 @@ namespace mpqc {
 
 template <typename D>
 void gram_schmidt(std::vector<D> &V, double threshold, std::size_t start = 0) {
-  const auto original_k = V.size();
   auto k = V.size();
   std::size_t n_neglect = 0;
 

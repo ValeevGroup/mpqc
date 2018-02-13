@@ -27,7 +27,11 @@ macro (validate_tiledarray)
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TILEDARRAY_OLDEST_REVISION 7dc782a5ab8fda91d2ef769e9ae480c0f0ac0983)
+  set (TILEDARRAY_OLDEST_REVISION c76972a187e0d21cd94070a6a6397946ecb7bd94)
+  # first make sure TiledArray_Eigen and TiledArray_BTAS targets are defined
+  if (NOT TARGET TiledArray_Eigen OR NOT TARGET TiledArray_BTAS)
+    message (FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TILEDARRAY_OLDEST_REVISION} or later")
+  endif()
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>

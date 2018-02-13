@@ -1,5 +1,8 @@
 #include "mpqc/math/external/eigen/util.h"
 
+#include <utility>
+#include <vector>
+
 namespace mpqc {
 namespace detail {
 

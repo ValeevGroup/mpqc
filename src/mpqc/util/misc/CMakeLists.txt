@@ -13,5 +13,5 @@ set(sources
   timestamp.h
 )
 
-add_mpqc_library(util_misc sources sources "MADworld;MPQCutil_c++;MPQCutil_keyval" "mpqc/util/misc")
-target_link_libraries(MPQCutil_misc PUBLIC tbb)
+add_mpqc_library(util_misc sources sources "MADworld;tbb;MPQCutil_c++;MPQCutil_keyval" "mpqc/util/misc")
+target_link_libraries(MPQCutil_misc PUBLIC MPQC_Eigen)

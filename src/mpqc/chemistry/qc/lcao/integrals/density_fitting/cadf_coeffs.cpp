@@ -250,8 +250,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
                                utility::make_array_of_refs(dfbs, bs0, bs1),
                                libint2::BraKet::xs_xx);
 
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
 
   auto eri3_norms = [&](TA::Tensor<float> const &in) {
     const auto thresh = screener->skip_threshold();

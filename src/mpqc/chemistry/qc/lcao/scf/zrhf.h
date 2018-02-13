@@ -13,6 +13,9 @@
 #include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 
+// constant: imaginary unit i
+const std::complex<double> I(0.0, 1.0);
+
 namespace mpqc {
 namespace lcao {
 

@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LATTICE_UNIT_CELL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LATTICE_UNIT_CELL_H_
 
 #include "mpqc/chemistry/molecule/molecule.h"
 
@@ -46,7 +46,7 @@ class UnitCell : public Molecule {
    * \param RJ_max the range of nuclear repulsion interaction; all cells with [- \c RJ_max .. RJ_max] are included
    * \return nuclear repulsion energy
    */
-  double nuclear_repulsion_energy(Vector3i RJ_max) const;
+  double nuclear_repulsion_energy(const Vector3i &RJ_max) const;
 
   ~UnitCell() { }
 
@@ -62,4 +62,4 @@ std::ostream &operator<<(std::ostream &, UnitCell const &);
 
 }  // mpqc namespace
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LATTICE_UNIT_CELL_H_

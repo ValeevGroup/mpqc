@@ -3,6 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "mpqc/math/external/tiledarray/util.h"
 
 namespace mpqc {
 namespace pbc {
@@ -27,9 +28,9 @@ TA::DistArray<Tile, Policy> reduced_size_array(
          arg_range(2) >= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::lcao::detail::direct_ord_idx;
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
   const auto arg_range_size =
@@ -83,9 +84,9 @@ TA::DistArray<Tile, Policy> enlarged_size_array(
          arg_range(2) <= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::lcao::detail::direct_ord_idx;
-  using ::mpqc::lcao::detail::direct_3D_idx;
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
   const auto arg_range_size = 1 + direct_ord_idx(arg_range, arg_range);

@@ -55,8 +55,8 @@ class PeriodicTwoCenterBuilder
 
   array_type eval(OperType oper, double target_precision =
                                      std::numeric_limits<double>::epsilon()) {
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::shift_mol_origin;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::shift_mol_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;

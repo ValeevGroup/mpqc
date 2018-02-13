@@ -19,9 +19,14 @@ using EigenVector = ::Eigen::Matrix<T, ::Eigen::Dynamic, 1>;
 template <typename T>
 using RowEigenVector = ::Eigen::Matrix<T, 1, ::Eigen::Dynamic>;
 
+using MatrixZ = Eigen::Matrix<std::complex<double>, Eigen::Dynamic,
+                              Eigen::Dynamic, Eigen::RowMajor>;
+using VectorZ = EigenVector<std::complex<double>>;
+using VectorD = EigenVector<double>;
+
 using Vector3d = Eigen::Vector3d;
 using Vector3i = Eigen::Vector3i;
-}
+}  // namespace mpqc
 
 namespace madness {
 namespace archive {
@@ -34,7 +39,6 @@ template <class Archive, typename Data>
 struct ArchiveStoreImpl;
 template <class Archive, typename Data>
 struct ArchiveLoadImpl;
-
 
 template <class Archive, typename _T>
 struct ArchiveStoreImpl<Archive, mpqc::RowMatrix<_T>> {
@@ -55,7 +59,7 @@ struct ArchiveLoadImpl<Archive, mpqc::RowMatrix<_T>> {
 };
 
 template <class Archive, typename _T>
-struct ArchiveStoreImpl<Archive, mpqc::EigenVector <_T>> {
+struct ArchiveStoreImpl<Archive, mpqc::EigenVector<_T>> {
   static inline void store(const Archive& ar, const mpqc::EigenVector<_T>& t) {
     ar& t.size();
     if (t.size()) ar& madness::archive::wrap(t.data(), t.size());

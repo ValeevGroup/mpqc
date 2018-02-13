@@ -20,8 +20,7 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
   GammaPointCCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv), kv_(kv) {
     phf_wfn_ = kv.keyval("ref")
                    .class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
-    lcao_factory_ =
-        lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);
+    lcao_factory_ = construct_periodic_lcao_factory<Tile, Policy>(kv);
 
     converge_ = kv.value<double>("converge", 1.0E-7);
   }
@@ -48,8 +47,10 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
    * \brief This initializes gamma-point CCSD
    */
   void init_gpccsd() {
+    using ::mpqc::detail::k_ord_idx;
+
     auto nk = phf_wfn_->nk();
-    auto k_size = 1 + detail::k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
+    auto k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
     auto unitcell = lcao_factory_->pao_factory().unitcell();
 
     int64_t gamma_point;

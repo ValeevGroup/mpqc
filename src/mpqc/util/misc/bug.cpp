@@ -84,7 +84,7 @@ Debugger::Debugger(const KeyVal &keyval) {
 
 Debugger::~Debugger() {
   for (int i = 0; i < NSIG; i++) {
-    if (mysigs_[i]) signals[i] = 0;
+    if (mysigs_[i]) signals[i] = nullptr;
   }
   delete[] mysigs_;
 }
@@ -122,6 +122,14 @@ void Debugger::handle(int sig) {
   mysigs_[sig] = 1;
 }
 
+void Debugger::release(int sig) {
+    if (sig >= NSIG) return;
+    typedef void (*handler_type)(int);
+    signal(sig, SIG_DFL);
+    signals[sig] = nullptr;
+    mysigs_[sig] = 0;
+}
+
 void Debugger::handle_defaults() {
 #ifdef SIGSEGV
   handle(SIGSEGV);
@@ -146,6 +154,9 @@ void Debugger::handle_defaults() {
 #endif
 #ifdef SIGABRT
   handle(SIGABRT);
+#endif
+#ifdef SIGTRAP
+  handle(SIGTRAP);
 #endif
 }
 
@@ -228,6 +239,8 @@ void Debugger::debug(const char *reason) {
       cmd.replace(pos, prefixvar.size(), prefix_);
     }
     // start the debugger
+    // before starting the debugger de-register signal handler for SIGTRAP to let the debugger take over
+    release(SIGTRAP);
     ExEnv::outn() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
     debugger_ready_ = 0;
     const auto system_retvalue = system(cmd.c_str());
@@ -269,6 +282,8 @@ void Debugger::got_signal(int sig) {
   else if (sig == SIGBUS)
     signame = "SIGBUS";
 #endif
+  else if (sig == SIGTRAP)
+    signame = "SIGTRAP";
   else
     signame = "UNKNOWN SIGNAL";
 

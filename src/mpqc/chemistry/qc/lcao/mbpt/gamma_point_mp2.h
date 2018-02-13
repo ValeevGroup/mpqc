@@ -18,8 +18,7 @@ class GammaPointMP2 : public RMP2<Tile, Policy> {
   GammaPointMP2(const KeyVal &kv) : RMP2<Tile, Policy>(kv) {
     phf_wfn_ = kv.keyval("ref")
                    .class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
-    lcao_factory_ =
-        lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);
+    lcao_factory_ = construct_periodic_lcao_factory<Tile, Policy>(kv);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
@@ -86,8 +85,10 @@ class GammaPointMP2 : public RMP2<Tile, Policy> {
    * \brief This initializes gamma-point MP2
    */
   void init_gpmp2() {
+    using ::mpqc::detail::k_ord_idx;
+
     auto nk = phf_wfn_->nk();
-    auto k_size = 1 + detail::k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
+    auto k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
     auto unitcell = lcao_factory_->pao_factory().unitcell();
 
     int64_t gamma_point;

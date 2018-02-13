@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MM_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MM_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_H_
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
@@ -73,21 +73,21 @@ class BasisPairInfo {
 
 }  // namespace detail
 
-namespace mm {
+namespace ma {
 
 /*!
  * \brief This class compute centers and extents for periodic multiple
  * approximation.
  */
 template <typename Factory>
-class PeriodicMM {
+class PeriodicMA {
  public:
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
 
-  PeriodicMM(Factory &ao_factory, double mm_thresh = 1.0e-8, double ws = 3.0)
-      : ao_factory_(ao_factory), mm_thresh_(mm_thresh), ws_(ws) {
+  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-8, double ws = 3.0)
+      : ao_factory_(ao_factory), ma_thresh_(ma_thresh), ws_(ws) {
     auto &world = ao_factory_.world();
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
     dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
@@ -137,11 +137,16 @@ class PeriodicMM {
     // all charge centers
     const auto ref_center = 0.5 * dcell_;
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_center);
+
+    // determine CFF boundary
+    cff_boundary_ = compute_CFF_boundary(RJ_max_);
+    ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
+                  << cff_boundary_.transpose() << std::endl;
   }
 
  private:
   Factory &ao_factory_;
-  const double mm_thresh_;  /// threshold of multiple approximation error
+  const double ma_thresh_;  /// threshold of multiple approximation error
   const double ws_;         /// well-separateness criterion
 
   std::shared_ptr<Basis> obs_;
@@ -157,12 +162,33 @@ class PeriodicMM {
   std::vector<Vector3i> uc_near_list_;
   std::shared_ptr<detail::BasisPairInfo> ref_pairs_;
   double max_distance_to_refcenter_;
+  Vector3i cff_boundary_;
 
  public:
+  const Vector3i &CFF_boundary() {return cff_boundary_;}
+
+
+ private:
   /*!
-   * \brief This determines if a unit cell \c uc_ket is in the crystal far
-   * field of the bra unit cell \c uc_bra.
+   * \brief This computes centers and extents of product density between unit
+   * cell \c ref_uc and its neighbours
    */
+  std::shared_ptr<detail::BasisPairInfo> compute_basis_pairs(
+      const Vector3i &ref_uc = {0, 0, 0}) {
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+
+    Vector3d uc_vec = ref_uc.cast<double>().cwiseProduct(dcell_);
+    auto basis = shift_basis_origin(*obs_, uc_vec);
+    auto basis_neighbour =
+        shift_basis_origin(*obs_, uc_vec, uc_near_list_, dcell_);
+
+    return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour);
+  }
+
+  /*!
+ * \brief This determines if a unit cell \c uc_ket is in the crystal far
+ * field of the bra unit cell \c uc_bra.
+ */
   bool is_uc_in_CFF(const Vector3i &uc_ket,
                     const Vector3i &uc_bra = {0, 0, 0}) {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -172,7 +198,7 @@ class PeriodicMM {
     const auto vec_rel = vec_ket - vec_bra;
 
     const auto npairs = ref_pairs_->npairs();
-    // CFF condition #1: all charge distributions are well seperated
+    // CFF condition #1: all charge distributions are well separated
     auto condition1 = true;
     for (auto p0 = 0ul; p0 != npairs; ++p0) {
       const auto center0 = ref_pairs_->center(p0) + vec_bra;
@@ -197,44 +223,62 @@ class PeriodicMM {
     condition2 = (L >= ws_ * (max_distance_to_refcenter_ * 2.0)) ? true : false;
 
     // test:
-    {
-      ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
-                    << std::endl;
-      ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
-                    << std::endl;
-      ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
-                    << std::endl;
-      ExEnv::out0() << "Distance between bra and ket = " << L << std::endl;
-      ExEnv::out0() << "r0_max = " << max_distance_to_refcenter_ << std::endl;
-      auto cond1_val = (condition1) ? "true" : "false";
-      auto cond2_val = (condition2) ? "true" : "false";
-      ExEnv::out0() << "Is Condition 1 true? " << cond1_val << std::endl;
-      ExEnv::out0() << "Is Condition 2 true? " << cond2_val << std::endl;
-    }
+//    {
+//      ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
+//                    << std::endl;
+//      ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
+//                    << std::endl;
+//      ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
+//                    << std::endl;
+//      ExEnv::out0() << "Distance between bra and ket = " << L << std::endl;
+//      ExEnv::out0() << "r0_max = " << max_distance_to_refcenter_ << std::endl;
+//      auto cond1_val = (condition1) ? "true" : "false";
+//      auto cond2_val = (condition2) ? "true" : "false";
+//      ExEnv::out0() << "Is Condition 1 true? " << cond1_val << std::endl;
+//      ExEnv::out0() << "Is Condition 2 true? " << cond2_val << std::endl;
+//    }
 
     return (condition1 && condition2);
   }
 
- private:
   /*!
-   * \brief This computes centers and extents of product density between unit
-   * cell \c ref_uc and its neighbours
+   * @brief This computes Crystal Far Field (CFF) boundary (bx, by, bz)
+   * @param limit3d the range limit (lx, ly, lz) of CFF boundary so that
+   * bx <= lx, by <= ly, bz <= lz. The computation of the boundary in one
+   * dimension will be skipped if its limit is zero.
+   * @return CFF boundary
    */
-  std::shared_ptr<detail::BasisPairInfo> compute_basis_pairs(
-      const Vector3i &ref_uc = {0, 0, 0}) {
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+  Vector3i compute_CFF_boundary(const Vector3i &limit3d) {
+    Vector3i cff_bound({0, 0, 0});
 
-    Vector3d uc_vec = ref_uc.cast<double>().cwiseProduct(dcell_);
-    auto basis = shift_basis_origin(*obs_, uc_vec);
-    auto basis_neighbour =
-        shift_basis_origin(*obs_, uc_vec, uc_near_list_, dcell_);
+    for (auto dim = 0; dim <= 2; ++dim) {
+      Vector3i uc_idx({0, 0, 0});
+      bool is_in_CFF = false;
+      auto idx1 = 0;
+      if (limit3d(dim) > 0) {
+        do {
+          uc_idx(dim) = idx1;
+          is_in_CFF = is_uc_in_CFF(uc_idx);
+          idx1++;
+        } while (idx1 <= limit3d(dim) && !is_in_CFF);
 
-    return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour);
+        cff_bound(dim) = uc_idx(dim);
+
+        if (!is_in_CFF) {
+          throw AlgorithmException(
+              "Insufficient range limit for the boundary of Crystal Far Field",
+              __FILE__, __LINE__);
+        }
+      }
+    }
+
+    return cff_bound;
   }
+
 };
 
-}  // namespace mm
+}  // namespace ma
 }  // namespace pbc
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MM_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_H_

@@ -45,8 +45,12 @@ class PeriodicMARIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                         bool) override {
     array_type G;
 
-    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") -
-                  compute_K(D, target_precision)("mu, nu");
+    const auto J = compute_J(D, target_precision);
+    const auto K = compute_K(D, target_precision);
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->K_lattice_range();
+    G = ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 2.0,
+                                 -1.0);
 
     return G;
   }

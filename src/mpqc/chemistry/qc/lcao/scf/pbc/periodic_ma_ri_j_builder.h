@@ -16,7 +16,7 @@ class PeriodicMARIJBuilder {
  public:
   using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
   using RIJ_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
-  using MM = ::mpqc::pbc::mm::PeriodicMM<Factory>;
+  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<Factory>;
 
   PeriodicMARIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
@@ -27,34 +27,34 @@ class PeriodicMARIJBuilder {
     auto t1_j_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 
-    // Construct exact perioic 4-center K builder
-    auto t0_mm_init = mpqc::fenced_now(world);
-    mm_ = std::make_unique<MM>(ao_factory_);
-    auto t1_mm_init = mpqc::fenced_now(world);
-    auto t_mm_init = mpqc::duration_in_s(t0_mm_init, t1_mm_init);
+    // Construct exact periodic 4-center K builder
+    auto t0_ma_init = mpqc::fenced_now(world);
+    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_);
+    auto t1_ma_init = mpqc::fenced_now(world);
+    auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 
     // test boost legendre polynomials
     double tmp1 = boost::math::legendre_p(0, 0.5);
     ExEnv::out0() << "\nLegendre P(0, 0.5) = " << tmp1 << std::endl;
 
-    const auto R_max = ao_factory_.R_max();
+    const auto RJ_max = ao_factory_.RJ_max();
     // test CNF and CFF
-    for (auto x = -R_max(0); x <= R_max(0); ++x) {
-      for (auto y = -R_max(1); y <= R_max(1); ++y) {
-        for (auto z = -R_max(2); z <= R_max(2); ++z) {
-          ExEnv::out0() << "\nUnit Cell (" << x << ", " << y << ", " << z
-                        << "):" << std::endl;
-          const auto uc_idx = Vector3i({x, y, z});
-          const auto uc_is_cff = mm_->is_uc_in_CFF(uc_idx);
-          const auto uc_val = uc_is_cff ? "Yes" : "No";
-          ExEnv::out0() << "Unit Cell (" << x << ", " << y << ", " << z
-                        << "): Is is in CFF ? " << uc_val << std::endl;
-        }
-      }
-    }
+    //    for (auto x = -RJ_max(0); x <= RJ_max(0); ++x) {
+    //      for (auto y = -RJ_max(1); y <= RJ_max(1); ++y) {
+    //        for (auto z = -RJ_max(2); z <= RJ_max(2); ++z) {
+    //          ExEnv::out0() << "\nUnit Cell (" << x << ", " << y << ", " << z
+    //                        << "):" << std::endl;
+    //          const auto uc_idx = Vector3i({x, y, z});
+    //          const auto uc_is_cff = ma_builder_->is_uc_in_CFF(uc_idx);
+    //          const auto uc_val = uc_is_cff ? "Yes" : "No";
+    //          ExEnv::out0() << "Unit Cell (" << x << ", " << y << ", " << z
+    //                        << "): Is it in CFF ? " << uc_val << std::endl;
+    //        }
+    //      }
+    //    }
 
     ExEnv::out0() << "\nInit RI-J time:      " << t_j_init << " s" << std::endl;
-    ExEnv::out0() << "\nInit MM time:      " << t_mm_init << " s\n"
+    ExEnv::out0() << "\nInit MA time:        " << t_ma_init << " s\n"
                   << std::endl;
   }
 
@@ -65,7 +65,7 @@ class PeriodicMARIJBuilder {
 
     G("mu, nu") = compute_RIJ(D, target_precision)("mu, nu");
 
-    auto tmp = compute_MMJ(D, target_precision);
+    auto tmp = compute_MAJ(D, target_precision);
 
     return G;
   }
@@ -73,16 +73,16 @@ class PeriodicMARIJBuilder {
  private:
   Factory &ao_factory_;
   std::unique_ptr<RIJ_Builder> rij_builder_;
-  std::unique_ptr<MM> mm_;
+  std::unique_ptr<MA_Builder> ma_builder_;
 
  private:
   array_type compute_RIJ(const array_type &D, double target_precision) {
     return rij_builder_->operator()(D, target_precision);
   }
 
-  array_type compute_MMJ(const array_type &D, double target_precision) {
-    array_type mmj;
-    return mmj;
+  array_type compute_MAJ(const array_type &D, double target_precision) {
+    array_type maj;
+    return maj;
   }
 };
 

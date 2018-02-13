@@ -33,7 +33,7 @@ not yet accessible for non-experts.
 Although the development of MPQC has been ongoing since 1992, the code is constantly evolving.
 MPQC is fundamentally an experimental/research platform that is
 used to seek new computational approaches in electronic structure. Thus,
-this manual is always incomplete.  Furthermore, some of the classes in the
+this manual is always a work-in-progress (read: incomplete).  Furthermore, some of the classes in the
 distribution may be on the verge of obsolescence and others may be
 unfinished work that are intended to provide new functionality in later
 releases.

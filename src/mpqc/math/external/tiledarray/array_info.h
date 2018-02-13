@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/misc/string.h"
 
 namespace mpqc {

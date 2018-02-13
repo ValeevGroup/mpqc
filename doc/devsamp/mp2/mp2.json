@@ -12,7 +12,7 @@
   },
   "wfn_world":{
     "type" : "WfnWorld",
-    "molecule" : "$:water",
+    "atoms" : "$:water",
     "basis" : "$:basis"
   },
   "rhf":{
@@ -30,7 +30,7 @@
   },
   "basis": {
     "name": "6-31G",
-    "molecule": "$:water"
+    "atoms": "$:water"
   }
 }
 

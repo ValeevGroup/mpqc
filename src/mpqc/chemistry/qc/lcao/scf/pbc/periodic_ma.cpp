@@ -1,4 +1,4 @@
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_mm.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma.h"
 
 namespace mpqc {
 namespace pbc {

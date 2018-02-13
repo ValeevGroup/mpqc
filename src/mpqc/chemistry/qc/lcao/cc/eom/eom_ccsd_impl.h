@@ -187,7 +187,7 @@ TA::DistArray<Tile, Policy> EOM_CCSD<Tile, Policy>::compute_HDS_HDD_C(
       TArray U;
       U("p,r,i,j") =
           Cabij("c,d,i,j") * Ca("q,c") * Ca("s,d") * direct_integral("p,q,r,s");
-      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
+//      U("p,r,i,j") = 0.5 * (U("p,r,i,j") + U("r,p,j,i"));
       HDS_HDD_C("a,b,i,j") +=
           U("p,r,i,j") * Ca("p,a") * Ca("r,b") -
           U("r,p,i,j") * Ci("p,k") * Ca("r,a") * t1("b,k") -
@@ -204,7 +204,7 @@ EigenVector<typename Tile::numeric_type>
 EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
                                                  double convergence) {
   madness::World& world =
-      C_[0].t1.is_initialized() ? C_[0].t1.world() : C_[0].t2.world();
+      C_[0][0].is_initialized() ? C_[0][0].world() : C_[0][1].world();
   std::size_t iter = 0;
   std::size_t n_roots = C_.size();
   double norm_r = 1.0;
@@ -232,11 +232,11 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(std::size_t max_iter,
     //    ExEnv::out0() << "vector dimension: " << dim << std::endl;
 
     // compute product of H with guess vector
-    std::vector<GuessVector> HC(dim);
+    std::vector<GuessVector> HC(dim, GuessVector(2));
     for (std::size_t i = 0; i < dim; ++i) {
-      if (C_[i].t1.is_initialized() && C_[i].t2.is_initialized()) {
-        HC[i].t1 = compute_HSS_HSD_C(C_[i].t1, C_[i].t2);
-        HC[i].t2 = compute_HDS_HDD_C(C_[i].t1, C_[i].t2);
+      if (C_[i][0].is_initialized() && C_[i][0].is_initialized()) {
+        HC[i][0] = compute_HSS_HSD_C(C_[i][0], C_[i][1]);
+        HC[i][1] = compute_HDS_HDD_C(C_[i][0], C_[i][1]);
 
       } else {
         throw ProgrammingError("Guess Vector not initialized", __FILE__,
@@ -305,24 +305,19 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     std::vector<TArray> guess;
     {
-      // do not use cis direct method, not efficient
-      KeyVal& kv_nonconst = const_cast<KeyVal&>(this->kv_);
-      std::string cis_method = (this->df_ ? "df" : "standard");
-      kv_nonconst.assign("method", cis_method);
-      auto cis = std::make_shared<CIS<Tile, Policy>>(this->kv_);
-      ::mpqc::evaluate(*ex_energy, cis);
-      guess = cis->eigen_vector();
-      kv_nonconst.assign("method", this->method_);
+      ::mpqc::evaluate(*ex_energy, cis_guess_wfn_);
+      guess = cis_guess_wfn_->eigen_vector();
     }
 
     this->init();
 
-    C_ = std::vector<GuessVector>(n_roots);
+    C_ = std::vector<GuessVector>(n_roots, GuessVector(2));
     auto t2 = this->t2();
     for (std::size_t i = 0; i < n_roots; i++) {
-      C_[i].t1("a,i") = guess[i]("i,a");
-      C_[i].t2 = TArray(t2.world(), t2.trange(), t2.shape());
-      C_[i].t2.fill(0.0);
+      TA_ASSERT(guess[i].is_initialized());
+      C_[i][0]("a,i") = guess[i]("i,a");
+      C_[i][1] = TArray(t2.world(), t2.trange(), t2.shape());
+      C_[i][1].fill(0.0);
     }
 
     auto max_iter = this->max_iter_;

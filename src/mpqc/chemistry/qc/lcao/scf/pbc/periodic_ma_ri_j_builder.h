@@ -2,7 +2,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_mm.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 

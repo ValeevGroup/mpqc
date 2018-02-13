@@ -12,6 +12,24 @@ if (${PYTHONINTERP_FOUND})
 
     string(REGEX REPLACE ".(json|xml|info)\$" "" baseName "${infileName}")
 
+    # filter out tests based on the available MPQC features
+    # TODO also filter based on the default TA policy
+    if ((${baseName} MATCHES "(ccsd|cc3)") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_cc")
+        continue()
+    endif()
+    if ((${baseName} MATCHES "eom" OR ${baseName} MATCHES "cis") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_ci")
+        continue()
+    endif()
+    if ((${baseName} MATCHES "f12") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_f12")
+        continue()
+    endif()
+    if ((${baseName} MATCHES "mp2" OR ${baseName} MATCHES "gf2") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_mbpt")
+        continue()
+    endif()
+    if ((${baseName} MATCHES "hf") AND NOT "${MPQC_FEATURES}" MATCHES "lcao_scf")
+        continue()
+    endif()
+
     add_test(NAME validation/${baseName}-np1
             COMMAND ${CMAKE_COMMAND}
             -DtestName=${baseName}

@@ -4,6 +4,8 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/decomposed_rij.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 
 namespace mpqc {
 namespace scf {
@@ -59,19 +61,7 @@ class PeriodicRIJBuilder {
     auto t_a = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
-    auto A_eig = array_ops::array_to_eigen(A);
-    using MatType = decltype(A_eig);
-    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(A_eig).matrixL()).inverse();
-    auto tr0 = A.trange().data()[0];
-    auto tr1 = A.trange().data()[1];
-    assert(tr0 == tr1 && "Matrix A = LLT must be symmetric!");
-    array_type L_inv =
-        array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr0, tr1);
-    t1 = mpqc::fenced_now(world);
-    auto t_l_inv = mpqc::duration_in_s(t0, t1);
-
-    t0 = mpqc::fenced_now(world);
-    inv_("X, Y") = L_inv("Z, X") * L_inv("Z, Y");
+    inv_ = array_ops::eigen_inverse(A);
     t1 = mpqc::fenced_now(world);
     auto t_a_inv = mpqc::duration_in_s(t0, t1);
 
@@ -81,27 +71,7 @@ class PeriodicRIJBuilder {
     auto t_im = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
-    {
-      // collect information to construct 3-center builders
-      auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-      auto aux_basis =
-          ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
-      auto dcell = ao_factory_.unitcell().dcell();
-      auto R_max = ao_factory_.R_max();
-      auto RJ_max = ao_factory_.RJ_max();
-      auto RD_max = ao_factory_.RD_max();
-      auto R_size = ao_factory_.R_size();
-      auto RJ_size = ao_factory_.RJ_size();
-      auto RD_size = ao_factory_.RD_size();
-      auto screen = ao_factory_.screen();
-      auto screen_threshold = ao_factory_.screen_threshold();
-
-      // construct PerioidcThreeCenterContractionBuilder for contractions
-      // involving 3-center ints
-      three_center_builder_ = std::make_unique<PTC_Builder>(
-          world, basis, aux_basis, dcell, R_max, RJ_max, RD_max, R_size,
-          RJ_size, RD_size, screen, screen_threshold);
-    }
+    three_center_builder_ = std::make_unique<PTC_Builder>(ao_factory_);
     t1 = mpqc::fenced_now(world);
     auto t_3c_ctor = mpqc::duration_in_s(t0, t1);
 
@@ -109,7 +79,6 @@ class PeriodicRIJBuilder {
       ExEnv::out0() << "\nRI-J init time decomposition:\n"
                     << "\tV perp:              " << t_v_perp << " s\n"
                     << "\tA = V_perp + P_para: " << t_a << " s\n"
-                    << "\tL inv:               " << t_l_inv << " s\n"
                     << "\tA inv:               " << t_a_inv << " s\n"
                     << "\tIM:                  " << t_im << " s\n"
                     << "\t3-c builder ctor:    " << t_3c_ctor << " s"
@@ -164,7 +133,12 @@ class PeriodicRIJBuilder {
       // intermediate for C_para_Xμν D_μν
       t0 = mpqc::fenced_now(world);
       array_type interm;
-      double prefactor = M_("mu, nu") * D("mu, nu");
+      double prefactor;
+      {
+        const auto R_max = ao_factory_.R_max();
+        const auto RD_max = ao_factory_.RD_max();
+        prefactor = ::mpqc::pbc::detail::dot_product(M_, D, R_max, RD_max);
+      }
       interm("X") = (prefactor / q_) * n_("X");
       t1 = mpqc::fenced_now(world);
       t_w_para = mpqc::duration_in_s(t0, t1);

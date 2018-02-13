@@ -40,10 +40,10 @@ namespace mpqc {
       inline void print_ccsd(int iter, double dE, double error, double error_r1, double error_r2,
           double E1, double time) {
         if (iter == 0) {
-          std::printf("%3s \t %10s \t %10s \t %12s \t %12s \t %15s \t %10s \n", "iter", "deltaE",
+          ExEnv::out0() << indent << mpqc::printf("%3s \t %10s \t %10s \t %12s \t %12s \t %15s \t %10s \n", "iter", "deltaE",
                       "residual", "norm (r1)", "norm (r2)", "energy", "total time/s");
         }
-        std::printf("%3i \t %10.5e \t %10.5e \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n",
+        ExEnv::out0() << indent << mpqc::printf("%3i \t %10.5e \t %10.5e \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n",
                     iter, dE, error, error_r1, error_r2, E1, time);
       }
     } // end of namespace detail
@@ -191,7 +191,7 @@ namespace mpqc {
            << "  norm of (t_new - t_old): " << (TA::subt(in_tile, tab_tile)).norm()
            << std::endl;
 
-        std::printf("%s", ss.str().c_str());
+        ExEnv::out0() << indent << ss.str();
 
         return in_tile.norm();
       };
@@ -535,8 +535,8 @@ namespace mpqc {
 
           if (dE >= this->target_precision_ || error >= this->target_precision_) {
               tmp_time0 = mpqc::now(world, accurate_time);
-              ::mpqc::cc::T1T2<TArray, TArray> t(t1, t2);
-              ::mpqc::cc::T1T2<TArray, TArray> r(r1, r2);
+              ::mpqc::cc::TPack<TArray> t(t1, t2);
+              ::mpqc::cc::TPack<TArray> r(r1, r2);
               error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
               diis.extrapolate(t, r);
 

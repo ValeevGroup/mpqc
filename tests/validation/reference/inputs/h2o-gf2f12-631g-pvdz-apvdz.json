@@ -6,26 +6,25 @@
     "target" : 1,
     "wfn" : "$:wfn"
   },
-  "molecule": {
+  "atoms": {
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0
   },
   "basis": {
     "name": "6-31G",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "df_basis": {
     "name": "cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "aux_basis":{
     "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "wfn_world":{
-    "type" : "WfnWorld",
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "basis" : "$:basis",
     "df_basis" :"$:df_basis",
     "aux_basis" : "$:aux_basis",
@@ -33,16 +32,16 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "molecule": "$:molecule",
+    "atoms": "$:atoms",
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "GF2F12",
-    "molecule": "$:molecule",
+    "atoms": "$:atoms",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
-    "occ_block_size": 8,
-    "unocc_block_size":32,
+    "occ_block_size": 4,
+    "unocc_block_size":4,
     "use_cabs" : true,
     "dyson_method" : "diagonal"
   }

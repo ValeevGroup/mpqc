@@ -8,7 +8,7 @@
 
 #include <madness/world/world.h>
 
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 namespace mpqc {
 namespace utility {

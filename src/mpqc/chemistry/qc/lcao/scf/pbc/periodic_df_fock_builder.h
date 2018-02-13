@@ -27,24 +27,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct exact perioic 4-center K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    {
-      // collect information to construct 4-center builders
-      auto basis = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-      auto dcell = ao_factory_.unitcell().dcell();
-      auto R_max = ao_factory_.R_max();
-      auto RJ_max = ao_factory_.RJ_max();
-      auto RD_max = ao_factory_.RD_max();
-      auto R_size = ao_factory_.R_size();
-      auto RJ_size = ao_factory_.RJ_size();
-      auto RD_size = ao_factory_.RD_size();
-      auto screen = ao_factory_.screen();
-      auto screen_threshold = ao_factory_.screen_threshold();
-
-      // construct PerioidcFourCenterFockBuilder for exchange term
-      k_builder_ = std::make_unique<K_Builder>(
-          world, basis, basis, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-          RD_size, false, true, screen, screen_threshold);
-    }
+    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 
@@ -59,9 +42,13 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                         bool) override {
     array_type G;
 
+    const auto J = compute_J(D, target_precision);
+    const auto K = compute_K(D, target_precision);
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->fock_lattice_range();
     // the '-' sign is embeded in K builder
-    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") +
-                  compute_K(D, target_precision)("mu, nu");
+    G = ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 2.0,
+                                 1.0);
 
     return G;
   }
@@ -69,6 +56,26 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
   void register_fock(const array_type &fock,
                      FormulaRegistry<array_type> &registry) override {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
+  }
+
+  Vector3i fock_lattice_range() override {
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->fock_lattice_range();
+    if (J_lattice_range(0) >= K_lattice_range(0) &&
+        J_lattice_range(1) >= K_lattice_range(1) &&
+        J_lattice_range(2) >= K_lattice_range(2)) {
+      return J_lattice_range;
+    } else if (J_lattice_range(0) <= K_lattice_range(0) &&
+               J_lattice_range(1) <= K_lattice_range(1) &&
+               J_lattice_range(2) <= K_lattice_range(2)) {
+      return K_lattice_range;
+    } else {
+      ExEnv::out0() << "\nLattice range of Coulomb: "
+                    << J_lattice_range.transpose()
+                    << "\nLattice range of exchange: "
+                    << K_lattice_range.transpose() << std::endl;
+      throw "Invalid lattice ranges!";
+    }
   }
 
  private:

@@ -13,6 +13,9 @@
 #include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 
+// constant: imaginary unit i
+const std::complex<double> I(0.0, 1.0);
+
 namespace mpqc {
 namespace lcao {
 
@@ -37,21 +40,49 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 
   zRHF() = default;
 
+  // clang-format off
   /**
-   * KeyVal constructor for zRHF
+   * \brief KeyVal constructor for zRHF
    *
-   * keywords: takes all keywords from PeriodicAOWavefunction
+   * \param kv The KeyVal object will take all keywords from PeriodicAOWavefunction, and the following keywords
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
    * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
    * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap
-   * matrix |
+   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
+   * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
+   * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
+   * | fock_mixing | double | 0.0 | mixing of Fock matrices in reciprocal space |
+   * | level_shift | double | 0.0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
+   * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
+   * | diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
+   * | diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
+   * | diis_damping | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
+   * | diis_mixing | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
+   * | diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
+   * | diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
    *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   zRHF(const KeyVal& kv);
 
   ~zRHF() {}
@@ -84,14 +115,29 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \brief This diagonalizes Fock matrix in reciprocal space and
    * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
    */
-  array_type compute_density();
+  std::pair<array_type, array_type_z> compute_density();
 
   /*!
    * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \param real_lattice_range maximum unit cell index (n1, n2, n3) in lattice
+   * sum of \c R. n1, n2 and n3 are non-negative integers.
+   * \param recip_lattice_range number of k points (k1, k2, k3) in reciprocal
+   * space. k1, k2, and k3 are positive integers
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
    */
-  array_type_z transform_real2recip(array_type& matrix);
+  array_type_z transform_real2recip(const array_type& matrix,
+                                    const Vector3i& real_lattice_range,
+                                    const Vector3i& recip_lattice_range);
+
+  /*!
+   * \brief This transforms an integral matrix from real to reciprocal space
+   * via M(μ, ν_k) = \sum_R exp(I k.R) M(μ, ν_R).
+   * \param matrix the real-space integral matrix M(μ, ν_R)
+   * \return the reciprocal-space integral matrix M(μ, ν_k)
+   */
+  array_type_z transform_real2recip(const array_type& matrix);
 
   /*!
    * \brief This changes phase factor of a complex value
@@ -99,6 +145,11 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \param factor \phi in e^(i \phi)
    */
   MatrixZ reverse_phase_factor(MatrixZ& mat0);
+
+  /*!
+   * \brief This prints direct and indirect band gaps
+   */
+  void print_band_gaps();
 
  protected:
   array_type S_;
@@ -110,12 +161,13 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
  private:
   array_type T_;
   array_type V_;
-  array_type_z Sk_;
   array_type H_;
   array_type J_;
   array_type K_;
   array_type F_;
+  array_type_z Sk_;
   array_type_z Fk_;
+  array_type_z Dk_;
 
   MatrixzVec C_;
   VectordVec eps_;
@@ -127,6 +179,18 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   const KeyVal kv_;
   int64_t maxiter_;
   double max_condition_num_;
+  double fmix_;
+  int64_t iter_;
+
+  std::string diis_;
+  unsigned int diis_start_;
+  unsigned int diis_num_vecs_;
+  double diis_damping_;
+  double diis_mixing_;
+  unsigned int diis_num_iters_group_;
+  unsigned int diis_num_extrap_group_;
+
+  double level_shift_;
 
   Vector3i R_max_;
   Vector3i RJ_max_;
@@ -166,7 +230,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
 };
 
 /*!
- * \brief DFzRHF class uses density fitting for Coulomb
+ * \brief DFzRHF class uses density fitting for Coulomb and 4-center-K for
+ * exchange.
  *
  * Refs: Burow, A. M.; Sierka, M.; Mohamed, F. JCP. 131, 214101 (2009)
  */
@@ -175,6 +240,29 @@ class DFzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  /**
+   * \brief KeyVal constructor for DFzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF.
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "DF-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   DFzRHF(const KeyVal& kv);
 
   ~DFzRHF() {}
@@ -191,6 +279,29 @@ class DFzRHF : public zRHF<Tile, Policy> {
 template <typename Tile, typename Policy>
 class FourCenterzRHF : public zRHF<Tile, Policy> {
  public:
+  /**
+   * \brief KeyVal constructor for FourCenterzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF.
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "FourCenter-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
   FourCenterzRHF(const KeyVal& kv);
 
   ~FourCenterzRHF() {}
@@ -207,6 +318,35 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
 
+  // clang-format off
+  /**
+   * \brief KeyVal constructor for RIJCADFKzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF, and the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c force_shape_threshold | double | 0.0 | This gives the threshold used to construct the shape of F(Υ, μ, ν) using the shape of Q(Y, ρ, ν). See periodic_cadf_k_builder.h for more details.|
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "RIJ-CADFK-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "force_shape_threshold": 1e-10,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
+  // clang-format on
   RIJCADFKzRHF(const KeyVal& kv);
 
   ~RIJCADFKzRHF() {}
@@ -233,6 +373,53 @@ class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
   double force_shape_threshold_;
 };
 
+/*!
+ * \brief FourCenterJCADFKzRHF uses four-center-J for coulomb
+ * and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+
+  // clang-format off
+  /**
+   * \brief KeyVal constructor for FourCenterJCADFKzRHF
+   *
+   * \param kv The KeyVal object takes same keywords in zRHF, and the following keywords:
+   *  | Keyword | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |\c force_shape_threshold | double | 0.0 | This gives the threshold used to construct the shape of F(Υ, μ, ν) using the shape of Q(Y, ρ, ν). See periodic_cadf_k_builder.h for more details.|
+   *
+   * example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "wfn": {
+   *    "type": "FourCenterJ-CADFK-zRHF",
+   *    "atoms": "$:h2o",
+   *    "wfn_world": "$:wfn_world",
+   *    "max_iter": 100,
+   *    "soad_guess": true,
+   *    "print_detail": true,
+   *    "max_condition_num": 1e8,
+   *    "print_max_item": 100,
+   *    "force_shape_threshold": 1e-10,
+   *    "fock_mixing": 0.0,
+   *    "diis": "gamma_point",
+   *    "k_points": [1, 1, 11]
+   *  }
+   * ~~~~~~~~~~~~~~~~~~~~~
+   */
+  // clang-format on
+  FourCenterJCADFKzRHF(const KeyVal& kv);
+
+  ~FourCenterJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  double force_shape_threshold_;
+};
+
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
@@ -241,6 +428,7 @@ extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class MARIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class FourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

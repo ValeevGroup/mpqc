@@ -31,7 +31,7 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
     case Operator::Type::Coulomb: {
       result = libint2::Operator::coulomb;
     } break;
-    case Operator::Type::Cadf: {
+    case Operator::Type::CADF: {
       result = libint2::Operator::coulomb;
     } break;
     case Operator::Type::cGTG: {
@@ -128,36 +128,32 @@ std::shared_ptr<Basis> index_to_basis(
   }
 }
 
-std::array<std::wstring, 3> get_df_formula(const Formula &formula) {
-  std::array<std::wstring, 3> result;
+std::array<std::wstring, 2> get_df_formula(const Formula &formula) {
+  TA_ASSERT(formula.has_option(Formula::Option::DensityFitting));
+
+  std::array<std::wstring, 2> result;
 
   // chemical notation
   if (formula.notation() == Formula::Notation::Chemical) {
     std::wstring left = L"( Κ |" + formula.oper().oper_string() + L"| " +
                         formula.bra_indices()[0].name() + L" " +
-                        formula.bra_indices()[1].name() + L" )";
+                        formula.bra_indices()[1].name() + L" )[inv_sqr]";
     std::wstring right = L"( Κ |" + formula.oper().oper_string() + L"| " +
                          formula.ket_indices()[0].name() + L" " +
-                         formula.ket_indices()[1].name() + L" )";
-    std::wstring center =
-        L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
+                         formula.ket_indices()[1].name() + L" )[inv_sqr]";
     result[0] = left;
-    result[1] = center;
-    result[2] = right;
+    result[1] = right;
   }
   // physical notation
   else {
     std::wstring left = L"( Κ |" + formula.oper().oper_string() + L"| " +
                         formula.bra_indices()[0].name() + L" " +
-                        formula.ket_indices()[0].name() + L" )";
+                        formula.ket_indices()[0].name() + L" )[inv_sqr]";
     std::wstring right = L"( Κ |" + formula.oper().oper_string() + L"| " +
                          formula.bra_indices()[1].name() + L" " +
-                         formula.ket_indices()[1].name() + L" )";
-    std::wstring center =
-        L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
+                         formula.ket_indices()[1].name() + L" )[inv_sqr]";
     result[0] = left;
-    result[1] = center;
-    result[2] = right;
+    result[1] = right;
   }
 
   return result;
@@ -244,6 +240,10 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
   std::array<Formula, 3> result;
   Formula h(formula);
   h.set_operator(Operator(L"H"));
+  // H doesn't need DF
+  if (formula.has_option(Formula::Option::DensityFitting)) {
+    h.remove_option(Formula::Option::DensityFitting);
+  }
   decltype(h) j(formula);
   j.set_operator_type(Operator::Type::J);
   decltype(h) k(formula);
@@ -258,6 +258,63 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
   result[0] = h;
   result[1] = j;
   result[2] = k;
+  return result;
+}
+
+std::vector<std::vector<size_t>> parallel_compute_shellpair_list(
+    madness::World &world, const Basis &basis1, const Basis &basis2,
+    double threshold, double engine_precision) {
+  using ::mpqc::lcao::gaussian::make_engine_pool;
+  // initialize engine
+  auto engine_pool = make_engine_pool(
+      libint2::Operator::overlap, utility::make_array_of_refs(basis1, basis2),
+      libint2::BraKet::x_x);
+
+  const auto &shv1 = basis1.flattened_shells();
+  const auto &shv2 = basis2.flattened_shells();
+  const auto nsh1 = shv1.size();
+  const auto nsh2 = shv2.size();
+
+  std::vector<std::vector<size_t>> result;
+  result.reserve(nsh1);
+
+  auto compute = [&](size_t input_s1) {
+    auto engine = engine_pool->local();
+    engine.set_precision(engine_precision);
+    const auto &buf = engine.results();
+
+    auto n1 = shv1[input_s1].size();
+    for (auto s2 = 0ul; s2 != nsh2; ++s2) {
+      auto on_same_center = (shv1[input_s1].O == shv2[s2].O);
+      bool significant = on_same_center;
+      if (!on_same_center) {
+        auto n2 = shv2[s2].size();
+        engine.compute1(shv1[input_s1], shv2[s2]);
+        Eigen::Map<const RowMatrixXd> buf_mat(buf[0], n1, n2);
+        auto norm = buf_mat.norm();
+        significant = (norm >= threshold);
+      }
+
+      if (significant) {
+        result[input_s1].emplace_back(s2);
+      }
+    }
+  };
+
+  for (auto s1 = 0ul; s1 != nsh1; ++s1) {
+    result.emplace_back(std::vector<size_t>());
+    world.taskq.add(compute, s1);
+  }
+  world.gop.fence();
+
+  engine_pool.reset();
+
+  // resort shell list in increasing order
+  for (auto s1 = 0ul; s1 != nsh1; ++s1) {
+    auto &list = result[s1];
+    std::sort(list.begin(), list.end());
+  }
+
   return result;
 }
 

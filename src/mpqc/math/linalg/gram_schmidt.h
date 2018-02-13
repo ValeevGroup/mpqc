@@ -9,7 +9,7 @@
 
 #include <TiledArray/algebra/utils.h>
 
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/exenv.h"
 
 /**
  * Gram-Schmidt Process

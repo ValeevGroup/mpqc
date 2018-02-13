@@ -139,21 +139,26 @@ to_string(MPQCInit::InputFormat f) {
   }
 }
 
-/// \brief Creates a default options parser object for an MPQC executable
-///
-/// Creates a new options parser object and enrolls standard MPQC options:
-/// | option | accept value?| description                                           |
-/// |--------|--------------|-------------------------------------------------------|
-/// | -o     | mandatory    | output file                                           |
-/// | -p     | mandatory    | prefix for all relative paths in KeyVal               |
-/// | -W     | mandatory    | the working directory in which to compute             |
-/// | -v     | no           | print the version number and exit                     |
-/// | -w     | no           | print the warranty and exit                           |
-/// | -L     | no           | print the license and exit                            |
-/// | -h     | no           | print the usage info and exit                         |
-/// | -d     | no           | start the program and attach a debugger               |
-///
-/// \return a smart pointer to the newly created options parser object (see mpqc::GetLongOpt )
+// clang-format off
+/** \brief Creates a default options parser object for an MPQC executable
+
+    Creates a new options parser object and enrolls standard MPQC options:
+    | option          | accept value?| description                                           |
+    |-----------------|--------------|-------------------------------------------------------|
+    | <tt>-i</tt>     | mandatory    | The name of the input file. MPQC will attempt to parse the given input file using the JSON, XML, and INFO formats (in that order). If <tt>-i</tt> is not given, and no options with omitted optional values are used (e.g., <tt>-D</tt>), the last command-line argument that does not specify an option will be assumed to give the input file name.|
+    | <tt>-o</tt>     | mandatory    | The name of the output file.  The default is to send output to the console. |
+    | <tt>-p</tt>     | mandatory    | The prefix for all relative file paths in the input file               |
+    | <tt>-W</tt>     | mandatory    | the working directory in which to compute             |
+    | <tt>-D</tt>     | optional     | unless "debugger" keyword is given in input KeyVal, create a debugger at start, with the optional argument as its JSON KeyVal input |
+    | <tt>-v</tt>     | no           | print the version number and exit                     |
+    | <tt>-w</tt>     | no           | print the warranty and exit                           |
+    | <tt>-L</tt>     | no           | print the license and exit                            |
+    | <tt>-h</tt>     | no           | print the usage info and exit                         |
+    | <tt>-d</tt>     | no           | start the program and attach a debugger               |
+
+    \return a smart pointer to the newly created options parser object (see mpqc::GetLongOpt )
+    */
+// clang-format on
 std::shared_ptr<GetLongOpt> make_options();
 
 /// \brief Processes command-line options parsed by the options parser.

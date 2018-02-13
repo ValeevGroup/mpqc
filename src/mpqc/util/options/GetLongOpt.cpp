@@ -194,6 +194,8 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
         c.value = std::make_unique<std::string>(nexttoken);
         return 1;
       }
+      else
+        c.value = std::make_unique<std::string>("");
       return 0;
     case GetLongOpt::MandatoryValue:
       if (*valtoken == '=') {

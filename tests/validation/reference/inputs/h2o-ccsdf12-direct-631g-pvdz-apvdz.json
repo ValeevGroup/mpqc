@@ -1,6 +1,6 @@
 {
   "units": "2010CODATA",
-  "molecule": {
+  "atoms": {
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
@@ -8,18 +8,18 @@
   },
   "obs": {
     "name": "6-31G",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "dfbs": {
     "name": "cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "ribs":{
     "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$:atoms"
   },
   "wfn_world":{
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
     "aux_basis": "$:ribs",
@@ -32,11 +32,11 @@
   },
   "wfn":{
     "type": "CCSD(F12)",
-    "molecule" : "$:molecule",
+    "atoms" : "$:atoms",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "method" : "direct_df",
-    "occ_block_size" : 1,
+    "occ_block_size" : 4,
     "unocc_block_size" : 4
   },
   "property" : {

@@ -100,14 +100,15 @@ class PeriodicMM {
     RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
+    using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_3D_idx;
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
     // determine non-negligible shell pairs from ref unit cell and all nearby
     // unit cells
     auto basisR = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
     auto significant_shellpair_list =
-        detail::parallel_compute_shellpair_list(world, *obs_, *basisR);
+        parallel_compute_shellpair_list(world, *obs_, *basisR);
     // determine necessary nearby unit cells involved in product density
     for (auto R = 0; R != R_size_; ++R) {
       const auto R_3D = direct_3D_idx(R, R_max_);

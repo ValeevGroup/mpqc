@@ -6,7 +6,7 @@
 #include <sstream>
 #include <type_traits>
 
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 #include "mpqc/util/keyval/keyval.h"
 
 // This provides syntactic sugar for Acyclic Visitor.

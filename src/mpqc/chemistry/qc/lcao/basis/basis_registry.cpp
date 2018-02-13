@@ -31,14 +31,14 @@ gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
   this->add(OrbitalIndex(L"μ"), basis);
   ::mpqc::detail::parallel_print_range_info(
       world, basis->create_trange1(),
-      "OBS Basis = " + kv.value<std::string>("basis:name"));
+      "OBS Basis = " + basis->name());
 
   if (kv.exists("df_basis")) {
     auto df_basis = kv.class_ptr<gaussian::AtomicBasis>("df_basis");
     check(df_basis, "df_basis");
     ::mpqc::detail::parallel_print_range_info(
         world, df_basis->create_trange1(),
-        "DF Basis = " + kv.value<std::string>("df_basis:name"));
+        "DF Basis = " + df_basis->name());
     this->add(OrbitalIndex(L"Κ"), df_basis);
   }
 
@@ -48,7 +48,7 @@ gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
     this->add(OrbitalIndex(L"α"), aux_basis);
     ::mpqc::detail::parallel_print_range_info(
         world, aux_basis->create_trange1(),
-        "AUX Basis = " + kv.value<std::string>("aux_basis:name"));
+        "AUX Basis = " + aux_basis->name());
   }
 
   if (kv.exists("vir_basis")) {
@@ -57,7 +57,7 @@ gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
     this->add(OrbitalIndex(L"Α"), vir_basis);
     ::mpqc::detail::parallel_print_range_info(
         world, vir_basis->create_trange1(),
-        "Virtual Basis = " + kv.value<std::string>("vir_basis:name"));
+        "Virtual Basis = " + vir_basis->name());
   }
 }
 

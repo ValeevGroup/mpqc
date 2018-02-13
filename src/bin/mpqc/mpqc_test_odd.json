@@ -1,31 +1,32 @@
 {
-  "molecule": {
-    "type": "Molecule",
+  "water": {
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
     "n_cluster": 2
   },
   "obs": {
-    "type": "Basis",
     "name": "STO-3G",
-    "molecule": "$:molecule"
+    "atoms": "$..:water"
   },
   "dfbs": {
-    "type": "Basis",
     "name": "cc-pVDZ",
-    "molecule": "$:molecule"
+    "atoms": "$..:water"
   },
-  "world":{
-    "type" : "WfnWorld",
-    "molecule" : "$:molecule",
-    "basis" : "$:obs",
-    "df_basis" :"$:dfbs",
+  "wfn_world":{
+    "atoms" : "$..:water",
+    "basis" : "$..:obs",
+    "df_basis" :"$..:dfbs",
     "screen": "schwarz"
   },
   "wfn":{
     "type": "RI-RHF",
-    "wfn_world": "$:world",
+    "wfn_world": "$..:wfn_world",
+    "atoms" : "$..:water",
     "converge": 1.0e-11
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$..:wfn"
   }
 }

@@ -56,6 +56,20 @@ class PeriodicMARIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 
+  Vector3i fock_lattice_range() override {
+    const auto J_range = ao_factory_.R_max();
+    const auto K_range = k_builder_->K_lattice_range();
+    if (J_range(0) <= K_range(0) && J_range(1) <= K_range(1) &&
+        J_range(2) <= K_range(2)) {
+      return K_range;
+    } else if (J_range(0) >= K_range(0) && J_range(1) >= K_range(1) &&
+               J_range(2) >= K_range(2)) {
+      return J_range;
+    } else {
+      throw "invalid lattice ranges";
+    }
+  }
+
  private:
   Factory &ao_factory_;
   std::unique_ptr<J_Builder> j_builder_;

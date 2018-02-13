@@ -29,7 +29,7 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
   OrbitalRegistry(const container_type& map) : Registry<Key, Value>(map) {}
 
   /// The KeyVal ctor must be provided as a specialization
-  OrbitalRegistry(const KeyVal& kv) {}
+  explicit OrbitalRegistry(const KeyVal& kv) {}
 
   /// add Value that has index() function as key type
   void add(const Value& val) { this->insert(val.index(), val); }

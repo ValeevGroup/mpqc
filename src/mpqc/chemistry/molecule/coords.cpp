@@ -1,6 +1,6 @@
 
 #include "mpqc/chemistry/molecule/coords.h"
-#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/core/exception.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 MPQC_CLASS_EXPORT2("CartMolecularCoordinates", mpqc::CartMolecularCoordinates);

@@ -25,15 +25,15 @@ namespace lcao {
 template <typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-  using ArrayType = TA::DistArray<Tile, Policy>;
-  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
-  using AOFactoryType = gaussian::AOFactoryBase<Tile, Policy>;
+  using ArrayType = TA::DistArray<Tile,Policy>;
+  using AOFactoryType = gaussian::AOFactoryBase<Tile,Policy>;
+  using DirectArrayType = typename gaussian::AOFactory<Tile,Policy>::DirectTArray;
 
   // clang-format off
   /**
    *  \brief The KeyVal constructor
    *
-   * The KeyVal object will be queried for all keywords of the Wavefunction
+   * \param kv the KeyVal object. It will be queried for all keywords of the Wavefunction
    * class,
    * as well as the following keywords:
    * | Keyword | Type | Default| Description |
@@ -41,7 +41,6 @@ class AOWavefunction : public Wavefunction {
    * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
    */
   // clang-format on
-
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv) { init_factory(kv); }
   virtual ~AOWavefunction() {}
 
@@ -61,7 +60,7 @@ class AOWavefunction : public Wavefunction {
 
  private:
   /**
-    *  Default way of initialize factories
+    *  Default way of initializing factories
     *  use AOFactory
     */
   virtual void init_factory(const KeyVal &kv) {

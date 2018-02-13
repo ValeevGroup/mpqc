@@ -27,6 +27,7 @@
 
 #include "bug.h"
 
+#include <unistd.h>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -34,21 +35,9 @@
 #include <iostream>
 #include <iterator>
 #include <sstream>
-#include <unistd.h>
 
-#include "mpqc/mpqc_config.h"
-#if defined(HAVE_LIBUNWIND)
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>
-#elif defined(HAVE_BACKTRACE)
-#include <execinfo.h>
-#endif
-
-#ifdef HAVE_CXA_DEMANGLE
-#include <cxxabi.h>
-#endif
-
-#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/core/backtrace.h"
+#include "mpqc/util/core/exenv.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 MPQC_CLASS_EXPORT2("Debugger", mpqc::Debugger)
@@ -71,12 +60,9 @@ static Debugger *signals[NSIG];
 
 std::shared_ptr<Debugger> Debugger::default_debugger_(nullptr);
 
-Debugger::Debugger(const char *exec) {
-  init();
-
+Debugger::Debugger(const char *exec) : Debugger(KeyVal()) {
   set_exec(exec);
-
-  default_cmd();
+  resolve_cmd_alias();
 }
 
 Debugger::Debugger(const KeyVal &keyval) {
@@ -92,11 +78,13 @@ Debugger::Debugger(const KeyVal &keyval) {
   prefix_ = keyval.value<std::string>("prefix", std::string());
   handle_sigint_ = keyval.value<bool>("handle_sigint", true);
   if (keyval.value<bool>("handle_defaults", true)) handle_defaults();
+
+  resolve_cmd_alias();
 }
 
 Debugger::~Debugger() {
   for (int i = 0; i < NSIG; i++) {
-    if (mysigs_[i]) signals[i] = 0;
+    if (mysigs_[i]) signals[i] = nullptr;
   }
   delete[] mysigs_;
 }
@@ -119,12 +107,10 @@ void Debugger::init() {
 }
 
 namespace {
-static void
-handler(int sig)
-{
+static void handler(int sig) {
   if (signals[sig]) signals[sig]->got_signal(sig);
 }
-}
+}  // namespace
 
 void Debugger::handle(int sig) {
   if (sig >= NSIG) return;
@@ -134,6 +120,14 @@ void Debugger::handle(int sig) {
 #endif
   signals[sig] = this;
   mysigs_[sig] = 1;
+}
+
+void Debugger::release(int sig) {
+    if (sig >= NSIG) return;
+    typedef void (*handler_type)(int);
+    signal(sig, SIG_DFL);
+    signals[sig] = nullptr;
+    mysigs_[sig] = 0;
 }
 
 void Debugger::handle_defaults() {
@@ -160,6 +154,9 @@ void Debugger::handle_defaults() {
 #endif
 #ifdef SIGABRT
   handle(SIGABRT);
+#endif
+#ifdef SIGTRAP
+  handle(SIGTRAP);
 #endif
 }
 
@@ -189,9 +186,17 @@ void Debugger::default_cmd() {
   int has_x11_display = (getenv("DISPLAY") != 0);
 
   if (has_x11_display) {
-    set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID) &");
+    set_cmd("gdb_xterm");
   } else {
     set_cmd(0);
+  }
+}
+
+void Debugger::resolve_cmd_alias() {
+  if (cmd_ == "gdb_xterm") {
+    cmd_ = "xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID) &";
+  } else if (cmd_ == "lldb_xterm") {
+    cmd_ = "xterm -title \"$(PREFIX)$(EXEC)\" -e lldb -p $(PID) &";
   }
 }
 
@@ -234,20 +239,28 @@ void Debugger::debug(const char *reason) {
       cmd.replace(pos, prefixvar.size(), prefix_);
     }
     // start the debugger
+    // before starting the debugger de-register signal handler for SIGTRAP to let the debugger take over
+    release(SIGTRAP);
     ExEnv::outn() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
     debugger_ready_ = 0;
-    system(cmd.c_str());
-    // wait until the debugger is ready
-    if (sleep_) {
-      ExEnv::outn() << prefix_ << "Sleeping " << sleep_
-                    << " seconds to wait for debugger ..." << endl;
-      sleep(sleep_);
-    }
-    if (wait_for_debugger_) {
-      ExEnv::outn() << prefix_ << ": Spinning until debugger_ready_ is set ..."
+    const auto system_retvalue = system(cmd.c_str());
+    if (system_retvalue != 0) {  // call to system() failed
+      ExEnv::outn() << prefix_
+                    << "Failed debugger launch: system() did not succeed ..."
                     << endl;
-      while (!debugger_ready_)
-        ;
+    } else {  // call to system() succeeded
+      // wait until the debugger is ready
+      if (sleep_) {
+        ExEnv::outn() << prefix_ << "Sleeping " << sleep_
+                      << " seconds to wait for debugger ..." << endl;
+        sleep(sleep_);
+      }
+      if (wait_for_debugger_) {
+        ExEnv::outn() << prefix_
+                      << ": Spinning until debugger_ready_ is set ..." << endl;
+        while (!debugger_ready_)
+          ;
+      }
     }
   }
 #endif
@@ -269,6 +282,8 @@ void Debugger::got_signal(int sig) {
   else if (sig == SIGBUS)
     signame = "SIGBUS";
 #endif
+  else if (sig == SIGTRAP)
+    signame = "SIGTRAP";
   else
     signame = "UNKNOWN SIGNAL";
 
@@ -313,7 +328,7 @@ void Debugger::traceback(const char *reason) {
 }
 
 void Debugger::__traceback(const std::string &prefix, const char *reason) {
-  Backtrace result(prefix);
+  detail::Backtrace result(prefix);
   const size_t nframes_to_skip = 2;
 #if defined(HAVE_LIBUNWIND)
   ExEnv::outn() << prefix << "Debugger::traceback(using libunwind):";
@@ -343,119 +358,22 @@ void Debugger::__traceback(const std::string &prefix, const char *reason) {
 
 /////////////////////////////////////////////////////////////////////////////
 
-Debugger::Backtrace::Backtrace(const std::string &prefix) : prefix_(prefix) {
-#ifdef HAVE_LIBUNWIND
-  {
-    unw_cursor_t cursor;
-    unw_context_t uc;
-    unw_word_t ip, sp, offp;
-    int frame = 0;
+namespace mpqc {
 
-    unw_getcontext(&uc);
-    unw_init_local(&cursor, &uc);
-    while (unw_step(&cursor) > 0) {
-      unw_get_reg(&cursor, UNW_REG_IP, &ip);
-      unw_get_reg(&cursor, UNW_REG_SP, &sp);
-      char name[1024];
-      unw_get_proc_name(&cursor, name, 1024, &offp);
-      std::ostringstream oss;
-      oss << prefix_ << "frame " << frame << ": "
-          << mpqc::printf("ip = 0x%lx sp = 0x%lx ", (long)ip, (long)sp)
-          << " symbol = " << __demangle(name);
-      frames_.push_back(oss.str());
-      ++frame;
-    }
-  }
-#elif defined(HAVE_BACKTRACE)  // !HAVE_LIBUNWIND
-  void *stack_addrs[1024];
-  const int naddrs = backtrace(stack_addrs, 1024);
-  char **frame_symbols = backtrace_symbols(stack_addrs, naddrs);
-  // starting @ 1 to skip this function
-  for (int i = 1; i < naddrs; ++i) {
-    // extract (mangled) function name
-    std::string mangled_function_name;
-    {
-      std::istringstream iss(std::string(frame_symbols[i]),
-                             std::istringstream::in);
-      std::string frame, file, address;
-      iss >> frame >> file >> address >> mangled_function_name;
-    }
-
-    std::ostringstream oss;
-    oss << prefix_ << "frame " << i << ": return address = " << stack_addrs[i]
-        << std::endl
-        << "  symbol = " << __demangle(mangled_function_name);
-    frames_.push_back(oss.str());
-  }
-  free(frame_symbols);
-#else                          // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
-#if defined(SIMPLE_STACK)
-  int bottom = 0x1234;
-  void **topstack = (void **)0xffffffffL;
-  void **botstack = (void **)0x70000000L;
-  // signal handlers can put weird things in the return address slot,
-  // so it is usually best to keep toptext large.
-  void **toptext = (void **)0xffffffffL;
-  void **bottext = (void **)0x00010000L;
-#endif  // SIMPLE_STACK
-
-#if (defined(linux) && defined(i386))
-  topstack = (void **)0xc0000000;
-  botstack = (void **)0xb0000000;
-#endif
-#if (defined(__OSF1__) && defined(i860))
-  topstack = (void **)0x80000000;
-  botstack = (void **)0x70000000;
-#endif
-
-#if defined(SIMPLE_STACK)
-  // This will go through the stack assuming a simple linked list
-  // of pointers to the previous frame followed by the return address.
-  // It trys to be careful and avoid creating new execptions, but there
-  // are no guarantees.
-  void **stack = (void **)&bottom;
-
-  void **frame_pointer = (void **)stack[3];
-  while (frame_pointer >= botstack && frame_pointer < topstack &&
-         frame_pointer[1] >= bottext && frame_pointer[1] < toptext) {
-    std::ostringstream oss;
-    oss << prefix_ << "frame: " << (void *)frame_pointer;
-    oss << "  retaddr: " << frame_pointer[1];
-    frames_.push_back(oss.str());
-
-    frame_pointer = (void **)*frame_pointer;
-  }
-#endif  // SIMPLE_STACK
-#endif  // HAVE_BACKTRACE
+void launch_gdb_xterm() {
+  auto debugger = std::make_shared<mpqc::Debugger>();
+  if (ExEnv::initialized()) debugger->set_exec(ExEnv::argv()[0]);
+  debugger->debug("Starting gdb ...");
 }
 
-Debugger::Backtrace::Backtrace(const Backtrace &other)
-    : frames_(other.frames_), prefix_(other.prefix_) {}
-
-std::string Debugger::Backtrace::str(size_t nframes_to_skip) const {
-  std::ostringstream oss;
-  std::copy(frames_.begin() + nframes_to_skip, frames_.end(),
-            std::ostream_iterator<std::string>(oss, "\n"));
-  return oss.str();
+void launch_lldb_xterm() {
+  auto debugger = std::make_shared<mpqc::Debugger>();
+  if (ExEnv::initialized()) debugger->set_exec(ExEnv::argv()[0]);
+  debugger->set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e lldb -p $(PID) &");
+  debugger->debug("Starting gdb ...");
 }
 
-std::string Debugger::Backtrace::__demangle(const std::string &symbol) {
-  std::string dsymbol;
-#ifdef HAVE_CXA_DEMANGLE
-  {
-    int status;
-    char *dsymbol_char = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);
-    if (status == 0) {  // success
-      dsymbol = dsymbol_char;
-      free(dsymbol_char);
-    } else  // fail
-      dsymbol = symbol;
-  }
-#else
-  dsymbol = symbol;
-#endif
-  return dsymbol;
-}
+}  // namespace mpqc
 
 /////////////////////////////////////////////////////////////////////////////
 // Local Variables:

@@ -44,10 +44,7 @@ class PeriodicCADFKBuilder
    */
   PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory,
                        const double force_shape_threshold = 0.0)
-      : WorldObject_(world),
-        ao_factory_(ao_factory),
-        trans_(madness::cblas::Trans),
-        notrans_(madness::cblas::NoTrans) {
+      : WorldObject_(world), ao_factory_(ao_factory) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
@@ -71,8 +68,6 @@ class PeriodicCADFKBuilder
     RJ_max_ = ao_factory_.RJ_max();
     RD_max_ = ao_factory_.RD_max();
     R_size_ = ao_factory_.R_size();
-    RJ_size_ = ao_factory_.RJ_size();
-    RD_size_ = ao_factory_.RD_size();
 
     init();
   }
@@ -88,11 +83,6 @@ class PeriodicCADFKBuilder
    * \param R_max range of expansion of Bloch Gaussians in AO Gaussians
    * \param RJ_max range of Coulomb operation
    * \param RD_max range of density representation
-   * \param R_size number of unit cells included in R_max
-   * \param RJ_size number of unit cells included in RJ_max
-   * \param RD_size number of unit cells included in RD_max
-   * \param ntiles_per_uc number of tiles in one unit cell
-   * \param natoms_per_uc number of atoms in one unit cell
    * \param shell_pair_threshold threshold for screeing non-negligible shell
    * pairs
    * \param screen_threshold threshold for schwarz screening.
@@ -106,9 +96,8 @@ class PeriodicCADFKBuilder
   PeriodicCADFKBuilder(
       madness::World &world, Factory &ao_factory, std::shared_ptr<Basis> obs,
       std::shared_ptr<Basis> dfbs, const Vector3d &dcell, const Vector3i &R_max,
-      const Vector3i &RJ_max, const Vector3i &RD_max, const int64_t R_size,
-      const int64_t RJ_size, const int64_t RD_size, const size_t ntiles_per_uc,
-      const size_t natoms_per_uc, const double screen_threshold = 1.0e-20,
+      const Vector3i &RJ_max, const Vector3i &RD_max,
+      const double screen_threshold = 1.0e-20,
       const double density_threshold = Policy::shape_type::threshold(),
       const double target_precision = std::numeric_limits<double>::epsilon(),
       const bool print_detail = false, const double force_shape_threshold = 0.0)
@@ -120,23 +109,23 @@ class PeriodicCADFKBuilder
         R_max_(R_max),
         RJ_max_(RJ_max),
         RD_max_(RD_max),
-        R_size_(R_size),
-        RJ_size_(RJ_size),
-        RD_size_(RD_size),
-        ntiles_per_uc_(ntiles_per_uc),
-        natoms_per_uc_(natoms_per_uc),
         print_detail_(print_detail),
         screen_threshold_(screen_threshold),
         density_threshold_(density_threshold),
         force_shape_threshold_(force_shape_threshold),
-        target_precision_(target_precision),
-        trans_(madness::cblas::Trans),
-        notrans_(madness::cblas::NoTrans) {
+        target_precision_(target_precision) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
                   << std::endl;
+
+    MPQC_ASSERT(obs_->nclusters() == dfbs_->nclusters());
+    ntiles_per_uc_ = obs_->nclusters();
+    natoms_per_uc_ = ao_factory_.unitcell().natoms();
+
+    using ::mpqc::detail::direct_ord_idx;
+    R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
 
     // by-cluster orbital basis and df basis
     assert(obs_->nclusters() == dfbs_->nclusters());
@@ -161,9 +150,6 @@ class PeriodicCADFKBuilder
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
   size_t ntiles_per_uc_;
   size_t natoms_per_uc_;
   bool print_detail_;
@@ -171,10 +157,8 @@ class PeriodicCADFKBuilder
   double density_threshold_;
   double force_shape_threshold_;
   double target_precision_ = std::numeric_limits<double>::epsilon();
-  const madness::cblas::CBLAS_TRANSPOSE trans_;
-  const madness::cblas::CBLAS_TRANSPOSE notrans_;
 
-  const Vector3d zero_shift_base_ = {0.0, 0.0, 0.0};
+  int64_t R_size_;
   std::shared_ptr<Basis> basisR_;
   Vector3i truncated_RD_max_;
   Vector3i Rrho_max_;
@@ -212,7 +196,7 @@ class PeriodicCADFKBuilder
     // ordinal # of the reference unit cell in R_max_ lattice range
     ref_uc_ord_ = (R_size_ - 1) / 2;
     // make compound basis for ν in product density |μ_0 ν_Rν)
-    basisR_ = shift_basis_origin(*obs_, zero_shift_base_, R_max_, dcell_);
+    basisR_ = shift_basis_origin(*obs_, Vector3d::Zero(), R_max_, dcell_);
 
     // compute C(X_Rx, μ_0, ν_Rν)
     t0 = mpqc::fenced_now(world);
@@ -221,7 +205,7 @@ class PeriodicCADFKBuilder
       // same lattice range as ν_Rν.
       RX_max_ = R_max_;
       auto X_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base_, RX_max_, dcell_);
+          shift_basis_origin(*dfbs_, Vector3d::Zero(), RX_max_, dcell_);
       const auto by_atom_dfbs = lcao::detail::by_center_basis(*X_dfbs);
       auto M = compute_eri2(world, by_atom_dfbs, by_atom_dfbs);
       const Vector3i ref_lattice_range = {0, 0, 0};
@@ -481,11 +465,11 @@ class PeriodicCADFKBuilder
     D_repl.make_replicated();
     world.gop.fence();  // must wait till all replicating is finished
 
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::detail::direct_vector;
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::detail::is_in_lattice_range;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
     const auto Dnorms = D_repl.shape().data();
     auto task_id = 0ul;
@@ -666,8 +650,9 @@ class PeriodicCADFKBuilder
       const auto result_rng = TA::Range({rng_Y, rng_rho, rng_nu});
       Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(notrans_, trans_, result_tile.range().rank(),
-                              C_tile.range().rank(), D_tile.range().rank());
+      TA::math::GemmHelper gh(madness::cblas::NoTrans, madness::cblas::Trans,
+                              result_tile.range().rank(), C_tile.range().rank(),
+                              D_tile.range().rank());
 
       int m, k, n;
       gh.compute_matrix_sizes(m, n, k, C_tile.range(), D_tile.range());
@@ -728,8 +713,9 @@ class PeriodicCADFKBuilder
       const auto result_rng = TA::Range({rng_Y, rng_rho, rng_nu});
       Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(notrans_, trans_, result_tile.range().rank(),
-                              C.range().rank(), D.range().rank());
+      TA::math::GemmHelper gh(madness::cblas::NoTrans, madness::cblas::Trans,
+                              result_tile.range().rank(), C.range().rank(),
+                              D.range().rank());
       int m, k, n;
       gh.compute_matrix_sizes(m, n, k, C.range(), D.range());
       const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
@@ -928,8 +914,9 @@ class PeriodicCADFKBuilder
       const auto result_rng = TA::Range({rng_mu, rng_rho});
       Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
-                              F_tile.range().rank(), Q_tile.range().rank());
+      TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
+                              result_tile.range().rank(), F_tile.range().rank(),
+                              Q_tile.range().rank());
 
       int m, k, n;
       gh.compute_matrix_sizes(m, n, k, F_tile.range(), Q_tile.range());
@@ -1158,8 +1145,9 @@ class PeriodicCADFKBuilder
       const auto result_rng = TA::Range({rng_Y, rng_mu, rng_nu});
       Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
-                              M_tile.range().rank(), C_tile.range().rank());
+      TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
+                              result_tile.range().rank(), M_tile.range().rank(),
+                              C_tile.range().rank());
 
       int m, k, n;
       gh.compute_matrix_sizes(m, n, k, M_tile.range(), C_tile.range());
@@ -1220,8 +1208,9 @@ class PeriodicCADFKBuilder
 
     auto add_to_result_tile = [&](Tile &C, Tile &M) {
       // set up gemm helper
-      TA::math::GemmHelper gh(trans_, notrans_, result_tile.range().rank(),
-                              M.range().rank(), C.range().rank());
+      TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
+                              result_tile.range().rank(), M.range().rank(),
+                              C.range().rank());
 
       int m, k, n;
       gh.compute_matrix_sizes(m, n, k, M.range(), C.range());
@@ -1446,9 +1435,9 @@ class PeriodicCADFKBuilder
     if (print_detail_) {
       ExEnv::out0() << "\nUpdating RD-dependent variables:" << std::endl;
     }
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::detail::direct_vector;
     using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
     auto &world = this->get_world();
     time_point t0, t1;
@@ -1465,7 +1454,7 @@ class PeriodicCADFKBuilder
       RY_size_ = 1 + direct_ord_idx(RY_max_, RY_max_);
       RYmRX_max_ = Rrho_max_;
       auto shifted_Y_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base_, RYmRX_max_, dcell_);
+          shift_basis_origin(*dfbs_, Vector3d::Zero(), RYmRX_max_, dcell_);
       M_ = compute_eri2(world, *dfbs_, *shifted_Y_dfbs);
     }
     t1 = mpqc::fenced_now(world);
@@ -1475,7 +1464,7 @@ class PeriodicCADFKBuilder
     t0 = mpqc::fenced_now(world);
     {
       auto Y_dfbs =
-          shift_basis_origin(*dfbs_, zero_shift_base_, RY_max_, dcell_);
+          shift_basis_origin(*dfbs_, Vector3d::Zero(), RY_max_, dcell_);
       auto bs_array = utility::make_array_of_refs(*Y_dfbs, *obs_, *basisR_);
       auto bs_vector = lcao::gaussian::BasisVector{{*Y_dfbs, *obs_, *basisR_}};
 
@@ -1506,7 +1495,7 @@ class PeriodicCADFKBuilder
     {
       // make TiledRange and Pmap of exchange K(μ_0, ρ_Rρ)
       auto basisRrho =
-          shift_basis_origin(*obs_, zero_shift_base_, Rrho_max_, dcell_);
+          shift_basis_origin(*obs_, Vector3d::Zero(), Rrho_max_, dcell_);
       result_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(
           lcao::gaussian::BasisVector{{*obs_, *basisRrho}});
       auto tvolume = result_trange_.tiles_range().volume();
@@ -1516,9 +1505,9 @@ class PeriodicCADFKBuilder
       R1m2_max_ = RD_max + R_max_;
       R1m2_size_ = 1 + direct_ord_idx(R1m2_max_, R1m2_max_);
       auto Q_bs_Y =
-          shift_basis_origin(*dfbs_, zero_shift_base_, R_max_, dcell_);
+          shift_basis_origin(*dfbs_, Vector3d::Zero(), R_max_, dcell_);
       auto Q_bs_nu =
-          shift_basis_origin(*obs_, zero_shift_base_, R1m2_max_, dcell_);
+          shift_basis_origin(*obs_, Vector3d::Zero(), R1m2_max_, dcell_);
 
       // make TiledRange and Pmap of Q(Y_(Ry-Rρ), ρ_0, ν(Rν-Rρ))
       Q_trange_ = ::mpqc::lcao::gaussian::detail::create_trange(

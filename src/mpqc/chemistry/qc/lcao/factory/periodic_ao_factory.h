@@ -985,9 +985,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_two_center_periodic(
   TA_ASSERT(ket_basis != nullptr);
 
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis =
-      detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
+      detail::shift_basis_origin(*ket_basis, Vector3d::Zero(), R_max_, dcell_);
 
   bases = BasisVector{{*bra_basis, *ket_basis}};
 
@@ -1067,9 +1066,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_three_center_periodic(
   TA_ASSERT(ket_basis1 != nullptr);
 
   // Form a compound index ket1 basis
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis1 =
-      detail::shift_basis_origin(*ket_basis1, zero_shift_base, R_max_, dcell_);
+      detail::shift_basis_origin(*ket_basis1, Vector3d::Zero(), R_max_, dcell_);
   // Shift bra basis
   bra_basis0 = detail::shift_basis_origin(*bra_basis0, shift);
 
@@ -1133,14 +1131,13 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_four_center_periodic(
   TA_ASSERT(ket_basis1 != nullptr);
 
   // Form a compound index basis
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
-    bra_basis1 = detail::shift_basis_origin(*bra_basis1, zero_shift_base,
+    bra_basis1 = detail::shift_basis_origin(*bra_basis1, Vector3d::Zero(),
                                             R_max_, dcell_);
     ket_basis0 = detail::shift_basis_origin(*ket_basis0, shift_coul);
   } else {
     bra_basis1 = detail::shift_basis_origin(*bra_basis1, shift_coul);
-    ket_basis0 = detail::shift_basis_origin(*ket_basis0, zero_shift_base,
+    ket_basis0 = detail::shift_basis_origin(*ket_basis0, Vector3d::Zero(),
                                             R_max_, dcell_);
   }
   ket_basis1 =
@@ -1291,11 +1288,10 @@ std::ostream &operator<<(std::ostream &os,
 
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
-  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-  using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
   using ::mpqc::detail::direct_3D_idx;
   using ::mpqc::detail::direct_ord_idx;
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
+  using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
+  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
   ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
                 << R_max_.transpose() << std::endl;
@@ -1303,7 +1299,7 @@ void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
   // compute significant shell pair list
   auto basis_ptr = this->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   auto basisR_ptr =
-      shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
+      shift_basis_origin(*basis_ptr, Vector3d::Zero(), R_max_, dcell_);
   sig_shellpair_list_ =
       parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
                                       shell_pair_threshold_, engine_precision_);
@@ -1345,7 +1341,7 @@ void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
                 << R_max_.transpose() << std::endl;
 
   // do not forget to recompute significant shell pairs using new R_max_
-  basisR_ptr = shift_basis_origin(*basis_ptr, zero_shift_base, R_max_, dcell_);
+  basisR_ptr = shift_basis_origin(*basis_ptr, Vector3d::Zero(), R_max_, dcell_);
   sig_shellpair_list_ =
       parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
                                       shell_pair_threshold_, engine_precision_);

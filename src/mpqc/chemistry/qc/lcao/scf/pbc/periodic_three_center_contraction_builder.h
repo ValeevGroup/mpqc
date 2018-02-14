@@ -37,26 +37,39 @@ class PeriodicThreeCenterContractionBuilder
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
 
+  /*!
+   * @brief This constructs PeriodicThreeCenterContractionBuilder using specific
+   * basis sets, lattice params, and thresholds.
+   * @param world MADNESS world object
+   * @param basis orbital basis set
+   * @param aux_basis auxiliary fitting basis set
+   * @param dcell unit cell parameters
+   * @param R_max range of expansion of Bloch Gaussians in AO Gaussians
+   * @param RJ_max range of Coulomb operation
+   * @param RD_max range of density representation
+   * @param sig_shellpair_list a non-negligible (μ, ν) shell pair list where μ
+   * is in the reference unit cell and ν is in the neighbouring unit cells
+   * @param screen method for screening three-body integrals
+   * @param screen_threshold threshold for schwarz screening.
+   * @param density_threshold threshold for screening density blocks
+   */
   PeriodicThreeCenterContractionBuilder(
       madness::World &world, std::shared_ptr<const Basis> basis,
-      std::shared_ptr<const Basis> aux_basis, Vector3d &dcell, Vector3i &R_max,
-      Vector3i &RJ_max, Vector3i &RD_max, int64_t R_size, int64_t RJ_size,
-      int64_t RD_size, shellpair_list_t &sig_shellpair_list,
-      std::string screen = "schwarz", double screen_threshold = 1.0e-20,
+      std::shared_ptr<const Basis> aux_basis, const Vector3d &dcell,
+      const Vector3i &R_max, const Vector3i &RJ_max, const Vector3i &RD_max,
+      const shellpair_list_t &sig_shellpair_list,
+      const std::string &screen = "schwarz", double screen_threshold = 1.0e-20,
       double density_threshold = Policy::shape_type::threshold())
       : WorldObject_(world),
         basis0_(basis),
         aux_basis_(aux_basis),
-        screen_(screen),
-        screen_threshold_(screen_threshold),
-        density_threshold_(density_threshold),
         dcell_(dcell),
         R_max_(R_max),
         RJ_max_(RJ_max),
         RD_max_(RD_max),
-        R_size_(R_size),
-        RJ_size_(RJ_size),
-        RD_size_(RD_size),
+        screen_(screen),
+        screen_threshold_(screen_threshold),
+        density_threshold_(density_threshold),
         sig_shellpair_list_(sig_shellpair_list) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
@@ -67,20 +80,22 @@ class PeriodicThreeCenterContractionBuilder
     init();
   }
 
+  /*!
+   * @brief This constructs PeriodicThreeCenterContractionBuilder using a
+   * PeriodicAOFactory object
+   * @param ao_factory PeriodicAOFactory object
+   */
   PeriodicThreeCenterContractionBuilder(Factory &ao_factory)
       : WorldObject_(ao_factory.world()),
         basis0_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
         aux_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"Κ"))),
-        screen_(ao_factory.screen()),
-        screen_threshold_(ao_factory.screen_threshold()),
-        density_threshold_(ao_factory.density_threshold()),
         dcell_(ao_factory.unitcell().dcell()),
         R_max_(ao_factory.R_max()),
         RJ_max_(ao_factory.RJ_max()),
         RD_max_(ao_factory.RD_max()),
-        R_size_(ao_factory.R_size()),
-        RJ_size_(ao_factory.RJ_size()),
-        RD_size_(ao_factory.RD_size()),
+        screen_(ao_factory.screen()),
+        screen_threshold_(ao_factory.screen_threshold()),
+        density_threshold_(ao_factory.density_threshold()),
         sig_shellpair_list_(ao_factory.significant_shell_pairs()) {
     assert(basis0_ != nullptr && "No basis is provided");
     assert(aux_basis_ != nullptr && "No auxiliary basis is provided");
@@ -157,11 +172,10 @@ class PeriodicThreeCenterContractionBuilder
     auto ntiles = basis0_->nclusters();
 
     // make shell block norm of D
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     auto basis1 =
-        shift_basis_origin(*basis0_, zero_shift_base, RD_max_, dcell_);
+        shift_basis_origin(*basis0_, Vector3d::Zero(), RD_max_, dcell_);
     auto shblk_norm_D = compute_shellblock_norm(*basis0_, *basis1, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
     compute_world.gop.fence();
@@ -433,19 +447,19 @@ class PeriodicThreeCenterContractionBuilder
   // set by ctor
   std::shared_ptr<const Basis> basis0_;
   std::shared_ptr<const Basis> aux_basis_;
-  const std::string screen_;
-  const double screen_threshold_;
-  const double density_threshold_;
   const Vector3d dcell_;
   const Vector3i R_max_;
   const Vector3i RJ_max_;
   const Vector3i RD_max_;
-  const int64_t R_size_;
-  const int64_t RJ_size_;
-  const int64_t RD_size_;
+  const std::string screen_;
+  const double screen_threshold_;
+  const double density_threshold_;
   const shellpair_list_t &sig_shellpair_list_;
 
   // mutable by init function
+  mutable int64_t R_size_;
+  mutable int64_t RJ_size_;
+  mutable int64_t RD_size_;
   mutable size_t ntiles_per_uc_;
   mutable TA::TiledRange1 trange1_aux_;
   mutable TA::TiledRange trange_eri3_;
@@ -468,18 +482,22 @@ class PeriodicThreeCenterContractionBuilder
     ntiles_per_uc_ = basis0_->nclusters();
     assert(ntiles_per_uc_ == aux_basis_->nclusters());
 
+    using ::mpqc::detail::direct_ord_idx;
+    R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
+    RD_size_ = 1 + direct_ord_idx(RD_max_, RD_max_);
+
     trange1_aux_ = aux_basis_->create_trange1();
     auto &world = this->get_world();
 
     using ::mpqc::detail::direct_vector;
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shell_offset;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::make_screener;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
 
     // make compound basis set for ν_R in (X_Rj | μ_0 ν_R)
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
+    basisR_ = shift_basis_origin(*basis0_, Vector3d::Zero(), R_max_, dcell_);
 
     // make compound basis set for X in (X_Rj | μ_0 ν_R)
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
@@ -493,7 +511,7 @@ class PeriodicThreeCenterContractionBuilder
     // initialize screener for (X_Rj | μ_0 ν_R)
     if (screen_ == "schwarz") {
       const auto basisX =
-          *(shift_basis_origin(basis_aux, zero_shift_base, RJ_max_, dcell_));
+          *(shift_basis_origin(basis_aux, Vector3d::Zero(), RJ_max_, dcell_));
       auto screen_engine =
           make_engine_pool(libint2::Operator::coulomb,
                            utility::make_array_of_refs(basisX, basis0, basisR),
@@ -676,8 +694,9 @@ class PeriodicThreeCenterContractionBuilder
                 continue;
 
               // compute shell set
-              // TODO call 3-body version of compute2 to avoid extra copies
-              engine.compute(shell_aux, shell0, shell1);
+              engine.compute2<libint2::Operator::coulomb,
+                              libint2::BraKet::xs_xx, 0>(
+                  shell_aux, Shell::unit(), shell0, shell1);
               const auto *eri_aux_01 = computed_shell_sets[0];
 
               if (eri_aux_01 != nullptr) {
@@ -826,8 +845,9 @@ class PeriodicThreeCenterContractionBuilder
                 continue;
 
               // compute shell set
-              // TODO call 3-body version of compute2 to avoid extra copies
-              engine.compute(shell_aux, shell0, shell1);
+              engine.compute2<libint2::Operator::coulomb,
+                              libint2::BraKet::xs_xx, 0>(
+                  shell_aux, Shell::unit(), shell0, shell1);
               const auto *eri_aux_01 = computed_shell_sets[0];
 
               if (eri_aux_01 != nullptr) {

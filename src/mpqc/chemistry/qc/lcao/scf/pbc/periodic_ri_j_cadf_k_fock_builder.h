@@ -4,6 +4,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cadf_k_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
 namespace scf {
@@ -44,8 +45,12 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                         bool) override {
     array_type G;
 
-    G("mu, nu") = 2.0 * compute_J(D, target_precision)("mu, nu") -
-                  compute_K(D, target_precision)("mu, nu");
+    const auto J = compute_J(D, target_precision);
+    const auto K = compute_K(D, target_precision);
+    const auto J_lattice_range = ao_factory_.R_max();
+    const auto K_lattice_range = k_builder_->K_lattice_range();
+    G = ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 2.0,
+                                 -1.0);
 
     return G;
   }
@@ -55,7 +60,19 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 
-  Vector3i fock_lattice_range() override { return ao_factory_.R_max(); }
+  Vector3i fock_lattice_range() override {
+    const auto J_range = ao_factory_.R_max();
+    const auto K_range = k_builder_->K_lattice_range();
+    if (J_range(0) <= K_range(0) && J_range(1) <= K_range(1) &&
+        J_range(2) <= K_range(2)) {
+      return K_range;
+    } else if (J_range(0) >= K_range(0) && J_range(1) >= K_range(1) &&
+               J_range(2) >= K_range(2)) {
+      return J_range;
+    } else {
+      throw "invalid lattice ranges";
+    }
+  }
 
  private:
   Factory &ao_factory_;

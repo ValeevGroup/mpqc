@@ -9,7 +9,7 @@
 
 #include "mpqc/chemistry/molecule/lattice/unit_cell.h"
 #include "mpqc/chemistry/molecule/lattice/util.h"
-#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -68,8 +68,10 @@ template <typename Tile, typename Policy>
 class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectTArray = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
+  using DirectTArray =
+      DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, libint2::Engine>>;
   using Op = std::function<Tile(TA::TensorD &&)>;
+  using shellpair_list_t = std::vector<std::vector<size_t>>;
 
  public:
   PeriodicAOFactory() = default;
@@ -129,9 +131,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
         kv.value<std::array<int, 3>>(prefix + "rjmax").data());
 
     using ::mpqc::detail::direct_ord_idx;
-    R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
+    RD_size_ = 1 + direct_ord_idx(RD_max_, RD_max_);
 
     auto default_precision = std::numeric_limits<double>::epsilon();
     engine_precision_ =
@@ -167,6 +169,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
 
     this->set_orbital_registry(orbital_space_registry);
+
+    // Since R_max_ is only used in |μ_0 ν_R) related ints, it is reasonable to
+    // recalculate R_max_ based on the range of significant shell pairs
+    renew_overlap_lattice_range();
   }
 
   ~PeriodicAOFactory() noexcept {}
@@ -277,6 +283,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return density matrix
   TArray get_density() { return D_; }
 
+  /// @return significant shell pairs
+  const shellpair_list_t &significant_shell_pairs() {
+    return sig_shellpair_list_;
+  }
+
  private:
   /// compute integrals that has two dimensions for periodic systems
   TArray compute2(const Formula &formula);
@@ -360,6 +371,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
                                                std::shared_ptr<Screener> screen,
                                                Op op);
 
+  /// This renews R_max_ and R_size_ based on the range of significant shell
+  /// pairs
+  void renew_overlap_lattice_range();
+
  private:
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
 
@@ -388,6 +403,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
+  shellpair_list_t sig_shellpair_list_;
 };
 
 template <typename Tile, typename Policy>
@@ -969,9 +985,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_two_center_periodic(
   TA_ASSERT(ket_basis != nullptr);
 
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis =
-      detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
+      detail::shift_basis_origin(*ket_basis, Vector3d::Zero(), R_max_, dcell_);
 
   bases = BasisVector{{*bra_basis, *ket_basis}};
 
@@ -1051,9 +1066,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_three_center_periodic(
   TA_ASSERT(ket_basis1 != nullptr);
 
   // Form a compound index ket1 basis
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis1 =
-      detail::shift_basis_origin(*ket_basis1, zero_shift_base, R_max_, dcell_);
+      detail::shift_basis_origin(*ket_basis1, Vector3d::Zero(), R_max_, dcell_);
   // Shift bra basis
   bra_basis0 = detail::shift_basis_origin(*bra_basis0, shift);
 
@@ -1117,14 +1131,13 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_four_center_periodic(
   TA_ASSERT(ket_basis1 != nullptr);
 
   // Form a compound index basis
-  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
-    bra_basis1 = detail::shift_basis_origin(*bra_basis1, zero_shift_base,
+    bra_basis1 = detail::shift_basis_origin(*bra_basis1, Vector3d::Zero(),
                                             R_max_, dcell_);
     ket_basis0 = detail::shift_basis_origin(*ket_basis0, shift_coul);
   } else {
     bra_basis1 = detail::shift_basis_origin(*bra_basis1, shift_coul);
-    ket_basis0 = detail::shift_basis_origin(*ket_basis0, zero_shift_base,
+    ket_basis0 = detail::shift_basis_origin(*ket_basis0, Vector3d::Zero(),
                                             R_max_, dcell_);
   }
   ket_basis1 =
@@ -1231,7 +1244,8 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
                                               std::move(shr_bases),
                                               std::move(screen), std::move(op));
 
-  auto direct_array = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, E>>(std::move(builder));
+  auto direct_array = DirectArray<Tile, Policy, DirectIntegralBuilder<Tile, E>>(
+      std::move(builder));
   auto builder_ptr = direct_array.builder();
   using DirectTileType = DirectTile<Tile, DirectIntegralBuilder<Tile, E>>;
 
@@ -1270,6 +1284,67 @@ std::ostream &operator<<(std::ostream &os,
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
   return os;
+}
+
+template <typename Tile, typename Policy>
+void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
+  using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
+  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+
+  ExEnv::out0() << "\nUser specified range of lattice sum for |mu nu_R) = "
+                << R_max_.transpose() << std::endl;
+
+  // compute significant shell pair list
+  auto basis_ptr = this->basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  auto basisR_ptr =
+      shift_basis_origin(*basis_ptr, Vector3d::Zero(), R_max_, dcell_);
+  sig_shellpair_list_ =
+      parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
+                                      shell_pair_threshold_, engine_precision_);
+
+  // make a list of significant R's as in overlap between μ_0 and ν_R
+  std::vector<Vector3i> sig_lattice_list;
+  const auto nshells_per_uc = basis_ptr->flattened_shells().size();
+  for (auto R_ord = 0; R_ord != R_size_; ++R_ord) {
+    const auto R_3D = direct_3D_idx(R_ord, R_max_);
+    const auto shell1_min = nshells_per_uc * R_ord;
+    const auto shell1_max = shell1_min + nshells_per_uc;
+
+    auto is_significant = false;
+    for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
+      for (const auto &shell1 : sig_shellpair_list_[shell0]) {
+        if (shell1 >= shell1_min && shell1 < shell1_max) {
+          is_significant = true;
+          sig_lattice_list.emplace_back(R_3D);
+          break;
+        }
+      }
+      if (is_significant) break;
+    }
+  }
+
+  // renew the range of lattice sum for |μ_0 ν_Rν) based on the list of
+  // significant lattice vectors
+  auto x = 0;
+  auto y = 0;
+  auto z = 0;
+  for (const auto &R_3D : sig_lattice_list) {
+    x = std::max(x, R_3D(0));
+    y = std::max(y, R_3D(1));
+    z = std::max(z, R_3D(2));
+  }
+  R_max_ = Vector3i({x, y, z});
+  R_size_ = 1 + direct_ord_idx(R_max_, R_max_);
+  ExEnv::out0() << "Updated range of lattice sum for |mu nu_R) = "
+                << R_max_.transpose() << std::endl;
+
+  // do not forget to recompute significant shell pairs using new R_max_
+  basisR_ptr = shift_basis_origin(*basis_ptr, Vector3d::Zero(), R_max_, dcell_);
+  sig_shellpair_list_ =
+      parallel_compute_shellpair_list(this->world(), *basis_ptr, *basisR_ptr,
+                                      shell_pair_threshold_, engine_precision_);
 }
 
 #if TA_DEFAULT_POLICY == 1

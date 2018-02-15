@@ -152,6 +152,8 @@ class Debugger : virtual public DescribedClass {
 
   /// The Debugger will be actived when sig is caught.
   virtual void handle(int sig);
+  /// Reverts the effect of @c handle(sig) , i.e. the Debugger will not be activated when @c sig is caught.
+  virtual void release(int sig);
   /// This calls handle(int) with all of the major signals.
   virtual void handle_defaults();
 

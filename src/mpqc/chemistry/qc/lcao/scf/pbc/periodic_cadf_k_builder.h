@@ -3,7 +3,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/density_fitting/cadf_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_three_center_contraction_builder.h"
+#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 
@@ -175,9 +175,9 @@ class PeriodicCADFKBuilder
     const Vector3i ref_lattice_range = {0, 0, 0};
     Vector3d zero_shift_base(0.0, 0.0, 0.0);
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
@@ -335,7 +335,7 @@ class PeriodicCADFKBuilder
 
     auto t0_k = mpqc::fenced_now(world);
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::detail::direct_vector;
     using ::mpqc::lcao::gaussian::make_engine_pool;
 
     array_type K;
@@ -446,8 +446,8 @@ class PeriodicCADFKBuilder
     std::unordered_set<SigPair, boost::hash<SigPair>> Y_rho;
     Y_rho.reserve(ntiles_Y * ntiles_rho);
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     for (auto tile_Y = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
       const auto RY_ord = tile_Y / ntiles_per_uc_;
@@ -542,9 +542,9 @@ class PeriodicCADFKBuilder
     world.gop.fence();
 
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::lcao::detail::direct_vector;
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     // # of tiles per basis
     const auto ntiles_Y = Q_bs_Y_->nclusters();
@@ -720,8 +720,8 @@ class PeriodicCADFKBuilder
     const auto ntiles_nu = basisR_->nclusters();
     const auto ntiles_mu = obs_->nclusters();
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     for (auto tile_Y = 0ul, task = 0ul; tile_Y != ntiles_Y; ++tile_Y) {
       const auto RY_ord = tile_Y / ntiles_per_uc_;
@@ -882,8 +882,8 @@ class PeriodicCADFKBuilder
     const auto ntiles_rho = basisRJ_->nclusters();
     const auto ntiles_mu = obs_->nclusters();
 
-    using ::mpqc::lcao::detail::direct_3D_idx;
-    using ::mpqc::lcao::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
 
     for (auto tile_X = 0ul, task = 0ul; tile_X != ntiles_X; ++tile_X) {
       const auto RX_ord = tile_X / ntiles_per_uc_;

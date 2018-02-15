@@ -13,6 +13,8 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
+#include "mpqc/math/external/tiledarray/util.h"
+
 namespace mpqc {
 namespace lcao {
 
@@ -60,10 +62,11 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   RD_size_ = ao_factory.RD_size();
 
   // read # kpoints from keyval
+  using ::mpqc::detail::k_ord_idx;
   nk_ = decltype(nk_)(kv.value<std::array<int, 3>>("k_points").data());
   assert((nk_.array() > 0).all() &&
          "k_points cannot have zero or negative elements");
-  k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+  k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
                 << nk_.transpose() << "]" << std::endl;
@@ -264,7 +267,7 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
   C_.resize(k_size_);
 
   auto tr0 = Fk_.trange().data()[0];
-  using ::mpqc::lcao::detail::extend_trange1;
+  using ::mpqc::detail::extend_trange1;
   auto tr1 = extend_trange1(tr0, RD_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
@@ -298,10 +301,13 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::compute_density() {
 
   Matrix result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
+
+  using ::mpqc::detail::direct_vector;
+  using ::mpqc::detail::k_vector;
   for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
+    auto vec_R = direct_vector(R, RD_max_, dcell_);
     for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = detail::k_vector(k, nk_, dcell_);
+      auto vec_k = k_vector(k, nk_, dcell_);
       auto C_occ = C_[k].leftCols(docc_);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =
@@ -326,18 +332,24 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   assert((real_lattice_range.array() >= 0).all() &&
          (recip_lattice_range.array() > 0).all());
 
+  using ::mpqc::detail::direct_vector;
+  using ::mpqc::detail::k_vector;
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::extend_trange1;
+
   const auto real_lattice_size =
-      1 + detail::direct_ord_idx(real_lattice_range, real_lattice_range);
+      1 + direct_ord_idx(real_lattice_range, real_lattice_range);
   const Vector3i k_end_3D_idx = (recip_lattice_range.array() - 1).matrix();
   const auto recip_lattice_size =
-      1 + detail::k_ord_idx(k_end_3D_idx, recip_lattice_range);
+      1 + k_ord_idx(k_end_3D_idx, recip_lattice_range);
   const auto tiles_range = matrix.trange().tiles_range();
   assert(tiles_range.extent(1) % tiles_range.extent(0) == 0);
   assert(real_lattice_size == tiles_range.extent(1) / tiles_range.extent(0));
 
   array_type_z result;
   auto tr0 = matrix.trange().data()[0];
-  auto tr1 = detail::extend_trange1(tr0, recip_lattice_size);
+  auto tr1 = extend_trange1(tr0, recip_lattice_size);
   auto& world = matrix.world();
 
   // Perform real->reciprocal transformation with Eigen
@@ -353,9 +365,9 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
     if (bmat.norm() < bmat.size() * threshold)
       continue;
     else {
-      auto vec_R = detail::direct_vector(R, real_lattice_range, dcell_);
+      auto vec_R = direct_vector(R, real_lattice_range, dcell_);
       for (auto k = 0; k < recip_lattice_size; ++k) {
-        auto vec_k = detail::k_vector(k, recip_lattice_range, dcell_);
+        auto vec_k = k_vector(k, recip_lattice_range, dcell_);
         auto exponent = std::exp(I * vec_k.dot(vec_R));
         result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
             bmat * exponent;
@@ -372,9 +384,12 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
 template <typename Tile, typename Policy>
 typename zRHF<Tile, Policy>::array_type_z
 zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
+  using ::mpqc::detail::direct_ord_idx;
+  using ::mpqc::detail::k_ord_idx;
+
   const Vector3i k_end_3D_idx = (nk_.array() - 1).matrix();
-  assert(k_size_ == 1 + detail::k_ord_idx(k_end_3D_idx, nk_));
-  assert(R_size_ == 1 + detail::direct_ord_idx(R_max_, R_max_));
+  assert(k_size_ == 1 + k_ord_idx(k_end_3D_idx, nk_));
+  assert(R_size_ == 1 + direct_ord_idx(R_max_, R_max_));
   return transform_real2recip(matrix, R_max_, nk_);
 }
 

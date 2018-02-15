@@ -2,6 +2,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_
 
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/math/external/eigen/util.h"
 
 namespace mpqc {
 namespace utility {
@@ -14,7 +15,7 @@ namespace utility {
  * \return
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
+MatrixZ gensqrtinv(const TArray &S, bool symmetric, double max_condition_num,
                    int64_t k, bool print = false) {
   double S_condition_num;
   MatrixZ X;
@@ -29,7 +30,7 @@ MatrixZ gensqrtinv(const TArray S, bool symmetric, double max_condition_num,
   Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
-  //  integrals::detail::sort_eigen(s, U);
+  //  ::mpqc::detail::sort_eigen(s, U);
 
   auto s_max = s.maxCoeff();
   auto s_min = s.minCoeff();

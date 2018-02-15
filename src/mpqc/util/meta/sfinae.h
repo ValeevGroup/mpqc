@@ -2,7 +2,7 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_META_SFINAE_H_
 #define MPQC4_SRC_MPQC_UTIL_META_SFINAE_H_
 
-#include <type_traits>
+#include "type_traits.h"
 
 namespace mpqc {
 namespace meta {

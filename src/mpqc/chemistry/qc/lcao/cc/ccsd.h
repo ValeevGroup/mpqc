@@ -216,8 +216,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       }
       else if (solver_str_ == "pno")
         solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
-      else if (solver_str_ == "svo")
-        solver_ = std::make_shared<cc::SVOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 

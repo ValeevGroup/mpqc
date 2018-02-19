@@ -40,7 +40,7 @@ class RHF
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
-   * | localization_method | string | boys-foster | localization method; valid choices are "boys-foster" (localize all occupied orbitals; this is the default), "boys-foster(valence)" (do not localize the core), "RRQR" (use Rank Revealing QR), "RRQR(valence)" (do not localize the core)|
+   * | localization_method | string | boys-foster | localization method; valid choices are "boys-foster" (localize all occupied orbitals; this is the default), "boys-foster(valence)" (do not localize the core), "rrqr" (use Rank Revealing QR), "rrqr(valence)"|
    * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
    * | decompo_type | string | conditioned | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
    * | s_tolerance | double | 1.0e8 | S condition number threshold in DensityBuilder, valid when decompo_type is set to conditioned |
@@ -49,7 +49,7 @@ class RHF
   // clang-format on
   RHF(const KeyVal& kv);
 
-  virtual ~RHF() { }
+  virtual ~RHF() {}
 
   void obsolete() override;
 

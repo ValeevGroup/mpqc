@@ -3,24 +3,25 @@
   "property":{
     "type" : "GFRealPole",
     "precision" : 1.0e-6,
-    "target" : 1,
+    "target" : -1,
     "wfn" : "$:wfn"
   },
   "atoms": {
-    "file_name": "h2o.xyz",
+    "file_name": "n2.xyz",
     "sort_input": true,
-    "charge": 0
+    "charge": 0,
+    "n_cluster" : 2
   },
   "basis": {
-    "name": "6-31G",
+    "name": "aug-cc-pVDZ",
     "atoms": "$:atoms"
   },
   "df_basis": {
-    "name": "cc-pVDZ",
+    "name": "aug-cc-pVQZ-RI",
     "atoms": "$:atoms"
   },
   "aux_basis":{
-    "name": "aug-cc-pVDZ",
+    "name": "aug-cc-pVDZ-CABS",
     "atoms": "$:atoms"
   },
   "wfn_world":{
@@ -28,7 +29,7 @@
     "basis" : "$:basis",
     "df_basis" :"$:df_basis",
     "aux_basis" : "$:aux_basis",
-    "f12_factor" : "stg-6g[1.2]"
+    "f12_factor" : "stg-6g[1.1]"
   },
   "scf":{
     "type": "RI-RHF",
@@ -36,13 +37,16 @@
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
+    "max_iter": 25,
     "type": "GF2F12",
     "atoms": "$:atoms",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
-    "occ_block_size": 4,
-    "unocc_block_size":4,
+    "frozen_core" : false,
     "use_cabs" : true,
-    "dyson_method" : "diagonal"
+    "self_energy" : "gf2H",
+    "dyson_method" : "nondiagonal",
+    "f12_method" : "diagonal"
   }
 }
+

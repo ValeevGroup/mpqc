@@ -7,7 +7,7 @@ namespace detail {
 BasisPairInfo::BasisPairInfo(std::shared_ptr<const Basis> bs0,
                              std::shared_ptr<const Basis> bs1,
                              const double thresh, const double small_extent)
-    : bs0_(bs0), bs1_(bs1), thresh_(thresh), small_extent_(small_extent) {
+    : thresh_(thresh), small_extent_(small_extent), bs0_(bs0), bs1_(bs1) {
   const auto &shellvec0 = bs0->flattened_shells();
   const auto &shellvec1 = bs1->flattened_shells();
 

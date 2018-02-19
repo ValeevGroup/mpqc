@@ -326,6 +326,12 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     std::cout << mpqc::printf("\tTotal:               %20.3f\n\n",
                               scf_duration_);
   }
+
+  // test
+  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
+  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
+  ExEnv::out0() << "*** test multipole after converged scf ***\n";
+  ma_builder->compute_multipole_moments(D_, std::numeric_limits<double>::epsilon());
 }
 
 template <typename Tile, typename Policy>

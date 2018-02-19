@@ -203,6 +203,23 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// This computes a vector of direct integrals for periodic systems
   std::vector<DirectTArray> compute_direct_vector(const Formula &formula);
 
+  /// wrapper to compute_array<libint2_oper> function template
+  template <libint2::Operator libint2_oper>
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
+  compute_array(const std::wstring &formula_string);
+
+  /*!
+   * @brief This computes integrals by \c Formula for those operators that have
+   * more than one components, e.g. multipole moments, geometrical derivatives,
+   * etc.
+   * @tparam libint2_oper libint2 operator type
+   * @param formula the desired \c Formula type
+   * @return an array of \c TA::DistArray with the array size = \c nopers
+   */
+  template <libint2::Operator libint2_oper>
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
+  compute_array(const Formula &formula);
+
   /*!
    * \brief This computes sparse complex array
    *
@@ -219,6 +236,29 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
                            std::shared_ptr<Screener> p_screen =
                                std::make_shared<Screener>(Screener{})) {
     auto result = sparse_complex_integrals(world, engine, bases, p_screen, op_);
+    return result;
+  }
+
+  /*!
+   * @brief This computes integrals specified by \c engine and \c bases for
+   * those operators that have more than one components, e.g. multipole moments,
+   * geometrical derivatives, etc.
+   * @tparam libint2_oper libint2 operator type
+   * @param world MADNESS World
+   * @param engine a \c utility::TSPool object
+   * @param bases \c std::array of \c Basis
+   * @param p_screen Screenerd
+   * @return \c std::array of \c TA::DistArray
+   */
+  template <libint2::Operator libint2_oper>
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
+  compute_array_of_integrals(madness::World &world,
+                             ShrPool<libint2::Engine> &engine,
+                             BasisVector const &bases,
+                             std::shared_ptr<Screener> p_screen =
+                                 std::make_shared<Screener>(Screener{})) {
+    auto result = array_of_sparse_integrals<libint2_oper>(world, engine, bases,
+                                                          p_screen, op_);
     return result;
   }
 
@@ -371,6 +411,25 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
                                                std::shared_ptr<Screener> screen,
                                                Op op);
 
+  /*!
+   * @brief This constructs an array of sparse integral \c TA::DistArray in
+   * parallel
+   * @tparam libint2_oper libint2 operator type
+   * @param world MADNESS world
+   * @param shr_pool a shared pointer to \c utility::TSPool
+   * @param bases \c std::array of \c Basis
+   * @param screen a shared pointer to Screener
+   * @param op needs to be a function a functor that takes a TA::TensorD && and
+   * returns any valid tile type. Op is copied so it can be moved
+   * @return \c std::array of \c TA::DistArray
+   */
+  template <libint2::Operator libint2_oper>
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
+  array_of_sparse_integrals(madness::World &world,
+                            ShrPool<libint2::Engine> shr_pool,
+                            BasisVector const &bases,
+                            std::shared_ptr<Screener> screen, Op op);
+
   /// This renews R_max_ and R_size_ based on the range of significant shell
   /// pairs
   void renew_overlap_lattice_range();
@@ -443,6 +502,67 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 
   return result;
 }
+
+template <typename Tile, typename Policy>
+template <libint2::Operator libint2_oper>
+std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
+           libint2::operator_traits<libint2_oper>::nopers>
+PeriodicAOFactory<Tile, Policy>::compute_array(
+    const std::wstring &formula_string) {
+  auto formula = Formula(formula_string);
+  return compute_array<libint2_oper>(formula);
+}
+
+template <typename Tile, typename Policy>
+template <libint2::Operator libint2_oper>
+std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
+           libint2::operator_traits<libint2_oper>::nopers>
+PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
+  const auto mpqc_oper = formula.oper().type();
+  MPQC_ASSERT(detail::to_libint2_operator(mpqc_oper) == libint2_oper);
+
+  const auto nopers = libint2::operator_traits<libint2_oper>::nopers;
+
+  auto &world = this->world();
+
+  ExEnv::out0() << "\nComputing Two Center Integral for Periodic System: "
+                << utility::to_string(formula.string()) << std::endl;
+
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> result;
+
+  if (formula.rank() == 2) {
+    if (mpqc_oper == Operator::Type::SpheMultipole) {
+      auto bra_index = formula.bra_indices()[0];
+      auto ket_index = formula.ket_indices()[0];
+      auto bra_basis = this->basis_registry()->retrieve(bra_index);
+      auto ket_basis = this->basis_registry()->retrieve(ket_index);
+      auto bra_tr = bra_basis->create_trange1();
+      auto ket_tr = ket_basis->create_trange1();
+
+      // Form a compound ket basis by shifting origins from -Rmax to Rmax
+      ket_basis = detail::shift_basis_origin(*ket_basis, Vector3d::Zero(),
+                                             R_max_, dcell_);
+      auto bases = BasisVector{{*bra_basis, *ket_basis}};
+      auto engine_pool = make_engine_pool(
+          libint2_oper, utility::make_array_of_refs(*bra_basis, *ket_basis),
+          libint2::BraKet::x_x,
+          detail::to_libint2_operator_params(mpqc_oper, *unitcell_));
+
+      result =
+          compute_array_of_integrals<libint2_oper>(world, engine_pool, bases);
+    }
+  } else {
+    throw FeatureNotImplemented("Operator rank != 2 not supported");
+  }
+
+  double size = 0.0;
+  for (auto i = 0u; i != nopers; ++i) {
+    size += mpqc::detail::array_size(result[i]);
+  }
+  utility::print_par(this->world(), " Size: ", size, " GB\n");
+
+  return result;
+};
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
@@ -987,7 +1107,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_two_center_periodic(
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis =
-      detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
+      detail::shift_basis_origin(*ket_basis, Vector3d::Zero(), R_max_, dcell_);
 
   bases = BasisVector{{*bra_basis, *ket_basis}};
 
@@ -1221,6 +1341,101 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   out.truncate();
 
   return out;
+}
+
+template <typename Tile, typename Policy>
+template <libint2::Operator libint2_oper>
+std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
+           libint2::operator_traits<libint2_oper>::nopers>
+PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
+    madness::World &world, ShrPool<libint2::Engine> shr_pool,
+    BasisVector const &bases, std::shared_ptr<Screener> screen, Op op) {
+  const auto nopers = libint2::operator_traits<libint2_oper>::nopers;
+
+  // build the trange and shape tensor
+  auto trange = detail::create_trange(bases);
+  const auto tvolume = trange.tiles_range().volume();
+
+  using TileVec = std::vector<std::pair<unsigned long, Tile>>;
+  TileVec tiles(tvolume);
+
+  using NormArray = std::array<TA::TensorF, libint2::operator_traits<libint2_oper>::nopers>;
+  using TileArray = std::array<Tile *, libint2::operator_traits<libint2_oper>::nopers>;
+
+  NormArray array_of_tile_norms;
+  for (auto &norms : array_of_tile_norms) {
+    norms = TA::TensorF(trange.tiles_range(), 0.0);
+  }
+
+  // Copy the Bases for the Integral Builder
+  auto shr_bases = std::make_shared<BasisVector>(bases);
+
+  // Make a pointer to an Integral builder.  Doing this because we want to use
+  // it in Tasks.
+  auto builder_ptr = std::make_shared<IntegralBuilder<Tile, libint2::Engine>>(
+      std::move(shr_pool), std::move(shr_bases), std::move(screen),
+      std::move(op));
+
+  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng, NormArray &norms_array, TileArray &out_tile_array) {
+    // This is why builder was made into a shared_ptr.
+    auto &builder = *builder_ptr;
+    auto ta_tile_array = builder.template integrals<libint2_oper>(idx, std::move(rng));
+
+    for (auto oper = 0; oper != nopers; ++oper) {
+      const auto tile_volume = ta_tile_array[oper].range().volume();
+      const auto tile_norm = ta_tile_array[oper].norm();
+
+      // Keep tile if it was significant.
+      bool save_norm =
+          tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
+      // test
+//      std::cout << "\noper = " << oper << ", norm of computed tile = " << tile_norm;
+      if (save_norm) {
+        *(out_tile_array[oper]) = builder.op(std::move(ta_tile_array[oper]));
+
+        auto &norms = norms_array[oper];
+        norms[ord] = tile_norm;
+
+        // test
+//        std::cout << "\noper = " << oper
+//                  << ", norm of saved tile = " << out_tile_array[oper]->norm()
+//                  << ", value of shape [" << ord << "] = " << norms_array[oper][ord]
+//                  << std::endl;
+      }
+
+    }
+  };
+
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
+
+  using TileVecArray = std::array<TileVec, libint2::operator_traits<libint2_oper>::nopers>;
+  TileVecArray array_of_tilevec;
+  array_of_tilevec.fill(tiles);
+
+  for (auto const ord : *pmap) {
+    TileArray array_of_tile;
+    for (auto oper = 0u; oper != nopers; ++oper) {
+      array_of_tile[oper] = &(array_of_tilevec[oper][ord].second);
+    }
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
+    world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord), array_of_tile_norms, array_of_tile);
+  }
+  world.gop.fence();
+
+  using TArrayArray = std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>;
+  TArrayArray result;
+  for (auto oper = 0u; oper != nopers; ++oper) {
+    auto &norms = array_of_tile_norms[oper];
+    TA::SparseShape<float> shape(world, norms, trange);
+    TArray &tarray = result[oper];
+    tarray = TArray(world, trange, shape, pmap);
+    if (norms.norm() >= norms.range().volume() * TA::SparseShape<float>::threshold()) {
+      detail::set_array(array_of_tilevec[oper], tarray);
+      tarray.truncate();
+    }
+  }
+
+  return result;
 }
 
 template <typename Tile, typename Policy>

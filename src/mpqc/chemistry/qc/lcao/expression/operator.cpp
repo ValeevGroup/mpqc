@@ -23,7 +23,7 @@ const std::map<Operator::Type, std::wstring> Operator::oper_to_string = {
     {Type::KAlpha, L"K(α)"},   {Type::KBeta, L"K(β)"},
     {Type::Fock, L"F"},        {Type::FockAlpha, L"F(α)"},
     {Type::FockBeta, L"F(β)"}, {Type::CADF, L"CADF"},
-    {Type::Identity, L"I"}};
+    {Type::Identity, L"I"},    {Type::SpheMultipole, L"O"}};
 
 bool Operator::is_onebody() const {
   return Type::__first_1body_operator <= type_ &&

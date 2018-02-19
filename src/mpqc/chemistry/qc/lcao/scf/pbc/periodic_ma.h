@@ -10,7 +10,8 @@ namespace pbc {
 namespace detail {
 
 /*!
- * \brief Class to hold information of basis pairs
+ * @brief Class to hold information for basis shell pairs, including total
+ * number of shell pairs, extents (radii) and centers of shell pairs, etc.
  */
 class BasisPairInfo {
  public:
@@ -18,12 +19,21 @@ class BasisPairInfo {
   using Basis = ::mpqc::lcao::gaussian::Basis;
 
   BasisPairInfo() = default;
+
+  /*!
+   * @brief This constructs BasisPairInfo between two basis sets
+   * @param bs0 first basis set
+   * @param bs1 second basis set
+   * @param thresh threshold of the first-order multipole expansion error
+   * @param small_extent a small value that is used when no real solution exists
+   * for any shell pair
+   */
   BasisPairInfo(std::shared_ptr<const Basis> bs0,
                 std::shared_ptr<const Basis> bs1, const double thresh = 1.0e-6,
                 const double small_extent = 0.01);
 
  private:
-  const double thresh_;        ///> threshold of multiple approximation error
+  const double thresh_;        ///> threshold of multipole expansion error
   const double small_extent_;  ///> a small extent will be used in case no real
                                /// solution exists
 
@@ -36,16 +46,47 @@ class BasisPairInfo {
   std::vector<std::vector<Vector3d>> pair_centers_;
 
  public:
+  /*!
+   * @brief This returns the extent (radius) of a pair of shells (shell \em i
+   * and shell \em j)
+   * @param i index of shell \em i
+   * @param j index of shell \em j
+   * @return the extent (radius)
+   */
   double extent(int64_t i, int64_t j) const { return pair_extents_(i, j); }
+
+  /*!
+   * @brief This returns the extent (radius) of a pair of shells (shell \em i
+   * and shell \em j)
+   * @param ij the ordinal index of the shell pair (\em i, \em j)
+   * @return the extent (radius)
+   */
+  double extent(int64_t ij) const;
+
+  /*!
+   * @brief This returns the weighted center of a pair of shells (shell \em i
+   * and shell \em j)
+   * @param i index of shell \em i
+   * @param j index of shell \em j
+   * @return the weighted center
+   */
   Vector3d center(int64_t i, int64_t j) const { return pair_centers_[i][j]; }
 
-  double extent(int64_t ij) const;
+  /*!
+   * @brief This returns the weighted center of a pair of shells (shell \em i
+   * and shell \em j)
+   * @param ij the ordinal index of the shell pair (\em i, \em j)
+   * @return the weighted center
+   */
   Vector3d center(int64_t ij) const;
 
+  /*!
+   * @brief This returns the total number of shell pairs
+   */
   size_t npairs() const { return npairs_; }
 
   /*!
-   * \brief This computes maximum distance between \cref_point and all charge
+   * \brief This computes maximum distance between \c ref_point and all charge
    * centers comprising the product density
    */
   double max_distance_to(const Vector3d &ref_point);
@@ -61,11 +102,11 @@ class BasisPairInfo {
                                                        const Shell &sh1);
 
   /*!
-   * \brief This computes the center of the product of two primitives
-   * \param exp0
-   * \param exp1
-   * \param thresh
-   * \return
+   * \brief This computes the extent (radius) of the product of two primitives
+   * with exponents \c exp0 and \c exp1, respectively. \param exp0 exponent of
+   * the first primitive function \param exp1 exponent of the second primitive
+   * function \param rab distance between centers of two primitives \return the
+   * extent (radius)
    */
   double prim_pair_extent(const double exp0, const double exp1,
                           const double rab);
@@ -76,17 +117,25 @@ class BasisPairInfo {
 namespace ma {
 
 /*!
- * \brief This class compute centers and extents for periodic multiple
- * approximation.
+ * \brief This class computes the contribution to Coulomb interaction from unit
+ * cells in Crystal Far Field (CFF) using multipole approximation.
  */
-template <typename Factory>
+template <typename Factory, libint2::Operator Oper = libint2::Operator::sphemultipole>
 class PeriodicMA {
  public:
+  using TArray = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
-
-  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-8, double ws = 3.0)
+  template<typename T>
+  using MultipoleMoment = std::array<T, libint2::operator_traits<Oper>::nopers>;
+  /*!
+   * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
+   * @param ao_factory a \c PeriodicAOFactory object
+   * @param ma_thresh threshold of multipole expansion error
+   * @param ws well-separateness criterion
+   */
+  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-6, double ws = 3.0)
       : ao_factory_(ao_factory), ma_thresh_(ma_thresh), ws_(ws) {
     auto &world = ao_factory_.world();
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
@@ -100,54 +149,38 @@ class PeriodicMA {
     RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
-    using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-    using ::mpqc::detail::direct_3D_idx;
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    // determine non-negligible shell pairs from ref unit cell and all nearby
-    // unit cells
-    auto basisR = shift_basis_origin(*obs_, zero_shift_base, R_max_, dcell_);
-    auto significant_shellpair_list =
-        parallel_compute_shellpair_list(world, *obs_, *basisR);
-    // determine necessary nearby unit cells involved in product density
-    for (auto R = 0; R != R_size_; ++R) {
-      const auto R_3D = direct_3D_idx(R, R_max_);
-
-      const auto nshells = obs_->flattened_shells().size();
-      const auto shell1_min = nshells * R;
-      const auto shell1_max = shell1_min + nshells;
-
-      auto is_significant = false;
-      for (auto shell0 = 0; shell0 != nshells; ++shell0) {
-        for (const auto &shell1 : significant_shellpair_list[shell0]) {
-          if (shell1 >= shell1_min && shell1 < shell1_max) {
-            is_significant = true;
-            uc_near_list_.emplace_back(R_3D);
-            break;
-          }
-        }
-        if (is_significant) break;
-      }
-    }
-
-    // compute centers and extents of product density between the referene
+    // compute centers and extents of product density between the reference
     // unit cell and its neighbours
-    ref_pairs_ = compute_basis_pairs();
-    // compute maximum distance between the center of reference unit cell and
-    // all charge centers
-    const auto ref_center = 0.5 * dcell_;
-    max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_center);
+    ref_pairs_ = construct_basis_pairs();
+    // compute maximum distance between the center of mass of unit cell atoms
+    // and all charge centers
+    const auto &ref_com = ao_factory_.unitcell().com();
+    max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com);
 
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
+
+    // compute spherical multipole moments (the chargeless version, before being
+    // contracted with density matrix)
+    sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
+
+    // test
+//    ExEnv::out0() << "\nspherical multiple:\n";
+//    for (auto oper = 0u; oper != sphemm.size(); ++oper) {
+//      ExEnv::out0() << "when oper = " << oper << ", sphe multipole = \n"
+//                    << sphemm[oper] << std::endl;
+//    }
+
     ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
                   << cff_boundary_.transpose() << std::endl;
   }
 
  private:
   Factory &ao_factory_;
-  const double ma_thresh_;  /// threshold of multiple approximation error
+  const double ma_thresh_;  /// threshold of multipole expansion error
   const double ws_;         /// well-separateness criterion
+
+  MultipoleMoment<TArray> sphemm_;
 
   std::shared_ptr<Basis> obs_;
   std::shared_ptr<Basis> dfbs_;
@@ -165,30 +198,49 @@ class PeriodicMA {
   Vector3i cff_boundary_;
 
  public:
-  const Vector3i &CFF_boundary() {return cff_boundary_;}
+  const Vector3i &CFF_boundary() { return cff_boundary_; }
 
+  MultipoleMoment<double> compute_multipole_moments(const TArray &D, double target_precision) {
+    std::array<double, 9> moments;
+    for (auto op = 0; op != moments.size(); ++op) {
+      moments[op] = -2.0 * sphemm_[op]("mu, nu") * D("mu, nu");
+    }
+    ExEnv::out0() << "\n****** electronic multipole moments ******\n"
+                  << "monopole = "
+                  << moments[0] << "\n"
+                  << "dipole = ("
+                  << moments[1] << ", "
+                  << moments[2] << ", "
+                  << moments[3] << ")\n"
+                  << "quadrupole = ("
+                  << moments[4] << ", "
+                  << moments[5] << ", "
+                  << moments[6] << ", "
+                  << moments[7] << ", "
+                  << moments[8] << ")\n";
+  }
 
  private:
   /*!
-   * \brief This computes centers and extents of product density between unit
+   * \brief This constructs a \c BasisPairInfo object between basis sets of unit
    * cell \c ref_uc and its neighbours
    */
-  std::shared_ptr<detail::BasisPairInfo> compute_basis_pairs(
+  std::shared_ptr<detail::BasisPairInfo> construct_basis_pairs(
       const Vector3i &ref_uc = {0, 0, 0}) {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
     Vector3d uc_vec = ref_uc.cast<double>().cwiseProduct(dcell_);
     auto basis = shift_basis_origin(*obs_, uc_vec);
-    auto basis_neighbour =
-        shift_basis_origin(*obs_, uc_vec, uc_near_list_, dcell_);
+    auto basis_neighbour = shift_basis_origin(*obs_, uc_vec, R_max_, dcell_);
 
-    return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour);
+    return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour,
+                                                   ma_thresh_);
   }
 
   /*!
- * \brief This determines if a unit cell \c uc_ket is in the crystal far
- * field of the bra unit cell \c uc_bra.
- */
+   * \brief This determines if a unit cell \c uc_ket is in the crystal far
+   * field of the bra unit cell \c uc_bra.
+   */
   bool is_uc_in_CFF(const Vector3i &uc_ket,
                     const Vector3i &uc_bra = {0, 0, 0}) {
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
@@ -217,26 +269,25 @@ class PeriodicMA {
     }
 
     // CFF condition #2: |L| >= ws * (r0_max + r1_max)
-    auto condition2 = false;
     const auto L = vec_rel.norm();
-    const auto uc_center_bra = vec_bra + 0.5 * dcell_;
-    condition2 = (L >= ws_ * (max_distance_to_refcenter_ * 2.0)) ? true : false;
+    bool condition2 = (L >= ws_ * (max_distance_to_refcenter_ * 2.0));
 
     // test:
-//    {
-//      ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
-//                    << std::endl;
-//      ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
-//                    << std::endl;
-//      ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
-//                    << std::endl;
-//      ExEnv::out0() << "Distance between bra and ket = " << L << std::endl;
-//      ExEnv::out0() << "r0_max = " << max_distance_to_refcenter_ << std::endl;
-//      auto cond1_val = (condition1) ? "true" : "false";
-//      auto cond2_val = (condition2) ? "true" : "false";
-//      ExEnv::out0() << "Is Condition 1 true? " << cond1_val << std::endl;
-//      ExEnv::out0() << "Is Condition 2 true? " << cond2_val << std::endl;
-//    }
+    //    {
+    //      ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
+    //                    << std::endl;
+    //      ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
+    //                    << std::endl;
+    //      ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
+    //                    << std::endl;
+    //      ExEnv::out0() << "Distance between bra and ket = " << L <<
+    //      std::endl; ExEnv::out0() << "r0_max = " <<
+    //      max_distance_to_refcenter_ << std::endl; auto cond1_val =
+    //      (condition1) ? "true" : "false"; auto cond2_val = (condition2) ?
+    //      "true" : "false"; ExEnv::out0() << "Is Condition 1 true? " <<
+    //      cond1_val << std::endl; ExEnv::out0() << "Is Condition 2 true? " <<
+    //      cond2_val << std::endl;
+    //    }
 
     return (condition1 && condition2);
   }
@@ -274,7 +325,6 @@ class PeriodicMA {
 
     return cff_bound;
   }
-
 };
 
 }  // namespace ma

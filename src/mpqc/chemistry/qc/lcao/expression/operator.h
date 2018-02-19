@@ -23,6 +23,7 @@ namespace mpqc {
  *  - V -> Nuclear
  *  - H -> Hcore
  *  - I -> Identity
+ *  - O -> SpheMultipole(libint::sphemultipole
  *  - G -> Coulomb(libint::Coulomb)
  *  - R -> cGTG(libint::cGTG)
  *  - GR -> cGTGCoulomb(libint::cGTG_times_Coulomb)
@@ -53,7 +54,8 @@ class Operator {
     Kinetic = 2,
     Nuclear = 3,
     Core = 4,
-    __last_1body_operator = 4,
+    SpheMultipole = 5,
+    __last_1body_operator = 5,
     __first_fock_operator = 32,
     J = 32,
     K = 33,

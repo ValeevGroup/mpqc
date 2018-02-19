@@ -115,6 +115,27 @@ class IntegralBuilder {
     }
   }
 
+  template <libint2::Operator libint2_oper>
+  std::array<TA::TensorD, libint2::operator_traits<libint2_oper>::nopers> integrals(std::vector<std::size_t> const &idx, TA::Range range) {
+    auto size = bases_->size();
+
+    switch (size) {
+      case 2:
+        // get integral shells
+        detail::VecArray<2> shellvec_ptrs2;
+        for (auto i = 0ul; i < size; ++i) {
+          auto const &basis_i = bases_->operator[](i);
+          shellvec_ptrs2[i] = &basis_i.cluster_shells()[idx[i]];
+        }
+        // Compute integrals over the selected shells.
+        return detail::integral_kernel<libint2_oper>(engines_->local(), std::move(range),
+            shellvec_ptrs2, *screen_, *plist_);
+
+      default:
+        throw FeatureNotImplemented("Only support basis set size = 2!", __FILE__, __LINE__);
+    }
+  };
+
   Tile op(TA::TensorD &&tensor) { return op_(std::move(tensor)); }
 };
 

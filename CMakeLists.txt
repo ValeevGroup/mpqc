@@ -246,13 +246,18 @@ FIND_PACKAGE(TBB REQUIRED)
 include(ImportTBB)
 import_tbb()
 
-FIND_PACKAGE(Eigen3 REQUIRED)
+##### Eigen3 #####
+include(external/eigen.cmake)
+
+##### BTAS #####
+include(external/btas.cmake)
+
+##### Libint2 #####
 FIND_PACKAGE(LIBINT2 REQUIRED)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LIBINT2_INCLUDE_DIRS})
 add_definitions(${LIBINT2_EXTRA_DEFINITIONS})
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
 find_package(PythonInterp)
 

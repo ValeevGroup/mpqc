@@ -76,9 +76,9 @@ class PeriodicTwoCenterBuilder
                                      std::numeric_limits<double>::epsilon()) {
     using ::mpqc::detail::direct_vector;
     using ::mpqc::detail::shift_mol_origin;
-    using ::mpqc::lcao::gaussian::make_engine_pool;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
     using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
 
     // initialize engines
     const auto basis0 = *basis0_;
@@ -210,12 +210,11 @@ class PeriodicTwoCenterBuilder
   mutable std::unordered_map<size_t, size_t> basisR_shell_offset_map_;
 
   void init() {
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
     using ::mpqc::lcao::gaussian::detail::compute_shell_offset;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
     // make compound basis set for ket
-    Vector3d zero_shift_base(0.0, 0.0, 0.0);
-    basisR_ = shift_basis_origin(*basis0_, zero_shift_base, R_max_, dcell_);
+    basisR_ = shift_basis_origin(*basis0_, Vector3d::Zero(), R_max_, dcell_);
 
     const auto basis0 = *basis0_;
     const auto basisR = *basisR_;

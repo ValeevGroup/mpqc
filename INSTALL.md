@@ -49,7 +49,6 @@ cmake \
     -DTiledArray_INSTALL_DIR= ${TiledArray_INSTALL} \
     -DLIBINT2_INSTALL_DIR=${LIBINT2_INSTALL} \
     -DBOOST_ROOT=/path/to/boost/install/direcotry \
-    -DEIGEN3_INCLUDE_DIR=/path/to/eigen3/include/directory \
     ${MPQC_SOURCE}
 ```
 
@@ -63,7 +62,6 @@ The most useful MPQC-specific `cmake` variables are listed below:
 | `TiledArray_INSTALL_DIR` | path to TiledArray install directory |
 | `LIBINT2_INSTALL_DIR` | path to Libint2 install directory |
 | `BOOST_ROOT` | root path for Boost |
-| `EIGEN3_INCLUDE_DIR` | Comma separated list of include directories required to use Eigen 3 |
 | `TA_POLICY` |  dense or sparse, default sparse. control which policy to use with TiledArray. Some classes may only support sparse |
 | `MPQC_VALIDATION_TEST_PRINT` | default off, control if print output after validation test failed |
 

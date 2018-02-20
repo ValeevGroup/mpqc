@@ -4,4 +4,5 @@ set(sources
   util.cpp
 )
 
-add_mpqc_hdr_library(math_eigen sources "" "mpqc/math/external/eigen")
+add_mpqc_library(math_eigen sources sources "" "mpqc/math/external/eigen")
+target_link_libraries(MPQCmath_eigen PUBLIC MPQC_Eigen)

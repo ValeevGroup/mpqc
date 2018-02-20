@@ -182,12 +182,12 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 
 /**
  *
- * @param r2_abij  T2 like Array with dimention "a,b,i,j", it should blocked by
+ * @param[in] r2_abij  T2 like Array with dimension "a,b,i,j", it should blocked by
  * V in a,b and 1 in i,j
- * @param F_occ_act  active occupied Fock matrix in canonical basis
- * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * @param[in] F_occ_act  active occupied Fock matrix in canonical basis
+ * @param[in] F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
- * @param pnos vector of PNOs, only local i,j will be initialized
+ * @param[in] pnos vector of PNOs, only local i,j will be initialized
  * @return
  */
 template <typename Tile, typename Policy>
@@ -270,12 +270,12 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
 
 /**
  *
- * @param r1_ai  T1 like Array with dimention "a,i", it should blocked by V in
+ * @param[in] r1_ai  T1 like Array with dimension "a,i", it should blocked by V in
  * a,b and 1 in i,j
- * @param F_occ_act  active occupied Fock matrix in canonical basis
- * @param F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * @param[in] F_occ_act  active occupied Fock matrix in canonical basis
+ * @param[in] F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
- * @param osvs vector of OSVs, only local i will be initialized
+ * @param[in] osvs vector of OSVs, only local i will be initialized
  * @return
  */
 template <typename Tile, typename Policy>
@@ -350,9 +350,9 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
 
 /**
  *
- * @param abij T2 like Array with dimention "a,b,i,j", it should blocked by V in
+ * @param[in] abij T2 like Array with dimension "a,b,i,j", it should blocked by V in
  * a,b and 1 in i,j
- * @param pnos vector of PNOs, only local i,j will be initialized
+ * @param[in] pnos vector of PNOs, only local i,j will be initialized
  * @return
  */
 template <typename Tile, typename Policy>
@@ -403,9 +403,9 @@ TA::DistArray<Tile, Policy> pno_transform_abij(
 
 /**
  *
- * @param ai  T1 like Array with dimention "a,i", it should blocked by V in a,b
+ * @param[in] ai  T1 like Array with dimension "a,i", it should blocked by V in a,b
  * and 1 in i,j
- * @param osvs vector of OSVs, only local i will be initialized
+ * @param[in] osvs vector of OSVs, only local i will be initialized
  * @return
  */
 template <typename Tile, typename Policy>
@@ -495,9 +495,9 @@ TA::DistArray<Tile, Policy> t2_project_pno(
 
 /**
  *
- * @param t2   T2 like array with dimention "a,b,i,j"
- * @param i_block array "i,j" reblock occupied dimention i to j
- * @param a_block array "a,b" that reblock unoccupied dimention a to b
+ * @param t2   T2 like array with dimension "a,b,i,j"
+ * @param i_block array "i,j" reblock occupied dimension i to j
+ * @param a_block array "a,b" that reblock unoccupied dimension a to b
  * @return
  */
 template <typename Tile, typename Policy>
@@ -515,9 +515,9 @@ TA::DistArray<Tile, Policy> reblock_t2(
 
 /**
  *
- * @param t2   T2 like array with dimention "a,b,i,j"
- * @param i_block array "i,j" reblock occupied dimention j to i
- * @param a_block array "a,b" that reblock unoccupied dimention b to a
+ * @param t2   T2 like array with dimension "a,b,i,j"
+ * @param i_block array "i,j" reblock occupied dimension j to i
+ * @param a_block array "a,b" that reblock unoccupied dimension b to a
  * @return
  */
 template <typename Tile, typename Policy>
@@ -535,9 +535,9 @@ TA::DistArray<Tile, Policy> unblock_t2(
 
 /**
  *
- * @param t1  T1 like array with dimention "a,i"
- * @param i_block array "i,j" reblock occupied dimention i to j
- * @param a_block array "a,b" that reblock unoccupied dimention a to b
+ * @param t1  T1 like array with dimension "a,i"
+ * @param i_block array "i,j" reblock occupied dimension i to j
+ * @param a_block array "a,b" that reblock unoccupied dimension a to b
  * @return
  */
 template <typename Tile, typename Policy>
@@ -557,9 +557,9 @@ TA::DistArray<Tile, Policy> reblock_t1(
 
 /**
  *
- * @param t1  T1 like array with dimention "a,i"
- * @param i_block array "i,j" reblock occupied dimention j to i
- * @param a_block array "a,b" that reblock unoccupied dimention b to a
+ * @param t1  T1 like array with dimension "a,i"
+ * @param i_block array "i,j" reblock occupied dimentson j to i
+ * @param a_block array "a,b" that reblock unoccupied dimension b to a
  * @return
  */
 template <typename Tile, typename Policy>

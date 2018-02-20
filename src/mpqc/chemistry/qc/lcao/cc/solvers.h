@@ -445,6 +445,14 @@ TA::DistArray<Tile, Policy> osv_transform_ai(
 }
 
 // "Project" T2 into new PNO space
+/**
+ *
+ * @tparam Tile
+ * @tparam Policy
+ * @param[in] t2 T2-like array with dimensions "a,b,i,j"
+ * @param[in] pnos Vector of PNO matrices
+ * @return
+ */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> t2_project_pno(
     const TA::DistArray<Tile, Policy>& t2,
@@ -495,9 +503,9 @@ TA::DistArray<Tile, Policy> t2_project_pno(
 
 /**
  *
- * @param t2   T2 like array with dimension "a,b,i,j"
- * @param i_block array "i,j" reblock occupied dimension i to j
- * @param a_block array "a,b" that reblock unoccupied dimension a to b
+ * @param[in] t2   T2 like array with dimension "a,b,i,j"
+ * @param[in] i_block  array with dimension "i,j" that reblocks occupied dimension i to j
+ * @param[in] a_block  array with dimension "a,b" that reblocks unoccupied dimension a to b
  * @return
  */
 template <typename Tile, typename Policy>
@@ -515,9 +523,9 @@ TA::DistArray<Tile, Policy> reblock_t2(
 
 /**
  *
- * @param t2   T2 like array with dimension "a,b,i,j"
- * @param i_block array "i,j" reblock occupied dimension j to i
- * @param a_block array "a,b" that reblock unoccupied dimension b to a
+ * @param[in] t2   T2-like array with dimension "a,b,i,j"
+ * @param[in] i_block  array with dimension "i,j" that reblocks occupied dimension j to i
+ * @param[in] a_block  array with dimension "a,b" that reblocks unoccupied dimension b to a
  * @return
  */
 template <typename Tile, typename Policy>
@@ -535,9 +543,9 @@ TA::DistArray<Tile, Policy> unblock_t2(
 
 /**
  *
- * @param t1  T1 like array with dimension "a,i"
- * @param i_block array "i,j" reblock occupied dimension i to j
- * @param a_block array "a,b" that reblock unoccupied dimension a to b
+ * @param[in] t1  T1-like array with dimension "a,i"
+ * @param[in] i_block   array with dimension "i,j" that reblocks occupied dimension i to j
+ * @param[in] a_block   array with dimension "a,b" that reblocks unoccupied dimension a to b
  * @return
  */
 template <typename Tile, typename Policy>
@@ -557,9 +565,9 @@ TA::DistArray<Tile, Policy> reblock_t1(
 
 /**
  *
- * @param t1  T1 like array with dimension "a,i"
- * @param i_block array "i,j" reblock occupied dimentson j to i
- * @param a_block array "a,b" that reblock unoccupied dimension b to a
+ * @param[in] t1  T1-like array with dimension "a,i"
+ * @param[in] i_block   array with dimension "i,j" that reblocks occupied dimension j to i
+ * @param[in] a_block   array with dimension "a,b" that reblocks unoccupied dimension b to a
  * @return
  */
 template <typename Tile, typename Policy>

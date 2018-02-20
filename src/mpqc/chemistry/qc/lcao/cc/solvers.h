@@ -807,7 +807,7 @@ void construct_pno(
           // Store just the diagonal elements of F_osv_i
           F_osv_diag[i] = F_osv_i.diagonal();
 
-          /////// Transform osvs_list to canonical osvs_list if pno_canonical_ == true
+          // Transform osvs_list to canonical osvs_list if pno_canonical_ == true
           if (pno_canonical) {
             // Compute eigenvectors of F in OSV space
             es.compute(F_osv_i);
@@ -902,7 +902,7 @@ void construct_pno(
     // Store just the diagonal elements of F_pno_ij
     F_pno_diag[ij] = F_pno_ij.diagonal();
 
-    ///// Transform PNOs to canonical PNOs if pno_canonical_ == true
+    // Transform PNOs to canonical PNOs if pno_canonical_ == true
 
     if (pno_canonical && npno > 0) {
       //          if (pno_canonical_ == "true") {
@@ -1299,17 +1299,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           exact_e_mp2_, tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
-
-
-
-//    // Print out npno per pair
-//    ExEnv::out0() << "i\t" << "j\t"<< "npnos" << std::endl;
-//    for (int elem = 0; elem != npnos_.size(); ++elem) {
-//      int j = elem % nocc_act_;
-//      int i = (elem - j)/nocc_act_;
-//      int npno = npnos_.at(elem);
-//      ExEnv::out0() << i << "\t" << j << "\t" << npno << std::endl;
-//    }
   }
 
   virtual ~PNOSolver() = default;
@@ -1408,9 +1397,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       mpqc::cc::TPack<T> r(r1_reblock, r2_reblock);
       mpqc::cc::TPack<T> t(t1, t2);
       this->reset();
-      //this->diis().extrapolate(t, r);
-//      t1 = t.t1;
-//      t2 = t.t2;
       iter_count_ += 1;
       start_macro_ = true;  // set start_macro_ to true since next CCSD iter is start of macro iter
 
@@ -1431,7 +1417,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       t1 = t.at(0);
       t2 = t.at(1);
       iter_count_ += 1;
-//      start_macro_ = false; // set start_macro_ to false since subsequent CCSD iters are not start of macro iter
     }
 
 

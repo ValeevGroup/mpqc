@@ -1,11 +1,6 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 #define SRC_MPQC_CHEMISTRY_QC_LCAO_CC_SOLVERS_H_
 
-// set to 1, must have libint-2.4.0-beta.2 or older
-#define PRODUCE_PNO_MOLDEN_FILES 0
-#if PRODUCE_PNO_MOLDEN_FILES
-#include "libint2/lcao/molden.h"
-#endif
 
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
@@ -687,22 +682,6 @@ void construct_pno(
   F_osv_diag.resize(nocc_act);
   std::fill(nosvs.begin(), nosvs.end(), 0);
 
-//#if PRODUCE_PNO_MOLDEN_FILES
-//      // prepare to Molden
-//      const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
-//      const auto C_i_eig =
-//          array_ops::array_to_eigen(ofac.retrieve("i").coefs());
-//      const auto C_a_eig =
-//          array_ops::array_to_eigen(ofac.retrieve("a").coefs());
-//      const auto libint2_shells =
-//          fac.basis_registry()->retrieve(L"μ")->flattened_shells();
-
-//      // write out active occupied orbitals
-//      auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
-//      libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig,
-//                                    occs);
-//      xport.write("occ.molden");
-//#endif
 
   /// Step (2): Transform T to D
 
@@ -918,31 +897,6 @@ void construct_pno(
       F_pno_diag[ij] = es.eigenvalues();
     }  // pno_canonical
 
-//#if PRODUCE_PNO_MOLDEN_FILES
-//          // write PNOs to Molden
-//          {
-//            Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
-//            molden_coefs.col(0) = C_i_eig.col(i);
-//            molden_coefs.col(1) = C_i_eig.col(j);
-//            molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) =
-//                C_a_eig * pno_trunc;
-
-//            Eigen::VectorXd occs(2 + pno_trunc.cols());
-//            occs.setZero();
-//            occs[0] = 2.0;
-//            occs[1] = 2.0;
-
-//            Eigen::VectorXd evals(2 + pno_trunc.cols());
-//            evals(0) = 0.0;
-//            evals(1) = 0.0;
-//            evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
-
-//            libint2::molden::Export xport(libint2_atoms, libint2_shells,
-//                                          molden_coefs, occs, evals);
-//            xport.write(std::string("pno_") + std::to_string(i) + "_" +
-//                        std::to_string(j) + ".molden");
-//          }
-//#endif
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -960,31 +914,6 @@ void construct_pno(
   auto D_prime = TA::foreach (D, form_PNO);
   world.gop.fence();
 
-//#if PRODUCE_PNO_MOLDEN_FILES
-//          // write PNOs to Molden
-//          {
-//            Eigen::MatrixXd molden_coefs(C_i_eig.rows(), 2 + pno_trunc.cols());
-//            molden_coefs.col(0) = C_i_eig.col(i);
-//            molden_coefs.col(1) = C_i_eig.col(j);
-//            molden_coefs.block(0, 2, C_i_eig.rows(), pno_trunc.cols()) =
-//                C_a_eig * pno_trunc;
-
-//            Eigen::VectorXd occs(2 + pno_trunc.cols());
-//            occs.setZero();
-//            occs[0] = 2.0;
-//            occs[1] = 2.0;
-
-//            Eigen::VectorXd evals(2 + pno_trunc.cols());
-//            evals(0) = 0.0;
-//            evals(1) = 0.0;
-//            evals.tail(pno_trunc.cols()) = occ_ij.tail(pno_trunc.cols());
-
-//            libint2::molden::Export xport(libint2_atoms, libint2_shells,
-//                                          molden_coefs, occs, evals);
-//            xport.write(std::string("pno_") + std::to_string(i) + "_" +
-//                        std::to_string(j) + ".molden");
-//          }
-//#endif
 
   // Sum together vectors of npnos and nosvs on each node
   world.gop.sum(npnos.data(), npnos.size());
@@ -1195,40 +1124,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Reblock all K_abij
     K_reblock_ = detail::reblock_t2(K, reblock_i_, reblock_a_);
-
-
-
-#if PRODUCE_PNO_MOLDEN_FILES
-      // prepare to Molden
-      const auto libint2_atoms = to_libint_atom(fac.atoms()->atoms());
-      const auto C_i_eig =
-          array_ops::array_to_eigen(ofac.retrieve("i").coefs());
-
-//      for(auto i = 0; i < C_i_eig.cols(); ++i){
-//        auto const& col = C_i_eig.col(i);
-//        auto ind_largest_coeff = -1;
-//        auto largest_coeff = std::numeric_limits<double>::min();
-//        for(auto r = 0; r < col.size(); ++r){
-//          if(col(r) > largest_coeff){
-//            ind_largest_coeff = r;
-//            largest_coeff = col(r);
-//          }
-//        }
-//        std::cout << "Orbital " << i << " is probably on: " << ind_largest_coeff / 14 << " containing atom\n";
-//      }
-
-//      const auto C_a_eig =
-//          array_ops::array_to_eigen(ofac.retrieve("a").coefs());
-      const auto libint2_shells =
-          fac.basis_registry()->retrieve(L"μ")->flattened_shells();
-
-      // write out active occupied orbitals
-      auto occs = Eigen::VectorXd::Constant(C_i_eig.cols(), 2.0);
-
-      libint2::molden::Export xport(libint2_atoms, libint2_shells, C_i_eig,
-                                    occs, Eigen::VectorXd());
-      xport.write("occ.molden");
-#endif
 
 
     /// Step (1): Convert K to T

@@ -583,8 +583,8 @@ TA::DistArray<Tile, Policy> unblock_t1(
 
 /**
   *
-  * @param K T2 like array wth dimension "a,b,i,j"
-  * @param t2 T2 like array with dimension "a,b,i,j"
+  * @param[in] K   T2-like array wth dimension "a,b,i,j"
+  * @param[in] t2  T2-like array with dimension "a,b,i,j"
   * @return
   */
 template <typename Tile, typename Policy>
@@ -597,6 +597,17 @@ double compute_mp2(
 }
 
 // Form T from K
+/**
+ *
+ * @tparam Tile
+ * @tparam Policy
+ * @param[in] K  T2-like array with dimension "a,b,i,j"
+ * @param[in] F_occ_act  active occ-active occ block of the Fock matrix
+ * @param[in] F_uocc   unocc-unocc block of the Fock matrix
+ * @param[in] pnos  vector of PNO matrices
+ * @param[in] nocc_act   integer specifying the number of active occupied orbitals
+ * @return
+ */
 template<typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> form_T_from_K (
     const TA::DistArray<Tile, Policy>& K,

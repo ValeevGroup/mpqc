@@ -132,6 +132,17 @@ TA::DistArray<Tile, Policy> jacobi_update_t2_abij(
   return delta_t2_abij;
 }
 
+/**
+ *
+ * @tparam Tile
+ * @tparam Policy
+ * @param[in] r1_ai T1-like array with dimension "a,i"
+ * @param[in] ens_occ 1-dimensional array consisting of the occ-occ diagonal
+ * elements of the Fock matrix or the occupied orbital epsilon values
+ * @param[in] ens_uocc 1-dimensional array consisting of the unocc-unocc
+ * diagonal elements of the Fock matrix or the unoccupied orbital epsilong values
+ * @return
+ */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
     const TA::DistArray<Tile, Policy>& r1_ai,

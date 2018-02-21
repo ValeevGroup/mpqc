@@ -4,6 +4,9 @@
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
+#include <boost/math/special_functions/factorials.hpp>
+#include <boost/math/special_functions/legendre.hpp>
+
 namespace mpqc {
 namespace pbc {
 
@@ -120,15 +123,16 @@ namespace ma {
  * \brief This class computes the contribution to Coulomb interaction from unit
  * cells in Crystal Far Field (CFF) using multipole approximation.
  */
-template <typename Factory, libint2::Operator Oper = libint2::Operator::sphemultipole>
+template <typename Factory,
+          libint2::Operator Oper = libint2::Operator::sphemultipole>
 class PeriodicMA {
  public:
   using TArray = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
-  template<typename T>
-  using MultipoleMoment = std::array<T, libint2::operator_traits<Oper>::nopers>;
+  template <typename T, unsigned long nopers = libint2::operator_traits<Oper>::nopers>
+  using MultipoleMoment = std::array<T, nopers>;
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
    * @param ao_factory a \c PeriodicAOFactory object
@@ -164,12 +168,12 @@ class PeriodicMA {
     // contracted with density matrix)
     sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
 
-    // test
-//    ExEnv::out0() << "\nspherical multiple:\n";
-//    for (auto oper = 0u; oper != sphemm.size(); ++oper) {
-//      ExEnv::out0() << "when oper = " << oper << ", sphe multipole = \n"
-//                    << sphemm[oper] << std::endl;
-//    }
+    nopers_ = libint2::operator_traits<Oper>::nopers;
+
+    // make a map from ordinal indices of (l, m) to (l, m) pairs
+    O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
+    M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
+
 
     ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
                   << cff_boundary_.transpose() << std::endl;
@@ -181,6 +185,9 @@ class PeriodicMA {
   const double ws_;         /// well-separateness criterion
 
   MultipoleMoment<TArray> sphemm_;
+  size_t nopers_;  /// total number of (l, m) pairs in multipole moments
+  std::unordered_map<unsigned int, std::pair<int, int>> O_ord_to_lm_map_;
+  std::unordered_map<unsigned int, std::pair<int, int>> M_ord_to_lm_map_;
 
   std::shared_ptr<Basis> obs_;
   std::shared_ptr<Basis> dfbs_;
@@ -200,24 +207,32 @@ class PeriodicMA {
  public:
   const Vector3i &CFF_boundary() { return cff_boundary_; }
 
-  MultipoleMoment<double> compute_multipole_moments(const TArray &D, double target_precision) {
-    std::array<double, 9> moments;
-    for (auto op = 0; op != moments.size(); ++op) {
-      moments[op] = -2.0 * sphemm_[op]("mu, nu") * D("mu, nu");
+  MultipoleMoment<double> compute_multipole_moments(const TArray &D,
+                                                    double target_precision) {
+    // compute electronic multipole moments for the reference unit cell
+    MultipoleMoment<double> e_moments;
+    using ::mpqc::pbc::detail::dot_product;
+    for (auto op = 0; op != e_moments.size(); ++op) {
+      e_moments[op] = -2.0 * dot_product(sphemm_[op], D, R_max_, RD_max_);
     }
-    ExEnv::out0() << "\n****** electronic multipole moments ******\n"
-                  << "monopole = "
-                  << moments[0] << "\n"
-                  << "dipole = ("
-                  << moments[1] << ", "
-                  << moments[2] << ", "
-                  << moments[3] << ")\n"
-                  << "quadrupole = ("
-                  << moments[4] << ", "
-                  << moments[5] << ", "
-                  << moments[6] << ", "
-                  << moments[7] << ", "
-                  << moments[8] << ")\n";
+
+    // test
+    std::cout << "*** electronic spherical multipole moments ***\n"
+              << "\nmonopole: " << e_moments[0]
+              << "\ndipole m=-1: " << e_moments[1]
+              << "\ndipole m=0: " << e_moments[2]
+              << "\ndipole m=1: " << e_moments[3]
+              << "\nquadrupole m=-2: " << e_moments[4]
+              << "\nquadrupole m=-1: " << e_moments[5]
+              << "\nquadrupole m=0: " << e_moments[6]
+              << "\nquadrupole m=1: " << e_moments[7]
+              << "\nquadrupole m=2: " << e_moments[8] << "\n";
+
+    // compute interaction kernel between multipole moments centered at the
+    // reference unit cell and a remote unit cell
+    auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d{50.0, 100.0, 100.0});
+
+    return e_moments;
   }
 
  private:
@@ -325,6 +340,164 @@ class PeriodicMA {
 
     return cff_bound;
   }
+
+  /*!
+   * @brief This makes a map from the ordinal index of a (\em l, \em m) pair to
+   * the corresponding \em l and \em m
+   * @tparam lmax max value of l
+   * @return \c unordered_map with
+   * key: ordinal index
+   * mapped value: (\em l, \em m) pair
+   */
+  template <unsigned int lmax>
+  std::unordered_map<unsigned int, std::pair<int, int>> make_ord_to_lm_map() {
+    std::unordered_map<unsigned int, std::pair<int, int>> result;
+    result.reserve((lmax + 1) * (lmax + 1));
+
+    auto ord_idx = 0u;
+    for (auto l = 0; l <= lmax; ++l) {
+      for (auto m = -l; m <= l; ++m) {
+        result[ord_idx] = std::make_pair(l, m);
+        ord_idx++;
+      }
+    }
+
+    return result;
+  }
+
+  /*!
+   * @brief This builds the real interaction kernel \latexonly M$_{l, m}$
+   * \endlatexonly between two distant multipole moments centered at P and Q,
+   * respectively
+   *
+   * \latexonly
+   * \begin{eqnarray*}
+   * M_{l,m}(\mathbf{r}) =
+   * \begin{cases}
+   *  \frac{(l-m)!}{|\mathbf{r}|^{l+1}} P_l^m(cos\theta) cos(m \phi),
+   *    \text{ if m $\geq$ 0} \\
+   *  \frac{(l-m)!}{|\mathbf{r}|^{l+1}} P_l^m(cos\theta) sin(m \phi),
+   *    \text{ if m $<$ 0}
+   * \end{cases}
+   * \end{eqnarray*}
+   * \endlatexonly
+   *
+   * @tparam lmax max value of l
+   * @param c12 non-zero vector from center Q to center P
+   * @return an array of doubles with array size = number of components in
+   * \c Oper
+   */
+  template<unsigned int lmax>
+  MultipoleMoment<double, (lmax + 1) * (lmax + 1)> build_interaction_kernel(const Vector3d &c12) {
+    const auto c12_norm = c12.norm();
+    MPQC_ASSERT(c12_norm > 0.0);
+
+    using namespace boost::math;
+    MultipoleMoment<double, (lmax + 1) * (lmax + 1)> result;
+
+    const auto cos_theta = c12(2) / c12_norm;
+    const auto c12_xy_norm = std::sqrt(c12(0) * c12(0) + c12(1) * c12(1));
+
+    // When Rx^2 + Ry^2 = 0, φ cannot computed. We use the fact that in this
+    // case cosθ = 1, and then associated Legendre polynomials
+    // P_{l, m}(cosθ) = 0 if m != 0
+    // P_{l, m}(cosθ) = 1 if m == 0
+    if (c12_xy_norm < std::numeric_limits<double>::epsilon()) {
+      for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
+        auto frac = factorial<double>(l) / std::pow(c12_norm, l + 1);
+        for (auto m = -l; m <= l; ++m, ++ord_idx) {
+          result[ord_idx] = (m == 0) ? frac : 0.0;
+        }
+      }
+      return result;
+    } else {
+      const auto inv_x2py2 = 1.0 / c12_xy_norm;
+      const auto cos_phi = c12(0) * inv_x2py2;
+      const auto sin_phi = c12(1) * inv_x2py2;
+      const auto sin_theta = c12_xy_norm / c12_norm;
+
+      std::unordered_map<int, double> cos_m_phi_map, sin_m_phi_map, legendre_map;
+      cos_m_phi_map.reserve(2 * lmax + 1);
+      sin_m_phi_map.reserve(2 * lmax + 1);
+      legendre_map.reserve((lmax + 1) * (lmax + 1));
+
+      // build a map that returns cos(m * phi) for each m using recurrence relation
+      // build a map that returns sin(m * phi) for each m using recurrence relation
+      cos_m_phi_map[0] = 1.0;
+      sin_m_phi_map[0] = 0.0;
+      if (lmax >= 1) {
+        cos_m_phi_map[1] = cos_phi;
+        sin_m_phi_map[1] = sin_phi;
+        cos_m_phi_map[-1] = cos_phi;
+        sin_m_phi_map[-1] = -sin_phi;
+      }
+      if (lmax >= 2) {
+        for (auto m = 2; m <= lmax; ++m) {
+          cos_m_phi_map[m] = 2.0 * cos_m_phi_map[m - 1] * cos_phi - cos_m_phi_map[m - 2];
+          sin_m_phi_map[m] = 2.0 * sin_m_phi_map[m - 1] * cos_phi - sin_m_phi_map[m - 2];
+          cos_m_phi_map[-m] = cos_m_phi_map[m];
+          sin_m_phi_map[-m] = -sin_m_phi_map[m];
+        }
+      }
+
+      // build a map that returns P_{l, m)(cosθ) for any ordinal index of (l, m)
+      // using recurrence relation
+      legendre_map[0] = 1.0;  // (l = 0, m = 0)
+      if (lmax >= 1) {
+        // compute P_{l, m} for all l >= 1 and m = 0
+        legendre_map[2] = cos_theta;  // (l = 1, m = 0)
+        if (lmax >= 2) {
+          for (auto l = 2; l <= lmax; ++l) {
+            const auto ord_l_0 = l * l + l;  // (l, 0)
+            const auto ord_lm1_0 = l * l - l;  // (l - 1, 0)
+            const auto ord_lm2_0 = l * l - 3 * l + 2;  // (l - 2, 0)
+            legendre_map[ord_l_0] = legendre_next(l - 1, 0, cos_theta, legendre_map[ord_lm1_0], legendre_map[ord_lm2_0]);
+          }
+        }
+
+        // compute P_{l, m} for all l >= 1 and m != 0
+        for (auto m = 1; m <= lmax; ++m) {
+          const auto sign = (m % 2 == 0) ? 1 : -1;
+          const auto m2 = m * m;
+
+          const auto ord_m_m = m2 + m + m;  // (l = m, m)
+          const auto ord_mm1_mm1 = m2 - 1;  // (l = m - 1, m - 1)
+          legendre_map[ord_m_m] = -1.0 * (2.0 * m - 1.0) * sin_theta * legendre_map[ord_mm1_mm1];
+          legendre_map[m2] = sign * legendre_map[ord_m_m] / factorial<double>(m + m);  // (l = m, -m)
+
+          if (lmax >= 2 && lmax >= m + 1) {
+            const auto ord_mp1_m = m2 + 4 * m + 2;  // (l = m + 1, m)
+            legendre_map[ord_mp1_m] = (2.0 * m + 1.0) * cos_theta * legendre_map[ord_m_m];
+            legendre_map[ord_mp1_m - 2 * m] = sign * legendre_map[ord_mp1_m] / factorial<double>(2 * m + 1);  // (l = m + 1, -m)
+          }
+
+          if (lmax >= 3 && lmax >= m + 2) {
+            for (auto l = m + 2; l <= lmax; ++l) {
+              const auto l2 = l * l;
+              const auto ord_l_m = l2 + l + m;  // (l, m)
+              const auto ord_lm1_m = l2 - l + m;  // (l - 1, m)
+              const auto ord_lm2_m = l2 - 3 * l + 2 + m;  // (l - 2, m)
+              legendre_map[ord_l_m] = legendre_next(l - 1, m, cos_theta, legendre_map[ord_lm1_m], legendre_map[ord_lm2_m]);
+              legendre_map[ord_l_m - 2 * m] = sign * factorial<double>(l - m) * legendre_map[ord_l_m] / factorial<double>(l + m);  // (l, -m)
+            }
+          }
+        }
+      }
+
+      // fill the result
+      for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
+        const auto inv_denom = 1.0 / std::pow(c12_norm, l + 1);
+        for (auto m = -l; m <= l; ++m, ++ord_idx) {
+          const auto num = factorial<double>(l - m);
+          const auto phi_part = (m >= 0) ? cos_m_phi_map[m] : sin_m_phi_map[m];
+          result[ord_idx] = num * inv_denom * legendre_map[ord_idx] * phi_part;
+        }
+      }
+
+      return result;
+    }
+  }
+
 };
 
 }  // namespace ma

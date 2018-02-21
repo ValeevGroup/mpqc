@@ -53,8 +53,6 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                 const math::PetiteList &plist) {
   set_eng_precision(eng);
 
-  std::cout << "\nTask for range " << rng << std::endl;
-
   auto const &lobound = rng.lobound();
   std::array<std::size_t, 2> lb = {{lobound[0], lobound[1]}};
   std::array<std::size_t, 2> ub = lb;

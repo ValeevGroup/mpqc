@@ -131,16 +131,19 @@ class PeriodicMA {
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
-  template <typename T, unsigned long nopers = libint2::operator_traits<Oper>::nopers>
-  using MultipoleMoment = std::array<T, nopers>;
+  using Ord2lmMap = std::unordered_map<unsigned int, std::pair<int, int>>;
+  using UnitCellList = std::vector<std::pair<Vector3i, Vector3d>>;
+  using Sphere2UCListMap = std::unordered_map<size_t, UnitCellList>;
+  template <typename T, unsigned int nops = libint2::operator_traits<Oper>::nopers>
+  using MultipoleMoment = std::array<T, nops>;
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
    * @param ao_factory a \c PeriodicAOFactory object
    * @param ma_thresh threshold of multipole expansion error
    * @param ws well-separateness criterion
    */
-  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-6, double ws = 3.0)
-      : ao_factory_(ao_factory), ma_thresh_(ma_thresh), ws_(ws) {
+  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-6, double bs_extent_thresh = 1.0e-6, double ws = 3.0)
+      : ao_factory_(ao_factory), ma_thresh_(ma_thresh), bs_extent_thresh_(bs_extent_thresh), ws_(ws) {
     auto &world = ao_factory_.world();
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
     dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
@@ -153,6 +156,16 @@ class PeriodicMA {
     RJ_size_ = ao_factory_.RJ_size();
     RD_size_ = ao_factory_.RD_size();
 
+    // determine dimensionality of crystal
+    dimensionality_ = 0;
+    for (auto dim = 0; dim <= 2; ++dim) {
+      if (RJ_max_(dim) > 0) {
+        dimensionality_++;
+      }
+    }
+    ExEnv::out0() << "\nCrystal dimensionality : " << dimensionality_
+                  << std::endl;
+
     // compute centers and extents of product density between the reference
     // unit cell and its neighbours
     ref_pairs_ = construct_basis_pairs();
@@ -164,30 +177,35 @@ class PeriodicMA {
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
 
+    ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
+                  << cff_boundary_.transpose() << std::endl;
+
     // compute spherical multipole moments (the chargeless version, before being
     // contracted with density matrix)
     sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
-
-    nopers_ = libint2::operator_traits<Oper>::nopers;
 
     // make a map from ordinal indices of (l, m) to (l, m) pairs
     O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
     M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
 
-
-    ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
-                  << cff_boundary_.transpose() << std::endl;
   }
 
  private:
   Factory &ao_factory_;
-  const double ma_thresh_;  /// threshold of multipole expansion error
+  const double ma_thresh_;  /// multipole approximation is considered converged when the energy difference between two iterations of unit cell spheres is below this value
+  const double bs_extent_thresh_;  /// threshold used in computing extent of a pair of primitives
   const double ws_;         /// well-separateness criterion
 
   MultipoleMoment<TArray> sphemm_;
-  size_t nopers_;  /// total number of (l, m) pairs in multipole moments
-  std::unordered_map<unsigned int, std::pair<int, int>> O_ord_to_lm_map_;
-  std::unordered_map<unsigned int, std::pair<int, int>> M_ord_to_lm_map_;
+
+  static constexpr unsigned int nopers_ = libint2::operator_traits<Oper>::nopers;
+  static constexpr unsigned int nopers_doubled_lmax_ = (2 * MULTIPOLE_MAX_ORDER + 1) * (2 * MULTIPOLE_MAX_ORDER + 1);
+
+  Ord2lmMap O_ord_to_lm_map_;
+  Ord2lmMap M_ord_to_lm_map_;
+
+  Sphere2UCListMap cff_sphere_to_unitcells_map_;
+  int dimensionality_;  // dimensionality of crystal
 
   std::shared_ptr<Basis> obs_;
   std::shared_ptr<Basis> dfbs_;
@@ -207,32 +225,89 @@ class PeriodicMA {
  public:
   const Vector3i &CFF_boundary() { return cff_boundary_; }
 
-  MultipoleMoment<double> compute_multipole_moments(const TArray &D,
-                                                    double target_precision) {
+  double compute_energy(const TArray &D, double target_precision) {
     // compute electronic multipole moments for the reference unit cell
-    MultipoleMoment<double> e_moments;
-    using ::mpqc::pbc::detail::dot_product;
-    for (auto op = 0; op != e_moments.size(); ++op) {
-      e_moments[op] = -2.0 * dot_product(sphemm_[op], D, R_max_, RD_max_);
+    auto O_elec = compute_multipole_moments(sphemm_, D);
+
+    double e_total = 0.0;
+    double e_sphere = 0.0;
+    double e_diff = 0.0;
+    bool converged = false;
+    bool out_of_rjmax = false;
+    size_t cff_sphere_idx = 0;
+    Vector3i sphere_thickness_next = {0, 0, 0};
+
+    do {
+      auto e_old = e_sphere;
+
+      auto sphere_iter = cff_sphere_to_unitcells_map_.find(cff_sphere_idx);
+      // build a list of unit cells for a sphere if does not exist
+      if (sphere_iter == cff_sphere_to_unitcells_map_.end()) {
+        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_sphere_idx);
+        sphere_iter = cff_sphere_to_unitcells_map_.insert({cff_sphere_idx, unitcell_list}).first;
+      }
+
+      ExEnv::out0() << "\nSphere index in CFF: " << sphere_iter->first << std::endl;
+
+      e_sphere = 0.0;
+      for (const auto &unitcell : sphere_iter->second) {
+        const auto &unitcell_idx = unitcell.first;
+        const auto &unitcell_vec = unitcell.second;
+
+        // compute interaction kernel between multipole moments centered at the
+        // reference unit cell and a remote unit cell
+        // TODO attach each M to a unit cell in UnitCellList to avoid recomputing though it may cause memory issues
+        auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d::Zero() - unitcell_vec);
+
+        // compute local potential created by a remote unit cell
+        auto L = build_local_potential(O_elec, M);
+
+        // compute multipole interaction energy per unit cell
+        double e_unitcell = compute_energy_per_unitcell(O_elec, L);
+
+        e_sphere += e_unitcell;
+
+        ExEnv::out0() << "\tmultipole interaction energy for unit cell (" << unitcell_idx.transpose() << ") = " << e_unitcell << std::endl;
+      }
+      ExEnv::out0() << "multipole interaction energy for sphere [" << cff_sphere_idx << "] = " << e_sphere << std::endl;
+
+      e_diff = e_sphere - e_old;
+      ExEnv::out0() << "Delta(E_ma_per_sphere) = " << e_diff << std::endl;
+
+      e_total += e_sphere;
+
+      // determine if the energy is converged
+      if (std::abs(e_diff) < ma_thresh_) {
+        converged = true;
+      }
+
+      // determine if the next sphere is out of rjmax range
+      for (auto dim = 0; dim <= 2; ++dim) {
+        if (RJ_max_(dim) > 0) {
+          sphere_thickness_next(dim) = cff_sphere_idx + 1;
+        }
+      }
+      Vector3i corner_idx_next = cff_boundary_ + sphere_thickness_next;
+      if (corner_idx_next(0) > RJ_max_(0) || corner_idx_next(1) > RJ_max_(1)
+          || corner_idx_next(2) > RJ_max_(2)) {
+        out_of_rjmax = true;
+      }
+
+      cff_sphere_idx++;
+    } while (!converged && !out_of_rjmax);
+
+    if (!converged) {
+      ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
+                    << "\nMultipole approximation is not converged to the given threshold!"
+                    << std::endl;
     }
 
-    // test
-    std::cout << "*** electronic spherical multipole moments ***\n"
-              << "\nmonopole: " << e_moments[0]
-              << "\ndipole m=-1: " << e_moments[1]
-              << "\ndipole m=0: " << e_moments[2]
-              << "\ndipole m=1: " << e_moments[3]
-              << "\nquadrupole m=-2: " << e_moments[4]
-              << "\nquadrupole m=-1: " << e_moments[5]
-              << "\nquadrupole m=0: " << e_moments[6]
-              << "\nquadrupole m=1: " << e_moments[7]
-              << "\nquadrupole m=2: " << e_moments[8] << "\n";
+    return e_total;
+  }
 
-    // compute interaction kernel between multipole moments centered at the
-    // reference unit cell and a remote unit cell
-    auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d{50.0, 100.0, 100.0});
-
-    return e_moments;
+  /// compute electronic multipole moments for the reference unit cell
+  MultipoleMoment<double> compute_multipole_moments(const TArray &D) {
+    return compute_multipole_moments(sphemm_, D);
   }
 
  private:
@@ -249,7 +324,7 @@ class PeriodicMA {
     auto basis_neighbour = shift_basis_origin(*obs_, uc_vec, R_max_, dcell_);
 
     return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour,
-                                                   ma_thresh_);
+                                                   bs_extent_thresh_);
   }
 
   /*!
@@ -350,8 +425,8 @@ class PeriodicMA {
    * mapped value: (\em l, \em m) pair
    */
   template <unsigned int lmax>
-  std::unordered_map<unsigned int, std::pair<int, int>> make_ord_to_lm_map() {
-    std::unordered_map<unsigned int, std::pair<int, int>> result;
+  Ord2lmMap make_ord_to_lm_map() {
+    Ord2lmMap result;
     result.reserve((lmax + 1) * (lmax + 1));
 
     auto ord_idx = 0u;
@@ -496,6 +571,229 @@ class PeriodicMA {
 
       return result;
     }
+  }
+
+  /*!
+   * @brief This forms real multipole moments with cos(m φ) and sin(m φ) parts,
+   * respectively.
+   * @tparam nopers total number of componments in multipole expansion operator
+   * @param M multipole moments with mixed cosine and sine parts
+   * @param ord_to_lm_map a map from ordinal index of (l, m) to a specific
+   * (l, m) pair
+   * @return a pair of multipole moments with cos(m φ) and sin(m φ) parts,
+   * respectively.
+   */
+  template <unsigned int nopers>
+  std::pair<MultipoleMoment<double, nopers>, MultipoleMoment<double, nopers>>
+  form_symm_and_antisymm_moments(const MultipoleMoment<double, nopers> &M, Ord2lmMap &ord_to_lm_map) {
+    assert(M.size() == nopers);
+    assert(ord_to_lm_map.size() == nopers);
+    MultipoleMoment<double, nopers> Mplus, Mminus;
+    for (auto op = 0u; op != nopers; ++op) {
+      auto m = ord_to_lm_map[op].second;
+      auto sign = (m > 0) ? 1 : ((m < 1) ? -1 : 0);
+      auto nega1_m = (m % 2 == 0) ? 1.0 : -1.0;  // (-1)^m
+      switch (sign) {
+        case 1:
+          Mplus[op] = M[op];
+          Mminus[op] = -nega1_m * M[op - 2 * m];
+          break;
+        case 0:
+          Mplus[op] = M[op];
+          Mminus[op] = 0.0;
+          break;
+        case -1:
+          Mplus[op] = nega1_m * M[op - 2 * m];
+          Mminus[op] = M[op];
+          break;
+        default:
+          throw ProgrammingError("Invalid sign of m.", __FILE__, __LINE__);
+      }
+    }
+    return std::make_pair(Mplus, Mminus);
+  };
+
+  /*!
+   * @brief This builds the local multipole expansion of the potential at the origin
+   * created by a remote unit cell
+   * @param O multipole moments of the charge distribution of the remote unit cell
+   * @param M multipole interaction kernel between the origin and the remote unit cell
+   * @return
+   */
+  MultipoleMoment<double> build_local_potential(const MultipoleMoment<double>& O,
+                                                const MultipoleMoment<double, nopers_doubled_lmax_> &M) {
+    MultipoleMoment<double> result;
+
+    // form O+, O-
+    auto O_pm = form_symm_and_antisymm_moments<nopers_>(O, O_ord_to_lm_map_);
+    auto &O_plus = O_pm.first;
+    auto &O_minus = O_pm.second;
+
+    // form M+, M-
+    auto M_pm = form_symm_and_antisymm_moments<nopers_doubled_lmax_>(M, M_ord_to_lm_map_);
+    auto &M_plus = M_pm.first;
+    auto &M_minus = M_pm.second;
+
+    // form multipole expansion of local potential created by the remote unit cell
+    for (auto op1 = 0; op1 != nopers_; ++op1) {
+      auto l1 = O_ord_to_lm_map_[op1].first;
+      auto m1 = O_ord_to_lm_map_[op1].second;
+      auto accu = 0.0;
+      for (auto op2 = 0; op2 != nopers_; ++op2) {
+        auto l1pl2 = l1 + O_ord_to_lm_map_[op2].first;
+        auto m1pm2 = m1 + O_ord_to_lm_map_[op2].second;
+        auto ord_M = l1pl2 * l1pl2 + l1pl2 + m1pm2;
+        if (m1 >= 0) {
+          accu += M_plus[ord_M] * O_plus[op2];
+          accu += M_minus[ord_M] * O_minus[op2];
+        } else {
+          accu += M_minus[ord_M] * O_plus[op2];
+          accu -= M_plus[ord_M] * O_minus[op2];
+        }
+      }
+      result[op1] = accu;
+    }
+
+    return result;
+  }
+
+  double compute_energy_per_unitcell(const MultipoleMoment<double> &O,
+                                     const MultipoleMoment<double> &L) {
+    double result = 0.0;
+    for (auto op = 0; op != nopers_; ++op) {
+      auto l = O_ord_to_lm_map_[op].first;
+      auto m = O_ord_to_lm_map_[op].second;
+      auto sign = (l % 2 == 0) ? 1.0 : -1.0;
+      auto delta = (m == 0) ? 1.0 : 2.0;
+      // scale by 0.5 because energy per cell is half the interaction energy
+      result += 0.5 * sign * delta * O[op] * L[op];
+    }
+
+    return result;
+  }
+
+  UnitCellList build_unitcells_on_a_sphere(const Vector3i &sphere_start,
+                                           size_t sphere_idx) {
+    UnitCellList result;
+
+    // compute thickness of the sphere to CFF boundary
+    Vector3i sphere_thickness = {0, 0, 0};
+    for (auto dim = 0; dim <= 2; ++dim) {
+      if (RJ_max_(dim) > 0) {
+        sphere_thickness(dim) = sphere_idx;
+      }
+    }
+
+    // index (x, y, z) of the unit cell at the corner with positive x, y, z
+    Vector3i corner_idx = sphere_start + sphere_thickness;
+
+    // a lambda that returns a (idx, vector) pair for a given idx of a unit cell
+    auto make_pair = [](const Vector3i &idx, const Vector3d &dcell) {
+      return std::make_pair(idx, idx.cast<double>().cwiseProduct(dcell));
+    };
+
+    // build the unit cell list depending on the crystal dimensionality
+    if (dimensionality_ == 0) {
+      result.emplace_back(std::make_pair(Vector3i::Zero(), Vector3d::Zero()));
+    } else if (dimensionality_ == 1) {
+      auto dim = (RJ_max_(0) > 0) ? 0 : ((RJ_max_(1) > 0) ? 1 : 2);
+      MPQC_ASSERT(corner_idx(dim) > 0);
+      Vector3i neg1_idx = -1 * corner_idx;
+      result.emplace_back(make_pair(corner_idx, dcell_));
+      result.emplace_back(make_pair(neg1_idx, dcell_));
+    } else if (dimensionality_ == 2) {
+      auto dim_a = (RJ_max_(0) == 0) ? 1 : 0;
+      auto dim_b = (RJ_max_(2) == 0) ? 1 : 2;
+      const auto a_max = corner_idx(dim_a);
+      const auto b_max = corner_idx(dim_b);
+      MPQC_ASSERT(a_max > 0 && b_max > 0);
+      Vector3i pos2_idx = Vector3i::Zero();
+      Vector3i neg2_idx = Vector3i::Zero();
+      pos2_idx(dim_a) = a_max;
+      neg2_idx(dim_a) = -a_max;
+      for (auto b = -b_max; b <= b_max; ++b) {
+        pos2_idx(dim_b) = b;
+        neg2_idx(dim_b) = b;
+        result.emplace_back(make_pair(pos2_idx, dcell_));
+        result.emplace_back(make_pair(neg2_idx, dcell_));
+      }
+
+      pos2_idx.setZero();
+      neg2_idx.setZero();
+      pos2_idx(dim_b) = b_max;
+      neg2_idx(dim_b) = -b_max;
+      for (auto a = -a_max + 1; a <= a_max - 1; ++a) {
+        pos2_idx(dim_a) = a;
+        neg2_idx(dim_a) = a;
+        result.emplace_back(make_pair(pos2_idx, dcell_));
+        result.emplace_back(make_pair(neg2_idx, dcell_));
+      }
+    } else if (dimensionality_ == 3) {
+      const auto x_max = corner_idx[0];
+      const auto y_max = corner_idx[1];
+      const auto z_max = corner_idx[2];
+      MPQC_ASSERT(x_max > 0 && y_max > 0 && z_max > 0);
+      Vector3i pos3_idx = Vector3i::Zero();
+      Vector3i neg3_idx = Vector3i::Zero();
+      pos3_idx(0) = x_max;
+      neg3_idx(0) = -x_max;
+      for (auto y = -y_max; y <= y_max; ++y) {
+        pos3_idx(1) = y;
+        neg3_idx(1) = y;
+        for (auto z = -z_max; z <= z_max; ++z) {
+          pos3_idx(2) = z;
+          neg3_idx(2) = z;
+          result.emplace_back(make_pair(pos3_idx, dcell_));
+          result.emplace_back(make_pair(neg3_idx, dcell_));
+        }
+      }
+
+      pos3_idx.setZero();
+      neg3_idx.setZero();
+      pos3_idx(1) = y_max;
+      neg3_idx(1) = -y_max;
+      for (auto x = -x_max + 1; x <= x_max - 1; ++x) {
+        pos3_idx(0) = x;
+        neg3_idx(0) = x;
+        for (auto z = -z_max; z <= z_max; ++z) {
+          pos3_idx(2) = z;
+          neg3_idx(2) = z;
+          result.emplace_back(make_pair(pos3_idx, dcell_));
+          result.emplace_back(make_pair(neg3_idx, dcell_));
+        }
+      }
+
+      pos3_idx.setZero();
+      neg3_idx.setZero();
+      pos3_idx(2) = z_max;
+      neg3_idx(2) = -z_max;
+      for (auto x = -x_max + 1; x <= x_max - 1; ++x) {
+        pos3_idx(0) = x;
+        neg3_idx(0) = x;
+        for (auto y = -y_max + 1; y <= y_max - 1; ++y) {
+          pos3_idx(1) = y;
+          neg3_idx(1) = y;
+          result.emplace_back(make_pair(pos3_idx, dcell_));
+          result.emplace_back(make_pair(neg3_idx, dcell_));
+        }
+      }
+    } else {
+      throw ProgrammingError("Invalid crystal dimensionality.", __FILE__, __LINE__);
+    }
+
+    return result;
+  }
+
+  /// compute electronic multipole moments for the reference unit cell
+  MultipoleMoment<double> compute_multipole_moments(
+      const MultipoleMoment<TArray> &sphemm, const TArray &D) {
+    MultipoleMoment<double> result;
+    using ::mpqc::pbc::detail::dot_product;
+    for (auto op = 0; op != nopers_; ++op) {
+      result[op] = -2.0 * dot_product(sphemm[op], D, R_max_, RD_max_);
+    }
+
+    return result;
   }
 
 };

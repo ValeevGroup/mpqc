@@ -82,7 +82,7 @@ class PeriodicMARIJBuilder {
 
   array_type compute_MAJ(const array_type &D, double target_precision) {
     array_type maj;
-    auto emoments = ma_builder_->compute_multipole_moments(D, target_precision);
+    auto emoments = ma_builder_->compute_energy(D, target_precision);
     return maj;
   }
 };

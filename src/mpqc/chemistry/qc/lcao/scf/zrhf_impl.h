@@ -48,11 +48,14 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   iter_ = 0;
 
   auto& ao_factory = this->ao_factory();
-  // retrieve world from periodic ao_factory
+
+// retrieve world from periodic ao_factory
   auto& world = ao_factory.world();
   auto unitcell = ao_factory.unitcell();
 
   auto init_start = mpqc::fenced_now(world);
+
+  init_fock_builder();
 
   ExEnv::out0() << ao_factory << std::endl;
   ExEnv::out0() << unitcell << std::endl;
@@ -127,8 +130,6 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
                                            print_max_item_);
   // compute guess density
   std::tie(D_, Dk_) = compute_density();
-
-  init_fock_builder();
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
@@ -331,7 +332,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
   auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
   ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
-  auto elec_moments = ma_builder->compute_multipole_moments(D_);
+  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
   ExEnv::out0() << "electronic spherical multipole moments:"
                 << "\nmonopole: " << elec_moments[0]
                 << "\ndipole m=-1: " << elec_moments[1]

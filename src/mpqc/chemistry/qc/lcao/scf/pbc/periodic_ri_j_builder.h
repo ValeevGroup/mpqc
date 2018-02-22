@@ -16,7 +16,44 @@ class PeriodicRIJBuilder {
   using array_type = TA::DistArray<Tile, Policy>;
   using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
 
-  PeriodicRIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
+  PeriodicRIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) { init(); }
+
+  PeriodicRIJBuilder(Factory &ao_factory, const Vector3i &rj_max)
+      : ao_factory_(ao_factory) {
+    ao_factory_.set_rjmax(rj_max);
+    init();
+  }
+
+  ~PeriodicRIJBuilder() {}
+
+  array_type operator()(array_type const &D, double target_precision) {
+    return compute_J(D, target_precision);
+  }
+
+ private:
+  Factory &ao_factory_;
+  bool print_detail_;
+  std::unique_ptr<PTC_Builder> three_center_builder_;
+
+  array_type M_;         // charge matrix of product density <μ|ν>
+  array_type n_;         // normalized charge vector <Κ>
+  double q_;             // total charge of auxiliary basis functions
+  array_type P_para_;    // projection matrix that projects X onto auxiliary
+                         // charge vector
+  array_type P_perp_;    // projection matrix that projects X onto the subspace
+                         // orthogonal to auxiliary charge vector
+  array_type V_;         // 2-center 2-electron integrals
+  array_type V_perp_;    // part of 2-center 2-electron integrals that is
+                         // orthogonal to auxiliary charge vector
+  array_type G_;         // 3-center 2-electron direct integrals contracted with
+                         // density matrix
+  array_type inv_;       // A inverse where A = V_perp + P_para
+  array_type identity_;  // idensity matrix
+  array_type CD_;        // intermediate for C_Xμν D_μν
+  array_type IP_;        // intermediate for inv_XY P_perp_YZ
+
+ private:
+  void init() {
     print_detail_ = ao_factory_.print_detail();
     auto &world = ao_factory_.world();
 
@@ -86,35 +123,6 @@ class PeriodicRIJBuilder {
     }
   }
 
-  ~PeriodicRIJBuilder() {}
-
-  array_type operator()(array_type const &D, double target_precision) {
-    return compute_J(D, target_precision);
-  }
-
- private:
-  Factory &ao_factory_;
-  bool print_detail_;
-  std::unique_ptr<PTC_Builder> three_center_builder_;
-
-  array_type M_;         // charge matrix of product density <μ|ν>
-  array_type n_;         // normalized charge vector <Κ>
-  double q_;             // total charge of auxiliary basis functions
-  array_type P_para_;    // projection matrix that projects X onto auxiliary
-                         // charge vector
-  array_type P_perp_;    // projection matrix that projects X onto the subspace
-                         // orthogonal to auxiliary charge vector
-  array_type V_;         // 2-center 2-electron integrals
-  array_type V_perp_;    // part of 2-center 2-electron integrals that is
-                         // orthogonal to auxiliary charge vector
-  array_type G_;         // 3-center 2-electron direct integrals contracted with
-                         // density matrix
-  array_type inv_;       // A inverse where A = V_perp + P_para
-  array_type identity_;  // idensity matrix
-  array_type CD_;        // intermediate for C_Xμν D_μν
-  array_type IP_;        // intermediate for inv_XY P_perp_YZ
-
- private:
   array_type compute_J(const array_type &D, double target_precision) {
     auto &world = ao_factory_.world();
 

@@ -318,7 +318,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    * \brief This sets the density for coulomb and exchange computations
    * \param D the density feeded by user
    */
-  void set_density(TArray D) { D_ = D; }
+  void set_density(const TArray &D) { D_ = D; }
 
   /// @return density matrix
   TArray get_density() { return D_; }
@@ -326,6 +326,14 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// @return significant shell pairs
   const shellpair_list_t &significant_shell_pairs() {
     return sig_shellpair_list_;
+  }
+
+  /// @brief This sets the range of Coulomb interaction
+  void set_rjmax(const Vector3i &rjmax) {
+    RJ_max_ = rjmax;
+
+    using ::mpqc::detail::direct_ord_idx;
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
   }
 
  private:

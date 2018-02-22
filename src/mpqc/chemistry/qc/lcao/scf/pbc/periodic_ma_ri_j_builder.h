@@ -21,23 +21,37 @@ class PeriodicMARIJBuilder {
   PeriodicMARIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
+    // Construct multipole approximation builder
+    auto t0_ma_init = mpqc::fenced_now(world);
+    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_);
+    auto t1_ma_init = mpqc::fenced_now(world);
+    auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
+
+    // set RJ_max_ to be the boundary of Crystal Near Field (= CFF_boundary - 1)
+    // for the rest of the calculation
+    const auto &cff_boundary = ma_builder_->CFF_boundary();
+    Vector3i cnf_boundary = {0, 0, 0};
+    for (auto dim = 0; dim <= 2; ++dim) {
+      if (cff_boundary(dim) > 0) {
+        cnf_boundary(dim) = cff_boundary(dim) - 1;
+      }
+    }
+    ao_factory_.set_rjmax(cnf_boundary);
+
+    ExEnv::out0() << "\nThe boundary of Crystal Near Field is "
+                  << ao_factory_.RJ_max().transpose() << std::endl;
+
     // Construct periodic RI-J builder
     auto t0_j_init = mpqc::fenced_now(world);
     rij_builder_ = std::make_unique<RIJ_Builder>(ao_factory_);
     auto t1_j_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 
-    // Construct exact periodic 4-center K builder
-    auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_);
-    auto t1_ma_init = mpqc::fenced_now(world);
-    auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
-
     // test boost legendre polynomials
     double tmp1 = boost::math::legendre_p(0, 0.5);
     ExEnv::out0() << "\nLegendre P(0, 0.5) = " << tmp1 << std::endl;
 
-    const auto RJ_max = ao_factory_.RJ_max();
+//    const auto RJ_max = ao_factory_.RJ_max();
     // test CNF and CFF
     //    for (auto x = -RJ_max(0); x <= RJ_max(0); ++x) {
     //      for (auto y = -RJ_max(1); y <= RJ_max(1); ++y) {
@@ -65,7 +79,7 @@ class PeriodicMARIJBuilder {
 
     G("mu, nu") = compute_RIJ(D, target_precision)("mu, nu");
 
-    auto tmp = compute_MAJ(D, target_precision);
+    auto energy_from_cff = compute_MAJ(D, target_precision);
 
     return G;
   }
@@ -80,10 +94,8 @@ class PeriodicMARIJBuilder {
     return rij_builder_->operator()(D, target_precision);
   }
 
-  array_type compute_MAJ(const array_type &D, double target_precision) {
-    array_type maj;
-    auto emoments = ma_builder_->compute_energy(D, target_precision);
-    return maj;
+  double compute_MAJ(const array_type &D, double target_precision) {
+    return ma_builder_->compute_energy(D, target_precision);
   }
 };
 

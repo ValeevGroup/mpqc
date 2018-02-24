@@ -133,9 +133,11 @@ class PeriodicMA {
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using Ord2lmMap = std::unordered_map<unsigned int, std::pair<int, int>>;
   using UnitCellList = std::vector<std::pair<Vector3i, Vector3d>>;
-  using Sphere2UCListMap = std::unordered_map<size_t, UnitCellList>;
+  using Shell2UCListMap = std::unordered_map<size_t, UnitCellList>;
   template <typename T, unsigned int nops = libint2::operator_traits<Oper>::nopers>
   using MultipoleMoment = std::array<T, nops>;
+  using Shell2KernelMap = std::unordered_map<size_t, MultipoleMoment<double, (2 * MULTIPOLE_MAX_ORDER + 1) * (2 * MULTIPOLE_MAX_ORDER + 1)>>;
+
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
    * @param ao_factory a \c PeriodicAOFactory object
@@ -171,10 +173,10 @@ class PeriodicMA {
     ref_pairs_ = construct_basis_pairs();
     // compute maximum distance between the center of mass of unit cell atoms
     // and all charge centers
-    const auto &ref_com = ao_factory_.unitcell().com();
+    ref_com_ = ao_factory_.unitcell().com();
     ExEnv::out0() << "\ncenter of mass of the reference cell is "
-                  << ref_com.transpose() << std::endl;
-    max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com);
+                  << ref_com_.transpose() << std::endl;
+    max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com_);
 
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
@@ -187,7 +189,7 @@ class PeriodicMA {
     sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
 
     // compute spherical multipole moments for nuclei (the charged version)
-    O_nuc_ = compute_nuc_multipole_moments();
+    O_nuc_ = compute_nuc_multipole_moments(ref_com_);
 
     // make a map from ordinal indices of (l, m) to (l, m) pairs
     O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
@@ -197,7 +199,7 @@ class PeriodicMA {
 //    {
 //      auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d({-100.0, -100.0, -100.0}));
 //      auto L = build_local_potential(O_nuc_, M);
-//      double e = compute_energy_per_unitcell(O_nuc_, L);
+//      double e = compute_energy(O_nuc_, L);
 //
 //      ExEnv::out0() << "\n****** TEST ******\n";
 //      for (auto op = 0; op != L.size(); ++op) {
@@ -214,7 +216,7 @@ class PeriodicMA {
 
  private:
   Factory &ao_factory_;
-  const double ma_thresh_;  /// multipole approximation is considered converged when the energy difference between two iterations of unit cell spheres is below this value
+  const double ma_thresh_;  /// multipole approximation is considered converged when Coulomb contribution from a spherical shell of unit cells is below this value
   const double bs_extent_thresh_;  /// threshold used in computing extent of a pair of primitives
   const double ws_;         /// well-separateness criterion
 
@@ -227,7 +229,8 @@ class PeriodicMA {
   Ord2lmMap O_ord_to_lm_map_;
   Ord2lmMap M_ord_to_lm_map_;
 
-  Sphere2UCListMap cff_sphere_to_unitcells_map_;
+  Shell2UCListMap cff_shell_to_unitcells_map_;
+  Shell2KernelMap cff_shell_to_M_map_;
   int dimensionality_;  // dimensionality of crystal
 
   std::shared_ptr<Basis> obs_;
@@ -239,6 +242,7 @@ class PeriodicMA {
   int64_t R_size_;
   int64_t RJ_size_;
   int64_t RD_size_;
+  Vector3d ref_com_;  // center of mass of the reference unit cell
 
   std::vector<Vector3i> uc_near_list_;
   std::shared_ptr<detail::BasisPairInfo> ref_pairs_;
@@ -251,8 +255,8 @@ class PeriodicMA {
 
   /*!
    * @brief This computes Coulomb interaction for the reference cell contributed
-   * from all cells in CFF. Energy contribution is computed per sphere from the
-   * CFF boundary to the user-given \c rjmax unless it is converged
+   * from all cells in CFF. Energy contribution is computed per spherical shell
+   * from the CFF boundary to the user-given \c rjmax unless it is converged
    * @param D
    * @param target_precision
    * @return
@@ -275,57 +279,58 @@ class PeriodicMA {
     }
 
     double e_total = 0.0;
-    double e_sphere = 0.0;
     bool converged = false;
     bool out_of_rjmax = false;
-    size_t cff_sphere_idx = 0;
+    size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
     Vector3i sphere_thickness_next = {0, 0, 0};
 
     do {
-      auto e_old = e_sphere;
-
-      auto sphere_iter = cff_sphere_to_unitcells_map_.find(cff_sphere_idx);
-      // build a list of unit cells for a sphere if does not exist
-      if (sphere_iter == cff_sphere_to_unitcells_map_.end()) {
-        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_sphere_idx);
-        sphere_iter = cff_sphere_to_unitcells_map_.insert({cff_sphere_idx, unitcell_list}).first;
+      auto shell_iter = cff_shell_to_unitcells_map_.find(cff_shell_idx);
+      // build a list of unit cells for a spherical shell (outermost cells of
+      // the sphere) if it does not exist
+      if (shell_iter == cff_shell_to_unitcells_map_.end()) {
+        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
+        shell_iter = cff_shell_to_unitcells_map_.insert({cff_shell_idx, unitcell_list}).first;
       }
 
-      ExEnv::out0() << "\nSphere index in CFF: " << sphere_iter->first << std::endl;
+      auto M_shell_iter = cff_shell_to_M_map_.find(cff_shell_idx);
+      // build interaction kernel for a spherical shell if it does not exist
+      if (M_shell_iter == cff_shell_to_M_map_.end()) {
+        MultipoleMoment<double, nopers_doubled_lmax_> M_shell;
+        M_shell.fill(0.0);
+        for (const auto &unitcell : shell_iter->second) {
+          const auto &unitcell_vec = unitcell.second;
 
-      e_sphere = 0.0;
-      for (const auto &unitcell : sphere_iter->second) {
-        const auto &unitcell_idx = unitcell.first;
-        const auto &unitcell_vec = unitcell.second;
+          // compute interaction kernel between multipole moments centered at the
+          // reference unit cell and a remote unit cell
+          auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(ref_com_ - unitcell_vec);
 
-        // compute interaction kernel between multipole moments centered at the
-        // reference unit cell and a remote unit cell
-        // TODO attach each M to a unit cell in UnitCellList to avoid recomputing though it may cause memory issues
-        auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d::Zero() - unitcell_vec);
-
-        // compute local potential created by a remote unit cell
-        auto L = build_local_potential(O, M);
-
-        // compute multipole interaction energy per unit cell
-        double e_unitcell = compute_energy_per_unitcell(O, L);
-
-        e_sphere += e_unitcell;
-
-        ExEnv::out0() << "\tmultipole interaction energy for unit cell (" << unitcell_idx.transpose() << ") = " << e_unitcell << std::endl;
+          // compress M from unit cells to a spherical shell level
+          for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
+            M_shell[op] += M[op];
+          }
+        }
+        // save the shell-level M into a map so it can be reused
+        M_shell_iter = cff_shell_to_M_map_.insert({cff_shell_idx, M_shell}).first;
       }
-      ExEnv::out0() << "multipole interaction energy for sphere [" << cff_sphere_idx << "] = " << e_sphere << std::endl;
 
-      e_total += e_sphere;
+      // compute local potential created by all cells in a spherical shell
+      auto L_shell = build_local_potential(O, M_shell_iter->second);
+      // compute Coulomb energy contribution from a spherical shell
+      double e_shell = compute_energy(O, L_shell);
+      ExEnv::out0() << "multipole interaction energy for shell [" << cff_shell_idx << "] = " << e_shell << std::endl;
+
+      e_total += e_shell;
 
       // determine if the energy is converged
-      if (std::abs(e_sphere) < ma_thresh_) {
+      if (std::abs(e_shell) < ma_thresh_) {
         converged = true;
       }
 
-      // determine if the next sphere is out of rjmax range
+      // determine if the next shell is out of rjmax range
       for (auto dim = 0; dim <= 2; ++dim) {
         if (RJ_max_(dim) > 0) {
-          sphere_thickness_next(dim) = cff_sphere_idx + 1;
+          sphere_thickness_next(dim) = cff_shell_idx + 1;
         }
       }
       Vector3i corner_idx_next = cff_boundary_ + sphere_thickness_next;
@@ -334,7 +339,7 @@ class PeriodicMA {
         out_of_rjmax = true;
       }
 
-      cff_sphere_idx++;
+      cff_shell_idx++;
     } while (!converged && !out_of_rjmax);
 
     if (!converged) {
@@ -343,7 +348,7 @@ class PeriodicMA {
                     << std::endl;
     }
 
-    ExEnv::out0() << "Coulomb energy contributed from CFF by now = " << e_total << std::endl;
+    ExEnv::out0() << "Coulomb energy contributed from CFF so far = " << e_total << std::endl;
 
     return e_total;
   }
@@ -834,14 +839,13 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This computes multipole interaction energy of the reference cell
-   * contributed a single cell
-   * @param O
-   * @param L
+   * @brief This computes multipole interaction energy for give multipole moments and local potential
+   * @param O multipole moments
+   * @param L local potential created by distant charges
    * @return
    */
-  double compute_energy_per_unitcell(const MultipoleMoment<double> &O,
-                                     const MultipoleMoment<double> &L) {
+  double compute_energy(const MultipoleMoment<double> &O,
+                        const MultipoleMoment<double> &L) {
     double result = 0.0;
     for (auto op = 0; op != nopers_; ++op) {
       auto l = O_ord_to_lm_map_[op].first;
@@ -856,20 +860,21 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This builds a list a unit cells in a give sphere
+   * @brief This builds a list a unit cells in a give spherical shell (outermost
+   * cells of the sphere)
    * @param sphere_start
-   * @param sphere_idx
+   * @param shell_idx
    * @return
    */
   UnitCellList build_unitcells_on_a_sphere(const Vector3i &sphere_start,
-                                           size_t sphere_idx) {
+                                           size_t shell_idx) {
     UnitCellList result;
 
     // compute thickness of the sphere to CFF boundary
     Vector3i sphere_thickness = {0, 0, 0};
     for (auto dim = 0; dim <= 2; ++dim) {
       if (RJ_max_(dim) > 0) {
-        sphere_thickness(dim) = sphere_idx;
+        sphere_thickness(dim) = shell_idx;
       }
     }
 
@@ -992,17 +997,18 @@ class PeriodicMA {
 
   /*!
    * @brief This computes nuclear multipole moments for the reference unit cell
+   * @param center expansion center
    * @return
    */
-  MultipoleMoment<double> compute_nuc_multipole_moments() {
+  MultipoleMoment<double> compute_nuc_multipole_moments(const Vector3d &center) {
     const auto &atoms = ao_factory_.unitcell().atoms();
     const auto natoms = atoms.size();
 
     std::unordered_map<unsigned int, MultipoleMoment<double>> O_atoms;
 
     for (auto i = 0u; i != natoms; ++i) {
-      const auto &position = atoms[i].center();
-      O_atoms[i] = build_multipole_expansion<MULTIPOLE_MAX_ORDER>(position);
+      const Vector3d &r = atoms[i].center() - center;
+      O_atoms[i] = build_multipole_expansion<MULTIPOLE_MAX_ORDER>(r);
     }
 
     MultipoleMoment<double> result;

@@ -18,13 +18,14 @@ PurificationDensityBuilder<Tile, Policy>::PurificationDensityBuilder(
     PurificationDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<PurificationDensityBuilder<Tile, Policy>::array_type> r_xyz,
     int64_t occ, int64_t ncore, int64_t nclusters, double TcutC, bool localize,
-    std::string localization_method)
+    std::string localization_method, bool clustered_coeffs)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
       localize_(localize),
       localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
+      clustered_coeffs_(clustered_coeffs),
       occ_(occ),
       ncore_(ncore) {
   M_inv_ = array_ops::inverse_sqrt(S_);
@@ -83,14 +84,18 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
   auto Cao =
-      array_ops::eigen_to_array<Tile,Policy>(D.world(), D_eig, tr_ao, tr_occ);
+      array_ops::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localize_) {
-    auto U = mpqc::scf::FosterBoysLocalization{}(Cao, r_xyz_ints_, (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+    auto U = mpqc::scf::FosterBoysLocalization{}(
+        Cao, r_xyz_ints_,
+        (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
     Cao("mu,i") = Cao("mu,k") * U("k,i");
 
     auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
-    scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
+    if (clustered_coeffs_) {
+      scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
+    }
   }
 
 #if TA_DEFAULT_POLICY == 1

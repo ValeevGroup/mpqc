@@ -26,6 +26,7 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   bool localize_;
   std::string localization_method_;
   int64_t n_coeff_clusters_;
+  bool clustered_coeffs_;
   std::string metric_decomp_type_;
   int64_t nocc_;  //!< # of occupied orbitals
   int64_t ncore_;  //!< # of core orbitals (will be skipped in localization)
@@ -56,7 +57,8 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
       std::string const &metric_decomp_type = "cholesky_inverse",
       double s_tolerance = 1.0e8,
       bool localize = true,
-      std::string localization_method = "boys-foster");
+      std::string localization_method = "boys-foster",
+      bool clustered_coeffs = false);
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;
 

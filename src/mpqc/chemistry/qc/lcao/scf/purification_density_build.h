@@ -2,16 +2,17 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_
 
-#include "mpqc/chemistry/qc/lcao/scf/density_builder.h"
 #include <vector>
+#include "mpqc/chemistry/qc/lcao/scf/density_builder.h"
 
 namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy>
-class PurificationDensityBuilder : public DensityBuilder<Tile,Policy> {
+class PurificationDensityBuilder : public DensityBuilder<Tile, Policy> {
  public:
-  using array_type = typename DensityBuilder<Tile,Policy>::array_type;
+  using array_type = typename DensityBuilder<Tile, Policy>::array_type;
+
  private:
   array_type S_;
   array_type M_inv_;
@@ -22,6 +23,7 @@ class PurificationDensityBuilder : public DensityBuilder<Tile,Policy> {
   bool localize_;
   std::string localization_method_;
   int64_t n_coeff_clusters_;
+  bool clustered_coeffs_;
   int64_t occ_;
   int64_t ncore_;
 
@@ -32,7 +34,8 @@ class PurificationDensityBuilder : public DensityBuilder<Tile,Policy> {
   PurificationDensityBuilder(array_type const &S, std::vector<array_type> r_xyz,
                              int64_t occ, int64_t ncore, int64_t nclusters,
                              double TcutC = 0.0, bool localize = true,
-                             std::string localization_method = "boys-foster");
+                             std::string localization_method = "boys-foster",
+                             bool clustered_coeffs = false);
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;
 

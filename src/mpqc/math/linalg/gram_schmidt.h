@@ -74,7 +74,6 @@ void gram_schmidt(std::vector<D> &V, double threshold, std::size_t start = 0) {
 template <typename D>
 void gram_schmidt(const std::vector<D> &V1, std::vector<D> &V2,
                   double threshold) {
-  const auto original_k = V2.size();
   const auto k1 = V1.size();
   auto k2 = V2.size();
   std::size_t n_neglect = 0;

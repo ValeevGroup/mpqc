@@ -81,16 +81,6 @@ class PeriodicMARIJBuilder {
     return compute_RIJ(D, target_precision);
   }
 
-  const array_type &get_fock_CFF() {
-    MPQC_ASSERT(ma_builder_->fock_computed());
-    return ma_builder_->get_fock();
-  }
-
-  double get_energy_CFF() {
-    MPQC_ASSERT(ma_builder_->energy_computed());
-    return ma_builder_->get_energy();
-  }
-
   MA_Builder &multipole_builder() {
     return *ma_builder_;
   }

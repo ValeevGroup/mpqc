@@ -7,10 +7,10 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_four_center_k_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
@@ -51,7 +51,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
 
   auto& ao_factory = this->ao_factory();
 
-// retrieve world from periodic ao_factory
+  // retrieve world from periodic ao_factory
   auto& world = ao_factory.world();
   auto unitcell = ao_factory.unitcell();
 
@@ -288,8 +288,8 @@ void zRHF<Tile, Policy>::solve(double thresh) {
                                       niter.c_str(), nEle.c_str(), nTot.c_str(),
                                       nDel.c_str(), nRMS.c_str(), nT.c_str());
       ExEnv::out0() << mpqc::printf(
-          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf,
-          etotal, ediff, rms, iter_duration);
+          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf, etotal,
+          ediff, rms, iter_duration);
     }
 
   } while ((iter_ <= maxiter_) && (!converged));
@@ -341,21 +341,20 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   }
 
   // test
-//  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
-//  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
-//  ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
-//  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
-//  ExEnv::out0() << "electronic spherical multipole moments:"
-//                << "\nmonopole: " << elec_moments[0]
-//                << "\ndipole m=-1: " << elec_moments[1]
-//                << "\ndipole m=0:  " << elec_moments[2]
-//                << "\ndipole m=1:  " << elec_moments[3]
-//                << "\nquadrupole m=-2: " << elec_moments[4]
-//                << "\nquadrupole m=-1: " << elec_moments[5]
-//                << "\nquadrupole m=0:  " << elec_moments[6]
-//                << "\nquadrupole m=1:  " << elec_moments[7]
-//                << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
-
+  //  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
+  //  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
+  //  ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
+  //  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
+  //  ExEnv::out0() << "electronic spherical multipole moments:"
+  //                << "\nmonopole: " << elec_moments[0]
+  //                << "\ndipole m=-1: " << elec_moments[1]
+  //                << "\ndipole m=0:  " << elec_moments[2]
+  //                << "\ndipole m=1:  " << elec_moments[3]
+  //                << "\nquadrupole m=-2: " << elec_moments[4]
+  //                << "\nquadrupole m=-1: " << elec_moments[5]
+  //                << "\nquadrupole m=0:  " << elec_moments[6]
+  //                << "\nquadrupole m=1:  " << elec_moments[7]
+  //                << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
 }
 
 template <typename Tile, typename Policy>
@@ -465,11 +464,11 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   MPQC_ASSERT((real_lattice_range.array() >= 0).all() &&
               (recip_lattice_range.array() > 0).all());
 
-  using ::mpqc::detail::direct_vector;
-  using ::mpqc::detail::k_vector;
   using ::mpqc::detail::direct_ord_idx;
-  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::direct_vector;
   using ::mpqc::detail::extend_trange1;
+  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::k_vector;
 
   const auto real_lattice_size =
       1 + direct_ord_idx(real_lattice_range, real_lattice_range);
@@ -676,10 +675,8 @@ void zRHF<Tile, Policy>::init_fock_builder() {
 }
 
 template <typename Tile, typename Policy>
-typename zRHF<Tile, Policy>::array_type
-zRHF<Tile, Policy>::build_F(const array_type &D,
-                            const array_type &H,
-                            const Vector3i &H_lattice_range) {
+typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::build_F(
+    const array_type& D, const array_type& H, const Vector3i& H_lattice_range) {
   auto G = f_builder_->operator()(D);
   const auto fock_lattice_range = f_builder_->fock_lattice_range();
   return ::mpqc::pbc::detail::add(H, G, H_lattice_range, fock_lattice_range);
@@ -771,20 +768,21 @@ void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 typename MARIJCADFKzRHF<Tile, Policy>::array_type
-MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type &D,
-                                      const array_type &H,
-                                      const Vector3i &H_lattice_range) {
+MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type& D, const array_type& H,
+                                      const Vector3i& H_lattice_range) {
   auto G_cnf = this->f_builder_->operator()(D);
   const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
-  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
 
-  using namespace ::mpqc::scf;
-  using Builder = PeriodicMARIJCADFKFockBuilder<
+  using Builder = scf::PeriodicMARIJCADFKFockBuilder<
       Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
 
-  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_);
-  this->extra_F_ = ma_f_builder.get_fock_CFF();
-  this->extra_energy_ = ma_f_builder.get_energy_CFF();
+  auto& ma_builder = dynamic_cast<Builder&>(*this->f_builder_)
+                         .coulomb_builder()
+                         .multipole_builder();
+  this->extra_F_ = ma_builder.get_fock();
+  this->extra_energy_ = ma_builder.get_energy();
 
   return F_cnf;
 }
@@ -794,8 +792,8 @@ MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type &D,
  */
 
 template <typename Tile, typename Policy>
-MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal &kv)
-: zRHF<Tile, Policy>(kv) {
+MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {
   this->need_extra_update_ = true;
 }
 
@@ -807,18 +805,21 @@ void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 typename MARIJFourCenterKzRHF<Tile, Policy>::array_type
-MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type &D,
-                                            const array_type &H,
-                                            const Vector3i &H_lattice_range) {
+MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type& D,
+                                            const array_type& H,
+                                            const Vector3i& H_lattice_range) {
   auto G_cnf = this->f_builder_->operator()(D);
   const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
-  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
 
   using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
 
-  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_).coulomb_builder().multipole_builder();
-  this->extra_F_ = ma_f_builder.get_fock();
-  this->extra_energy_ = ma_f_builder.get_energy();
+  auto& ma_builder = dynamic_cast<Builder&>(*this->f_builder_)
+                         .coulomb_builder()
+                         .multipole_builder();
+  this->extra_F_ = ma_builder.get_fock();
+  this->extra_energy_ = ma_builder.get_energy();
 
   return F_cnf;
 }
@@ -828,7 +829,7 @@ MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type &D,
  */
 
 template <typename Tile, typename Policy>
-MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal &kv)
+MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal& kv)
     : zRHF<Tile, Policy>(kv) {
   this->need_extra_update_ = true;
 }
@@ -841,18 +842,20 @@ void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 typename MAFourCenterzRHF<Tile, Policy>::array_type
-MAFourCenterzRHF<Tile, Policy>::build_F(const array_type &D,
-                                            const array_type &H,
-                                            const Vector3i &H_lattice_range) {
+MAFourCenterzRHF<Tile, Policy>::build_F(const array_type& D,
+                                        const array_type& H,
+                                        const Vector3i& H_lattice_range) {
   auto G_cnf = this->f_builder_->operator()(D);
   const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
-  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
 
   using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
 
-  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
-  this->extra_F_ = ma_f_builder.get_fock();
-  this->extra_energy_ = ma_f_builder.get_energy();
+  auto& ma_builder =
+      dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
+  this->extra_F_ = ma_builder.get_fock();
+  this->extra_energy_ = ma_builder.get_energy();
 
   return F_cnf;
 }

@@ -383,12 +383,6 @@ class PeriodicMA {
     return compute_elec_multipole_moments(sphemm_, D);
   }
 
-  /// return whether Fock contributed from CFF is computed
-  bool fock_computed() {return fock_computed_; }
-
-  /// return whether Coulomb interaction energy contributed from CFF is computed
-  bool energy_computed() {return energy_computed_; }
-
   const TArray &get_fock() {
     if (fock_computed_) {
       return fock_cff_;

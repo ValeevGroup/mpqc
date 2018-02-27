@@ -91,6 +91,10 @@ class PeriodicMARIJBuilder {
     return ma_builder_->get_energy();
   }
 
+  MA_Builder &multipole_builder() {
+    return *ma_builder_;
+  }
+
  private:
   Factory &ao_factory_;
   std::unique_ptr<RIJ_Builder> rij_builder_;

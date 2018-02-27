@@ -358,6 +358,7 @@ class PeriodicMA {
                     << "\nMultipole approximation is not converged to the given threshold!"
                     << std::endl;
     }
+    energy_computed_ = true;
 
     ExEnv::out0() << "Coulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
 
@@ -375,7 +376,6 @@ class PeriodicMA {
       }
     }
     fock_computed_ = true;
-    energy_computed_ = true;
   }
 
   /// compute electronic multipole moments for the reference unit cell
@@ -389,9 +389,21 @@ class PeriodicMA {
   /// return whether Coulomb interaction energy contributed from CFF is computed
   bool energy_computed() {return energy_computed_; }
 
-  const TArray &get_fock() { return fock_cff_; }
-  
-  double get_energy() { return energy_cff_; }
+  const TArray &get_fock() {
+    if (fock_computed_) {
+      return fock_cff_;
+    } else {
+      throw ProgrammingError("Fock cannot be retrieved before it is computed", __FILE__, __LINE__);
+    }
+  }
+
+  double get_energy() {
+    if (energy_computed_) {
+      return energy_cff_;
+    } else {
+      throw ProgrammingError("Energy cannot be retrieved before it is computed", __FILE__, __LINE__);
+    }
+  }
 
  private:
   /*!

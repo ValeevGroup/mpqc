@@ -7,7 +7,9 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cond_ortho.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_four_center_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
@@ -783,6 +785,74 @@ MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type &D,
   auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_);
   this->extra_F_ = ma_f_builder.get_fock_CFF();
   this->extra_energy_ = ma_f_builder.get_energy_CFF();
+
+  return F_cnf;
+}
+
+/**
+ *  MARIJFourCenterKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal &kv)
+: zRHF<Tile, Policy>(kv) {
+  this->need_extra_update_ = true;
+}
+
+template <typename Tile, typename Policy>
+void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
+template <typename Tile, typename Policy>
+typename MARIJFourCenterKzRHF<Tile, Policy>::array_type
+MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type &D,
+                                            const array_type &H,
+                                            const Vector3i &H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
+
+  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_).coulomb_builder().multipole_builder();
+  this->extra_F_ = ma_f_builder.get_fock();
+  this->extra_energy_ = ma_f_builder.get_energy();
+
+  return F_cnf;
+}
+
+/**
+ *  MAFourCenterzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal &kv)
+    : zRHF<Tile, Policy>(kv) {
+  this->need_extra_update_ = true;
+}
+
+template <typename Tile, typename Policy>
+void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
+template <typename Tile, typename Policy>
+typename MAFourCenterzRHF<Tile, Policy>::array_type
+MAFourCenterzRHF<Tile, Policy>::build_F(const array_type &D,
+                                            const array_type &H,
+                                            const Vector3i &H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
+
+  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
+  this->extra_F_ = ma_f_builder.get_fock();
+  this->extra_energy_ = ma_f_builder.get_energy();
 
   return F_cnf;
 }

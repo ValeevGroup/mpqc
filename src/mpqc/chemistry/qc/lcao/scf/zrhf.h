@@ -427,6 +427,47 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
   double force_shape_threshold_;
 };
 
+/*!
+ * \brief MARIJFourCenterKzRHF uses MA-RI-J for coulomb and four-center-K for
+ * exchange
+ */
+template <typename Tile, typename Policy>
+class MARIJFourCenterKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MARIJFourCenterKzRHF(const KeyVal& kv);
+
+  ~MARIJFourCenterKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
+};
+
+/*!
+ * \brief MAFourCenterzRHF uses MA for Coulomb CFF and four-center-JK for
+ * Coulomb and exchange CNF
+ */
+template <typename Tile, typename Policy>
+class MAFourCenterzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MAFourCenterzRHF(const KeyVal& kv);
+
+  ~MAFourCenterzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
+};
+
+
 #if TA_DEFAULT_POLICY == 0
 
 #elif TA_DEFAULT_POLICY == 1
@@ -436,6 +477,8 @@ extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class MARIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MARIJFourCenterKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MAFourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

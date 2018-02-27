@@ -48,7 +48,9 @@ list(APPEND sources
         pbc/periodic_ma.h
         pbc/periodic_ma.cpp
         pbc/periodic_ma_ri_j_builder.h
-        pbc/periodic_ma_ri_j_cadf_k_builder.h
+        pbc/periodic_ma_ri_j_cadf_k_fock_builder.h
+        pbc/periodic_ma_ri_j_four_center_k_fock_builder.h
+        pbc/periodic_ma_four_center_fock_builder.h
         pbc/periodic_four_center_j_cadf_k_fock_builder.h
         pbc/util.h
         )

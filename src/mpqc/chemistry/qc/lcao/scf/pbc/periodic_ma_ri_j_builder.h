@@ -75,13 +75,20 @@ class PeriodicMARIJBuilder {
   ~PeriodicMARIJBuilder() {}
 
   array_type operator()(array_type const &D, double target_precision) {
-    array_type G;
 
-    G("mu, nu") = compute_RIJ(D, target_precision)("mu, nu");
+    compute_MAJ(D, target_precision);
 
-    auto energy_from_cff = compute_MAJ(D, target_precision);
+    return compute_RIJ(D, target_precision);
+  }
 
-    return G;
+  const array_type &get_fock_CFF() {
+    MPQC_ASSERT(ma_builder_->fock_computed());
+    return ma_builder_->get_fock();
+  }
+
+  double get_energy_CFF() {
+    MPQC_ASSERT(ma_builder_->energy_computed());
+    return ma_builder_->get_energy();
   }
 
  private:
@@ -94,8 +101,8 @@ class PeriodicMARIJBuilder {
     return rij_builder_->operator()(D, target_precision);
   }
 
-  double compute_MAJ(const array_type &D, double target_precision) {
-    return ma_builder_->compute_energy(D, target_precision);
+  void compute_MAJ(const array_type &D, double target_precision) {
+    ma_builder_->compute_multipole_approx(D, target_precision);
   }
 };
 

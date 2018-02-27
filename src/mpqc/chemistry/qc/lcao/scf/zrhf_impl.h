@@ -152,6 +152,8 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   ExEnv::out0() << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
+  auto etotal = erep;
+
   TiledArray::DIIS<array_type_z> diis_gamma_point(
       diis_start_, diis_num_vecs_, diis_damping_, diis_num_iters_group_,
       diis_num_extrap_group_, diis_mixing_);
@@ -165,7 +167,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     iter_++;
 
     // Save a copy of energy and density
-    auto ezrhf_old = ezrhf;
+    auto etotal_old = etotal;
     auto D_old = D_;
     array_type_z Fk_old = Fk_;
 
@@ -175,18 +177,26 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
     // F = H + 2J - K
     auto f_start = mpqc::fenced_now(world);
-    build_F();
+    F_ = build_F(D_, H_, R_max_);
     auto f_end = mpqc::fenced_now(world);
-
-    // transform Fock from real to reciprocal space
-    auto trans_start = mpqc::fenced_now(world);
-    const auto fock_lattice_range = f_builder_->fock_lattice_range();
-    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
-    auto trans_end = mpqc::fenced_now(world);
-    trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute zRHF energy
     ezrhf = compute_energy();
+    etotal = erep + ezrhf;
+
+    const auto fock_lattice_range = f_builder_->fock_lattice_range();
+    // extra updates for Fock and energy
+    if (need_extra_update_) {
+      MPQC_ASSERT(extra_F_.is_initialized());
+      F_ = ::mpqc::pbc::detail::add(F_, extra_F_, fock_lattice_range, R_max_);
+      etotal += extra_energy_;
+    }
+
+    // transform Fock from real to reciprocal space
+    auto trans_start = mpqc::fenced_now(world);
+    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
+    auto trans_end = mpqc::fenced_now(world);
+    trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // DIIS
     if (diis_ != "none") {
@@ -243,7 +253,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
     // compute difference with last iteration
-    ediff = ezrhf - ezrhf_old;
+    ediff = etotal - etotal_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     auto volume = Ddiff.trange().elements_range().volume();
     rms = Ddiff("mu, nu").norm() / volume;
@@ -257,7 +267,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     // Print out information
     if (print_detail_) {
       ExEnv::out0() << "\nzRHF Energy: " << ezrhf << "\n"
-                    << "Total Energy: " << ezrhf + erep << "\n"
+                    << "Total Energy: " << etotal << "\n"
                     << "Delta(E): " << ediff << "\n"
                     << "RMS(D): " << rms << "\n"
                     << "Fock Build Time: "
@@ -277,13 +287,13 @@ void zRHF<Tile, Policy>::solve(double thresh) {
                                       nDel.c_str(), nRMS.c_str(), nT.c_str());
       ExEnv::out0() << mpqc::printf(
           " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf,
-          ezrhf + erep, ediff, rms, iter_duration);
+          etotal, ediff, rms, iter_duration);
     }
 
   } while ((iter_ <= maxiter_) && (!converged));
 
   // save total energy to energy no matter if zRHF converges
-  energy_ = ezrhf + erep;
+  energy_ = etotal;
 
   if (!converged) {
     // TODO read a keyval value to determine
@@ -329,20 +339,20 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   }
 
   // test
-  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
-  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
-  ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
-  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
-  ExEnv::out0() << "electronic spherical multipole moments:"
-                << "\nmonopole: " << elec_moments[0]
-                << "\ndipole m=-1: " << elec_moments[1]
-                << "\ndipole m=0:  " << elec_moments[2]
-                << "\ndipole m=1:  " << elec_moments[3]
-                << "\nquadrupole m=-2: " << elec_moments[4]
-                << "\nquadrupole m=-1: " << elec_moments[5]
-                << "\nquadrupole m=0:  " << elec_moments[6]
-                << "\nquadrupole m=1:  " << elec_moments[7]
-                << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
+//  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
+//  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
+//  ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
+//  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
+//  ExEnv::out0() << "electronic spherical multipole moments:"
+//                << "\nmonopole: " << elec_moments[0]
+//                << "\ndipole m=-1: " << elec_moments[1]
+//                << "\ndipole m=0:  " << elec_moments[2]
+//                << "\ndipole m=1:  " << elec_moments[3]
+//                << "\nquadrupole m=-2: " << elec_moments[4]
+//                << "\nquadrupole m=-1: " << elec_moments[5]
+//                << "\nquadrupole m=0:  " << elec_moments[6]
+//                << "\nquadrupole m=1:  " << elec_moments[7]
+//                << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
 
 }
 
@@ -664,10 +674,13 @@ void zRHF<Tile, Policy>::init_fock_builder() {
 }
 
 template <typename Tile, typename Policy>
-void zRHF<Tile, Policy>::build_F() {
-  auto G = f_builder_->operator()(D_);
+typename zRHF<Tile, Policy>::array_type
+zRHF<Tile, Policy>::build_F(const array_type &D,
+                            const array_type &H,
+                            const Vector3i &H_lattice_range) {
+  auto G = f_builder_->operator()(D);
   const auto fock_lattice_range = f_builder_->fock_lattice_range();
-  F_ = ::mpqc::pbc::detail::add(H_, G, R_max_, fock_lattice_range);
+  return ::mpqc::pbc::detail::add(H, G, H_lattice_range, fock_lattice_range);
 }
 
 /**
@@ -743,6 +756,7 @@ template <typename Tile, typename Policy>
 MARIJCADFKzRHF<Tile, Policy>::MARIJCADFKzRHF(const KeyVal& kv)
     : zRHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  this->need_extra_update_ = true;
 }
 
 template <typename Tile, typename Policy>
@@ -751,6 +765,26 @@ void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
       Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ =
       std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+}
+
+template <typename Tile, typename Policy>
+typename MARIJCADFKzRHF<Tile, Policy>::array_type
+MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type &D,
+                                      const array_type &H,
+                                      const Vector3i &H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf = ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using namespace ::mpqc::scf;
+  using Builder = PeriodicMARIJCADFKFockBuilder<
+      Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
+
+  auto &ma_f_builder = dynamic_cast<Builder&>(*this->f_builder_);
+  this->extra_F_ = ma_f_builder.get_fock_CFF();
+  this->extra_energy_ = ma_f_builder.get_energy_CFF();
+
+  return F_cnf;
 }
 
 }  // namespace lcao

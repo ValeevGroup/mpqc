@@ -249,6 +249,11 @@ class PeriodicMA {
   double max_distance_to_refcenter_;
   Vector3i cff_boundary_;
 
+  double energy_cff_;
+  TArray fock_cff_;
+  bool energy_computed_ = false;
+  bool fock_computed_ = false;
+
  public:
   /// @brief This returns the boundary of Crystal Far Field
   const Vector3i &CFF_boundary() { return cff_boundary_; }
@@ -261,7 +266,7 @@ class PeriodicMA {
    * @param target_precision
    * @return
    */
-  double compute_energy(const TArray &D, double target_precision) {
+  void compute_multipole_approx(const TArray &D, double target_precision) {
     // compute electronic multipole moments for the reference unit cell
     auto O_elec_prim = compute_elec_multipole_moments(sphemm_, D);
     // store to a slightly different form
@@ -278,7 +283,10 @@ class PeriodicMA {
       O[op] = O_elec[op] + O_nuc_[op];
     }
 
-    double e_total = 0.0;
+    MultipoleMoment<double> L;
+    L.fill(0.0);
+
+    energy_cff_ = 0.0;
     bool converged = false;
     bool out_of_rjmax = false;
     size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
@@ -320,7 +328,10 @@ class PeriodicMA {
       double e_shell = compute_energy(O, L_shell);
       ExEnv::out0() << "multipole interaction energy for shell [" << cff_shell_idx << "] = " << e_shell << std::endl;
 
-      e_total += e_shell;
+      for (auto op = 0; op != nopers_; ++op) {
+        L[op] += L_shell[op];
+      }
+      energy_cff_ += e_shell;
 
       // determine if the energy is converged
       if (std::abs(e_shell) < ma_thresh_) {
@@ -348,15 +359,39 @@ class PeriodicMA {
                     << std::endl;
     }
 
-    ExEnv::out0() << "Coulomb energy contributed from CFF so far = " << e_total << std::endl;
+    ExEnv::out0() << "Coulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
 
-    return e_total;
+    // compute Fock contribution from CFF
+    fock_cff_ = sphemm_[0];
+    fock_cff_("mu, nu") = -1.0 * L[0] * fock_cff_("mu, nu");
+    if (MULTIPOLE_MAX_ORDER >= 1) {
+      for (auto op = 1; op != nopers_; ++op) {
+        auto l = O_ord_to_lm_map_[op].first;
+        auto m = O_ord_to_lm_map_[op].second;
+        auto signl = (l % 2 == 0) ? 1.0 : -1.0;
+        auto signm = (m < 0 && (m % 2 != 0)) ? -1.0 : 1.0;
+        auto prefactor = -1.0 * signl * signm * L[op];
+        fock_cff_("mu, nu") += prefactor * sphemm_[op]("mu, nu");
+      }
+    }
+    fock_computed_ = true;
+    energy_computed_ = true;
   }
 
   /// compute electronic multipole moments for the reference unit cell
   MultipoleMoment<double> compute_elec_multipole_moments(const TArray &D) {
     return compute_elec_multipole_moments(sphemm_, D);
   }
+
+  /// return whether Fock contributed from CFF is computed
+  bool fock_computed() {return fock_computed_; }
+
+  /// return whether Coulomb interaction energy contributed from CFF is computed
+  bool energy_computed() {return energy_computed_; }
+
+  const TArray &get_fock() { return fock_cff_; }
+  
+  double get_energy() { return energy_cff_; }
 
  private:
   /*!

@@ -152,16 +152,17 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   void print_band_gaps();
 
  protected:
-  array_type S_;
-  array_type D_;
-  bool print_detail_;
-  int64_t print_max_item_;
   std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
+  bool need_extra_update_ = false;
+  array_type extra_F_;
+  double extra_energy_ = 0.0;
 
  private:
+  array_type S_;
   array_type T_;
   array_type V_;
   array_type H_;
+  array_type D_;
   array_type J_;
   array_type K_;
   array_type F_;
@@ -177,6 +178,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   int64_t docc_;
 
   const KeyVal kv_;
+  bool print_detail_;
+  int64_t print_max_item_;
   int64_t maxiter_;
   double max_condition_num_;
   double fmix_;
@@ -226,7 +229,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   virtual void init_fock_builder();
 
   /// builds Fock
-  void build_F();
+  virtual array_type build_F(const array_type& D, const array_type& H,
+                             const Vector3i& H_lattice_range);
 };
 
 /*!
@@ -363,6 +367,7 @@ template <typename Tile, typename Policy>
 class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
  public:
   using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
 
   MARIJCADFKzRHF(const KeyVal& kv);
 
@@ -370,6 +375,8 @@ class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
   double force_shape_threshold_;
 };
 

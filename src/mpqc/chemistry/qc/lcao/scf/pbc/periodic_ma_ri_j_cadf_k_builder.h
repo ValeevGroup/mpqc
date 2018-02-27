@@ -74,6 +74,14 @@ class PeriodicMARIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     }
   }
 
+  const array_type &get_fock_CFF() {
+    return j_builder_->get_fock_CFF();
+  }
+
+  double get_energy_CFF() {
+    return j_builder_->get_energy_CFF();
+  }
+
  private:
   Factory &ao_factory_;
   std::unique_ptr<J_Builder> j_builder_;

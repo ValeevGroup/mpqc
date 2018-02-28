@@ -184,11 +184,9 @@ class PeriodicMA {
     ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
                   << cff_boundary_.transpose() << std::endl;
 
-    if (cff_boundary_ == RJ_max_) {
-      cff_reached_ = false;
+    if (!CFF_reached()) {
       ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.\n";
     } else {
-      cff_reached_ = true;
       // compute spherical multipole moments (the chargeless version, before being
       // contracted with density matrix) for electrons
       sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
@@ -260,7 +258,7 @@ class PeriodicMA {
   TArray fock_cff_;
   bool energy_computed_ = false;
   bool fock_computed_ = false;
-  bool cff_reached_;
+  std::array<bool, 3> cff_reached_;
 
  public:
   /// @brief This returns the boundary of Crystal Far Field
@@ -275,6 +273,8 @@ class PeriodicMA {
    * @return
    */
   void compute_multipole_approx(const TArray &D, double target_precision) {
+    MPQC_ASSERT(CFF_reached());
+
     // compute electronic multipole moments for the reference unit cell
     auto O_elec_prim = compute_elec_multipole_moments(sphemm_, D);
     // store to a slightly different form
@@ -295,6 +295,7 @@ class PeriodicMA {
     L.fill(0.0);
 
     energy_cff_ = 0.0;
+    double e_shell;
     bool converged = false;
     bool out_of_rjmax = false;
     size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
@@ -325,6 +326,7 @@ class PeriodicMA {
           for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
             M_shell[op] += M[op];
           }
+
         }
         // save the shell-level M into a map so it can be reused
         M_shell_iter = cff_shell_to_M_map_.insert({cff_shell_idx, M_shell}).first;
@@ -333,8 +335,8 @@ class PeriodicMA {
       // compute local potential created by all cells in a spherical shell
       auto L_shell = build_local_potential(O, M_shell_iter->second);
       // compute Coulomb energy contribution from a spherical shell
-      double e_shell = compute_energy(O, L_shell);
-      ExEnv::out0() << "multipole interaction energy for shell [" << cff_shell_idx << "] = " << e_shell << std::endl;
+      e_shell = compute_energy(O, L_shell);
+//      ExEnv::out0() << "multipole interaction energy for shell [" << cff_shell_idx << "] = " << e_shell << std::endl;
 
       for (auto op = 0; op != nopers_; ++op) {
         L[op] += L_shell[op];
@@ -364,11 +366,16 @@ class PeriodicMA {
     if (!converged) {
       ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
                     << "\nMultipole approximation is not converged to the given threshold!"
+                    << "\nEnergy contribution from spherical shell [" << cff_shell_idx - 1 << "] is " << e_shell
+                    << " while MA threshold is " << ma_thresh_
                     << std::endl;
+    } else {
+      ExEnv::out0() << "\nMultipole approximation is converged after spherical shell [" << cff_shell_idx - 1 << "]"
+                                                                                                             << std::endl;
     }
     energy_computed_ = true;
 
-    ExEnv::out0() << "Coulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
+    ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
 
     // compute Fock contribution from CFF
     fock_cff_ = sphemm_[0];
@@ -377,13 +384,14 @@ class PeriodicMA {
       for (auto op = 1; op != nopers_; ++op) {
         auto l = O_ord_to_lm_map_[op].first;
         auto m = O_ord_to_lm_map_[op].second;
-        auto signl = (l % 2 == 0) ? 1.0 : -1.0;
+        auto signl = (l % 2 == 0) ? 1.0 : -1.0;  // (-1)^l
         auto signm = (m < 0 && (m % 2 != 0)) ? -1.0 : 1.0;
         auto prefactor = -1.0 * signl * signm * L[op];
         fock_cff_("mu, nu") += prefactor * sphemm_[op]("mu, nu");
       }
     }
     fock_computed_ = true;
+
   }
 
   /// compute electronic multipole moments for the reference unit cell
@@ -407,7 +415,11 @@ class PeriodicMA {
     }
   }
 
-  bool CFF_reached() { return cff_reached_; }
+  bool CFF_reached() {
+    return std::any_of(cff_reached_.begin(), cff_reached_.end(), [](bool x){return x;});
+  }
+
+  bool CFF_reached(int dim) { return cff_reached_[dim]; }
 
  private:
   /*!
@@ -491,6 +503,7 @@ class PeriodicMA {
   Vector3i compute_CFF_boundary(const Vector3i &limit3d) {
     Vector3i cff_bound({0, 0, 0});
 
+    cff_reached_.fill(false);
     for (auto dim = 0; dim <= 2; ++dim) {
       Vector3i uc_idx({0, 0, 0});
       bool is_in_CFF = false;
@@ -506,8 +519,10 @@ class PeriodicMA {
 
         if (!is_in_CFF) {
           ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
-                        << "\nThe range limit is not enough to reach Crystal Far Field. Use larger `rjmax` in the input."
+                        << "\nThe range limit in dimension " << dim << " is not enough to reach Crystal Far Field. Use larger `rjmax` in the input."
                         << std::endl;
+        } else {
+          cff_reached_[dim] = true;
         }
       }
     }

@@ -16,6 +16,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/math/groups/petite_list.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace lcao {

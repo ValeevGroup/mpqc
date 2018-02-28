@@ -32,7 +32,7 @@ class PeriodicMAFourCenterFockBuilder
     const auto &cff_boundary = ma_builder_->CFF_boundary();
     Vector3i cnf_boundary = ao_factory_.RJ_max();
     for (auto dim = 0; dim <= 2; ++dim) {
-      if (cff_boundary(dim) > 0 && cff_boundary(dim) < cnf_boundary(dim)) {
+      if (ma_builder_->CFF_reached(dim)) {
         cnf_boundary(dim) = cff_boundary(dim) - 1;
       }
     }

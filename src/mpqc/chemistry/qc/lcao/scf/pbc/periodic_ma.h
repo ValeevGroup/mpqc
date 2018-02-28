@@ -184,16 +184,23 @@ class PeriodicMA {
     ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
                   << cff_boundary_.transpose() << std::endl;
 
-    // compute spherical multipole moments (the chargeless version, before being
-    // contracted with density matrix) for electrons
-    sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
+    if (cff_boundary_ == RJ_max_) {
+      cff_reached_ = false;
+      ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.\n";
+    } else {
+      cff_reached_ = true;
+      // compute spherical multipole moments (the chargeless version, before being
+      // contracted with density matrix) for electrons
+      sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
 
-    // compute spherical multipole moments for nuclei (the charged version)
-    O_nuc_ = compute_nuc_multipole_moments(ref_com_);
+      // compute spherical multipole moments for nuclei (the charged version)
+      O_nuc_ = compute_nuc_multipole_moments(ref_com_);
 
-    // make a map from ordinal indices of (l, m) to (l, m) pairs
-    O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
-    M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
+      // make a map from ordinal indices of (l, m) to (l, m) pairs
+      O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
+      M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
+    }
+
 
     // test against Mathematica
 //    {
@@ -253,6 +260,7 @@ class PeriodicMA {
   TArray fock_cff_;
   bool energy_computed_ = false;
   bool fock_computed_ = false;
+  bool cff_reached_;
 
  public:
   /// @brief This returns the boundary of Crystal Far Field
@@ -398,6 +406,8 @@ class PeriodicMA {
       throw ProgrammingError("Energy cannot be retrieved before it is computed", __FILE__, __LINE__);
     }
   }
+
+  bool CFF_reached() { return cff_reached_; }
 
  private:
   /*!

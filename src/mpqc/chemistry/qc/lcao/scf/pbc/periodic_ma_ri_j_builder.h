@@ -30,9 +30,9 @@ class PeriodicMARIJBuilder {
     // set RJ_max_ to be the boundary of Crystal Near Field (= CFF_boundary - 1)
     // for the rest of the calculation
     const auto &cff_boundary = ma_builder_->CFF_boundary();
-    Vector3i cnf_boundary = {0, 0, 0};
+    Vector3i cnf_boundary = ao_factory_.RJ_max();
     for (auto dim = 0; dim <= 2; ++dim) {
-      if (cff_boundary(dim) > 0) {
+      if (cff_boundary(dim) > 0 && cff_boundary(dim) < cnf_boundary(dim)) {
         cnf_boundary(dim) = cff_boundary(dim) - 1;
       }
     }
@@ -76,7 +76,9 @@ class PeriodicMARIJBuilder {
 
   array_type operator()(array_type const &D, double target_precision) {
 
-    compute_MAJ(D, target_precision);
+    if (ma_builder_->CFF_reached()) {
+      compute_MAJ(D, target_precision);
+    }
 
     return compute_RIJ(D, target_precision);
   }

@@ -30,9 +30,9 @@ class PeriodicMAFourCenterFockBuilder
     // set RJ_max_ to be the boundary of Crystal Near Field (= CFF_boundary - 1)
     // for the rest of the calculation
     const auto &cff_boundary = ma_builder_->CFF_boundary();
-    Vector3i cnf_boundary = {0, 0, 0};
+    Vector3i cnf_boundary = ao_factory_.RJ_max();
     for (auto dim = 0; dim <= 2; ++dim) {
-      if (cff_boundary(dim) > 0) {
+      if (cff_boundary(dim) > 0 && cff_boundary(dim) < cnf_boundary(dim)) {
         cnf_boundary(dim) = cff_boundary(dim) - 1;
       }
     }
@@ -111,7 +111,9 @@ class PeriodicMAFourCenterFockBuilder
   std::unique_ptr<JK_Builder> k_builder_;
 
   array_type compute_J(const array_type &D, double target_precision, bool is_density_diagonal) {
-    ma_builder_->compute_multipole_approx(D, target_precision);
+    if (ma_builder_->CFF_reached()) {
+      ma_builder_->compute_multipole_approx(D, target_precision);
+    }
 
     return j_builder_->operator()(D, target_precision, is_density_diagonal);
   }

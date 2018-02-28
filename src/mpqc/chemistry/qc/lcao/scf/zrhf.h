@@ -377,7 +377,12 @@ class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
+
   double force_shape_threshold_;
+  double ma_energy_threshold_;
+  double ma_extent_threshold_;
+  double ma_extent_smallval_;
+  double ma_ws_;
 };
 
 /*!
@@ -445,6 +450,11 @@ class MARIJFourCenterKzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
+
+  double ma_energy_threshold_;
+  double ma_extent_threshold_;
+  double ma_extent_smallval_;
+  double ma_ws_;
 };
 
 /*!
@@ -465,6 +475,11 @@ class MAFourCenterzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
+
+  double ma_energy_threshold_;
+  double ma_extent_threshold_;
+  double ma_extent_smallval_;
+  double ma_ws_;
 };
 
 

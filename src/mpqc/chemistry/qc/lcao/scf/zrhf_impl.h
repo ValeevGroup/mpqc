@@ -755,6 +755,10 @@ template <typename Tile, typename Policy>
 MARIJCADFKzRHF<Tile, Policy>::MARIJCADFKzRHF(const KeyVal& kv)
     : zRHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  ma_energy_threshold_ = kv.value<double>("ma_energy_threshold", 1e-9);
+  ma_ws_ = kv.value<double>("ma_well_separateness", 3.0);
+  ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
+  ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
 }
 
 template <typename Tile, typename Policy>
@@ -762,7 +766,7 @@ void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMARIJCADFKFockBuilder<
       Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ =
-      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .coulomb_builder()
                                  .multipole_builder()
@@ -798,12 +802,17 @@ MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type& D, const array_type& H,
 
 template <typename Tile, typename Policy>
 MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {}
+    : zRHF<Tile, Policy>(kv) {
+  ma_energy_threshold_ = kv.value<double>("ma_energy_threshold", 1e-9);
+  ma_ws_ = kv.value<double>("ma_well_separateness", 3.0);
+  ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
+  ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
+}
 
 template <typename Tile, typename Policy>
 void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .coulomb_builder()
                                  .multipole_builder()
@@ -839,12 +848,17 @@ MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type& D,
 
 template <typename Tile, typename Policy>
 MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {}
+    : zRHF<Tile, Policy>(kv) {
+  ma_energy_threshold_ = kv.value<double>("ma_energy_threshold", 1e-9);
+  ma_ws_ = kv.value<double>("ma_well_separateness", 3.0);
+  ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
+  ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
+}
 
 template <typename Tile, typename Policy>
 void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .multipole_builder()
                                  .CFF_reached();

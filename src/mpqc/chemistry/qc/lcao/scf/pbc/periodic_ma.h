@@ -141,11 +141,11 @@ class PeriodicMA {
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
    * @param ao_factory a \c PeriodicAOFactory object
-   * @param ma_thresh threshold of multipole expansion error
+   * @param e_thresh threshold of multipole expansion error
    * @param ws well-separateness criterion
    */
-  PeriodicMA(Factory &ao_factory, double ma_thresh = 1.0e-9, double bs_extent_thresh = 1.0e-6, double ws = 3.0)
-      : ao_factory_(ao_factory), ma_thresh_(ma_thresh), bs_extent_thresh_(bs_extent_thresh), ws_(ws) {
+  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0, double extent_thresh = 1.0e-6, double extent_smallval = 0.01)
+      : ao_factory_(ao_factory), e_thresh_(e_thresh), ws_(ws), extent_thresh_(extent_thresh), extent_smallval_(extent_smallval) {
     auto &world = ao_factory_.world();
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
     dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
@@ -166,6 +166,14 @@ class PeriodicMA {
       }
     }
     ExEnv::out0() << "\nCrystal dimensionality : " << dimensionality_
+                  << std::endl;
+
+    // print MA parameters
+    ExEnv::out0() << "\nMultipole approximation thresholds:"
+                  << "\n\tenergy threshold = " << e_thresh_
+                  << "\n\twell-separateness criterion = " << ws_
+                  << "\n\tprimitive pair extent threshold = " << extent_thresh_
+                  << "\n\tprimitive pair extent small value = " << extent_smallval_
                   << std::endl;
 
     // compute centers and extents of product density between the reference
@@ -221,9 +229,10 @@ class PeriodicMA {
 
  private:
   Factory &ao_factory_;
-  const double ma_thresh_;  /// multipole approximation is considered converged when Coulomb contribution from a spherical shell of unit cells is below this value
-  const double bs_extent_thresh_;  /// threshold used in computing extent of a pair of primitives
+  const double e_thresh_;  /// multipole approximation is considered converged when Coulomb contribution from a spherical shell of unit cells is below this value
   const double ws_;         /// well-separateness criterion
+  const double extent_thresh_;  /// threshold used in computing extent of a pair of primitives
+  const double extent_smallval_;  /// a small value is used when the extent of a pair of primitives is not computable
 
   MultipoleMoment<TArray> sphemm_;
   MultipoleMoment<double> O_nuc_;
@@ -344,7 +353,7 @@ class PeriodicMA {
       energy_cff_ += e_shell;
 
       // determine if the energy is converged
-      if (std::abs(e_shell) < ma_thresh_) {
+      if (std::abs(e_shell) < e_thresh_) {
         converged = true;
       }
 
@@ -367,7 +376,7 @@ class PeriodicMA {
       ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
                     << "\nMultipole approximation is not converged to the given threshold!"
                     << "\nEnergy contribution from spherical shell [" << cff_shell_idx - 1 << "] is " << e_shell
-                    << " while MA threshold is " << ma_thresh_
+                    << " while MA threshold is " << e_thresh_
                     << std::endl;
     } else {
       ExEnv::out0() << "\nMultipole approximation is converged after spherical shell [" << cff_shell_idx - 1 << "]"
@@ -435,7 +444,7 @@ class PeriodicMA {
     auto basis_neighbour = shift_basis_origin(*obs_, uc_vec, R_max_, dcell_);
 
     return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour,
-                                                   bs_extent_thresh_);
+                                                   extent_thresh_, extent_smallval_);
   }
 
   /*!

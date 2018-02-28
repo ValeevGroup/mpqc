@@ -17,13 +17,13 @@ class PeriodicMAFourCenterFockBuilder
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
   using JK_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMAFourCenterFockBuilder(factory_type &factory)
+  PeriodicMAFourCenterFockBuilder(factory_type &factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01)
       : ao_factory_(factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_);
+    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 

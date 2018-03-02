@@ -336,6 +336,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
   }
 
+  void set_libint2_operator_params(libint2::any oper_params) {
+    libint2_oper_params_ = oper_params;
+  }
+
  private:
   /// compute integrals that has two dimensions for periodic systems
   TArray compute2(const Formula &formula);
@@ -471,6 +475,8 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
   shellpair_list_t sig_shellpair_list_;
+
+  libint2::any libint2_oper_params_ = libint2::any();
 };
 
 template <typename Tile, typename Policy>
@@ -554,7 +560,7 @@ PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
       auto engine_pool = make_engine_pool(
           libint2_oper, utility::make_array_of_refs(*bra_basis, *ket_basis),
           libint2::BraKet::x_x,
-          detail::to_libint2_operator_params(mpqc_oper, *unitcell_));
+          libint2_oper_params_);
 
       result =
           compute_array_of_integrals<libint2_oper>(world, engine_pool, bases);

@@ -184,6 +184,15 @@ class PeriodicMA {
     ref_com_ = ao_factory_.unitcell().com();
     ExEnv::out0() << "\ncenter of mass of the reference cell is "
                   << ref_com_.transpose() << std::endl;
+
+    // set the origin of multipole expansion to be the center of mass
+    std::array<double, 3> com;
+    Eigen::Map<Vector3d>(com.data()) = ref_com_;
+    ao_factory_.set_libint2_operator_params(com);
+    // compute spherical multipole moments (the chargeless version, before being
+    // contracted with density matrix) for electrons
+    sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
+
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com_);
 
     // determine CFF boundary
@@ -195,10 +204,6 @@ class PeriodicMA {
     if (!CFF_reached()) {
       ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.\n";
     } else {
-      // compute spherical multipole moments (the chargeless version, before being
-      // contracted with density matrix) for electrons
-      sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
-
       // compute spherical multipole moments for nuclei (the charged version)
       O_nuc_ = compute_nuc_multipole_moments(ref_com_);
 
@@ -329,7 +334,7 @@ class PeriodicMA {
 
           // compute interaction kernel between multipole moments centered at the
           // reference unit cell and a remote unit cell
-          auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(ref_com_ - unitcell_vec);
+          auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d::Zero() - unitcell_vec);
 
           // compress M from unit cells to a spherical shell level
           for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
@@ -668,14 +673,15 @@ class PeriodicMA {
       const auto r_xy_norm = std::sqrt(r(0) * r(0) + r(1) * r(1));
 
       // When Rx^2 + Ry^2 = 0, φ cannot computed. We use the fact that in this
-      // case cosθ = 1, and then associated Legendre polynomials
+      // case cosθ = 1 or -1, and then associated Legendre polynomials
       // P_{l, m}(cosθ) = 0 if m != 0
-      // P_{l, m}(cosθ) = 1 if m == 0
-      if (r_xy_norm < std::numeric_limits<double>::epsilon()) {
+      // P_{l, m}(cosθ) = (cosθ)^l if m == 0
+      if (r_xy_norm < std::numeric_limits<double>::epsilon() * 10.0) {  // in case of r_xy_norm ~ epsilon, let's multiply epsilon by 10
         for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
-          auto frac = std::pow(r_norm, l) / factorial<double>(l);
+          auto cos_theta_l = ((cos_theta > 0.0) || (l % 2 == 0)) ? 1.0 : -1.0;
+          auto result_l0 = std::pow(r_norm, l) / factorial<double>(l) * cos_theta_l;
           for (auto m = -l; m <= l; ++m, ++ord_idx) {
-            result[ord_idx] = (m == 0) ? frac : 0.0;
+            result[ord_idx] = (m == 0) ? result_l0 : 0.0;
           }
         }
         return result;
@@ -1082,7 +1088,7 @@ class PeriodicMA {
     std::unordered_map<unsigned int, MultipoleMoment<double>> O_atoms;
 
     for (auto i = 0u; i != natoms; ++i) {
-      const Vector3d &r = atoms[i].center() - center;
+      const Vector3d r = atoms[i].center() - center;
       O_atoms[i] = build_multipole_expansion<MULTIPOLE_MAX_ORDER>(r);
     }
 

@@ -335,6 +335,21 @@ class PeriodicMA {
     MultipoleMoment<double> L;
     L.fill(0.0);
 
+    using KernelType = MultipoleMoment<double, nopers_doubled_lmax_>;
+    // make a lambda to accumulate interaction kernels
+    std::mutex mtx;
+    auto task = [this, &mtx](const Vector3d &r_vec, KernelType *M_total) {
+      // compute interaction kernel between multipole moments centered at the
+      // origin P and the remote Q (note that r_vec = P - Q)
+      auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(r_vec);
+      // critical section: accumulate M to M_total
+      mtx.lock();
+      for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
+        (*M_total)[op] += M[op];
+      }
+      mtx.unlock();
+    };
+
     energy_cff_ = 0.0;
     double e_shell;
     bool converged = false;
@@ -361,21 +376,18 @@ class PeriodicMA {
       auto M_shell_iter = cff_shell_to_M_map_.find(cff_shell_idx);
       // build interaction kernel for a spherical shell if it does not exist
       if (M_shell_iter == cff_shell_to_M_map_.end()) {
-        MultipoleMoment<double, nopers_doubled_lmax_> M_shell;
+        KernelType M_shell;
         M_shell.fill(0.0);
+
+        // for each unit cell in the spherical shell, compute the interaction
+        // kernel w.r.t. the reference cell, and then compress it to \c M_shell
+        // (from a unit cell level to a shell level
         for (const auto &unitcell : shell_iter->second) {
           const auto &unitcell_vec = unitcell.second;
-
-          // compute interaction kernel between multipole moments centered at the
-          // reference unit cell and a remote unit cell
-          auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d::Zero() - unitcell_vec);
-
-          // compress M from unit cells to a spherical shell level
-          for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
-            M_shell[op] += M[op];
-          }
-
+           world.taskq.add(task, Vector3d::Zero() - unitcell_vec, &M_shell);
         }
+        world.gop.fence();
+
         // save the shell-level M into a map so it can be reused
         M_shell_iter = cff_shell_to_M_map_.insert({cff_shell_idx, M_shell}).first;
       }
@@ -387,7 +399,6 @@ class PeriodicMA {
       auto L_shell = build_local_potential(O, M_shell_iter->second);
       // compute Coulomb energy contribution from a spherical shell
       e_shell = compute_energy(O, L_shell);
-//      ExEnv::out0() << "multipole interaction energy for shell [" << cff_shell_idx << "] = " << e_shell << std::endl;
 
       for (auto op = 0; op != nopers_; ++op) {
         L[op] += L_shell[op];
@@ -658,14 +669,15 @@ class PeriodicMA {
     const auto c12_xy_norm = std::sqrt(c12(0) * c12(0) + c12(1) * c12(1));
 
     // When Rx^2 + Ry^2 = 0, φ cannot computed. We use the fact that in this
-    // case cosθ = 1, and then associated Legendre polynomials
+    // case cosθ = 1 or -1, and then associated Legendre polynomials
     // P_{l, m}(cosθ) = 0 if m != 0
-    // P_{l, m}(cosθ) = 1 if m == 0
-    if (c12_xy_norm < std::numeric_limits<double>::epsilon()) {
+    // P_{l, m}(cosθ) = (cosθ)^l if m == 0
+    if (c12_xy_norm < std::numeric_limits<double>::epsilon() * 10.0) {  // in case of c12_xy_norm ~ epsilon, let's multiply epsilon by 10
       for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
-        auto frac = factorial<double>(l) / std::pow(c12_norm, l + 1);
+        auto cos_theta_l = ((cos_theta > 0.0) || (l % 2 == 0)) ? 1.0 : -1.0;
+        auto result_l_0 = factorial<double>(l) / std::pow(c12_norm, l + 1) * cos_theta_l;
         for (auto m = -l; m <= l; ++m, ++ord_idx) {
-          result[ord_idx] = (m == 0) ? frac : 0.0;
+          result[ord_idx] = (m == 0) ? result_l_0 : 0.0;
         }
       }
       return result;
@@ -735,9 +747,9 @@ class PeriodicMA {
       if (r_xy_norm < std::numeric_limits<double>::epsilon() * 10.0) {  // in case of r_xy_norm ~ epsilon, let's multiply epsilon by 10
         for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
           auto cos_theta_l = ((cos_theta > 0.0) || (l % 2 == 0)) ? 1.0 : -1.0;
-          auto result_l0 = std::pow(r_norm, l) / factorial<double>(l) * cos_theta_l;
+          auto result_l_0 = std::pow(r_norm, l) / factorial<double>(l) * cos_theta_l;
           for (auto m = -l; m <= l; ++m, ++ord_idx) {
-            result[ord_idx] = (m == 0) ? result_l0 : 0.0;
+            result[ord_idx] = (m == 0) ? result_l_0 : 0.0;
           }
         }
         return result;

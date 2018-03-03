@@ -147,6 +147,8 @@ class PeriodicMA {
   PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0, double extent_thresh = 1.0e-6, double extent_smallval = 0.01)
       : ao_factory_(ao_factory), e_thresh_(e_thresh), ws_(ws), extent_thresh_(extent_thresh), extent_smallval_(extent_smallval) {
     auto &world = ao_factory_.world();
+    mpqc::time_point t0, t1;
+
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
     dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
 
@@ -178,29 +180,36 @@ class PeriodicMA {
 
     // compute centers and extents of product density between the reference
     // unit cell and its neighbours
+    t0 = mpqc::fenced_now(world);
     ref_pairs_ = construct_basis_pairs();
-    // compute maximum distance between the center of mass of unit cell atoms
-    // and all charge centers
-    ref_com_ = ao_factory_.unitcell().com();
-    ExEnv::out0() << "\ncenter of mass of the reference cell is "
-                  << ref_com_.transpose() << std::endl;
+    t1 = mpqc::fenced_now(world);
+    auto t_basis_ctor = mpqc::duration_in_s(t0, t1);
 
     // set the origin of multipole expansion to be the center of mass
+    ref_com_ = ao_factory_.unitcell().com();
     std::array<double, 3> com;
     Eigen::Map<Vector3d>(com.data()) = ref_com_;
     ao_factory_.set_libint2_operator_params(com);
     // compute spherical multipole moments (the chargeless version, before being
     // contracted with density matrix) for electrons
+    t0 = mpqc::fenced_now(world);
     sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
+    t1 = mpqc::fenced_now(world);
+    auto t_ints = mpqc::duration_in_s(t0, t1);
 
+    t0 = mpqc::fenced_now(world);
+    // compute maximum distance between the center of mass of unit cell atoms
+    // and all charge centers
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com_);
-
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
+    t1 = mpqc::fenced_now(world);
+    auto t_boundary = mpqc::duration_in_s(t0, t1);
 
     ExEnv::out0() << "\nThe boundary of Crystal Far Field is "
                   << cff_boundary_.transpose() << std::endl;
 
+    t0 = mpqc::fenced_now(world);
     if (!CFF_reached()) {
       ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.\n";
     } else {
@@ -210,6 +219,16 @@ class PeriodicMA {
       // make a map from ordinal indices of (l, m) to (l, m) pairs
       O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
       M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
+    }
+    t1 = mpqc::fenced_now(world);
+    auto t_nuc = mpqc::duration_in_s(t0, t1);
+
+    if (ao_factory_.print_detail()) {
+      ExEnv::out0() << "\nMA init time decomposition:\n"
+                    << "\tbasis pair ctor:          " << t_basis_ctor << " s\n"
+                    << "\tmultipole ints:           " << t_ints << " s\n"
+                    << "\tCFF boundary:             " << t_boundary << " s\n"
+                    << "\tnuclear multipole + misc: " << t_nuc << " s\n";
     }
 
 
@@ -289,8 +308,16 @@ class PeriodicMA {
   void compute_multipole_approx(const TArray &D, double target_precision) {
     MPQC_ASSERT(CFF_reached());
 
+    auto &world = ao_factory_.world();
+    mpqc::time_point t0, t1;
+    auto t0_ma = mpqc::fenced_now(world);
+
     // compute electronic multipole moments for the reference unit cell
+    t0 = mpqc::fenced_now(world);
     auto O_elec_prim = compute_elec_multipole_moments(sphemm_, D);
+    t1 = mpqc::fenced_now(world);
+    auto t_elec_mm = mpqc::duration_in_s(t0, t1);
+
     // store to a slightly different form
     MultipoleMoment<double> O_elec;
     for (auto op = 0; op != nopers_; ++op) {
@@ -315,7 +342,11 @@ class PeriodicMA {
     size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
     Vector3i sphere_thickness_next = {0, 0, 0};
 
+    double t_build_uc = 0.0;
+    double t_build_M = 0.0;
+    double t_build_L = 0.0;
     do {
+      t0 = mpqc::fenced_now(world);
       auto shell_iter = cff_shell_to_unitcells_map_.find(cff_shell_idx);
       // build a list of unit cells for a spherical shell (outermost cells of
       // the sphere) if it does not exist
@@ -323,7 +354,10 @@ class PeriodicMA {
         auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
         shell_iter = cff_shell_to_unitcells_map_.insert({cff_shell_idx, unitcell_list}).first;
       }
+      t1 = mpqc::fenced_now(world);
+      t_build_uc += mpqc::duration_in_s(t0, t1);
 
+      t0 = mpqc::fenced_now(world);
       auto M_shell_iter = cff_shell_to_M_map_.find(cff_shell_idx);
       // build interaction kernel for a spherical shell if it does not exist
       if (M_shell_iter == cff_shell_to_M_map_.end()) {
@@ -345,7 +379,10 @@ class PeriodicMA {
         // save the shell-level M into a map so it can be reused
         M_shell_iter = cff_shell_to_M_map_.insert({cff_shell_idx, M_shell}).first;
       }
+      t1 = mpqc::fenced_now(world);
+      t_build_M += mpqc::duration_in_s(t0, t1);
 
+      t0 = mpqc::fenced_now(world);
       // compute local potential created by all cells in a spherical shell
       auto L_shell = build_local_potential(O, M_shell_iter->second);
       // compute Coulomb energy contribution from a spherical shell
@@ -355,6 +392,9 @@ class PeriodicMA {
       for (auto op = 0; op != nopers_; ++op) {
         L[op] += L_shell[op];
       }
+      t1 = mpqc::fenced_now(world);
+      t_build_L += mpqc::duration_in_s(t0, t1);
+
       energy_cff_ += e_shell;
 
       // determine if the energy is converged
@@ -392,6 +432,7 @@ class PeriodicMA {
     ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
 
     // compute Fock contribution from CFF
+    t0 = mpqc::fenced_now(world);
     fock_cff_ = sphemm_[0];
     fock_cff_("mu, nu") = -1.0 * L[0] * fock_cff_("mu, nu");
     if (MULTIPOLE_MAX_ORDER >= 1) {
@@ -405,6 +446,21 @@ class PeriodicMA {
       }
     }
     fock_computed_ = true;
+    t1 = mpqc::fenced_now(world);
+    auto t_fock = mpqc::duration_in_s(t0, t1);
+
+    auto t1_ma = mpqc::fenced_now(world);
+    auto t_ma = mpqc::duration_in_s(t0_ma, t1_ma);
+
+    if (ao_factory_.print_detail()) {
+      ExEnv::out0() << "\nMA time decomposition:\n"
+                    << "\tO_elec = O_lm^μν D_μν: " << t_elec_mm << " s\n"
+                    << "\tbuild/retrieve UCs:    " << t_build_uc << " s\n"
+                    << "\tbuild/retrieve M:      " << t_build_M << " s\n"
+                    << "\tbuild L:               " << t_build_L << " s\n"
+                    << "\tbuild Fock (CFF):      " << t_fock << " s\n"
+                    << "\nTotal MA builder time: " << t_ma << " s\n";
+    }
 
   }
 

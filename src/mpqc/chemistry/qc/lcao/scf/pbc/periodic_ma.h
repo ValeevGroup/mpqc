@@ -201,6 +201,9 @@ class PeriodicMA {
     // compute maximum distance between the center of mass of unit cell atoms
     // and all charge centers
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com_);
+    // compute squared minimum requirement for the distance between any CFF cell
+    // to the reference cell (used in condition #2 for CFF)
+    squared_min_dist_ = 4.0 * ws_ * ws_ * max_distance_to_refcenter_ * max_distance_to_refcenter_;
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
     t1 = mpqc::fenced_now(world);
@@ -285,6 +288,7 @@ class PeriodicMA {
   std::vector<Vector3i> uc_near_list_;
   std::shared_ptr<detail::BasisPairInfo> ref_pairs_;
   double max_distance_to_refcenter_;
+  double squared_min_dist_;
   Vector3i cff_boundary_;
 
   double energy_cff_;
@@ -525,24 +529,48 @@ class PeriodicMA {
    */
   bool is_uc_in_CFF(const Vector3i &uc_ket,
                     const Vector3i &uc_bra = {0, 0, 0}) {
-    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
+    // CFF condition #1: all shell pairs of the two cells are well separated
+    bool condition1 = is_uc_in_CFF_condition1(uc_ket, uc_bra);
+    // CFF condition #2: |L| >= ws * (r0_max + r1_max)
+    bool condition2 = is_uc_in_CFF_condition2(uc_ket, uc_bra);
+
+    return (condition1 && condition2);
+  }
+
+  /*!
+   * \brief This determines if a unit cell \c uc_ket is in the crystal far
+   * field of the bra unit cell \c uc_bra using Condition #1:
+   * All shell pairs of \c uc_bra is well separated from all shell pairs of
+   * \c uc_ket.
+   */
+  bool is_uc_in_CFF_condition1(const Vector3i &uc_ket,
+                               const Vector3i &uc_bra = {0, 0, 0}) {
     Vector3d vec_bra = uc_bra.cast<double>().cwiseProduct(dcell_);
     Vector3d vec_ket = uc_ket.cast<double>().cwiseProduct(dcell_);
-    const auto vec_rel = vec_ket - vec_bra;
 
     const auto npairs = ref_pairs_->npairs();
-    // CFF condition #1: all charge distributions are well separated
+
+    using CenterExtentPair = std::vector<std::pair<Vector3d, double>>;
+    CenterExtentPair uc0, uc1;
+    for (auto p = 0ul; p != npairs; ++p) {
+      const auto center = ref_pairs_->center(p);
+      const auto extent = ref_pairs_->extent(p);
+      uc0.emplace_back(std::make_pair(center + vec_bra, extent));
+      uc1.emplace_back(std::make_pair(center + vec_ket, extent));
+    }
+
     auto condition1 = true;
     for (auto p0 = 0ul; p0 != npairs; ++p0) {
-      const auto center0 = ref_pairs_->center(p0) + vec_bra;
-      const auto extent0 = ref_pairs_->extent(p0);
+      const auto &center0 = uc0[p0].first;
+      const auto &extent0 = uc0[p0].second;
       for (auto p1 = 0ul; p1 != npairs; ++p1) {
-        const auto center1 = ref_pairs_->center(p1) + vec_ket;
-        const auto extent1 = ref_pairs_->extent(p1);
+        const auto &center1 = uc1[p1].first;
+        const auto &extent1 = uc1[p1].second;
 
-        const double rab = (center1 - center0).norm();
-        if (rab < (extent0 + extent1)) {
+        const auto rab2 = (center1 - center0).squaredNorm();
+        const auto ex2 = (extent0 + extent1) * (extent0 + extent1);
+        if (rab2 < ex2) {
           condition1 = false;
           break;
         }
@@ -550,28 +578,22 @@ class PeriodicMA {
       if (!condition1) break;
     }
 
-    // CFF condition #2: |L| >= ws * (r0_max + r1_max)
-    const auto L = vec_rel.norm();
-    bool condition2 = (L >= ws_ * (max_distance_to_refcenter_ * 2.0));
+    return condition1;
+  }
 
-    // test:
-    //    {
-    //      ExEnv::out0() << "Vector bra corner = " << vec_bra.transpose()
-    //                    << std::endl;
-    //      ExEnv::out0() << "Vector ket corner = " << vec_ket.transpose()
-    //                    << std::endl;
-    //      ExEnv::out0() << "Vector bra center = " << uc_center_bra.transpose()
-    //                    << std::endl;
-    //      ExEnv::out0() << "Distance between bra and ket = " << L <<
-    //      std::endl; ExEnv::out0() << "r0_max = " <<
-    //      max_distance_to_refcenter_ << std::endl; auto cond1_val =
-    //      (condition1) ? "true" : "false"; auto cond2_val = (condition2) ?
-    //      "true" : "false"; ExEnv::out0() << "Is Condition 1 true? " <<
-    //      cond1_val << std::endl; ExEnv::out0() << "Is Condition 2 true? " <<
-    //      cond2_val << std::endl;
-    //    }
 
-    return (condition1 && condition2);
+  /*!
+   * \brief This determines if a unit cell \c uc_ket is in the crystal far
+   * field of the bra unit cell \c uc_bra using Condition #2:
+   *    |L| >= ws * (r0_max + r1_max)
+   * where L is the distance between two unit cells, ws is the well-separateness
+   * criterion, and rx_max is the max distance from all shell pair centers to
+   * the reference center.
+   */
+  bool is_uc_in_CFF_condition2(const Vector3i &uc_ket,
+                               const Vector3i &uc_bra = {0, 0, 0}) {
+    const auto vec_rel = (uc_ket - uc_bra).cast<double>().cwiseProduct(dcell_);
+    return vec_rel.squaredNorm() >= squared_min_dist_;
   }
 
   /*!
@@ -585,14 +607,26 @@ class PeriodicMA {
     Vector3i cff_bound({0, 0, 0});
 
     cff_reached_.fill(false);
+
     for (auto dim = 0; dim <= 2; ++dim) {
-      Vector3i uc_idx({0, 0, 0});
-      bool is_in_CFF = false;
-      auto idx1 = 0;
       if (limit3d(dim) > 0) {
+
+        Vector3i uc_idx({0, 0, 0});
+        auto idx1 = 0;
+        bool is_in_CFF, condition1, condition2;
+        condition1 = condition2 = false;
+
         do {
           uc_idx(dim) = idx1;
-          is_in_CFF = is_uc_in_CFF(uc_idx);
+
+          if (!condition1) {
+            condition1 = is_uc_in_CFF_condition1(uc_idx);
+          }
+          if (!condition2) {
+            condition2 = is_uc_in_CFF_condition2(uc_idx);
+          }
+          is_in_CFF = (condition1 && condition2);
+
           idx1++;
         } while (idx1 <= limit3d(dim) && !is_in_CFF);
 

@@ -37,7 +37,7 @@ cd mpqc4
 
 
 if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then
-    export CODECOVCXXFLAGS="-O0 --coverage"
+    export CODECOVCXXFLAGS="--coverage -O0"
 fi
 
 cmake ${TRAVIS_BUILD_DIR} \

@@ -35,12 +35,17 @@ cd ${BUILD_PREFIX}
 mkdir -p mpqc4
 cd mpqc4
 
+
+if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then
+    export CODECOVCXXFLAGS="-O0 --coverage"
+fi
+
 cmake ${TRAVIS_BUILD_DIR} \
     -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS}" \
+    -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS} ${CODECOVCXXFLAGS}" \
     -DLIBINT2_INSTALL_DIR="${INSTALL_PREFIX}/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true
 

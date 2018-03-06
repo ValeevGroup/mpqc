@@ -57,7 +57,9 @@ setarch `uname -m` -R make -j1 check
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples
 cd mp2
-  cmake . -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS=${CODECOVCXXFLAGS}
+  cmake . \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DCMAKE_CXX_FLAGS=$CODECOVCXXFLAGS
   make mp2
   setarch `uname -m` -R ./mp2 ./mp2.json
 cd ..

@@ -19,6 +19,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/meta/make_array.h"
 #include "mpqc/util/misc/pool.h"
 
@@ -160,6 +161,65 @@ TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
   return result_array;
 }
 
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> compute_shellblock_norm(
+    const Basis &bs0, const Basis &bs1, const TA::DistArray<Tile, Policy> &D) {
+  auto &world = D.world();
+  // make trange1
+  auto make_shblk_trange1 = [](const Basis &bs) {
+    const auto &shells_Vec = bs.cluster_shells();
+    auto blocking = std::vector<int64_t>{0};
+    for (const auto &shells : shells_Vec) {
+      const auto nshell = shells.size();
+      auto next = blocking.back() + nshell;
+      blocking.emplace_back(next);
+    }
+    return TA::TiledRange1(blocking.begin(), blocking.end());
+  };
+
+  const auto tr0 = make_shblk_trange1(bs0);
+  const auto tr1 = make_shblk_trange1(bs1);
+
+  auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
+  // compute shell block norms
+  const auto shells0 = bs0.flattened_shells();
+  const auto shells1 = bs1.flattened_shells();
+  const auto nshell0 = shells0.size();
+  const auto nshell1 = shells1.size();
+  RowMatrixXd norm_D(nshell0, nshell1);
+  for (auto sh0 = 0, sh0_first = 0; sh0 != nshell0; ++sh0) {
+    const auto sh0_size = shells0[sh0].size();
+    for (auto sh1 = 0, sh1_first = 0; sh1 != nshell1; ++sh1) {
+      const auto sh1_size = shells1[sh1].size();
+
+      norm_D(sh0, sh1) = eig_D.block(sh0_first, sh1_first, sh0_size, sh1_size)
+                             .template lpNorm<Eigen::Infinity>();
+
+      sh1_first += sh1_size;
+    }
+
+    sh0_first += sh0_size;
+  }
+
+  return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
+}
+
+/*!
+ * \brief This computes non-negligible shell pair list; shells \c i and \c j
+ * form a non-negligible pair if they share a center or the Frobenius norm of
+ * their overlap is greater than threshold
+ * \param basis1 a basis
+ * \param basis2 a basis
+ * \param threshold
+ *
+ * \return a list of pairs with
+ * key: shell index
+ * mapped value: a vector of shell indices
+ */
+std::vector<std::vector<size_t>> parallel_compute_shellpair_list(
+    madness::World &world, const Basis &basis1, const Basis &basis2,
+    double threshold = 1e-12, double engine_precision = 0.0);
+
 }  // namespace detail
 
 }  // namespace gaussian
@@ -216,7 +276,7 @@ bool if_all_lcao(const Formula &formula);
 
 /// check if all index in formula are in AO
 bool if_all_ao(const Formula &formula);
-}
+}  // namespace detail
 
 }  // namespace lcao
 }  // namespace mpqc

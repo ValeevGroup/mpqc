@@ -389,24 +389,24 @@ class DavidsonDiag {
     }
 
 // test if orthonomalized
-#ifndef NDEBUG
-    const auto k = B.size();
-    const auto tolerance =
-        std::numeric_limits<typename D::element_type>::epsilon() * 100;
-    for (std::size_t i = 0; i < k; ++i) {
-      for (std::size_t j = i; j < k; ++j) {
-        const auto test = dot_product(B[i], B[j]);
-        //                std::cout << "i= " << i << " j= " << j << " dot= " <<
-        //                test <<
-        //                std::endl;
-        if (i == j) {
-          TA_ASSERT(test - 1.0 < tolerance);
-        } else {
-          TA_ASSERT(test < tolerance);
-        }
-      }
-    }
-#endif
+//#ifndef NDEBUG
+//    const auto k = B.size();
+//    const auto tolerance =
+//        std::numeric_limits<typename D::element_type>::epsilon() * 100;
+//    for (std::size_t i = 0; i < k; ++i) {
+//      for (std::size_t j = i; j < k; ++j) {
+//        const auto test = dot_product(B[i], B[j]);
+//        //                std::cout << "i= " << i << " j= " << j << " dot= " <<
+//        //                test <<
+//        //                std::endl;
+//        if (i == j) {
+//          TA_ASSERT(test - 1.0 < tolerance);
+//        } else {
+//          TA_ASSERT(test < tolerance);
+//        }
+//      }
+//    }
+//#endif
 
     return std::make_tuple(E.segment(0, n_roots_), norms);
   }

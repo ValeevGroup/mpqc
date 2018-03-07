@@ -13,8 +13,8 @@ namespace lcao {
 template <typename Tile, typename Policy>
 void EOM_EA_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
   auto target_precision = ex_energy->target_precision(0);
-  if(vector_threshold_ == 0.0){
-    vector_threshold_ = 10*target_precision;
+  if (vector_threshold_ == 0.0) {
+    vector_threshold_ = 10 * target_precision;
   }
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
@@ -41,9 +41,9 @@ void EOM_EA_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
     // initialize intermediates
     ExEnv::out0() << indent << "\nInitialize Intermediates \n";
-    auto imds =
-        cc::compute_eom_intermediates(this->lcao_factory(), this->ao_factory(),
-                                  this->t2(), this->t1(), this->is_df(), "ea");
+    auto imds = cc::compute_eom_intermediates(this->lcao_factory(),
+                                              this->ao_factory(), this->t2(),
+                                              this->t1(), this->is_df(), "ea");
 
     auto max_iter = this->max_iter_;
     auto result =
@@ -119,8 +119,8 @@ template <typename Tile, typename Policy>
 EigenVector<typename Tile::numeric_type>
 EOM_EA_CCSD<Tile, Policy>::ea_eom_ccsd_davidson_solver(
     std::vector<typename EOM_EA_CCSD<Tile, Policy>::GuessVector>& C,
-    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds, std::size_t max_iter,
-    double convergence) {
+    const cc::Intermediates<TA::DistArray<Tile, Policy>>& imds,
+    std::size_t max_iter, double convergence) {
   std::size_t n_roots = C.size();
 
   /// make preconditioner
@@ -174,7 +174,7 @@ EOM_EA_CCSD<Tile, Policy>::ea_eom_ccsd_davidson_solver(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> EOM_EA_CCSD<Tile, Policy>::compute_HS1(
     const TArray& Ca, const TArray& Cabi,
-    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds) {
+    const cc::Intermediates<TA::DistArray<Tile, Policy>>& imds) {
   TArray HS1;
 
   {
@@ -190,7 +190,7 @@ TA::DistArray<Tile, Policy> EOM_EA_CCSD<Tile, Policy>::compute_HS1(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> EOM_EA_CCSD<Tile, Policy>::compute_HS2(
     const TArray& Ca, const TArray& Cabi,
-    const cc::Intermediates<TA::DistArray<Tile,Policy>>& imds) {
+    const cc::Intermediates<TA::DistArray<Tile, Policy>>& imds) {
   TArray HS2;
   {
     HS2("a,b,i") = imds.Wabci("a,b,c,i") * Ca("c");

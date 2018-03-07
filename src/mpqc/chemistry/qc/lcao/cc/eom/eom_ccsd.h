@@ -45,8 +45,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     vector_threshold_ = kv.value<double>("vector_threshold", 0);
 
     // need to modify the method keyword, CIS only has standard and df
-    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    std::string original_method = kv.value<std::string>("method","");
+    KeyVal &kv_nonconst = const_cast<KeyVal &>(kv);
+    std::string original_method = kv.value<std::string>("method", "");
     std::string cis_method = (this->df_ ? "df" : "standard");
     kv_nonconst.assign("method", cis_method);
 
@@ -54,7 +54,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     cis_guess_wfn_ = std::make_shared<CIS<Tile, Policy>>(kv);
 
     // change method keyword back to original value
-    if(!original_method.empty()) {
+    if (!original_method.empty()) {
       kv_nonconst.assign("method", original_method);
     }
 
@@ -121,7 +121,7 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   }
 
  private:
-  std::shared_ptr<CIS<Tile,Policy>> cis_guess_wfn_;
+  std::shared_ptr<CIS<Tile, Policy>> cis_guess_wfn_;
   std::size_t max_vector_;   // max number of guess vector
   double vector_threshold_;  // threshold for norm of new guess vector
   std::string davidson_solver_;

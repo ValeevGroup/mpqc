@@ -21,6 +21,7 @@ addons:
     - libtbb-dev
     - cmake
     - cmake-data
+    - lcov
 
 env:
   global:
@@ -131,6 +132,16 @@ script:
 after_failure:
 - cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeOutput.log
 - cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeError.log
+
+# codecov
+after_success:
+  # create report
+  - cd ${TRAVIS_BUILD_DIR}
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --gcov-tool gcov-${GCC_VERSION} --directory ${BUILD_PREFIX}/mpqc4 --capture --output-file coverage.info; fi; # capture coverage info
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --remove coverage.info '/usr/*' '*/tiledarray/*' '*/madness/*' '*/btas/*' '*/tests/*' --output-file coverage.info; fi; # filter out non-project files
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --list coverage.info; fi; #debug info
+  # upload report to CodeCov
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then bash <(curl -s https://codecov.io/bash) -t 91e770bd-4741-4553-a7d3-c226fb4e41fa; fi;
 
 notifications:
   slack:

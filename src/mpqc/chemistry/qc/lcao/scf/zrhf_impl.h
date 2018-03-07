@@ -370,23 +370,40 @@ zRHF<Tile, Policy>::compute_density() {
   auto tr1_real = extend_trange1(tr0, RD_size_);
   auto tr1_recip = extend_trange1(tr0, k_size_);
 
-  auto fock_eig = array_ops::array_to_eigen(Fk_);
-  for (auto k = 0; k < k_size_; ++k) {
-    // Get orthogonalizer
-    auto X = X_[k];
-    // Symmetrize Fock
-    auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    MatrixZ F_twice = F + F.transpose().conjugate();
-    // When k=0 (gamma point), reverse phase factor of complex values
-    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-      F_twice = reverse_phase_factor(F_twice);
-    F = 0.5 * F_twice;
+  const auto ext0 = tr0.extent();
+  RowMatrixXd result_real_eig(ext0, tr1_real.extent());
+  MatrixZ result_recip_eig(ext0, tr1_recip.extent());
+  result_real_eig.setZero();
+  result_recip_eig.setZero();
 
-    if (level_shift_ > 0.0 && iter_ > 0) {
+  MatrixzVec F_recip_vec, D_recip_vec;
+  MatrixdVec D_real_vec;
+  F_recip_vec.resize(k_size_);
+  D_recip_vec.resize(k_size_);
+  D_real_vec.resize(RD_size_);
+
+  auto fock_eig = array_ops::array_to_eigen(Fk_);
+
+  // parallel impl for F_k diagonalization and D_k build
+  auto compute_recip_density = [ext0, this](MatrixZ *F_ptr, MatrixZ *X_ptr, MatrixZ *C_old_ptr, MatrixZ *C_ptr, VectorD *eps_ptr, MatrixZ *D_ptr, bool is_gamma_point, bool do_level_shift) {
+    // get references to matrix pointers
+    const auto &F = *F_ptr;
+    const auto &X = *X_ptr;
+    auto &C = *C_ptr;
+    auto &eps = *eps_ptr;
+    auto &D = *D_ptr;
+
+    // symmetrize Fock
+    MatrixZ F_symm = 0.5 * (F.transpose().conjugate() + F);
+    if (is_gamma_point) {
+      F_symm = this->reverse_phase_factor(F_symm);
+    }
+
+    // diagonalize Fock
+    if (do_level_shift) {
       // transform Fock from AO to CO basis
-      MatrixZ C = C_[k];
-      MatrixZ Ct = C.transpose().conjugate();
-      MatrixZ FCO = Ct * F * C;
+      const auto &C_old = *C_old_ptr;
+      MatrixZ FCO = C_old.transpose().conjugate() * F_symm * C_old;
       // add energy level shift to diagonal elements of unoccupied orbitals
       auto nobs = FCO.cols();
       for (auto a = docc_; a != nobs; ++a) {
@@ -394,59 +411,84 @@ zRHF<Tile, Policy>::compute_density() {
       }
       // diagonalize Fock in CO basis
       Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
-      VectorD eps = comp_eig_solver_fco.eigenvalues();
-      MatrixZ Ctemp = comp_eig_solver_fco.eigenvectors();
+      VectorD eps_temp = comp_eig_solver_fco.eigenvalues();
+      MatrixZ C_temp = comp_eig_solver_fco.eigenvectors();
       // when k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-        Ctemp = reverse_phase_factor(Ctemp);
+      if (is_gamma_point) {
+        C_temp = this->reverse_phase_factor(C_temp);
+      }
       // transform eigenvectors back to CO coefficients
-      C_[k] = C * Ctemp;
+      C = C_old * C_temp;
       // remove energy level shift from eigenvalues
       for (auto p = 0; p != nobs; ++p) {
-        eps_[k](p) = (p < docc_) ? eps(p) : eps(p) - level_shift_;
+        eps(p) = (p < docc_) ? eps_temp(p) : eps_temp(p) - level_shift_;
       }
     } else {
       // Orthogonalize Fock matrix: F' = Xt * F * X
-      MatrixZ Xt = X.transpose().conjugate();
-      auto XtF = Xt * F;
-      auto Ft = XtF * X;
-
+      MatrixZ Ft = X.transpose().conjugate() * F_symm * X;
       // Diagonalize F'
       Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
-      eps_[k] = comp_eig_solver.eigenvalues();
+      eps = comp_eig_solver.eigenvalues();
       MatrixZ Ctemp = comp_eig_solver.eigenvectors();
-
       // When k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-        Ctemp = reverse_phase_factor(Ctemp);
-
-      C_[k] = X * Ctemp;
+      if (is_gamma_point) {
+        Ctemp = this->reverse_phase_factor(Ctemp);
+      }
+      // transform eigenvectors back to CO coefficients
+      C = X * Ctemp;
     }
+
+    // compute_density
+    MatrixZ C_occ = C_ptr->leftCols(docc_);
+    D = C_occ.conjugate() * C_occ.transpose();
+  };
+
+  bool do_level_shift = (level_shift_ > 0.0 && iter_ > 0);
+  for (int64_t k = 0; k != k_size_; ++k) {
+    bool is_gamma_point = (k_size_ > 1 && k == ((k_size_ - 1) / 2));
+    MatrixZ *C_old = do_level_shift ? &C_[k] : nullptr;
+    F_recip_vec[k] = fock_eig.block(0, k * ext0, ext0, ext0);
+
+    world.taskq.add(compute_recip_density, &(F_recip_vec[k]), &(X_[k]), C_old, &(C_[k]), &(eps_[k]), &(D_recip_vec[k]), is_gamma_point, do_level_shift);
+  }
+  world.gop.fence();
+
+  // collect all D_k's to a big rectangular matrix
+  for (int64_t k = 0; k != k_size_; ++k) {
+    result_recip_eig.block(0, k * ext0, ext0, ext0) = D_recip_vec[k];
   }
 
-  using ::mpqc::detail::direct_vector;
-  using ::mpqc::detail::k_vector;
+  // parallel impl for D_r
+  const auto denom_inv = 1.0 / double(nk_(0) * nk_(1) * nk_(2));
+  auto transform_recip2real = [ext0, denom_inv, this](MatrixZ *D_recip_ptr, RowMatrixXd *D_real_ptr, int64_t R) {
+    using ::mpqc::detail::k_vector;
+    using ::mpqc::detail::direct_vector;
 
-  const auto ext0 = tr0.extent();
-  Matrix result_real_eig(ext0, tr1_real.extent());
-  MatrixZ result_recip_eig(ext0, tr1_recip.extent());
-  result_real_eig.setZero();
-  result_recip_eig.setZero();
+    // get references to all matrix pointers
+    const auto &D_recip = *D_recip_ptr;
+    auto &D_real = *D_real_ptr;
 
-  for (auto k = 0; k < k_size_; ++k) {
-    auto vec_k = k_vector(k, nk_, dcell_);
-    auto C_occ = C_[k].leftCols(docc_);
-    auto D_k = C_occ.conjugate() * C_occ.transpose();
-    result_recip_eig.block(0, k * ext0, ext0, ext0) = D_k;
-    for (auto R = 0; R < RD_size_; ++R) {
-      auto vec_R = direct_vector(R, RD_max_, dcell_);
-      auto exponent =
-          std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-      auto D_RD_contr = exponent * D_k;
-      result_real_eig.block(0, R * ext0, ext0, ext0) += D_RD_contr.real();
+    auto vec_R = direct_vector(R, RD_max_, dcell_);
+    D_real.setZero(ext0, ext0);
+
+    for (int64_t k = 0; k != k_size_; ++k) {
+      auto vec_k = k_vector(k, nk_, dcell_);
+      auto exponent = std::exp(I * vec_k.dot(vec_R)) * denom_inv;
+      D_real += (exponent * D_recip.block(0, k * ext0, ext0, ext0)).real();
     }
+  };
+
+  for (int64_t Rd = 0; Rd != RD_size_; ++Rd) {
+    world.taskq.add(transform_recip2real, &result_recip_eig, &(D_real_vec[Rd]), Rd);
+  }
+  world.gop.fence();
+
+  // collect all D_r's to a big rectangular matrix
+  for (int64_t Rd = 0; Rd != RD_size_; ++Rd) {
+    result_real_eig.block(0, Rd * ext0, ext0, ext0) = D_real_vec[Rd];
   }
 
+  // convert rectangular matrices to TA::DistArray
   auto result_real = array_ops::eigen_to_array<Tile, Policy>(
       world, result_real_eig, tr0, tr1_real);
   auto result_recip = array_ops::eigen_to_array<TA::TensorZ, Policy>(
@@ -527,7 +569,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
 }
 
 template <typename Tile, typename Policy>
-MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(MatrixZ& mat0) {
+MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(const MatrixZ& mat0) {
   MatrixZ result(mat0);
 
   for (auto row = 0; row < mat0.rows(); ++row) {

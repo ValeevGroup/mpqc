@@ -20,9 +20,9 @@ namespace mpqc {
 namespace lcao {
 
 using MatrixzVec = std::vector<MatrixZ>;
+using MatrixdVec = std::vector<RowMatrixXd>;
 using VectorzVec = std::vector<VectorZ>;
 using VectordVec = std::vector<VectorD>;
-using Matrix = RowMatrixXd;
 
 /**
  * complex-valued Restricted Hartree-Fock class
@@ -144,7 +144,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \param arg_value original complex value
    * \param factor \phi in e^(i \phi)
    */
-  MatrixZ reverse_phase_factor(MatrixZ& mat0);
+  MatrixZ reverse_phase_factor(const MatrixZ& mat0);
 
   /*!
    * \brief This prints direct and indirect band gaps

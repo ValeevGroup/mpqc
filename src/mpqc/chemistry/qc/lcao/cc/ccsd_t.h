@@ -88,13 +88,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | reblock_occ | int | none | block size to reblock occ |
-   * | reblock_unocc | int | none | block size to reblock unocc |
-   * | reblock_inner | int | size of number of orbital | block size to reblock inner dimension, set to 0 to disable reblock inner |
-   * | approach | string | coarse | coarse grain, fine grain, straight or laplace approach |
-   * | replicate_ijka | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
-   * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
-   * | quadrature_points | int | 4 | number of quadrature points for the Laplace transform |
+   * | @c approach | string | @c coarse | the (T) algorithm; valid choices are <ul> <li>@c coarse (parallelized over {a,b,c}, each assigned round-robin to single node) <li/> @c fine (same as @coarse, but each {a,b,c} task is executed over the entire machine; less scalable than @coarse ) <li/> @c straight (for reference purposes only) <li/> @c laplace (Laplace MO-based implementation) </ul> |
+   * | @c increase | int | @c 2 | number of unoccupied tiles (per dimension) to load in each abc loop; valid only if @c approach=fine  |
+   * | @c reblock_occ | int | @c 8 | the block size used for the occupied orbitals |
+   * | @c reblock_unocc | int | @c 8 | the block size used for the unoccupied orbitals |
+   * | @c reblock_inner | int | number of orbitals | the block size for the inner (contraction) dimension; set to 0 to disable reblock inner; only used if @c approach=laplace |
+   * | @c replicate_ijka | bool | @c false | whether to replicate integral <ij\|ka>, the smallest 2-body integral in (T); valid only with @c approach=coarse |
+   * | @c quadrature_points | int | @c 4 | number of quadrature points for the Laplace transform; valid only if @c approach=laplace |
    */
   // clang-format on
 
@@ -215,15 +215,15 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       reblock_inner_t2(t2_left, t2_right);
     }
 
-    auto trange1_eignie = this->local_trange1_engine() == nullptr
+    auto trange1_engine = this->local_trange1_engine() == nullptr
                           ? this->trange1_engine()
                           : this->local_trange1_engine();
     // get trange1
-    auto tr_occ = trange1_eignie->get_active_occ_tr1();
-    auto tr_vir = trange1_eignie->get_vir_tr1();
+    auto tr_occ = trange1_engine->get_active_occ_tr1();
+    auto tr_vir = trange1_engine->get_vir_tr1();
 
-    auto n_tr_occ = trange1_eignie->get_active_occ_blocks();
-    auto n_tr_vir = trange1_eignie->get_vir_blocks();
+    auto n_tr_occ = trange1_engine->get_active_occ_blocks();
+    auto n_tr_vir = trange1_engine->get_vir_blocks();
 
     // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
@@ -234,8 +234,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     std::size_t vir_block_size =
-        trange1_eignie->get_vir_block_size();
-    std::size_t n_occ = trange1_eignie->get_active_occ();
+        trange1_engine->get_vir_block_size();
+    std::size_t n_occ = trange1_engine->get_active_occ();
             std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;
             double mem = (n_occ * n_occ * n_occ * vir_block_size * vir_block_size *
                 vir_block_size * 8) /
@@ -619,8 +619,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                   if (b < a && c < b) {
                     time00 = mpqc::now(this_world, accurate_time);
                     auto ccsd_t_reduce = CCSD_T_Reduce(
-                        this->orbital_energy(), trange1_eignie->get_occ(),
-                trange1_eignie->get_nfrozen(), offset);
+                        this->orbital_energy(), trange1_engine->get_occ(),
+                trange1_engine->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -630,8 +630,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           else {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), trange1_eignie->get_occ(),
-                trange1_eignie->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_engine->get_occ(),
+                trange1_engine->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -727,16 +727,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       reblock_inner_t2(t2_left, t2_right);
     }
 
-    auto trange1_eignie = this->local_trange1_engine() == nullptr
+    auto trange1_engine = this->local_trange1_engine() == nullptr
                               ? this->trange1_engine()
                               : this->local_trange1_engine();
 
     // get trange1
-    auto tr_occ = trange1_eignie->get_active_occ_tr1();
-    auto tr_vir = trange1_eignie->get_vir_tr1();
+    auto tr_occ = trange1_engine->get_active_occ_tr1();
+    auto tr_vir = trange1_engine->get_vir_tr1();
 
-    auto n_tr_occ = trange1_eignie->get_active_occ_blocks();
-    auto n_tr_vir = trange1_eignie->get_vir_blocks();
+    auto n_tr_occ = trange1_engine->get_active_occ_blocks();
+    auto n_tr_vir = trange1_engine->get_vir_blocks();
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
     if (reblock_inner_) {
@@ -825,9 +825,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t c_increase = increase;
 
     std::size_t occ_block_size =
-        trange1_eignie->get_occ_block_size();
+        trange1_engine->get_occ_block_size();
     std::size_t vir_block_size =
-        trange1_eignie->get_vir_block_size();
+        trange1_engine->get_vir_block_size();
     std::size_t n_blocks =
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_blocks * std::pow(occ_block_size, 3) *
@@ -1063,8 +1063,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           double tmp_energy = 0.0;
           if (b_end < a && c_end < b) {
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy(), trange1_eignie->get_occ(),
-                trange1_eignie->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_engine->get_occ(),
+                trange1_engine->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -1075,8 +1075,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             tmp_energy *= 2;
           } else {
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), trange1_eignie->get_occ(),
-                trange1_eignie->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_engine->get_occ(),
+                trange1_engine->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -1152,13 +1152,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
 
     std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
-    auto trange1_eignie = this->local_trange1_engine() == nullptr
+    auto trange1_engine = this->local_trange1_engine() == nullptr
                           ? this->trange1_engine()
                           : this->local_trange1_engine();
 
     auto ccsd_t_reduce = CCSD_T_Reduce(
-        this->orbital_energy(), trange1_eignie->get_occ(),
-        trange1_eignie->get_nfrozen(), offset);
+        this->orbital_energy(), trange1_engine->get_occ(),
+        trange1_engine->get_nfrozen(), offset);
 
     double triple_energy =
         ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *

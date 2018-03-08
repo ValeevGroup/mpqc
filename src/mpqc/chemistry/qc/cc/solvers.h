@@ -1,7 +1,7 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_CC_SOLVERS_H_
 #define SRC_MPQC_CHEMISTRY_QC_CC_SOLVERS_H_
 
-#include "diis.h"
+#include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/core/exception.h"
 

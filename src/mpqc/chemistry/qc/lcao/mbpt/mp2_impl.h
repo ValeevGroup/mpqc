@@ -82,7 +82,7 @@ template <typename Tile, typename Policy>
 double RMP2<Tile, Policy>::compute() {
   return detail::compute_mp2(
       this->lcao_factory(),
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory()),
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(),false),
       this->trange1_engine(), false);
 }
 
@@ -102,7 +102,7 @@ template <typename Tile, typename Policy>
 double RIRMP2<Tile, Policy>::compute() {
   return detail::compute_mp2(
       this->lcao_factory(),
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory()),
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(), true),
       this->trange1_engine(), true);
 }
 }  // namespace lcao

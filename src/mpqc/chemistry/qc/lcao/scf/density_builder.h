@@ -15,13 +15,13 @@ namespace TA = TiledArray;
 template <typename Tile, typename Policy>
 class DensityBuilder {
  public:
-  using array_type = TA::DistArray<Tile,Policy>;
+  using array_type = TA::DistArray<Tile, Policy>;
   DensityBuilder() = default;
   DensityBuilder(DensityBuilder const &) = default;
   DensityBuilder(DensityBuilder &&) = default;
   DensityBuilder &operator=(DensityBuilder const &) = default;
   DensityBuilder &operator=(DensityBuilder &&) = default;
-  virtual ~DensityBuilder() { }
+  virtual ~DensityBuilder() {}
 
   virtual std::pair<array_type, array_type> operator()(array_type const &) = 0;
 

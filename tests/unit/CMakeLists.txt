@@ -2,6 +2,7 @@ enable_testing(true)
 add_custom_target(check_unit COMMAND ${CMAKE_CTEST_COMMAND} -V)
 
 set(utests_src
+    array_max_n.cpp
     atom_test.cpp
     bug_test.cpp
     clustering_test.cpp

@@ -1,6 +1,7 @@
 set(sources
     cis.cpp
     cis.h
+    cis_d.h
     linkage.h
     )
 

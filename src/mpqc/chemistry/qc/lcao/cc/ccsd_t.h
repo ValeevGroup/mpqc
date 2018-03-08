@@ -110,7 +110,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                             ->basis_registry()
                             ->retrieve(OrbitalIndex(L"κ"))
                             ->nfunctions();
-    inner_block_size_ = kv.value<int>("reblock_inner", n_obs);
+    inner_block_size_ = reblock_ ? kv.value<int>("reblock_inner", n_obs) : 0;
     reblock_inner_ = (inner_block_size_ == 0) ? false : true;
 
     increase_ = kv.value<int>("increase", 2);
@@ -215,12 +215,15 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       reblock_inner_t2(t2_left, t2_right);
     }
 
+    auto trange1_eignie = this->local_trange1_engine() == nullptr
+                          ? this->trange1_engine()
+                          : this->local_trange1_engine();
     // get trange1
-    auto tr_occ = this->local_trange1_engine()->get_active_occ_tr1();
-    auto tr_vir = this->local_trange1_engine()->get_vir_tr1();
+    auto tr_occ = trange1_eignie->get_active_occ_tr1();
+    auto tr_vir = trange1_eignie->get_vir_tr1();
 
-    auto n_tr_occ = this->local_trange1_engine()->get_active_occ_blocks();
-    auto n_tr_vir = this->local_trange1_engine()->get_vir_blocks();
+    auto n_tr_occ = trange1_eignie->get_active_occ_blocks();
+    auto n_tr_vir = trange1_eignie->get_vir_blocks();
 
     // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
@@ -231,391 +234,393 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     std::size_t vir_block_size =
-        this->local_trange1_engine()->get_vir_block_size();
-    std::size_t n_occ = this->local_trange1_engine()->get_active_occ();
-    std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;
-    double mem = (n_occ * n_occ * n_occ * vir_block_size * vir_block_size *
-                  vir_block_size * 8) /
-                 1.0e9;
-
-    ExEnv::out0() << "Number of blocks at each iteration: " << n_blocks
-                  << std::endl;
-    ExEnv::out0() << "Size of T3 or V3 at each iteration per node: 3x" << mem
-                  << " GB" << std::endl;
-
-    // split global_world
-    const auto rank = global_world.rank();
-    const auto size = global_world.size();
-
-    madness::World *tmp_ptr;
-    std::shared_ptr<madness::World> world_ptr;
-
-    if (size > 1) {
-      SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
-      SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
-      world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
-      tmp_ptr = world_ptr.get();
-    } else {
-      tmp_ptr = &global_world;
-    }
-    auto &this_world = *tmp_ptr;
-    global_world.gop.fence();
-
-    TArray g_cjkl_global(
-        this_world, g_aijk.trange(), g_aijk.shape(),
-        Policy::default_pmap(this_world,
-                             g_aijk.trange().tiles_range().volume()));
-
-    TArray t1_this(
-        this_world, t1.trange(), t1.shape(),
-        Policy::default_pmap(this_world, t1.trange().tiles_range().volume()));
-
-    // by default replicate t1 array
-    if (size > 1) {
-      // replicate t1 array
-      t1_this("a,i") = t1("a,i").set_world(this_world);
-    } else {
-      // on 1 node, no need to replicate t1
-      t1_this = t1;
-    }
-
-    // based on replicate keyword, replicate g_cjkl array
-    if (replicate_ijka_ && size > 1) {
-      // replicate g_cjkl
-      g_cjkl_global("c,j,k,l") = g_aijk("c,j,k,l").set_world(this_world);
-    } else {
-      // don't replicate g_cjkl
-      g_cjkl_global = g_aijk;
-    }
-
-    typedef std::vector<std::size_t> block;
-    // lambda function to compute t3
-
-    auto compute_t3_c = [&g_dabi, &t2_right, &t2_left, &g_cjkl_global,
-                         n_tr_vir_inner, n_tr_occ, n_tr_occ_inner](
-        std::size_t a, std::size_t b, std::size_t c, TArray &t3) {
-      // index
-      std::size_t a_low = a;
-      std::size_t a_up = a + 1;
-      std::size_t b_low = b;
-      std::size_t b_up = b + 1;
-      std::size_t c_low = c;
-      std::size_t c_up = c + 1;
-
-      {
-        // block for g_dbai
-        block g_dabi_low{0, a_low, b_low, 0};
-        block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
-
-        auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
-
-        // block for t2_dcjk
-        block t2_dcjk_low{0, c_low, 0, 0};
-        block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
-        auto block_t2_dcjk = t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
-
-        // block for g_cjkl
-        block g_cjkl_low{c_low, 0, 0, 0};
-        block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
-        TArray g_cjkl;
-        auto block_g_cjkl =
-            g_cjkl_global("c,j,k,l").block(g_cjkl_low, g_cjkl_up);
-
-        // block for t2_abil
-        block t2_abil_low{a_low, b_low, 0, 0};
-        block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ_inner};
-
-        auto block_t2_abil = t2_right("a,b,i,l").block(t2_abil_low, t2_abil_up);
-
-        if (t3.is_initialized()) {
-          t3("a,b,i,c,j,k") +=
-              (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
-        } else {
-          t3("a,b,i,c,j,k") =
-              (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
-        }
-      }
-    };
-
-    auto compute_t3 = [&g_dabi, &t2_right, n_tr_vir_inner, n_tr_occ,
-                       n_tr_occ_inner](std::size_t a, std::size_t b, TArray &t3,
-                                       const TArray &this_t2_dcjk,
-                                       const TArray &this_g_cjkl) {
-      // index
-      std::size_t a_low = a;
-      std::size_t a_up = a + 1;
-      std::size_t b_low = b;
-      std::size_t b_up = b + 1;
-
-      {
-        // block for g_dbai
-        block g_dabi_low{0, a_low, b_low, 0};
-        block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
-
-        auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
-
-        // block for t2_dcjk
-        auto block_t2_dcjk = this_t2_dcjk("d,c,j,k");
-
-        // block for g_cjkl
-        auto block_g_cjkl = this_g_cjkl("c,j,k,l");
-
-        // block for t2_abil
-        block t2_abil_low{a_low, b_low, 0, 0};
-        block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ_inner};
-
-        auto block_t2_abil = t2_right("a,b,i,l").block(t2_abil_low, t2_abil_up);
-
-        t3("a,b,i,c,j,k") +=
-            (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
-      }
-    };
-
-    // lambda function to compute v3
-    auto compute_v3 = [&g_abij, &t1_this, n_tr_occ](
-        std::size_t a, std::size_t b, std::size_t c, TArray &v3) {
-      // index
-      std::size_t a_low = a;
-      std::size_t a_up = a + 1;
-      std::size_t b_low = b;
-      std::size_t b_up = b + 1;
-      std::size_t c_low = c;
-      std::size_t c_up = c + 1;
-
-      {
-        // block for g_bcjk
-        block g_bcjk_low{b_low, c_low, 0, 0};
-        block g_bcjk_up{b_up, c_up, n_tr_occ, n_tr_occ};
-
-        auto block_g_bcjk = g_abij("b,c,j,k").block(g_bcjk_low, g_bcjk_up);
-
-        // block for t1_ai
-        block t1_ai_low{a_low, 0};
-        block t1_ai_up{a_up, n_tr_occ};
-
-        auto block_t_ai = t1_this("a,i").block(t1_ai_low, t1_ai_up);
-
-        if (v3.is_initialized()) {
-          v3("b,c,j,k,a,i") += (block_g_bcjk * block_t_ai);
-        } else {
-          v3("b,c,j,k,a,i") = (block_g_bcjk * block_t_ai);
-        }
-      }
-    };
-
-    // start (T) calculation
-    double triple_energy = 0.0;
-
-    // time spend in reduction
-    double reduce_time = 0.0;
-    // time spend in contraction
-    double contraction_time = 0.0;
-    // time spend in outer product
-    double outer_product_time = 0.0;
-    // time spend in permutation
-    double permutation_time = 0.0;
-
-    mpqc::time_point time00;
-    mpqc::time_point time01;
-
-    // local iteration
-    std::size_t iter = 0;
-
-    // global iteration
-    std::size_t global_iter = 0;
-
-    // make progress points
-    const auto divide = 10;
-    std::size_t increase = std::max(1.0, std::round(double(n_tr_vir) / divide));
-    std::vector<std::size_t> progress_points;
-    for (std::size_t i = 0; i < n_tr_vir; i += increase) {
-      progress_points.push_back(i);
-    }
-
-    TA::set_default_world(this_world);
-
-    // start loop over a, b, c
-    for (auto a = 0; a < n_tr_vir; ++a) {
-      std::size_t a_low = a;
-      std::size_t a_up = a + 1;
-
-      // block for g_ajkl
-      block g_ajkl_low{a_low, 0, 0, 0};
-      block g_ajkl_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
-      TArray g_ajkl;
-      g_ajkl("a,j,k,l") = g_cjkl_global("a,j,k,l").block(g_ajkl_low, g_ajkl_up);
-
-      // block for t2_dcjk
-      block t2_dajk_low{0, a_low, 0, 0};
-      block t2_dajk_up{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
-      TArray t2_dajk;
-      t2_dajk("d,a,j,k") = t2_left("d,a,j,k").block(t2_dajk_low, t2_dajk_up);
-
-      for (auto b = 0; b <= a; ++b) {
-        std::size_t b_low = b;
-        std::size_t b_up = b + 1;
-
-        // block for g_bjkl
-        block g_bjkl_low{b_low, 0, 0, 0};
-        block g_bjkl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
-        TArray g_bjkl;
-        g_bjkl("b,j,k,l") =
-            g_cjkl_global("b,j,k,l").block(g_bjkl_low, g_bjkl_up);
-
-        // block for t2_dbjk
-        block t2_dbjk_low{0, b_low, 0, 0};
-        block t2_dbjk_up{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
-        TArray t2_dbjk;
-        t2_dbjk("d,b,j,k") = t2_left("d,b,j,k").block(t2_dbjk_low, t2_dbjk_up);
-
-        for (auto c = 0; c <= b; ++c) {
-          global_iter++;
-
-          // round-robin distribute the loop
-          if (global_iter % size != rank) continue;
-
-          // inner loop
-          iter++;
-
-          // compute t3
-          TArray t3;
-          // abcijk contribution
-          // g^{da}_{bi}*t^{cd}_{kj} - g^{cj}_{kl}*t^{ab}_{il}
-
-          time00 = mpqc::now(this_world, accurate_time);
-          compute_t3_c(a, b, c, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-
-          // acbikj contribution
-          // g^{da}_{ci}*t^{db}_{kj} - g^{bk}_{jl}*t^{ac}_{il}
-          {
-            t3("a,c,i,b,k,j") = t3("a,b,i,c,j,k");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_t3(a, c, t3, t2_dbjk, g_bjkl);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // cabkij contribution
-          // g^{dc}_{ak}*t^{db}_{ij} - g^{bi}_{jl}*t^{ca}_{kl}
-          {
-            t3("c,a,k,b,i,j") = t3("a,c,i,b,k,j");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_t3(c, a, t3, t2_dbjk, g_bjkl);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // cbakji contribution
-          // g^{dc}_{bk}*t^{da}_{ji} - g^{aj}_{il}*t^{cb}_{kl}
-          {
-            t3("c,b,k,a,j,i") = t3("c,a,k,b,i,j");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_t3(c, b, t3, t2_dajk, g_ajkl);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // bcajki contribution
-          // g^{db}_{cj}*t^{da}_{ki} - g^{ak}_{il}*t^{bc}_{jl}
-          {
-            t3("b,c,j,a,k,i") = t3("c,b,k,a,j,i");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_t3(b, c, t3, t2_dajk, g_ajkl);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // bacjik contribution
-          // g^{db}_{aj}*t^{dc}_{ik} - g^{ci}_{kl}*t^{ba}_{jl}
-          {
-            t3("b,a,j,c,i,k") = t3("b,c,j,a,k,i");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_t3_c(b, a, c, t3);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          t3("a,b,c,i,j,k") = t3("b,a,j,c,i,k");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          // compute v3
-          TArray v3;
-
-          // bcajki contribution
-          // g^{bc}_{jk}*t^{a}_{i}
-          {
-            compute_v3(a, b, c, v3);
-            time01 = mpqc::now(this_world, accurate_time);
-            outer_product_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // acbikj contribution
-          // g^{ac}_{ik}*t^{b}_{j}
-          {
-            v3("a,c,i,k,b,j") = v3("b,c,j,k,a,i");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_v3(b, a, c, v3);
-            time01 = mpqc::now(this_world, accurate_time);
-            outer_product_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // abcijk contribution
-          // g^{ab}_{ij}*t^{c}_{k}
-          {
-            v3("a,b,i,j,c,k") = v3("a,c,i,k,b,j");
-            time00 = mpqc::now(this_world, accurate_time);
-            permutation_time += mpqc::duration_in_s(time01, time00);
-
-            compute_v3(c, a, b, v3);
-            time01 = mpqc::now(this_world, accurate_time);
-            outer_product_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          v3("a,b,c,i,j,k") = v3("a,b,i,j,c,k");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          TArray result;
-          {
-            result("a,b,c,i,j,k") =
-                ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
-                 (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
-                  t3("a,b,c,j,k,i") -
-                  2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
-                       t3("a,b,c,j,i,k"))))
-                    .set_world(this_world);
-            time01 = mpqc::now(this_world, accurate_time);
-            contraction_time += mpqc::duration_in_s(time00, time01);
-          }
-
-          // compute offset
-          std::size_t a_offset = tr_vir.tile(a).first;
-          std::size_t b_offset = tr_vir.tile(b).first;
-          std::size_t c_offset = tr_vir.tile(c).first;
-          std::array<std::size_t, 6> offset{
-              {a_offset, b_offset, c_offset, 0, 0, 0}};
-
-          double tmp_energy = 0.0;
-          if (b < a && c < b) {
-            time00 = mpqc::now(this_world, accurate_time);
-            auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
-                this->local_trange1_engine()->get_nfrozen(), offset);
+        trange1_eignie->get_vir_block_size();
+    std::size_t n_occ = trange1_eignie->get_active_occ();
+            std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;
+            double mem = (n_occ * n_occ * n_occ * vir_block_size * vir_block_size *
+                vir_block_size * 8) /
+                1.0e9;
+
+            ExEnv::out0() << "Number of blocks at each iteration: " << n_blocks
+                          << std::endl;
+            ExEnv::out0() << "Size of T3 or V3 at each iteration per node: 3x" << mem
+                          << " GB" << std::endl;
+
+            // split global_world
+            const auto rank = global_world.rank();
+            const auto size = global_world.size();
+
+            madness::World *tmp_ptr;
+            std::shared_ptr<madness::World> world_ptr;
+
+            if (size > 1) {
+              SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
+              SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
+              world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
+              tmp_ptr = world_ptr.get();
+            } else {
+              tmp_ptr = &global_world;
+            }
+            auto &this_world = *tmp_ptr;
+            global_world.gop.fence();
+
+            TArray g_cjkl_global(
+                this_world, g_aijk.trange(), g_aijk.shape(),
+                Policy::default_pmap(this_world,
+                                     g_aijk.trange().tiles_range().volume()));
+
+            TArray t1_this(
+                this_world, t1.trange(), t1.shape(),
+                Policy::default_pmap(this_world, t1.trange().tiles_range().volume()));
+
+            // by default replicate t1 array
+            if (size > 1) {
+              // replicate t1 array
+              t1_this("a,i") = t1("a,i").set_world(this_world);
+            } else {
+              // on 1 node, no need to replicate t1
+              t1_this = t1;
+            }
+
+            // based on replicate keyword, replicate g_cjkl array
+            if (replicate_ijka_ && size > 1) {
+              // replicate g_cjkl
+              g_cjkl_global("c,j,k,l") = g_aijk("c,j,k,l").set_world(this_world);
+            } else {
+              // don't replicate g_cjkl
+              g_cjkl_global = g_aijk;
+            }
+
+            typedef std::vector<std::size_t> block;
+            // lambda function to compute t3
+
+            auto compute_t3_c = [&g_dabi, &t2_right, &t2_left, &g_cjkl_global,
+                n_tr_vir_inner, n_tr_occ,
+                n_tr_occ_inner](std::size_t a, std::size_t b,
+                                std::size_t c, TArray &t3) {
+              // index
+              std::size_t a_low = a;
+              std::size_t a_up = a + 1;
+              std::size_t b_low = b;
+              std::size_t b_up = b + 1;
+              std::size_t c_low = c;
+              std::size_t c_up = c + 1;
+
+              {
+                // block for g_dbai
+                block g_dabi_low{0, a_low, b_low, 0};
+                block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
+
+                auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
+
+                // block for t2_dcjk
+                block t2_dcjk_low{0, c_low, 0, 0};
+                block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
+                auto block_t2_dcjk = t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
+
+                // block for g_cjkl
+                block g_cjkl_low{c_low, 0, 0, 0};
+                block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
+                TArray g_cjkl;
+                auto block_g_cjkl =
+                    g_cjkl_global("c,j,k,l").block(g_cjkl_low, g_cjkl_up);
+
+                // block for t2_abil
+                block t2_abil_low{a_low, b_low, 0, 0};
+                block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ_inner};
+
+                auto block_t2_abil = t2_right("a,b,i,l").block(t2_abil_low, t2_abil_up);
+
+                if (t3.is_initialized()) {
+                  t3("a,b,i,c,j,k") +=
+                      (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
+                } else {
+                  t3("a,b,i,c,j,k") =
+                      (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
+                }
+              }
+            };
+
+            auto compute_t3 = [&g_dabi, &t2_right, n_tr_vir_inner, n_tr_occ,
+                n_tr_occ_inner](std::size_t a, std::size_t b, TArray &t3,
+                                const TArray &this_t2_dcjk,
+                                const TArray &this_g_cjkl) {
+              // index
+              std::size_t a_low = a;
+              std::size_t a_up = a + 1;
+              std::size_t b_low = b;
+              std::size_t b_up = b + 1;
+
+              {
+                // block for g_dbai
+                block g_dabi_low{0, a_low, b_low, 0};
+                block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
+
+                auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
+
+                // block for t2_dcjk
+                auto block_t2_dcjk = this_t2_dcjk("d,c,j,k");
+
+                // block for g_cjkl
+                auto block_g_cjkl = this_g_cjkl("c,j,k,l");
+
+                // block for t2_abil
+                block t2_abil_low{a_low, b_low, 0, 0};
+                block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ_inner};
+
+                auto block_t2_abil = t2_right("a,b,i,l").block(t2_abil_low, t2_abil_up);
+
+                t3("a,b,i,c,j,k") +=
+                    (block_g_dabi * block_t2_dcjk) - (block_t2_abil * block_g_cjkl);
+              }
+            };
+
+            // lambda function to compute v3
+            auto compute_v3 = [&g_abij, &t1_this, n_tr_occ](std::size_t a,
+                                                            std::size_t b,
+                                                            std::size_t c, TArray &v3) {
+              // index
+              std::size_t a_low = a;
+              std::size_t a_up = a + 1;
+              std::size_t b_low = b;
+              std::size_t b_up = b + 1;
+              std::size_t c_low = c;
+              std::size_t c_up = c + 1;
+
+              {
+                // block for g_bcjk
+                block g_bcjk_low{b_low, c_low, 0, 0};
+                block g_bcjk_up{b_up, c_up, n_tr_occ, n_tr_occ};
+
+                auto block_g_bcjk = g_abij("b,c,j,k").block(g_bcjk_low, g_bcjk_up);
+
+                // block for t1_ai
+                block t1_ai_low{a_low, 0};
+                block t1_ai_up{a_up, n_tr_occ};
+
+                auto block_t_ai = t1_this("a,i").block(t1_ai_low, t1_ai_up);
+
+                if (v3.is_initialized()) {
+                  v3("b,c,j,k,a,i") += (block_g_bcjk * block_t_ai);
+                } else {
+                  v3("b,c,j,k,a,i") = (block_g_bcjk * block_t_ai);
+                }
+              }
+            };
+
+            // start (T) calculation
+            double triple_energy = 0.0;
+
+            // time spend in reduction
+            double reduce_time = 0.0;
+            // time spend in contraction
+            double contraction_time = 0.0;
+            // time spend in outer product
+            double outer_product_time = 0.0;
+            // time spend in permutation
+            double permutation_time = 0.0;
+
+            mpqc::time_point time00;
+            mpqc::time_point time01;
+
+            // local iteration
+            std::size_t iter = 0;
+
+            // global iteration
+            std::size_t global_iter = 0;
+
+            // make progress points
+            const auto divide = 10;
+            std::size_t increase = std::max(1.0, std::round(double(n_tr_vir) / divide));
+            std::vector<std::size_t> progress_points;
+            for (std::size_t i = 0; i < n_tr_vir; i += increase) {
+              progress_points.push_back(i);
+            }
+
+            TA::set_default_world(this_world);
+
+            // start loop over a, b, c
+            for (auto a = 0; a < n_tr_vir; ++a) {
+              std::size_t a_low = a;
+              std::size_t a_up = a + 1;
+
+              // block for g_ajkl
+              block g_ajkl_low{a_low, 0, 0, 0};
+              block g_ajkl_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
+              TArray g_ajkl;
+              g_ajkl("a,j,k,l") = g_cjkl_global("a,j,k,l").block(g_ajkl_low, g_ajkl_up);
+
+              // block for t2_dcjk
+              block t2_dajk_low{0, a_low, 0, 0};
+              block t2_dajk_up{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
+              TArray t2_dajk;
+              t2_dajk("d,a,j,k") = t2_left("d,a,j,k").block(t2_dajk_low, t2_dajk_up);
+
+              for (auto b = 0; b <= a; ++b) {
+                std::size_t b_low = b;
+                std::size_t b_up = b + 1;
+
+                // block for g_bjkl
+                block g_bjkl_low{b_low, 0, 0, 0};
+                block g_bjkl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
+                TArray g_bjkl;
+                g_bjkl("b,j,k,l") =
+                    g_cjkl_global("b,j,k,l").block(g_bjkl_low, g_bjkl_up);
+
+                // block for t2_dbjk
+                block t2_dbjk_low{0, b_low, 0, 0};
+                block t2_dbjk_up{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
+                TArray t2_dbjk;
+                t2_dbjk("d,b,j,k") = t2_left("d,b,j,k").block(t2_dbjk_low, t2_dbjk_up);
+
+                for (auto c = 0; c <= b; ++c) {
+                  global_iter++;
+
+                  // round-robin distribute the loop
+                  if (global_iter % size != rank) continue;
+
+                  // inner loop
+                  iter++;
+
+                  // compute t3
+                  TArray t3;
+                  // abcijk contribution
+                  // g^{da}_{bi}*t^{cd}_{kj} - g^{cj}_{kl}*t^{ab}_{il}
+
+                  time00 = mpqc::now(this_world, accurate_time);
+                  compute_t3_c(a, b, c, t3);
+                  time01 = mpqc::now(this_world, accurate_time);
+                  contraction_time += mpqc::duration_in_s(time00, time01);
+
+                  // acbikj contribution
+                  // g^{da}_{ci}*t^{db}_{kj} - g^{bk}_{jl}*t^{ac}_{il}
+                  {
+                    t3("a,c,i,b,k,j") = t3("a,b,i,c,j,k");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_t3(a, c, t3, t2_dbjk, g_bjkl);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // cabkij contribution
+                  // g^{dc}_{ak}*t^{db}_{ij} - g^{bi}_{jl}*t^{ca}_{kl}
+                  {
+                    t3("c,a,k,b,i,j") = t3("a,c,i,b,k,j");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_t3(c, a, t3, t2_dbjk, g_bjkl);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // cbakji contribution
+                  // g^{dc}_{bk}*t^{da}_{ji} - g^{aj}_{il}*t^{cb}_{kl}
+                  {
+                    t3("c,b,k,a,j,i") = t3("c,a,k,b,i,j");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_t3(c, b, t3, t2_dajk, g_ajkl);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // bcajki contribution
+                  // g^{db}_{cj}*t^{da}_{ki} - g^{ak}_{il}*t^{bc}_{jl}
+                  {
+                    t3("b,c,j,a,k,i") = t3("c,b,k,a,j,i");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_t3(b, c, t3, t2_dajk, g_ajkl);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // bacjik contribution
+                  // g^{db}_{aj}*t^{dc}_{ik} - g^{ci}_{kl}*t^{ba}_{jl}
+                  {
+                    t3("b,a,j,c,i,k") = t3("b,c,j,a,k,i");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_t3_c(b, a, c, t3);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  t3("a,b,c,i,j,k") = t3("b,a,j,c,i,k");
+                  time00 = mpqc::now(this_world, accurate_time);
+                  permutation_time += mpqc::duration_in_s(time01, time00);
+
+                  // compute v3
+                  TArray v3;
+
+                  // bcajki contribution
+                  // g^{bc}_{jk}*t^{a}_{i}
+                  {
+                    compute_v3(a, b, c, v3);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    outer_product_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // acbikj contribution
+                  // g^{ac}_{ik}*t^{b}_{j}
+                  {
+                    v3("a,c,i,k,b,j") = v3("b,c,j,k,a,i");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_v3(b, a, c, v3);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    outer_product_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // abcijk contribution
+                  // g^{ab}_{ij}*t^{c}_{k}
+                  {
+                    v3("a,b,i,j,c,k") = v3("a,c,i,k,b,j");
+                    time00 = mpqc::now(this_world, accurate_time);
+                    permutation_time += mpqc::duration_in_s(time01, time00);
+
+                    compute_v3(c, a, b, v3);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    outer_product_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  v3("a,b,c,i,j,k") = v3("a,b,i,j,c,k");
+                  time00 = mpqc::now(this_world, accurate_time);
+                  permutation_time += mpqc::duration_in_s(time01, time00);
+
+                  TArray result;
+                  {
+                    result("a,b,c,i,j,k") =
+                        ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
+                            (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
+                                t3("a,b,c,j,k,i") -
+                                2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
+                                    t3("a,b,c,j,i,k"))))
+                            .set_world(this_world);
+                    time01 = mpqc::now(this_world, accurate_time);
+                    contraction_time += mpqc::duration_in_s(time00, time01);
+                  }
+
+                  // compute offset
+                  std::size_t a_offset = tr_vir.tile(a).first;
+                  std::size_t b_offset = tr_vir.tile(b).first;
+                  std::size_t c_offset = tr_vir.tile(c).first;
+                  std::array<std::size_t, 6> offset{
+                      {a_offset, b_offset, c_offset, 0, 0, 0}};
+
+                  double tmp_energy = 0.0;
+                  if (b < a && c < b) {
+                    time00 = mpqc::now(this_world, accurate_time);
+                    auto ccsd_t_reduce = CCSD_T_Reduce(
+                        this->orbital_energy(), trange1_eignie->get_occ(),
+                trange1_eignie->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -625,8 +630,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           else {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
-                this->local_trange1_engine()->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_eignie->get_occ(),
+                trange1_eignie->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -722,12 +727,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       reblock_inner_t2(t2_left, t2_right);
     }
 
-    // get trange1
-    auto tr_occ = this->local_trange1_engine()->get_active_occ_tr1();
-    auto tr_vir = this->local_trange1_engine()->get_vir_tr1();
+    auto trange1_eignie = this->local_trange1_engine() == nullptr
+                              ? this->trange1_engine()
+                              : this->local_trange1_engine();
 
-    auto n_tr_occ = this->local_trange1_engine()->get_active_occ_blocks();
-    auto n_tr_vir = this->local_trange1_engine()->get_vir_blocks();
+    // get trange1
+    auto tr_occ = trange1_eignie->get_active_occ_tr1();
+    auto tr_vir = trange1_eignie->get_vir_tr1();
+
+    auto n_tr_occ = trange1_eignie->get_active_occ_blocks();
+    auto n_tr_vir = trange1_eignie->get_vir_blocks();
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
     if (reblock_inner_) {
@@ -816,9 +825,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t c_increase = increase;
 
     std::size_t occ_block_size =
-        this->local_trange1_engine()->get_occ_block_size();
+        trange1_eignie->get_occ_block_size();
     std::size_t vir_block_size =
-        this->local_trange1_engine()->get_vir_block_size();
+        trange1_eignie->get_vir_block_size();
     std::size_t n_blocks =
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_blocks * std::pow(occ_block_size, 3) *
@@ -1054,8 +1063,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           double tmp_energy = 0.0;
           if (b_end < a && c_end < b) {
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
-                this->local_trange1_engine()->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_eignie->get_occ(),
+                trange1_eignie->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -1066,8 +1075,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             tmp_energy *= 2;
           } else {
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
-                this->local_trange1_engine()->get_nfrozen(), offset);
+                this->orbital_energy(), trange1_eignie->get_occ(),
+                trange1_eignie->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -1143,10 +1152,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
 
     std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
+    auto trange1_eignie = this->local_trange1_engine() == nullptr
+                          ? this->trange1_engine()
+                          : this->local_trange1_engine();
 
     auto ccsd_t_reduce = CCSD_T_Reduce(
-        this->orbital_energy(), this->local_trange1_engine()->get_occ(),
-        this->local_trange1_engine()->get_nfrozen(), offset);
+        this->orbital_energy(), trange1_eignie->get_occ(),
+        trange1_eignie->get_nfrozen(), offset);
 
     double triple_energy =
         ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
@@ -1159,7 +1171,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   // performs Laplace transform perturbative triple correction to CCSD energy
   double compute_ccsd_t_laplace_transform(const TArray &t1, const TArray &t2) {
-
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_dabi = get_abci();
@@ -2033,8 +2044,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   energy_o_s = E_O3V2_o_s + E_O4V2_o_s + E_O3V3_o_s;
 
-  triple_energy += 3.0 * w(m) * (2.0 * energy_vv + 2.0 * energy_oo -
-                                 4.0 * energy_vo + energy_v_s - energy_o_s);
+  triple_energy += 3.0 * w(m) *
+                   (2.0 * energy_vv + 2.0 * energy_oo - 4.0 * energy_vo +
+                    energy_v_s - energy_o_s);
 
   if (t1.world().rank() == 0) {
     std::cout << "done with quadrature: " << m + 1 << " out of "
@@ -2050,7 +2062,7 @@ if (t1.world().rank() == 0) {
 triple_energy = -triple_energy / (3.0 * alpha);
 
 return triple_energy;
-}  // end of Laplace-transform (T)
+}
 
 void reblock() {
   auto &lcao_factory = this->lcao_factory();
@@ -2174,7 +2186,7 @@ void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
   t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
 }
 
-//const TArray get_Xab() {
+// const TArray get_Xab() {
 //  TArray result;
 //  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
 //  TArray three_center;
@@ -2188,7 +2200,7 @@ void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
 //}
 //
 ///// get three center integral (X|ai)
-//const TArray get_Xai() {
+// const TArray get_Xai() {
 //  TArray result;
 //  TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
 //  TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
@@ -2226,11 +2238,11 @@ const TArray get_abci() {
 
 /// <ab|ij>
 const TArray get_abij() {
-    std::wstring post_fix = this->is_df() ? L"[df]" : L"";
-    TArray result;
-    result = this->lcao_factory().compute(L"<i j|G|a b>" + post_fix);
-    result("a,b,i,j") = result("i,j,a,b");
-    return result;
+  std::wstring post_fix = this->is_df() ? L"[df]" : L"";
+  TArray result;
+  result = this->lcao_factory().compute(L"<i j|G|a b>" + post_fix);
+  result("a,b,i,j") = result("i,j,a,b");
+  return result;
 }
 
 private:
@@ -2421,7 +2433,7 @@ struct CCSD_T_ReduceSymm : public ReduceBase {
   }
 };  // structure CCSD_T_ReduceSymm
 
-};  // class CCSD_T
+};  // end of class CCSD_T
 
 #if TA_DEFAULT_POLICY == 0
 extern template class CCSD_T<TA::TensorD, TA::DensePolicy>;

@@ -297,8 +297,8 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
  * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
  * @param ints cc::Integrals, requires Fia, FIJ, FAB, Xai, Xab, Xij, Gijab,
  * Giajb, Gijka, Gijkl  and  Giabc with Gabcd
- * if Giabc and Gabcd is not initialized, it will evaluated with lazy density-fitting
- * if U is initialized, Giabc and Gabcd won't be used
+ * if Giabc and Gabcd is not initialized, it will evaluated with lazy
+ * density-fitting if U is initialized, Giabc and Gabcd won't be used
  * @param u half transformed intermediates U("p,r,i,j") =
  * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
  * @return R2 residual

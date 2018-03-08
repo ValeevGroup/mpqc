@@ -40,8 +40,7 @@ class EEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
     }
   }
 
-  void compute(const element_type &e,
-               ::mpqc::cc::TPack<Array> &guess) const {
+  void compute(const element_type &e, ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v_;
     const auto &eps_o = this->eps_o_;
 
@@ -111,8 +110,7 @@ class EAPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
     }
   }
 
-  void compute(const element_type &e,
-               ::mpqc::cc::TPack<Array> &guess) const {
+  void compute(const element_type &e, ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -176,8 +174,7 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
     }
   }
 
-  void compute(const element_type &e,
-               ::mpqc::cc::TPack<Array> &guess) const {
+  void compute(const element_type &e, ::mpqc::cc::TPack<Array> &guess) const {
     const auto &eps_v = this->eps_v;
     const auto &eps_o = this->eps_o;
 
@@ -449,9 +446,8 @@ class StateSpecificPNOEEPred
 
   ~StateSpecificPNOEEPred() = default;
 
-  virtual void operator()(
-      const EigenVector<typename Tile::numeric_type> &e,
-      std::vector<::mpqc::cc::TPack<Array>> &guess) const {
+  virtual void operator()(const EigenVector<typename Tile::numeric_type> &e,
+                          std::vector<::mpqc::cc::TPack<Array>> &guess) const {
     TA_ASSERT(e.size() == guess.size());
     TA_ASSERT(e.size() == n_roots_);
 

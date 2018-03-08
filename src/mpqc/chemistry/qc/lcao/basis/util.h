@@ -10,6 +10,8 @@ namespace lcao {
 namespace gaussian {
 namespace detail {
 
+using func_offset_list = std::unordered_map<size_t, std::tuple<size_t, size_t>>;
+
 /*!
  * \brief This shifts the origin of a Basis object
  *
@@ -39,9 +41,32 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3d &dcell,
                                           const bool is_half_range = false);
 
+/*!
+ * \brief This computes shell offsets for every cluster in a basis
+ * \param basis
+ * \return a list of <key, mapped value> pairs with
+ * key: cluster index
+ * mapped value: index of first shell in a cluster
+ */
+std::unordered_map<size_t, size_t> compute_shell_offset(const Basis &basis);
+
+/*!
+ * \brief This computes cluster & basis function offsets for every shell in a
+ * cluster.
+ * \param cluster a cluster (a.k.a. std::vector<Shell>)
+ * \param bf_first basis function index of the first function in this \c
+ * cluster
+ *
+ * \return a list of <key, mapped value> pairs with
+ * key: shell index
+ * mapped value: {cluster function offset, basis function offset} tuple
+ */
+func_offset_list compute_func_offset_list(const ShellVec &cluster,
+                                          const size_t bf_first);
+
 }  // namespace detail
 }  // namespace gaussian
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_SHIFT_BASIS_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_BASIS_SHIFT_BASIS_H_

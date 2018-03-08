@@ -444,7 +444,6 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
 
       cis_vector = cis_guess_wfn_->eigen_vector();
       cis_eig = cis_guess_wfn_->eigen_value();
-
     }
 
     this->init();

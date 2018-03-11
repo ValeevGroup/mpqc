@@ -482,6 +482,31 @@ class MAFourCenterzRHF : public zRHF<Tile, Policy> {
   double ma_ws_;
 };
 
+/*!
+ * \brief MAFourCenterJCADFK uses four-center-J (CNF) and MA (CFF) for Coulomb
+ * and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class MAFourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MAFourCenterJCADFKzRHF(const KeyVal& kv);
+
+  ~MAFourCenterJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
+
+  double force_shape_threshold_;
+  double ma_energy_threshold_;
+  double ma_extent_threshold_;
+  double ma_extent_smallval_;
+  double ma_ws_;
+};
 
 #if TA_DEFAULT_POLICY == 0
 
@@ -494,6 +519,7 @@ extern template class MARIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class MARIJFourCenterKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class MAFourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MAFourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

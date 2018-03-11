@@ -34,4 +34,7 @@ MPQC_CLASS_EXPORT2("MA-RIJ-FourCenterK-zRHF", mpqc::lcao::MARIJFourCenterKzRHF<T
 
 template class mpqc::lcao::MAFourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("MA-FourCenter-zRHF", mpqc::lcao::MAFourCenterzRHF<TA::TensorD, TA::SparsePolicy>);
+
+template class mpqc::lcao::MAFourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("MA-FourCenterJ-CADFK-zRHF", mpqc::lcao::MAFourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>);
 #endif

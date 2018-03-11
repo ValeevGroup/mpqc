@@ -11,6 +11,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_four_center_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
@@ -927,6 +928,52 @@ MAFourCenterzRHF<Tile, Policy>::build_F(const array_type& D,
 
   return F_cnf;
 }
+
+/**
+ *  MAFourCenterJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MAFourCenterJCADFKzRHF<Tile, Policy>::MAFourCenterJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  ma_energy_threshold_ = kv.value<double>("ma_energy_threshold", 1e-9);
+  ma_ws_ = kv.value<double>("ma_well_separateness", 3.0);
+  ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
+  ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
+}
+
+template <typename Tile, typename Policy>
+void MAFourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_);
+  this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
+      .multipole_builder()
+      .CFF_reached();
+}
+
+template <typename Tile, typename Policy>
+typename MAFourCenterJCADFKzRHF<Tile, Policy>::array_type
+MAFourCenterJCADFKzRHF<Tile, Policy>::build_F(const array_type& D,
+                                        const array_type& H,
+                                        const Vector3i& H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
+
+  auto& ma_builder =
+      dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
+  if (this->need_extra_update_) {
+    this->extra_F_ = ma_builder.get_fock();
+    this->extra_energy_ = ma_builder.get_energy();
+  }
+
+  return F_cnf;
+}
+
 
 }  // namespace lcao
 }  // namespace mpqc

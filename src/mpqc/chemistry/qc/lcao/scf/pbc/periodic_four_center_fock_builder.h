@@ -1280,16 +1280,31 @@ class PeriodicFourCenterFockBuilder
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
         const auto R2m1_3D = R2_3D - R1_3D;
 
+        // skip 2 cases if Rρ is out of the RJ_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        bool skip02 = !is_in_lattice_range(R2_3D, RJ_max_);
+
         for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
           const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
           const auto R2p3_3D = R2_3D + R3_3D;
           const auto R2p3m1_3D = R2p3_3D - R1_3D;
 
+          // skip 2 cases if Rρ+Rσ is out of the RJ_max range
+          // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+          // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+          bool skip03 = !is_in_lattice_range(R2p3_3D, RJ_max_);
+          // skip 2 cases if Rρ-Rν is out of the RJ_max range
+          // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+          // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+          bool skip12 = !is_in_lattice_range(R2m1_3D, RJ_max_);
+          // skip 2 cases if Rρ+Rσ-Rν is out of the RJ_max range
+          // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+          // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+          bool skip13 = !is_in_lattice_range(R2p3m1_3D, RJ_max_);
+
           // skip if condition #3 (see doc) cannot be satisfied in all 8 cases
-          if ((!is_in_lattice_range(R2_3D, RJ_max_))
-              && (!is_in_lattice_range(R2p3_3D, RJ_max_))
-              && (!is_in_lattice_range(R2m1_3D, RJ_max_))
-              && (!is_in_lattice_range(R2p3m1_3D, RJ_max_))) {
+          if (skip02 && skip03 && skip12 && skip13) {
             continue;
           }
 
@@ -1301,38 +1316,6 @@ class PeriodicFourCenterFockBuilder
                                       : -1;
           if (uc_ord_D01 < 0 && uc_ord_D23 < 0) {
             continue;
-          }
-
-          double multiplicity_drop = 0.0;
-          // if Rρ is out of the RJ_max range, multiplicity -= 2
-          // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
-          // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
-          if (!is_in_lattice_range(R2_3D, RJ_max_)) {
-            multiplicity_drop += 2.0;
-          }
-          if (R3_ord != ref_R_ord_) {
-            // if Rρ+Rσ is out of the RJ_max range, multiplicity -= 2
-            // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
-            // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
-            if (!is_in_lattice_range(R2p3_3D, RJ_max_)) {
-              multiplicity_drop += 2.0;
-            }
-          }
-          if (R1_ord != ref_R_ord_) {
-            // if Rρ-Rν is out of the RJ_max range, multiplicity -= 2
-            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
-            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
-            if (!is_in_lattice_range(R2m1_3D, RJ_max_)) {
-              multiplicity_drop += 2.0;
-            }
-            if (R3_ord != ref_R_ord_) {
-              // if Rρ+Rσ-Rν is out of the RJ_max range, multiplicity -= 2
-              // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
-              // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
-              if (!is_in_lattice_range(R2p3m1_3D, RJ_max_)) {
-                multiplicity_drop += 2.0;
-              }
-            }
           }
 
           for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
@@ -1402,7 +1385,7 @@ class PeriodicFourCenterFockBuilder
                         std::array<std::array<long, 2>, 2>{{idx_F01, idx_F23}},
                         std::array<int64_t, 2>{
                             {int64_t(uc_ord_F01), int64_t(uc_ord_F23)}},
-                        multiplicity_drop);
+                        std::array<bool, 4>{{skip02, skip03, skip12, skip13}});
                   }
                   task_id++;
                 }
@@ -1422,7 +1405,7 @@ class PeriodicFourCenterFockBuilder
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
     for (auto i = 0; i < compute_world.nproc(); ++i) {
       if (me == i) {
-        ExEnv::outn() << indent << "Integrals on node(" << i
+        ExEnv::outn() << indent << "Ints for J on node(" << i
                       << "): " << num_ints_computed_ << std::endl;
       }
       compute_world.gop.fence();
@@ -1496,8 +1479,9 @@ class PeriodicFourCenterFockBuilder
       // copy results of local reduction tasks into G
       for (const auto &local_tile : local_fock_tiles_) {
         // if this tile was not truncated away
-        if (!G_unsymm.shape().is_zero(local_tile.first))
+        if (!G_unsymm.shape().is_zero(local_tile.first)) {
           G_unsymm.set(local_tile.first, local_tile.second);
+        }
       }
       // set the remaining local tiles to 0 (this should only be needed for
       // dense policy)
@@ -3472,7 +3456,7 @@ class PeriodicFourCenterFockBuilder
                            std::array<int64_t, 3> lattice_ord_idx,
                            std::array<std::array<long, 2>, 2> idx_F,
                            std::array<int64_t, 2> uc_ord_F,
-                           double multiplicity_drop) const {
+                           std::array<bool, 4> skip_ints) const {
     const auto tile0 = tile_idx[0];
     const auto tile1 = tile_idx[1];
     const auto tile2 = tile_idx[2];
@@ -3484,6 +3468,11 @@ class PeriodicFourCenterFockBuilder
 
     const auto uc_ord_F01 = uc_ord_F[0];
     const auto uc_ord_F23 = uc_ord_F[1];
+
+    const auto skip02 = skip_ints[0];
+    const auto skip03 = skip_ints[1];
+    const auto skip12 = skip_ints[2];
+    const auto skip13 = skip_ints[3];
 
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
@@ -3536,8 +3525,10 @@ class PeriodicFourCenterFockBuilder
         uc_ord_F23 < 0 ? range_type() : translate_rng(rng3, uc_ord_F23);
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this
-    auto rng01 = (uc_ord_F01 >= 0) ? TA::Range({rng0, rng1_in_F01}) : TA::Range();
-    auto rng23 = (uc_ord_F23 >= 0) ? TA::Range({rng2, rng3_in_F23}) : TA::Range();
+    auto rng01 =
+        (uc_ord_F01 >= 0) ? TA::Range({rng0, rng1_in_F01}) : TA::Range();
+    auto rng23 =
+        (uc_ord_F23 >= 0) ? TA::Range({rng2, rng3_in_F23}) : TA::Range();
 
     // initialize contribution to the Fock matrices
     auto F01 = (uc_ord_F01 >= 0) ? Tile(std::move(rng01), 0.0) : Tile();
@@ -3604,6 +3595,11 @@ class PeriodicFourCenterFockBuilder
         auto offset_list_c2 = compute_func_offset_list(cluster2, rng2.first);
         auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
 
+        // skip 2 cases if Rρ is out of the RJ_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        const auto drop02 = skip02 ? 2.0 : 0.0;
+
         // this is the index of the first basis functions for each shell *in
         // this shell cluster*
         auto cf0_offset = 0;
@@ -3640,7 +3636,13 @@ class PeriodicFourCenterFockBuilder
             const auto Dnorm01 =
                 (norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
 
-            const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
+            const auto permut01 = (bf0_offset != bf1_offset);
+            const auto multiplicity01 = permut01 ? 2.0 : 1.0;
+
+            // skip 2 cases if Rρ-Rν is out of the RJ_max range
+            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+            const auto drop12 = (skip12 && permut01) ? 2.0 : 0.0;
 
             for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
               std::tie(cf2_offset, bf2_offset) = offset_list_c2[sh2];
@@ -3685,18 +3687,30 @@ class PeriodicFourCenterFockBuilder
                 }
 
                 num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
-                const auto multiplicity23 =
-                    bf2_offset == bf3_offset ? 1.0 : 2.0;
+                const auto permut23 = (bf2_offset != bf3_offset);
+                const auto multiplicity23 = permut23 ? 2.0 : 1.0;
+
                 const auto multiplicity0213 =
                     (R2_ord == ref_Rrho_ord_ && R1_ord == R3_ord &&
                      bf0_offset == bf2_offset && bf1_offset == bf3_offset)
                         ? 1.0
                         : 2.0;
+
+                // skip 2 cases if Rρ+Rσ is out of the RJ_max range
+                // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+                // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+                const auto drop03 = (skip03 && permut23) ? 2.0 : 0.0;
+                // skip 2 cases if Rρ+Rσ-Rν is out of the RJ_max range
+                // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+                // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+                const auto drop13 =
+                    (skip13 && permut01 && permut23) ? 2.0 : 0.0;
+
                 const auto multiplicity =
                     multiplicity01 * multiplicity23 * multiplicity0213 -
-                    multiplicity_drop;
+                    drop02 - drop03 - drop12 - drop13;
 
-                assert(multiplicity >= 1.0);
+                assert(multiplicity > 0.0);
                 // compute shell set
                 engine.compute2<libint2::Operator::coulomb,
                                 libint2::BraKet::xx_xx, 0>(shell0, shell1,
@@ -3706,27 +3720,40 @@ class PeriodicFourCenterFockBuilder
                 if (eri_0123 != nullptr) {
                   // if the shell set is not screened out
                   for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
-                    const auto cf0 = f0 + cf0_offset;  // basis function index in tile0 (i.e. cluster0)
+                    const auto cf0 = f0 + cf0_offset;  // basis function index
+                                                       // in tile0 (i.e.
+                                                       // cluster0)
                     for (auto f1 = 0; f1 != nf1; ++f1) {
-                      const auto cf1 = f1 + cf1_offset;  // basis function index in tile1 (i.e. cluster1)
-                      const auto cf01 = cf0 * rng1_size + cf1;  // index of {cf0, cf1} in D01 or F01
+                      const auto cf1 = f1 + cf1_offset;  // basis function index
+                                                         // in tile1 (i.e.
+                                                         // cluster1)
+                      const auto cf01 =
+                          cf0 * rng1_size +
+                          cf1;  // index of {cf0, cf1} in D01 or F01
                       for (auto f2 = 0; f2 != nf2; ++f2) {
-                        const auto cf2 = f2 + cf2_offset;  // basis function index in tile2 (i.e. cluster2)
+                        const auto cf2 = f2 + cf2_offset;  // basis function
+                                                           // index in tile2
+                                                           // (i.e. cluster2)
                         for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
-                          const auto cf3 = f3 + cf3_offset;  // basis function index in tile3 (i.e. cluster3)
-                          const auto cf23 = cf2 * rng3_size + cf3;  // index of {cf2, cf3} in D23 or F23
+                          const auto cf3 = f3 + cf3_offset;  // basis function
+                                                             // index in tile3
+                                                             // (i.e. cluster3)
+                          const auto cf23 =
+                              cf2 * rng3_size +
+                              cf3;  // index of {cf2, cf3} in D23 or F23
 
                           const auto value = eri_0123[f0123];
                           const auto value_scaled_by_multiplicity =
                               value * multiplicity;
 
                           if (F01_ptr != nullptr && D23_ptr != nullptr) {
-                            F01_ptr[cf01] += D23_ptr[cf23] * value_scaled_by_multiplicity;
+                            F01_ptr[cf01] +=
+                                D23_ptr[cf23] * value_scaled_by_multiplicity;
                           }
                           if (F23_ptr != nullptr && D01_ptr != nullptr) {
-                            F23_ptr[cf23] += D01_ptr[cf01] * value_scaled_by_multiplicity;
+                            F23_ptr[cf23] +=
+                                D01_ptr[cf01] * value_scaled_by_multiplicity;
                           }
-
                         }
                       }
                     }

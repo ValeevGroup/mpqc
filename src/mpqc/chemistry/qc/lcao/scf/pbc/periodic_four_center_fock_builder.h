@@ -1190,6 +1190,33 @@ class PeriodicFourCenterFockBuilder
     }
   }
 
+  /*!
+   * This computes Coulomb matrix using eight-fold permutational symmetry in
+   * (μ_0 ν_Rν| ρ_Rρ σ_(Rρ+Rσ)):
+   *
+   *   (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+   * = (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+   * = (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+   * = (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+   * = (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+   * = (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+   * = (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+   * = (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+   *
+   * note that to reduce cost we use lattice truncations, i.e.
+   * 1. the unit cell distance between AO #2 and AO #1 (the reference cell) is
+   * shorter than \c R_max
+   * 2. the unit cell distance between AO #4 and AO #2 is shorter than \c R_max
+   * 3. the unit cell distance between AO #3 and AO #1 (the reference cell) is
+   * shorter than \c RJ_max
+   *
+   * Conditions 1 and 2 are satisfied automatically since Rν <= R_max and
+   * Rσ <= R_max. Condition 3 has to be determined in this function.
+   *
+   * @param D
+   * @param target_precision
+   * @return
+   */
   array_type compute_J_aaaa(array_type const &D, double target_precision) {
     auto &compute_world = this->get_world();
     const auto me = compute_world.rank();
@@ -1251,8 +1278,21 @@ class PeriodicFourCenterFockBuilder
                                   : -1;
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
+        const auto R2m1_3D = R2_3D - R1_3D;
+
         for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
           const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
+          const auto R2p3_3D = R2_3D + R3_3D;
+          const auto R2p3m1_3D = R2p3_3D - R1_3D;
+
+          // skip if condition #3 (see doc) cannot be satisfied in all 8 cases
+          if ((!is_in_lattice_range(R2_3D, RJ_max_))
+              && (!is_in_lattice_range(R2p3_3D, RJ_max_))
+              && (!is_in_lattice_range(R2m1_3D, RJ_max_))
+              && (!is_in_lattice_range(R2p3m1_3D, RJ_max_))) {
+            continue;
+          }
+
           const auto uc_ord_D23 = is_in_lattice_range(R3_3D, truncated_RD_max_)
                                       ? direct_ord_idx(R3_3D, RD_max_)
                                       : -1;
@@ -1263,12 +1303,37 @@ class PeriodicFourCenterFockBuilder
             continue;
           }
 
-          // ρ and σ in (μ_0 ν_Rν| ρ_Rρ σ_(Rρ+Rσ)) cannot be permuted if Rρ+Rσ
-          // is out of lattice range defined by RJ_max. In this case,
-          // multiplicity will drop by 2
-          const auto R2p3_3D = R2_3D + R3_3D;
-          const auto multiplicity_drop =
-              is_in_lattice_range(R2p3_3D, Rrho_max_) ? 0.0 : 2.0;
+          double multiplicity_drop = 0.0;
+          // if Rρ is out of the RJ_max range, multiplicity -= 2
+          // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+          // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+          if (!is_in_lattice_range(R2_3D, RJ_max_)) {
+            multiplicity_drop += 2.0;
+          }
+          if (R3_ord != ref_R_ord_) {
+            // if Rρ+Rσ is out of the RJ_max range, multiplicity -= 2
+            // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+            // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+            if (!is_in_lattice_range(R2p3_3D, RJ_max_)) {
+              multiplicity_drop += 2.0;
+            }
+          }
+          if (R1_ord != ref_R_ord_) {
+            // if Rρ-Rν is out of the RJ_max range, multiplicity -= 2
+            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+            if (!is_in_lattice_range(R2m1_3D, RJ_max_)) {
+              multiplicity_drop += 2.0;
+            }
+            if (R3_ord != ref_R_ord_) {
+              // if Rρ+Rσ-Rν is out of the RJ_max range, multiplicity -= 2
+              // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+              // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+              if (!is_in_lattice_range(R2p3m1_3D, RJ_max_)) {
+                multiplicity_drop += 2.0;
+              }
+            }
+          }
 
           for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
             for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
@@ -1962,7 +2027,7 @@ class PeriodicFourCenterFockBuilder
     // locate the ordinal index of the reference lattice in R vectors
     ref_R_ord_ = (R_size_ - 1) / 2;
     // lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    Rrho_max_ = RJ_max_;
+    Rrho_max_ = RJ_max_ + R_max_;
     Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
     ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
 
@@ -3402,7 +3467,7 @@ class PeriodicFourCenterFockBuilder
       PeriodicFourCenterFockBuilder_::accumulate_local_task(F13, idx_F[3]);
   }
 
-  void  compute_j_task_aaaa(std::array<Tile, 2> D, std::array<Tile, 2> norm_D,
+  void compute_j_task_aaaa(std::array<Tile, 2> D, std::array<Tile, 2> norm_D,
                            std::array<size_t, 4> tile_idx,
                            std::array<int64_t, 3> lattice_ord_idx,
                            std::array<std::array<long, 2>, 2> idx_F,
@@ -3452,8 +3517,27 @@ class PeriodicFourCenterFockBuilder
     const auto rng3_size = rng3.second - rng3.first;
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this
-    auto rng01 = (uc_ord_F01 >= 0) ? TA::Range({rng0, rng1}) : TA::Range();
-    auto rng23 = (uc_ord_F23 >= 0) ? TA::Range({rng2, rng3}) : TA::Range();
+    // some exchange tile ranges have to be translated
+    const auto nfunctions_per_uc = basis0->nfunctions();
+    using range_type = TA::TiledRange1::range_type;
+    auto translate_rng = [&nfunctions_per_uc](const auto &in_rng,
+                                              const auto uc_ord) {
+      assert(uc_ord >= 0);
+      const auto translation = uc_ord * nfunctions_per_uc;
+      range_type out_rng;
+      out_rng.first = in_rng.first % nfunctions_per_uc + translation;
+      out_rng.second =
+          (in_rng.second - 1) % nfunctions_per_uc + 1 + translation;
+      return out_rng;
+    };
+    const auto rng1_in_F01 =
+        uc_ord_F01 < 0 ? range_type() : translate_rng(rng1, uc_ord_F01);
+    const auto rng3_in_F23 =
+        uc_ord_F23 < 0 ? range_type() : translate_rng(rng3, uc_ord_F23);
+
+    // 2-d tile ranges describing the Fock contribution blocks produced by this
+    auto rng01 = (uc_ord_F01 >= 0) ? TA::Range({rng0, rng1_in_F01}) : TA::Range();
+    auto rng23 = (uc_ord_F23 >= 0) ? TA::Range({rng2, rng3_in_F23}) : TA::Range();
 
     // initialize contribution to the Fock matrices
     auto F01 = (uc_ord_F01 >= 0) ? Tile(std::move(rng01), 0.0) : Tile();
@@ -3612,6 +3696,7 @@ class PeriodicFourCenterFockBuilder
                     multiplicity01 * multiplicity23 * multiplicity0213 -
                     multiplicity_drop;
 
+                assert(multiplicity >= 1.0);
                 // compute shell set
                 engine.compute2<libint2::Operator::coulomb,
                                 libint2::BraKet::xx_xx, 0>(shell0, shell1,

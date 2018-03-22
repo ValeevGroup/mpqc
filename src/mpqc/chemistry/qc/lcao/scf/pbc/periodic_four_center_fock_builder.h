@@ -181,14 +181,6 @@ class PeriodicFourCenterFockBuilder
         return compute_JK_abcd(D, target_precision, is_density_diagonal);
       }
     } else {
-      // validate preconditions
-      for (auto Rrho = 0; Rrho != Rrho_size_ - ref_Rrho_ord_; ++Rrho) {
-        auto ntilesRrho = basis_Rrho_[Rrho]->nclusters();
-        auto nbf_Rrho = basis_Rrho_[Rrho]->nfunctions();
-        assert(elements_range.extent(0) == nbf_Rrho);
-        assert(tiles_range.extent(0) == ntilesRrho);
-      }
-
       if (compute_J_) {
         return compute_J_aaaa(D, target_precision);
       } else {
@@ -1077,7 +1069,10 @@ class PeriodicFourCenterFockBuilder
                             {idx_F02, idx_F03, idx_F12, idx_F13}},
                         std::array<int64_t, 4>{
                             {int64_t(uc_ord_F02), int64_t(uc_ord_F03),
-                             int64_t(uc_ord_F12), int64_t(uc_ord_F13)}});
+                             int64_t(uc_ord_F12), int64_t(uc_ord_F13)}},
+                        std::array<int64_t, 4>{
+                            {int64_t(uc_ord_D02), int64_t(uc_ord_D03),
+                             int64_t(uc_ord_D12), int64_t(uc_ord_D13)}});
                   }
                   task_id++;
                 }
@@ -1575,8 +1570,6 @@ class PeriodicFourCenterFockBuilder
   mutable Vector3i Rrho_max_;
   mutable int64_t Rrho_size_;
   mutable int64_t ref_Rrho_ord_;
-  mutable std::vector<std::shared_ptr<Basis>> basis_Rrho_;
-  mutable std::vector<std::shared_ptr<Basis>> basis_Rsigma_;
   mutable Vector3i RF_max_;
   mutable Vector3i truncated_RD_max_;
   mutable Vector3i truncated_RD_size_;
@@ -2055,15 +2048,6 @@ class PeriodicFourCenterFockBuilder
     Rrho_max_ = RJ_max_ + R_max_;
     Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
     ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
-
-    // make basis ρ and basis σ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord != Rrho_size_; ++Rrho_ord) {
-      auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
-      // make compound basis sets for ρ and σ
-      basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
-      basis_Rsigma_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
-    }
 
     // make TiledRange of Fock
     {
@@ -3528,8 +3512,20 @@ class PeriodicFourCenterFockBuilder
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basis1 = basisR_;
-    const auto &basis2 = basis_Rrho_[R2_ord - ref_Rrho_ord_];
-    const auto &basis3 = basis_Rsigma_[R2_ord - ref_Rrho_ord_];
+    const auto Rrho_vec = ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                                shell.O[1] + shift(1),
+                                                shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
 
     // translate tile indices by unit cell indices
     const auto tile1_R1 = tile1 + (R1_ord - ref_R_ord_) * ntiles_per_uc_;
@@ -3538,8 +3534,10 @@ class PeriodicFourCenterFockBuilder
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];
     const auto &cluster1 = basis1->cluster_shells()[tile1_R1];
-    const auto &cluster2 = basis2->cluster_shells()[tile2];
-    const auto &cluster3 = basis3->cluster_shells()[tile3_R3];
+    const auto &cluster2_unshifted = basis0->cluster_shells()[tile2];
+    const auto &cluster3_unshifted = basis1->cluster_shells()[tile3_R3];
+    const auto cluster2 = shift_origin(cluster2_unshifted, Rrho_vec);
+    const auto cluster3 = shift_origin(cluster3_unshifted, Rrho_vec);
 
     // number of shells in each cluster
     const auto nshells0 = cluster0.size();
@@ -3917,15 +3915,6 @@ class PeriodicFourCenterFockBuilder
     Rrho_max_ = R_max_ + RD_max;
     Rrho_size_ = direct_ord_idx(Rrho_max_, Rrho_max_) + 1;
     ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
-
-    // make basis ρ and basis σ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord < Rrho_size_; ++Rrho_ord) {
-      auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
-      // make compound basis sets for ket0 and ket1
-      basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
-      basis_Rsigma_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
-    }
 
     // make TiledRange of Fock using initial full basisR
     {

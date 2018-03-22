@@ -75,6 +75,7 @@ class PeriodicFourCenterFockBuilder
   using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using BasisVector = std::vector<Basis>;
+  using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using shellpair_list_t = std::vector<std::vector<size_t>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
@@ -942,18 +943,18 @@ class PeriodicFourCenterFockBuilder
       const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
-        const auto R2p1_3D = R2_3D - R1_3D;
+        const auto R2m1_3D = R2_3D - R1_3D;
         const auto uc_ord_D02 = is_in_lattice_range(R2_3D, truncated_RD_max_)
                                     ? direct_ord_idx(R2_3D, RD_max_)
                                     : -1;
-        const auto uc_ord_D12 = is_in_lattice_range(R2p1_3D, truncated_RD_max_)
-                                    ? direct_ord_idx(R2p1_3D, RD_max_)
+        const auto uc_ord_D12 = is_in_lattice_range(R2m1_3D, truncated_RD_max_)
+                                    ? direct_ord_idx(R2m1_3D, RD_max_)
                                     : -1;
         const auto uc_ord_F02 = is_in_lattice_range(R2_3D, RF_max_)
                                     ? direct_ord_idx(R2_3D, RF_max_)
                                     : -1;
-        const auto uc_ord_F12 = is_in_lattice_range(R2p1_3D, RF_max_)
-                                    ? direct_ord_idx(R2p1_3D, RF_max_)
+        const auto uc_ord_F12 = is_in_lattice_range(R2m1_3D, RF_max_)
+                                    ? direct_ord_idx(R2m1_3D, RF_max_)
                                     : -1;
 
         for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
@@ -2010,10 +2011,6 @@ class PeriodicFourCenterFockBuilder
     assert(RD_size_ > 0 && RD_size_ % 2 == 1);
     // locate the ordinal index of the reference lattice in R vectors
     ref_R_ord_ = (R_size_ - 1) / 2;
-    // lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    Rrho_max_ = RJ_max_ + R_max_;
-    Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
-    ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
 
     // make compound basis set for ν_R in |μ_0 ν_R)
     // note that ν_R only contains half basis functions of |μ_R> (R >= 0)
@@ -2053,6 +2050,11 @@ class PeriodicFourCenterFockBuilder
     } else {
       throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
     }
+
+    // lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
+    Rrho_max_ = RJ_max_ + R_max_;
+    Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
+    ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
 
     // make basis ρ and basis σ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
     for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord != Rrho_size_; ++Rrho_ord) {
@@ -3134,7 +3136,8 @@ class PeriodicFourCenterFockBuilder
                            std::array<size_t, 4> tile_idx,
                            std::array<int64_t, 3> lattice_ord_idx,
                            std::array<std::array<long, 2>, 4> idx_F,
-                           std::array<int64_t, 4> uc_ord_F) const {
+                           std::array<int64_t, 4> uc_ord_F,
+                           std::array<int64_t, 4> uc_ord_D) const {
     const auto tile0 = tile_idx[0];
     const auto tile1 = tile_idx[1];
     const auto tile2 = tile_idx[2];
@@ -3149,11 +3152,28 @@ class PeriodicFourCenterFockBuilder
     const auto uc_ord_F12 = uc_ord_F[2];
     const auto uc_ord_F13 = uc_ord_F[3];
 
+    const bool skip02 = uc_ord_D[0] < 0;
+    const bool skip03 = uc_ord_D[1] < 0;
+    const bool skip12 = uc_ord_D[2] < 0;
+    const bool skip13 = uc_ord_D[3] < 0;
+
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basis1 = basisR_;
-    const auto &basis2 = basis_Rrho_[R2_ord - ref_Rrho_ord_];
-    const auto &basis3 = basis_Rsigma_[R2_ord - ref_Rrho_ord_];
+    const auto Rrho_vec = ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
 
     // translate tile indices by unit cell indices
     const auto tile1_R1 = tile1 + (R1_ord - ref_R_ord_) * ntiles_per_uc_;
@@ -3162,8 +3182,10 @@ class PeriodicFourCenterFockBuilder
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];
     const auto &cluster1 = basis1->cluster_shells()[tile1_R1];
-    const auto &cluster2 = basis2->cluster_shells()[tile2];
-    const auto &cluster3 = basis3->cluster_shells()[tile3_R3];
+    const auto &cluster2_unshifted = basis0->cluster_shells()[tile2];
+    const auto &cluster3_unshifted = basis1->cluster_shells()[tile3_R3];
+    const auto cluster2 = shift_origin(cluster2_unshifted, Rrho_vec);
+    const auto cluster3 = shift_origin(cluster3_unshifted, Rrho_vec);
 
     // number of shells in each cluster
     const auto nshells0 = cluster0.size();
@@ -3285,6 +3307,11 @@ class PeriodicFourCenterFockBuilder
         auto offset_list_c2 = compute_func_offset_list(cluster2, rng2.first);
         auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
 
+        // skip 2 cases if Rρ+Rσ-Rν is out of the truncated_RD_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        const auto drop13 = skip13 ? 2.0 : 0.0;
+
         // this is the index of the first basis functions for each shell *in
         // this shell cluster*
         auto cf0_offset = 0;
@@ -3314,7 +3341,13 @@ class PeriodicFourCenterFockBuilder
             const auto &shell1 = cluster1[sh1];
             const auto nf1 = shell1.size();
 
-            const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
+            const auto permut01 = bf0_offset != bf1_offset;
+            const auto multiplicity01 = permut01 ? 2.0 : 1.0;
+
+            // skip 2 cases if Rρ+Rσ is out of the truncated_RD_max range
+            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+            const auto drop03 = (skip03 && permut01) ? 2.0 : 0.0;
 
             for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
               std::tie(cf2_offset, bf2_offset) = offset_list_c2[sh2];
@@ -3367,16 +3400,30 @@ class PeriodicFourCenterFockBuilder
                   continue;
 
                 num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
-                const auto multiplicity23 =
-                    bf2_offset == bf3_offset ? 1.0 : 2.0;
+                const auto permut23 = bf2_offset != bf3_offset;
+                const auto multiplicity23 = permut23 ? 2.0 : 1.0;
+
                 const auto multiplicity0213 =
                     (R2_ord == ref_Rrho_ord_ && R1_ord == R3_ord &&
                      bf0_offset == bf2_offset && bf1_offset == bf3_offset)
                         ? 1.0
                         : 2.0;
-                const auto multiplicity =
-                    multiplicity01 * multiplicity23 * multiplicity0213;
 
+                // skip 2 cases if Rρ-Rν is out of the truncated_RD_max range
+                // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+                // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+                const auto drop12 = (skip12 && permut23) ? 2.0 : 0.0;
+                // skip 2 cases if Rρ is out of the truncated_RD_max range
+                // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+                // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+                const auto drop02 =
+                    (skip02 && permut01 && permut23) ? 2.0 : 0.0;
+
+                const auto multiplicity =
+                    multiplicity01 * multiplicity23 * multiplicity0213 -
+                    drop13 - drop03 - drop12 - drop02;
+
+                assert(multiplicity > 0.0);
                 // compute shell set
                 engine.compute2<libint2::Operator::coulomb,
                                 libint2::BraKet::xx_xx, 0>(shell0, shell1,
@@ -3412,18 +3459,22 @@ class PeriodicFourCenterFockBuilder
                           const auto value_scaled_by_multiplicity =
                               value * multiplicity;
 
-                          if (F02_ptr != nullptr && D13_ptr != nullptr)
+                          if (F02_ptr != nullptr && D13_ptr != nullptr) {
                             F02_ptr[cf02] -= 0.25 * D13_ptr[cf13] *
                                              value_scaled_by_multiplicity;
-                          if (F13_ptr != nullptr && D02_ptr != nullptr)
+                          }
+                          if (F13_ptr != nullptr && D02_ptr != nullptr) {
                             F13_ptr[cf13] -= 0.25 * D02_ptr[cf02] *
                                              value_scaled_by_multiplicity;
-                          if (F03_ptr != nullptr && D12_ptr != nullptr)
+                          }
+                          if (F03_ptr != nullptr && D12_ptr != nullptr) {
                             F03_ptr[cf03] -= 0.25 * D12_ptr[cf12] *
                                              value_scaled_by_multiplicity;
-                          if (F12_ptr != nullptr && D03_ptr != nullptr)
+                          }
+                          if (F12_ptr != nullptr && D03_ptr != nullptr) {
                             F12_ptr[cf12] -= 0.25 * D03_ptr[cf03] *
                                              value_scaled_by_multiplicity;
+                          }
                         }
                       }
                     }

@@ -342,20 +342,27 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   }
 
   // test
-  //  using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
-  //  auto ma_builder = std::make_unique<MA_Builder>(this->ao_factory());
-  //  ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
-  //  auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
-  //  ExEnv::out0() << "electronic spherical multipole moments:"
-  //                << "\nmonopole: " << elec_moments[0]
-  //                << "\ndipole m=-1: " << elec_moments[1]
-  //                << "\ndipole m=0:  " << elec_moments[2]
-  //                << "\ndipole m=1:  " << elec_moments[3]
-  //                << "\nquadrupole m=-2: " << elec_moments[4]
-  //                << "\nquadrupole m=-1: " << elec_moments[5]
-  //                << "\nquadrupole m=0:  " << elec_moments[6]
-  //                << "\nquadrupole m=1:  " << elec_moments[7]
-  //                << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
+  {
+    ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
+
+    auto factory_ptr = std::make_shared<factory_type>(kv_);
+    ExEnv::out0() << *factory_ptr << std::endl;
+
+    using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
+    auto ma_builder = std::make_unique<MA_Builder>(*factory_ptr);
+    auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
+    ExEnv::out0() << "electronic spherical multipole moments:"
+                  << "\nmonopole: " << elec_moments[0]
+                  << "\ndipole m=-1: " << elec_moments[1]
+                  << "\ndipole m=0:  " << elec_moments[2]
+                  << "\ndipole m=1:  " << elec_moments[3]
+                  << "\nquadrupole m=-2: " << elec_moments[4]
+                  << "\nquadrupole m=-1: " << elec_moments[5]
+                  << "\nquadrupole m=0:  " << elec_moments[6]
+                  << "\nquadrupole m=1:  " << elec_moments[7]
+                  << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
+
+  }
 }
 
 template <typename Tile, typename Policy>

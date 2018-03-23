@@ -150,15 +150,11 @@ class PeriodicMA {
     mpqc::time_point t0, t1;
 
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
-    dfbs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"Κ"));
 
     dcell_ = ao_factory_.unitcell().dcell();
     R_max_ = ao_factory_.R_max();
     RJ_max_ = ao_factory_.RJ_max();
     RD_max_ = ao_factory_.RD_max();
-    R_size_ = ao_factory_.R_size();
-    RJ_size_ = ao_factory_.RJ_size();
-    RD_size_ = ao_factory_.RD_size();
 
     // determine dimensionality of crystal
     dimensionality_ = 0;
@@ -275,17 +271,12 @@ class PeriodicMA {
   int dimensionality_;  // dimensionality of crystal
 
   std::shared_ptr<Basis> obs_;
-  std::shared_ptr<Basis> dfbs_;
   Vector3d dcell_;
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
   Vector3d ref_com_;  // center of mass of the reference unit cell
 
-  std::vector<Vector3i> uc_near_list_;
   std::shared_ptr<detail::BasisPairInfo> ref_pairs_;
   double max_distance_to_refcenter_;
   double squared_min_dist_;

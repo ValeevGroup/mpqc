@@ -542,16 +542,15 @@ PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
   ExEnv::out0() << "\nComputing Two Center Integral for Periodic System: "
                 << utility::to_string(formula.string()) << std::endl;
 
-  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> result;
+  auto time0 = mpqc::fenced_now(world);
 
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> result;
   if (formula.rank() == 2) {
     if (mpqc_oper == Operator::Type::SpheMultipole) {
       auto bra_index = formula.bra_indices()[0];
       auto ket_index = formula.ket_indices()[0];
       auto bra_basis = this->basis_registry()->retrieve(bra_index);
       auto ket_basis = this->basis_registry()->retrieve(ket_index);
-      auto bra_tr = bra_basis->create_trange1();
-      auto ket_tr = ket_basis->create_trange1();
 
       // Form a compound ket basis by shifting origins from -Rmax to Rmax
       ket_basis = detail::shift_basis_origin(*ket_basis, Vector3d::Zero(),
@@ -569,11 +568,15 @@ PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
     throw FeatureNotImplemented("Operator rank != 2 not supported");
   }
 
+  auto time1 = mpqc::fenced_now(world);
+  auto time = mpqc::duration_in_s(time0, time1);
+
   double size = 0.0;
   for (auto i = 0u; i != nopers; ++i) {
     size += mpqc::detail::array_size(result[i]);
   }
-  utility::print_par(this->world(), " Size: ", size, " GB\n");
+  utility::print_par(this->world(), " Size: ", size, " GB");
+  utility::print_par(this->world(), " Time: ", time, " s\n");
 
   return result;
 };
@@ -1349,7 +1352,9 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
+  world.gop.fence();
   out.truncate();
+  world.gop.fence();
 
   return out;
 }
@@ -1368,10 +1373,10 @@ PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
   const auto tvolume = trange.tiles_range().volume();
 
   using TileVec = std::vector<std::pair<unsigned long, Tile>>;
-  TileVec tiles(tvolume);
-
   using NormArray = std::array<TA::TensorF, libint2::operator_traits<libint2_oper>::nopers>;
-  using TileArray = std::array<Tile *, libint2::operator_traits<libint2_oper>::nopers>;
+  using TilePtrArray = std::array<Tile *, libint2::operator_traits<libint2_oper>::nopers>;
+
+  TileVec tiles(tvolume);
 
   NormArray array_of_tile_norms;
   for (auto &norms : array_of_tile_norms) {
@@ -1387,9 +1392,12 @@ PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
       std::move(shr_pool), std::move(shr_bases), std::move(screen),
       std::move(op));
 
-  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng, NormArray &norms_array, TileArray &out_tile_array) {
+  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng, NormArray *norms_array_ptr, TilePtrArray *tileptr_array_ptr) {
     // This is why builder was made into a shared_ptr.
     auto &builder = *builder_ptr;
+    auto &norms_array = *norms_array_ptr;
+    auto &tileptr_array = *tileptr_array_ptr;
+
     auto ta_tile_array = builder.template integrals<libint2_oper>(idx, std::move(rng));
 
     for (auto oper = 0; oper != nopers; ++oper) {
@@ -1399,21 +1407,10 @@ PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
       // Keep tile if it was significant.
       bool save_norm =
           tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
-      // test
-//      std::cout << "\noper = " << oper << ", norm of computed tile = " << tile_norm;
       if (save_norm) {
-        *(out_tile_array[oper]) = builder.op(std::move(ta_tile_array[oper]));
-
-        auto &norms = norms_array[oper];
-        norms[ord] = tile_norm;
-
-        // test
-//        std::cout << "\noper = " << oper
-//                  << ", norm of saved tile = " << out_tile_array[oper]->norm()
-//                  << ", value of shape [" << ord << "] = " << norms_array[oper][ord]
-//                  << std::endl;
+        *(tileptr_array[oper]) = builder.op(std::move(ta_tile_array[oper]));
+        norms_array[oper][ord] = tile_norm;
       }
-
     }
   };
 
@@ -1423,18 +1420,20 @@ PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
   TileVecArray array_of_tilevec;
   array_of_tilevec.fill(tiles);
 
+  std::vector<TilePtrArray> vector_of_array_of_tileptr(tvolume);
   for (auto const ord : *pmap) {
-    TileArray array_of_tile;
     for (auto oper = 0u; oper != nopers; ++oper) {
-      array_of_tile[oper] = &(array_of_tilevec[oper][ord].second);
+      array_of_tilevec[oper][ord].first = ord;
+      vector_of_array_of_tileptr[ord][oper] = &(array_of_tilevec[oper][ord].second);
     }
     detail::IdxVec idx = trange.tiles_range().idx(ord);
-    world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord), array_of_tile_norms, array_of_tile);
+    world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord), &array_of_tile_norms, &(vector_of_array_of_tileptr[ord]));
   }
   world.gop.fence();
 
   using TArrayArray = std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>;
   TArrayArray result;
+
   for (auto oper = 0u; oper != nopers; ++oper) {
     auto &norms = array_of_tile_norms[oper];
     TA::SparseShape<float> shape(world, norms, trange);
@@ -1442,9 +1441,14 @@ PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
     tarray = TArray(world, trange, shape, pmap);
     if (norms.norm() >= norms.range().volume() * TA::SparseShape<float>::threshold()) {
       detail::set_array(array_of_tilevec[oper], tarray);
-      tarray.truncate();
     }
   }
+  world.gop.fence();
+
+  for (auto oper = 0u; oper != nopers; ++oper) {
+    result[oper].truncate();
+  }
+  world.gop.fence();
 
   return result;
 }

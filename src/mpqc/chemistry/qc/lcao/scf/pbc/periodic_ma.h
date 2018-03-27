@@ -352,21 +352,9 @@ class PeriodicMA {
     size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
     Vector3i sphere_thickness_next = {0, 0, 0};
 
-    double t_build_uc = 0.0;
     double t_build_M = 0.0;
     double t_build_L = 0.0;
     do {
-      t0 = mpqc::fenced_now(world);
-      auto shell_iter = cff_shell_to_unitcells_map_.find(cff_shell_idx);
-      // build a list of unit cells for a spherical shell (outermost cells of
-      // the sphere) if it does not exist
-      if (shell_iter == cff_shell_to_unitcells_map_.end()) {
-        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
-        shell_iter = cff_shell_to_unitcells_map_.insert({cff_shell_idx, unitcell_list}).first;
-      }
-      t1 = mpqc::fenced_now(world);
-      t_build_uc += mpqc::duration_in_s(t0, t1);
-
       t0 = mpqc::fenced_now(world);
       auto M_shell_iter = cff_shell_to_M_map_.find(cff_shell_idx);
       // build interaction kernel for a spherical shell if it does not exist
@@ -374,10 +362,14 @@ class PeriodicMA {
         KernelType M_shell;
         M_shell.fill(0.0);
 
+        // build a list of unit cells for a spherical shell (outermost cells of
+        // the sphere)
+        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
+
         // for each unit cell in the spherical shell, compute the interaction
         // kernel w.r.t. the reference cell, and then compress it to \c M_shell
         // (from a unit cell level to a shell level
-        for (const auto &unitcell : shell_iter->second) {
+        for (const auto &unitcell : unitcell_list) {
           const auto &unitcell_vec = unitcell.second;
            world.taskq.add(task, Vector3d::Zero() - unitcell_vec, &M_shell);
         }
@@ -461,7 +453,6 @@ class PeriodicMA {
     if (ao_factory_.print_detail()) {
       ExEnv::out0() << "\nMA time decomposition:\n"
                     << "\tO_elec = O_lm^μν D_μν: " << t_elec_mm << " s\n"
-                    << "\tbuild/retrieve UCs:    " << t_build_uc << " s\n"
                     << "\tbuild/retrieve M:      " << t_build_M << " s\n"
                     << "\tbuild L:               " << t_build_L << " s\n"
                     << "\tbuild Fock (CFF):      " << t_fock << " s\n"

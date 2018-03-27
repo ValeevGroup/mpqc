@@ -949,6 +949,19 @@ void construct_pno(
   world.gop.sum(npnos.data(), npnos.size());
   world.gop.sum(nosvs.data(), nosvs.size());
 
+//  // Dump # of pnos/pair to file
+//  std::ofstream out_file("/Users/mcclement/npnos.tsv");
+//
+//  out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+//
+//  for (int i = 0; i != nocc_act; ++i) {
+//    for (int j = 0; j != nocc_act; ++j) {
+//      int val = npnos[i * nocc_act + j];
+//      out_file << i << " " << j << " " << val << std::endl;
+//    }
+//  }
+
+
   // Compute and print average number of OSVs per pair
   if (D_prime.world().rank() == 0) {
     auto tot_osv = 0;
@@ -1224,6 +1237,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           exact_e_mp2_, tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+
+//    // Dump # of pnos/pair to file
+//    std::ofstream out_file("/Users/mcclement/npnos-orig.tsv");
+//
+//    out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+//
+//    for (int i = 0; i != nocc_act_; ++i) {
+//      for (int j = 0; j != nocc_act_; ++j) {
+//        int val = npnos_[i * nocc_act_ + j];
+//        out_file << i << " " << j << " " << val << std::endl;
+//      }
+//    }
+
   }
 
   virtual ~PNOSolver() = default;
@@ -1300,6 +1326,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
+    // Create copy of old T2
+    T t2_old = t2;
+    T t2_old_reblock = detail::reblock_t2(t2_old, reblock_i_, reblock_a_);
+
     // Whether or not Jacobi update is performed in PNO subspace
     // or full space will be determined within update_only
     update_only(t1, t2, r1_reblock, r2_reblock, dE);
@@ -1309,14 +1339,70 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
         || (solver_str_ == "exact_pno")) {
 
+      using Matrix = RowMatrix<typename Tile::numeric_type>;
+      using Vector = EigenVector<typename Tile::numeric_type>;
+
+      // Create copy of old pnos
+      std::vector<Matrix> old_pnos = pnos_;
+
+
+
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
                             exact_e_mp2_, tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
-      // Transform T_reblock
-      T T2 = detail::t2_project_pno(T_reblock, pnos_);
+//      // Dump # of pnos/pair to file
+//      std::ofstream out_file("/Users/mcclement/npnos" + std::to_string(iter_count_) + ".tsv");
+//
+//      out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+//
+//      for (int i = 0; i != nocc_act_; ++i) {
+//        for (int j = 0; j != nocc_act_; ++j) {
+//          int val = npnos_[i * nocc_act_ + j];
+//          out_file << i << " " << j << " " << val << std::endl;
+//        }
+//      }
+
+      double max_angle = 0.0;
+      int idxi = 0;
+      int idxj = 0;
+
+      for (int i = 0; i != nocc_act_; ++i) {
+        for (int j = i; j != nocc_act_; ++j) {
+          Matrix old_u = old_pnos[i * nocc_act_ + j];
+          Matrix new_u = pnos_[i * nocc_act_ + j];
+
+          Matrix product = old_u.transpose() * new_u;
+
+          Eigen::JacobiSVD<Matrix> svd(product);
+
+          Vector sing_vals = svd.singularValues();
+          int length = sing_vals.size();
+
+          double smallest_sing_val = sing_vals[length - 1];
+
+          double angle = acos(smallest_sing_val);
+
+          if (angle > max_angle) {
+            max_angle = angle;
+            idxi = i;
+            idxj = j;
+          }
+
+//          ExEnv::out0() << "The principal angle for pair i,j = " << i << "," << j << " is " << angle << " and the smallest sing val is " << smallest_sing_val << std::endl;
+        }
+      }
+
+      ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
+
+//      // Transform T_reblock
+//      T T2 = detail::t2_project_pno(T_reblock, pnos_);
+//      t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
+
+      // Transform t_old_reblock
+      T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
       t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
 
       mpqc::cc::TPack<T> r(r1_reblock, r2_reblock);
@@ -1325,9 +1411,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       iter_count_ += 1;
       start_macro_ = true;  // set start_macro_ to true since next CCSD iter is start of macro iter
 
-      // Recompute and transform all K integrals to PNO space
-      using Matrix = RowMatrix<typename Tile::numeric_type>;
-      using Vector = EigenVector<typename Tile::numeric_type>;
+//      // Recompute and transform all K integrals to PNO space
+//      using Matrix = RowMatrix<typename Tile::numeric_type>;
+//      using Vector = EigenVector<typename Tile::numeric_type>;
     }
 
     else {

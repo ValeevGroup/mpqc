@@ -446,8 +446,6 @@ void EOM_CCSD<Tile, Policy>::evaluate(ExcitationEnergy* ex_energy) {
       cis_eig = cis_guess_wfn_->eigen_value();
     }
 
-    this->init();
-
     auto max_iter = this->max_iter_;
     auto result = eom_ccsd_davidson_solver(n_roots, cis_vector, cis_eig,
                                            max_iter, target_precision);

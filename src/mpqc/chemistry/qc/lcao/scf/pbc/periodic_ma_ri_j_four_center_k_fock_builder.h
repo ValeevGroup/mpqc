@@ -16,12 +16,12 @@ class PeriodicMARIJFourCenterKFockBuilder : public PeriodicFockBuilder<Tile, Pol
   using J_Builder = PeriodicMARIJBuilder<Tile, Policy, factory_type>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01) : ao_factory_(ao_factory) {
+  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01, double ma_dipole_thresh = 1e-3) : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic MA-RI-J builder
     auto t0_j_init = mpqc::fenced_now(world);
-    j_builder_ = std::make_unique<J_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval);
+    j_builder_ = std::make_unique<J_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
     auto t1_j_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 

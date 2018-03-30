@@ -18,12 +18,12 @@ class PeriodicMARIJBuilder {
   using RIJ_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<Factory>;
 
-  PeriodicMARIJBuilder(Factory &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01) : ao_factory_(ao_factory) {
+  PeriodicMARIJBuilder(Factory &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01, double ma_dipole_thresh = 1e-3) : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval);
+    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 

@@ -382,6 +382,7 @@ class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
   double ma_energy_threshold_;
   double ma_extent_threshold_;
   double ma_extent_smallval_;
+  double ma_dipole_threshold_;
   double ma_ws_;
 };
 
@@ -454,6 +455,7 @@ class MARIJFourCenterKzRHF : public zRHF<Tile, Policy> {
   double ma_energy_threshold_;
   double ma_extent_threshold_;
   double ma_extent_smallval_;
+  double ma_dipole_threshold_;
   double ma_ws_;
 };
 
@@ -479,6 +481,7 @@ class MAFourCenterzRHF : public zRHF<Tile, Policy> {
   double ma_energy_threshold_;
   double ma_extent_threshold_;
   double ma_extent_smallval_;
+  double ma_dipole_threshold_;
   double ma_ws_;
 };
 
@@ -505,6 +508,7 @@ class MAFourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
   double ma_energy_threshold_;
   double ma_extent_threshold_;
   double ma_extent_smallval_;
+  double ma_dipole_threshold_;
   double ma_ws_;
 };
 

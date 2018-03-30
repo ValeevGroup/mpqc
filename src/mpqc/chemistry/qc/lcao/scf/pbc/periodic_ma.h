@@ -133,10 +133,10 @@ class PeriodicMA {
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using Ord2lmMap = std::unordered_map<unsigned int, std::pair<int, int>>;
   using UnitCellList = std::vector<std::pair<Vector3i, Vector3d>>;
-  using Shell2UCListMap = std::unordered_map<size_t, UnitCellList>;
-  template <typename T, unsigned int nops = libint2::operator_traits<Oper>::nopers>
-  using MultipoleMoment = std::array<T, nops>;
-  using Shell2KernelMap = std::unordered_map<size_t, MultipoleMoment<double, (2 * MULTIPOLE_MAX_ORDER + 1) * (2 * MULTIPOLE_MAX_ORDER + 1)>>;
+  template <typename T, unsigned int lmax = MULTIPOLE_MAX_ORDER>
+  using MultipoleMoment = std::array<T, (lmax + 1) * (lmax + 1)>;
+  template <typename T, unsigned int lmax = MULTIPOLE_MAX_ORDER>
+  using Shell2KernelMap = std::unordered_map<size_t, MultipoleMoment<double, 2 * lmax>>;
 
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
@@ -144,10 +144,12 @@ class PeriodicMA {
    * @param e_thresh threshold of multipole expansion error
    * @param ws well-separateness criterion
    */
-  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0, double extent_thresh = 1.0e-6, double extent_smallval = 0.01)
-      : ao_factory_(ao_factory), e_thresh_(e_thresh), ws_(ws), extent_thresh_(extent_thresh), extent_smallval_(extent_smallval) {
+  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0, double extent_thresh = 1.0e-6, double extent_smallval = 0.01, double dipole_thresh = 1e-3)
+      : ao_factory_(ao_factory), e_thresh_(e_thresh), ws_(ws), extent_thresh_(extent_thresh), extent_smallval_(extent_smallval), dipole_thresh_(dipole_thresh) {
     auto &world = ao_factory_.world();
     mpqc::time_point t0, t1;
+
+    assert(libint2::operator_traits<Oper>::nopers == (MULTIPOLE_MAX_ORDER + 1) * (MULTIPOLE_MAX_ORDER + 1));
 
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
@@ -172,6 +174,7 @@ class PeriodicMA {
                   << "\n\twell-separateness criterion = " << ws_
                   << "\n\tprimitive pair extent threshold = " << extent_thresh_
                   << "\n\tprimitive pair extent small value = " << extent_smallval_
+                  << "\n\tdipole correction threshold = " << dipole_thresh_
                   << std::endl;
 
     // compute centers and extents of product density between the reference
@@ -218,6 +221,9 @@ class PeriodicMA {
       // make a map from ordinal indices of (l, m) to (l, m) pairs
       O_ord_to_lm_map_ = make_ord_to_lm_map<MULTIPOLE_MAX_ORDER>();
       M_ord_to_lm_map_ = make_ord_to_lm_map<2 * MULTIPOLE_MAX_ORDER>();
+      // make a map from ordinal indices of (l, m) to (l, m) pairs for dipoles
+      O_ord_to_lm_map_dipole_ = make_ord_to_lm_map<1>();
+      M_ord_to_lm_map_dipole_ = make_ord_to_lm_map<2>();
     }
     t1 = mpqc::fenced_now(world);
     auto t_nuc = mpqc::duration_in_s(t0, t1);
@@ -256,19 +262,22 @@ class PeriodicMA {
   const double ws_;         /// well-separateness criterion
   const double extent_thresh_;  /// threshold used in computing extent of a pair of primitives
   const double extent_smallval_;  /// a small value is used when the extent of a pair of primitives is not computable
+  const double dipole_thresh_;  /// turn on dipole correction if dipole moment is greater than this value
+
+  int dimensionality_;  // dimensionality of crystal
 
   MultipoleMoment<TArray> sphemm_;
   MultipoleMoment<double> O_nuc_;
 
   static constexpr unsigned int nopers_ = libint2::operator_traits<Oper>::nopers;
-  static constexpr unsigned int nopers_doubled_lmax_ = (2 * MULTIPOLE_MAX_ORDER + 1) * (2 * MULTIPOLE_MAX_ORDER + 1);
+
+  Shell2KernelMap<double> cff_shell_to_M_map_;
+  Shell2KernelMap<double, 1> cff_shell_to_M_map_dipole_;
 
   Ord2lmMap O_ord_to_lm_map_;
   Ord2lmMap M_ord_to_lm_map_;
-
-  Shell2UCListMap cff_shell_to_unitcells_map_;
-  Shell2KernelMap cff_shell_to_M_map_;
-  int dimensionality_;  // dimensionality of crystal
+  Ord2lmMap O_ord_to_lm_map_dipole_;
+  Ord2lmMap M_ord_to_lm_map_dipole_;
 
   std::shared_ptr<Basis> obs_;
   Vector3d dcell_;
@@ -288,14 +297,18 @@ class PeriodicMA {
   bool fock_computed_ = false;
   std::array<bool, 3> cff_reached_;
 
+  double t_build_M_;
+  double t_build_L_;
+
  public:
   /// @brief This returns the boundary of Crystal Far Field
   const Vector3i &CFF_boundary() { return cff_boundary_; }
 
   /*!
    * @brief This computes Coulomb interaction for the reference cell contributed
-   * from all cells in CFF. Energy contribution is computed per spherical shell
-   * from the CFF boundary to the user-given \c rjmax unless it is converged
+   * from all cells in CFF using multipole approximation. Note that multipole
+   * moments will be separated into dipoles and higher-order moments for systems
+   * with large dipole moments.
    * @param D
    * @param target_precision
    * @return
@@ -322,112 +335,48 @@ class PeriodicMA {
     }
 
     // combine nuclear and electronic parts of multipole moments
-    MultipoleMoment<double> O;
+    MultipoleMoment<double> O_tot;
     for (auto op = 0; op != nopers_; ++op) {
-      O[op] = O_elec[op] + O_nuc_[op];
+      O_tot[op] = O_elec[op] + O_nuc_[op];
     }
 
+    // do dipole correction if dipole moments are non-zero (i.e. the system has permanent
+    // dipole)
+    bool do_dipole_correction = (std::abs(O_tot[1]) > dipole_thresh_ || std::abs(O_tot[2]) > dipole_thresh_ || std::abs(O_tot[3]) > dipole_thresh_);
+
+    // separate dipoles from multipole moments
+    // note: by doing so we neglect the interaction between dipole and higher-order multipoles
+    MultipoleMoment<double, 1> O_dipole;
+    if (do_dipole_correction) {
+      for (auto op = 0; op <= 3; ++op) {
+        O_dipole[op] = O_tot[op];
+        O_tot[op] = 0.0;
+      }
+    }
+
+    t_build_M_ = 0.0;
+    t_build_L_ = 0.0;
+    if (do_dipole_correction) {
+      ExEnv::out0() << "\nComputing multipole interaction without dipole ..." << std::endl;
+    }
     MultipoleMoment<double> L;
-    L.fill(0.0);
+    std::tie(energy_cff_, L) = solve_multipole_approx<MULTIPOLE_MAX_ORDER>(O_tot, O_ord_to_lm_map_, M_ord_to_lm_map_, cff_shell_to_M_map_);
 
-    using KernelType = MultipoleMoment<double, nopers_doubled_lmax_>;
-    // make a lambda to accumulate interaction kernels
-    std::mutex mtx;
-    auto task = [this, &mtx](const Vector3d &r_vec, KernelType *M_total) {
-      // compute interaction kernel between multipole moments centered at the
-      // origin P and the remote Q (note that r_vec = P - Q)
-      auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(r_vec);
-      // critical section: accumulate M to M_total
-      mtx.lock();
-      for (auto op = 0; op != nopers_doubled_lmax_; ++op) {
-        (*M_total)[op] += M[op];
+    // compute dipole-dipole interaction until it is converged
+    if (do_dipole_correction) {
+      ExEnv::out0() << "\nComputing dipole-dipole interaction ..." << std::endl;
+      double energy_dipole;
+      MultipoleMoment<double, 1> L_dipole;
+      std::tie(energy_dipole, L_dipole) = solve_multipole_approx<1>(O_dipole, O_ord_to_lm_map_dipole_, M_ord_to_lm_map_dipole_, cff_shell_to_M_map_dipole_);
+
+      // add up energy and local potential contributions
+      energy_cff_ += energy_dipole;
+      for (auto op = 0; op <= 3; ++op) {
+        L[op] += L_dipole[op];
       }
-      mtx.unlock();
-    };
-
-    energy_cff_ = 0.0;
-    double e_shell;
-    bool converged = false;
-    bool out_of_rjmax = false;
-    size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
-    Vector3i sphere_thickness_next = {0, 0, 0};
-
-    double t_build_M = 0.0;
-    double t_build_L = 0.0;
-    do {
-      t0 = mpqc::fenced_now(world);
-      auto M_shell_iter = cff_shell_to_M_map_.find(cff_shell_idx);
-      // build interaction kernel for a spherical shell if it does not exist
-      if (M_shell_iter == cff_shell_to_M_map_.end()) {
-        KernelType M_shell;
-        M_shell.fill(0.0);
-
-        // build a list of unit cells for a spherical shell (outermost cells of
-        // the sphere)
-        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
-
-        // for each unit cell in the spherical shell, compute the interaction
-        // kernel w.r.t. the reference cell, and then compress it to \c M_shell
-        // (from a unit cell level to a shell level
-        for (const auto &unitcell : unitcell_list) {
-          const auto &unitcell_vec = unitcell.second;
-           world.taskq.add(task, Vector3d::Zero() - unitcell_vec, &M_shell);
-        }
-        world.gop.fence();
-
-        // save the shell-level M into a map so it can be reused
-        M_shell_iter = cff_shell_to_M_map_.insert({cff_shell_idx, M_shell}).first;
-      }
-      t1 = mpqc::fenced_now(world);
-      t_build_M += mpqc::duration_in_s(t0, t1);
-
-      t0 = mpqc::fenced_now(world);
-      // compute local potential created by all cells in a spherical shell
-      auto L_shell = build_local_potential(O, M_shell_iter->second);
-      // compute Coulomb energy contribution from a spherical shell
-      e_shell = compute_energy(O, L_shell);
-
-      for (auto op = 0; op != nopers_; ++op) {
-        L[op] += L_shell[op];
-      }
-      t1 = mpqc::fenced_now(world);
-      t_build_L += mpqc::duration_in_s(t0, t1);
-
-      energy_cff_ += e_shell;
-
-      // determine if the energy is converged
-      if (std::abs(e_shell) < e_thresh_) {
-        converged = true;
-      }
-
-      // determine if the next shell is out of rjmax range
-      for (auto dim = 0; dim <= 2; ++dim) {
-        if (RJ_max_(dim) > 0) {
-          sphere_thickness_next(dim) = cff_shell_idx + 1;
-        }
-      }
-      Vector3i corner_idx_next = cff_boundary_ + sphere_thickness_next;
-      if (corner_idx_next(0) > RJ_max_(0) || corner_idx_next(1) > RJ_max_(1)
-          || corner_idx_next(2) > RJ_max_(2)) {
-        out_of_rjmax = true;
-      }
-
-      cff_shell_idx++;
-    } while (!converged && !out_of_rjmax);
-
-    if (!converged) {
-      ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
-                    << "\nMultipole approximation is not converged to the given threshold!"
-                    << "\nEnergy contribution from spherical shell [" << cff_shell_idx - 1 << "] is " << e_shell
-                    << " while MA threshold is " << e_thresh_
-                    << std::endl;
-    } else {
-      ExEnv::out0() << "\nMultipole approximation is converged after spherical shell [" << cff_shell_idx - 1 << "]"
-                                                                                                             << std::endl;
     }
-    energy_computed_ = true;
 
-    ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = " << energy_cff_ << std::endl;
+    energy_computed_ = true;
 
     // compute Fock contribution from CFF
     t0 = mpqc::fenced_now(world);
@@ -443,9 +392,10 @@ class PeriodicMA {
         fock_cff_("mu, nu") += prefactor * sphemm_[op]("mu, nu");
       }
     }
-    fock_computed_ = true;
     t1 = mpqc::fenced_now(world);
     auto t_fock = mpqc::duration_in_s(t0, t1);
+
+    fock_computed_ = true;
 
     auto t1_ma = mpqc::fenced_now(world);
     auto t_ma = mpqc::duration_in_s(t0_ma, t1_ma);
@@ -453,8 +403,8 @@ class PeriodicMA {
     if (ao_factory_.print_detail()) {
       ExEnv::out0() << "\nMA time decomposition:\n"
                     << "\tO_elec = O_lm^μν D_μν: " << t_elec_mm << " s\n"
-                    << "\tbuild/retrieve M:      " << t_build_M << " s\n"
-                    << "\tbuild L:               " << t_build_L << " s\n"
+                    << "\tbuild/retrieve M:      " << t_build_M_ << " s\n"
+                    << "\tbuild L:               " << t_build_L_ << " s\n"
                     << "\tbuild Fock (CFF):      " << t_fock << " s\n"
                     << "\nTotal MA builder time: " << t_ma << " s\n";
     }
@@ -674,12 +624,12 @@ class PeriodicMA {
    * \c Oper
    */
   template<unsigned int lmax>
-  MultipoleMoment<double, (lmax + 1) * (lmax + 1)> build_interaction_kernel(const Vector3d &c12) {
+  MultipoleMoment<double, lmax> build_interaction_kernel(const Vector3d &c12) {
     const auto c12_norm = c12.norm();
     MPQC_ASSERT(c12_norm > 0.0);
 
     using namespace boost::math;
-    MultipoleMoment<double, (lmax + 1) * (lmax + 1)> result;
+    MultipoleMoment<double, lmax> result;
 
     const auto cos_theta = c12(2) / c12_norm;
     const auto c12_xy_norm = std::sqrt(c12(0) * c12(0) + c12(1) * c12(1));
@@ -742,10 +692,10 @@ class PeriodicMA {
    * \c Oper
    */
   template<unsigned int lmax>
-  MultipoleMoment<double, (lmax + 1) * (lmax + 1)> build_multipole_expansion(const Vector3d &r) {
+  MultipoleMoment<double, lmax> build_multipole_expansion(const Vector3d &r) {
     const auto r_norm = r.norm();
 
-    MultipoleMoment<double, (lmax + 1) * (lmax + 1)> result;
+    MultipoleMoment<double, lmax> result;
 
     if (r_norm < std::numeric_limits<double>::epsilon()) {
       result.fill(0.0);
@@ -811,7 +761,6 @@ class PeriodicMA {
     std::unordered_map<int, double> sin_m_phi_map;
     sin_m_phi_map.reserve(2 * lmax + 1);
 
-    sin_m_phi_map[0] = 0.0;
     sin_m_phi_map[0] = 0.0;
     if (lmax >= 1) {
       sin_m_phi_map[1] = sin_phi;
@@ -929,12 +878,12 @@ class PeriodicMA {
    * @return a pair of multipole moments with cos(m φ) and sin(m φ) parts,
    * respectively.
    */
-  template <unsigned int nopers>
-  std::pair<MultipoleMoment<double, nopers>, MultipoleMoment<double, nopers>>
-  form_symm_and_antisymm_moments(const MultipoleMoment<double, nopers> &M, Ord2lmMap &ord_to_lm_map) {
+  template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
+  std::pair<MultipoleMoment<double, lmax>, MultipoleMoment<double, lmax>>
+  form_symm_and_antisymm_moments(const MultipoleMoment<double, lmax> &M, Ord2lmMap &ord_to_lm_map) {
     assert(M.size() == nopers);
     assert(ord_to_lm_map.size() == nopers);
-    MultipoleMoment<double, nopers> Mplus, Mminus;
+    MultipoleMoment<double, lmax> Mplus, Mminus;
     for (auto op = 0u; op != nopers; ++op) {
       auto m = ord_to_lm_map[op].second;
       auto sign_of_m = (m > 0) ? 1 : ((m < 0) ? -1 : 0);
@@ -966,28 +915,30 @@ class PeriodicMA {
    * @param M multipole interaction kernel between the origin and the remote unit cell
    * @return
    */
-  MultipoleMoment<double> build_local_potential(const MultipoleMoment<double>& O,
-                                                const MultipoleMoment<double, nopers_doubled_lmax_> &M) {
-    MultipoleMoment<double> result;
+  template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
+  MultipoleMoment<double, lmax> build_local_potential(const MultipoleMoment<double, lmax>& O,
+                                                      const MultipoleMoment<double, 2 * lmax> &M,
+                                                      Ord2lmMap &O_ord_to_lm_map, Ord2lmMap &M_ord_to_lm_map) {
+    MultipoleMoment<double, lmax> result;
 
     // form O+, O-
-    auto O_pm = form_symm_and_antisymm_moments<nopers_>(O, O_ord_to_lm_map_);
+    auto O_pm = form_symm_and_antisymm_moments<lmax>(O, O_ord_to_lm_map);
     auto &O_plus = O_pm.first;
     auto &O_minus = O_pm.second;
 
     // form M+, M-
-    auto M_pm = form_symm_and_antisymm_moments<nopers_doubled_lmax_>(M, M_ord_to_lm_map_);
+    auto M_pm = form_symm_and_antisymm_moments<2 * lmax>(M, M_ord_to_lm_map);
     auto &M_plus = M_pm.first;
     auto &M_minus = M_pm.second;
 
     // form multipole expansion of local potential created by the remote unit cell
-    for (auto op1 = 0; op1 != nopers_; ++op1) {
-      auto l1 = O_ord_to_lm_map_[op1].first;
-      auto m1 = O_ord_to_lm_map_[op1].second;
+    for (auto op1 = 0; op1 != nopers; ++op1) {
+      auto l1 = O_ord_to_lm_map[op1].first;
+      auto m1 = O_ord_to_lm_map[op1].second;
       auto accu = 0.0;
-      for (auto op2 = 0; op2 != nopers_; ++op2) {
-        auto l1pl2 = l1 + O_ord_to_lm_map_[op2].first;
-        auto m1pm2 = m1 + O_ord_to_lm_map_[op2].second;
+      for (auto op2 = 0; op2 != nopers; ++op2) {
+        auto l1pl2 = l1 + O_ord_to_lm_map[op2].first;
+        auto m1pm2 = m1 + O_ord_to_lm_map[op2].second;
         auto ord_M = l1pl2 * l1pl2 + l1pl2 + m1pm2;
         if (m1 >= 0) {
           accu += M_plus[ord_M] * O_plus[op2];
@@ -1009,12 +960,14 @@ class PeriodicMA {
    * @param L local potential created by distant charges
    * @return
    */
-  double compute_energy(const MultipoleMoment<double> &O,
-                        const MultipoleMoment<double> &L) {
+  template<unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
+  double compute_energy(const MultipoleMoment<double, lmax> &O,
+                        const MultipoleMoment<double, lmax> &L,
+                        Ord2lmMap &O_ord_to_lm_map) {
     double result = 0.0;
-    for (auto op = 0; op != nopers_; ++op) {
-      auto l = O_ord_to_lm_map_[op].first;
-      auto m = O_ord_to_lm_map_[op].second;
+    for (auto op = 0; op != nopers; ++op) {
+      auto l = O_ord_to_lm_map[op].first;
+      auto m = O_ord_to_lm_map[op].second;
       auto sign = (l % 2 == 0) ? 1.0 : -1.0;
       auto delta = (m == 0) ? 1.0 : 2.0;
       // scale by 0.5 because energy per cell is half the interaction energy
@@ -1186,6 +1139,131 @@ class PeriodicMA {
     }
 
     return result;
+  }
+
+
+  /*!
+   * @brief This computes Coulomb interaction for the reference cell contributed
+   * from all cells in CFF. Energy contribution is computed per spherical shell
+   * from the CFF boundary to the user-given \c rjmax unless it is converged
+   * @tparam lmax
+   * @tparam nopers
+   * @tparam nopers_doubled_lmax
+   * @param O
+   * @param O_ord_to_lm_map
+   * @param M_ord_to_lm_map
+   * @param cff_shell_to_M_map
+   * @return
+   */
+  template<unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1), unsigned int nopers_doubled_lmax = (2 * lmax + 1) * (2 * lmax + 1)>
+  std::pair<double, MultipoleMoment<double, lmax>> solve_multipole_approx(
+      const MultipoleMoment<double, lmax> &O,
+      Ord2lmMap &O_ord_to_lm_map, Ord2lmMap &M_ord_to_lm_map,
+      Shell2KernelMap<double, lmax> &cff_shell_to_M_map) {
+
+    auto &world = ao_factory_.world();
+    mpqc::time_point t0, t1;
+
+    MultipoleMoment<double, lmax> L;
+    L.fill(0.0);
+    double energy_cff = 0.0;
+
+    using KernelType = MultipoleMoment<double, 2 * lmax>;
+    // make a lambda to accumulate interaction kernels
+    std::mutex mtx;
+    auto task = [this, &mtx](const Vector3d &r_vec, KernelType *M_total) {
+      // compute interaction kernel between multipole moments centered at the
+      // origin P and the remote Q (note that r_vec = P - Q)
+      auto M = build_interaction_kernel<2 * lmax>(r_vec);
+      // critical section: accumulate M to M_total
+      mtx.lock();
+      for (auto op = 0; op != nopers_doubled_lmax; ++op) {
+        (*M_total)[op] += M[op];
+      }
+      mtx.unlock();
+    };
+
+    double e_shell;
+    bool converged = false;
+    bool out_of_rjmax = false;
+    size_t cff_shell_idx = 0;  // idx of a spherical shell in CFF region
+    Vector3i sphere_thickness_next = {0, 0, 0};
+
+    do {
+      t0 = mpqc::fenced_now(world);
+      auto M_shell_iter = cff_shell_to_M_map.find(cff_shell_idx);
+      // build interaction kernel for a spherical shell if it does not exist
+      if (M_shell_iter == cff_shell_to_M_map.end()) {
+        KernelType M_shell;
+        M_shell.fill(0.0);
+
+        // build a list of unit cells for a spherical shell (outermost cells of
+        // the sphere)
+        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
+
+        // for each unit cell in the spherical shell, compute the interaction
+        // kernel w.r.t. the reference cell, and then compress it to \c M_shell
+        // (from a unit cell level to a shell level
+        for (const auto &unitcell : unitcell_list) {
+          const auto &unitcell_vec = unitcell.second;
+          world.taskq.add(task, Vector3d::Zero() - unitcell_vec, &M_shell);
+        }
+        world.gop.fence();
+
+        // save the shell-level M into a map so it can be reused
+        M_shell_iter = cff_shell_to_M_map.insert({cff_shell_idx, M_shell}).first;
+      }
+      t1 = mpqc::fenced_now(world);
+      t_build_M_ += mpqc::duration_in_s(t0, t1);
+
+      t0 = mpqc::fenced_now(world);
+      // compute local potential created by all cells in a spherical shell
+      auto L_shell = build_local_potential<lmax>(O, M_shell_iter->second, O_ord_to_lm_map, M_ord_to_lm_map);
+      // compute Coulomb energy contribution from a spherical shell
+      e_shell = compute_energy<lmax>(O, L_shell, O_ord_to_lm_map);
+
+      for (auto op = 0; op != nopers; ++op) {
+        L[op] += L_shell[op];
+      }
+      t1 = mpqc::fenced_now(world);
+      t_build_L_ += mpqc::duration_in_s(t0, t1);
+
+      energy_cff += e_shell;
+
+      // determine if the energy is converged
+      if (std::abs(e_shell) < e_thresh_) {
+        converged = true;
+      }
+
+      // determine if the next shell is out of rjmax range
+      for (auto dim = 0; dim <= 2; ++dim) {
+        if (RJ_max_(dim) > 0) {
+          sphere_thickness_next(dim) = cff_shell_idx + 1;
+        }
+      }
+      Vector3i corner_idx_next = cff_boundary_ + sphere_thickness_next;
+      if (corner_idx_next(0) > RJ_max_(0) || corner_idx_next(1) > RJ_max_(1)
+          || corner_idx_next(2) > RJ_max_(2)) {
+        out_of_rjmax = true;
+      }
+
+      cff_shell_idx++;
+    } while (!converged && !out_of_rjmax);
+
+    if (!converged) {
+      ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
+                    << "\nMultipole approximation is not converged to the given threshold!"
+                    << "\nEnergy contribution from spherical shell [" << cff_shell_idx - 1 << "] is " << e_shell
+                    << " while MA threshold is " << e_thresh_
+                    << std::endl;
+    } else {
+      ExEnv::out0() << "\nMultipole approximation is converged after spherical shell [" << cff_shell_idx - 1 << "]"
+                    << std::endl;
+    }
+
+    ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = " << energy_cff << std::endl;
+
+    return std::make_pair(energy_cff, L);
   }
 
 };

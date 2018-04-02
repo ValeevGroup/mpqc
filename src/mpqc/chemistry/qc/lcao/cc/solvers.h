@@ -1073,7 +1073,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         update_pno_(kv.value<bool>("update_pno", false)),
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
-        residual_thresh_(kv.value<double>("residual_thresh", 0)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
@@ -1518,9 +1517,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto residual = sqrt(r1_reblock("a,i").reduce(op1).get() +
                          r2_reblock("a,b,i,j").reduce(op2).get()) /
                          (size(r1_reblock) + size(r2_reblock));
-//    if (residual < residual_thresh_) {
-//      update_pno_ = false;
-//    }
 
     return residual;
 
@@ -1540,9 +1536,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   T T_;                        //!< the array of MP2 T amplitudes
 
   int iter_count_;             //!< the CCSD iteration
-
-  double residual_thresh_;     //!< if residual becomes smaller than this
-                               // threshold, stop updating PNOs
 
   T reblock_i_;
   T reblock_a_;

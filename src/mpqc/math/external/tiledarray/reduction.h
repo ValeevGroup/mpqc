@@ -69,14 +69,18 @@ class MaxNReduction {
   // Reduce two result objects
   void operator()(result_type& result, const result_type& arg) const {
     result.insert(result.end(), arg.begin(), arg.end());
-    std::partial_sort(result.begin(), result.begin() + n_, result.end(),
-                      std::greater<element_type>());
-    result.erase(result.begin() + n_, result.end());
+    if (result.size() > n_) {
+      std::partial_sort(result.begin(), result.begin() + n_, result.end(),
+                        std::greater<element_type>());
+      result.erase(result.begin() + n_, result.end());
+    }
   }
 
   // Reduce an argument
   void operator()(result_type& result, const argument_type& arg) const {
-    result_type arg_result(n_);
+    // make sure n does not exceed number of elements in arg
+    std::size_t n = std::min(n_, arg.size());
+    result_type arg_result(n);
     std::partial_sort_copy(arg.begin(), arg.end(), arg_result.begin(),
                            arg_result.end(), std::greater<element_type>());
     operator()(result, arg_result);
@@ -113,14 +117,18 @@ class AbsMaxNReduction {
   // Reduce two result objects
   void operator()(result_type& result, const result_type& arg) const {
     result.insert(result.end(), arg.begin(), arg.end());
-    std::partial_sort(result.begin(), result.begin() + n_, result.end(),
-                      AbsMaxCompare<element_type>());
-    result.erase(result.begin() + n_, result.end());
+    if (result.size() > n_) {
+      std::partial_sort(result.begin(), result.begin() + n_, result.end(),
+                        AbsMaxCompare<element_type>());
+      result.erase(result.begin() + n_, result.end());
+    }
   }
 
   // Reduce an argument
   void operator()(result_type& result, const argument_type& arg) const {
-    result_type arg_result(n_);
+    // make sure n does not exceed number of elements in arg
+    std::size_t n = std::min(n_, arg.size());
+    result_type arg_result(n);
     std::partial_sort_copy(arg.begin(), arg.end(), arg_result.begin(),
                            arg_result.end(), AbsMaxCompare<element_type>());
     operator()(result, arg_result);
@@ -162,9 +170,12 @@ class MaxNIndexReduction {
   // Reduce two result objects
   void operator()(result_type& result, const result_type& arg) const {
     result.insert(result.end(), arg.begin(), arg.end());
-    std::partial_sort(result.begin(), result.begin() + n_, result.end(),
-                      MaxPairCompare<element_type, std::vector<std::size_t>>());
-    result.erase(result.begin() + n_, result.end());
+    if (result.size() > n_) {
+      std::partial_sort(
+          result.begin(), result.begin() + n_, result.end(),
+          MaxPairCompare<element_type, std::vector<std::size_t>>());
+      result.erase(result.begin() + n_, result.end());
+    }
   }
 
   // Reduce an argument
@@ -186,15 +197,18 @@ class MaxNIndexReduction {
       start++;
     }
 
-    std::partial_sort(arg_result.begin(), arg_result.begin() + n_,
+    // make sure n does not exceed number of elements in arg
+    std::size_t n = std::min(n_, total);
+
+    std::partial_sort(arg_result.begin(), arg_result.begin() + n,
                       arg_result.end(),
                       MaxPairCompare<element_type, std::size_t>());
 
-    arg_result.erase(arg_result.begin() + n_, arg_result.end());
+    arg_result.erase(arg_result.begin() + n, arg_result.end());
 
-    result_type arg_index_result(n_);
+    result_type arg_index_result(n);
 
-    for (std::size_t i = 0; i < n_; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       arg_index_result[i] =
           std::make_pair(arg_result[i].first, range.idx(arg_result[i].second));
     }
@@ -208,20 +222,17 @@ class MaxNIndexReduction {
 
 };  // class MaxNIndexReduction
 
-
-
 template <typename Tile>
 class AbsMaxNIndexReduction {
-public:
+ public:
   // typedefs
   using element_type = typename Tile::numeric_type;
   using result_type =
-  std::vector<std::pair<element_type, std::vector<std::size_t>>>;
+      std::vector<std::pair<element_type, std::vector<std::size_t>>>;
   using argument_type = Tile;
 
   // constructor
-  AbsMaxNIndexReduction(std::size_t n)
-      : n_(n), default_(0.0) {}
+  AbsMaxNIndexReduction(std::size_t n) : n_(n), default_(0.0) {}
   ~AbsMaxNIndexReduction() = default;
 
   // Reduction functions
@@ -240,9 +251,12 @@ public:
   // Reduce two result objects
   void operator()(result_type& result, const result_type& arg) const {
     result.insert(result.end(), arg.begin(), arg.end());
-    std::partial_sort(result.begin(), result.begin() + n_, result.end(),
-                      AbsMaxPairCompare<element_type, std::vector<std::size_t>>());
-    result.erase(result.begin() + n_, result.end());
+    if (result.size() > n_) {
+      std::partial_sort(
+          result.begin(), result.begin() + n_, result.end(),
+          AbsMaxPairCompare<element_type, std::vector<std::size_t>>());
+      result.erase(result.begin() + n_, result.end());
+    }
   }
 
   // Reduce an argument
@@ -264,15 +278,18 @@ public:
       start++;
     }
 
-    std::partial_sort(arg_result.begin(), arg_result.begin() + n_,
+    // make sure n does not exceed number of elements in arg
+    std::size_t n = std::min(n_, total);
+
+    std::partial_sort(arg_result.begin(), arg_result.begin() + n,
                       arg_result.end(),
                       AbsMaxPairCompare<element_type, std::size_t>());
 
-    arg_result.erase(arg_result.begin() + n_, arg_result.end());
+    arg_result.erase(arg_result.begin() + n, arg_result.end());
 
-    result_type arg_index_result(n_);
+    result_type arg_index_result(n);
 
-    for (std::size_t i = 0; i < n_; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       arg_index_result[i] =
           std::make_pair(arg_result[i].first, range.idx(arg_result[i].second));
     }
@@ -280,7 +297,7 @@ public:
     operator()(result, arg_index_result);
   }
 
-private:
+ private:
   std::size_t n_;         // number of max number to return
   element_type default_;  // default initialized value
 

@@ -104,6 +104,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", this->lcao_factory().verbose());
+    min_iter_ = kv.value<int>("min_iter", 20);
   }
 
   virtual ~CCSD() {}
@@ -123,6 +124,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   bool reduced_abcd_memory_ = false;
   std::string method_;
   std::size_t max_iter_;
+  std::size_t min_iter_;
   double target_precision_;
   double computed_precision_ = std::numeric_limits<double>::max();
   bool verbose_;
@@ -1121,7 +1123,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
+      if (iter < min_iter_ || dE >= target_precision_ || error >= target_precision_ || iter == 0) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);

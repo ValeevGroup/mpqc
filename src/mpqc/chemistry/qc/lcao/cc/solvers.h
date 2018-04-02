@@ -1062,7 +1062,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | update_pno | bool | false | Whether or not to recompute the PNOs every nth iteration |
-   * | pno_update_interval | int | 10 | Every nth iteration, PNOs are recomputed |
    * | residual_thresh | double | 1e-10 | Once the residual value is less than the threshold value, update_pno set to false |
    */
   // clang-format on
@@ -1074,7 +1073,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         update_pno_(kv.value<bool>("update_pno", false)),
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
-        pno_update_interval_(kv.value<int>("pno_update_interval", 10)),
         residual_thresh_(kv.value<double>("residual_thresh", 0)),
         dE_thresh_(kv.value<double>("dE_thresh", 0)),
         target_in_row_(kv.value<int>("target_in_row", 2)),
@@ -1560,7 +1558,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   T T_;                        //!< the array of MP2 T amplitudes
 
   int iter_count_;             //!< the CCSD iteration
-  int pno_update_interval_;    //!< the interval at which to update PNOs
 
   double residual_thresh_;     //!< if residual becomes smaller than this
                                // threshold, stop updating PNOs

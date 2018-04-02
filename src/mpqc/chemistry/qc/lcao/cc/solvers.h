@@ -1074,7 +1074,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         residual_thresh_(kv.value<double>("residual_thresh", 0)),
-        dE_thresh_(kv.value<double>("dE_thresh", 0)),
         target_in_row_(kv.value<int>("target_in_row", 2)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
@@ -1310,19 +1309,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
 
-//    if (start_macro_ == true) {
-//      if (dE < dE_thresh_) {
-//        num_in_row_ += 1;
-//      }
-//      else {
-//        num_in_row_ = 0;
-//      }
-//      start_macro_ = false;
-//
-//      if (num_in_row_ >= target_in_row_) {
-//        update_pno_ = false;  // once the specified number of macro iterations in a row have had dE < dE_thresh_, stop updating PNOs
-//      }
-//    }
 
 //    ExEnv::out0() << "abs(dE) = " << std::abs(dE) << std::endl;
 //    ExEnv::out0() << "abs(DE) = " << std::abs(DE_) << std::endl;
@@ -1587,7 +1573,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   int num_in_row_;              //!< The number of macro iterations in a row in which the first dE is below dE_thresh_
-  double dE_thresh_;            //!< The threshold against which we compare dE at the start of a macro iteration
   int target_in_row_;           //!< Our goal for the number of macro iters in a row for which the first dE is less than the dE_thresh_
 
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace

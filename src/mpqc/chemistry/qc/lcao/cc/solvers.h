@@ -1058,11 +1058,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tpno | double | 1e-7 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
-   * | update_pno | bool | false | Whether or not to recompute the PNOs every nth iteration |
-   * | residual_thresh | double | 1e-10 | Once the residual value is less than the threshold value, update_pno set to false |
+   * | update_pno | bool | false | Whether or not to recompute the PNOs |
+   * | solver_string | string | "pno" | The CCSD solver to use |
+   * | use_delta | bool | false | Whether or not to add Delta^(K) to T^(K) when updating PNOs |
+   * | micro_thresh | double | 1e-9 | When dE falls below this threshold, recompute PNOs |
+   * | macro_thresh | double | 1e-7 | When DE falls below this threshold, change update_pno to false |
+   * | min_micro | int | 2 | The minimum number of micro iterations to perform per macro iteration |
+   * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
@@ -1071,12 +1076,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         factory_(factory),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
         update_pno_(kv.value<bool>("update_pno", false)),
-        tpno_(kv.value<double>("tpno", 1.e-8)),
+        tpno_(kv.value<double>("tpno", 1.e-7)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
-        micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
-        macro_thresh_(kv.value<double>("macro_thresh", 1.e-4)),
+        micro_thresh_(kv.value<double>("micro_thresh", 1.e-9)),
+        macro_thresh_(kv.value<double>("macro_thresh", 1.e-7)),
         min_micro_(kv.value<int>("min_micro", 2)),
         print_npnos_(kv.value<bool>("print_npnos", false)){
     // part of WorldObject initialization

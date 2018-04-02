@@ -1074,7 +1074,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         residual_thresh_(kv.value<double>("residual_thresh", 0)),
-        target_in_row_(kv.value<int>("target_in_row", 2)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
@@ -1110,9 +1109,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Set DE_ to 1 initially
     DE_ = 1.0;
-
-    // Set num_in_row_ to zero
-    num_in_row_ = 0;
 
     // Form Fock array
     auto F = fac.compute(L"<p|F|q>[df]");
@@ -1572,9 +1568,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
-  int num_in_row_;              //!< The number of macro iterations in a row in which the first dE is below dE_thresh_
-  int target_in_row_;           //!< Our goal for the number of macro iters in a row for which the first dE is less than the dE_thresh_
-
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
   double macro_thresh_;         //!< Determines whether or not PNOs should continue to be updated
 

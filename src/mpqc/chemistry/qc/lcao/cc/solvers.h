@@ -949,18 +949,6 @@ void construct_pno(
   world.gop.sum(npnos.data(), npnos.size());
   world.gop.sum(nosvs.data(), nosvs.size());
 
-//  // Dump # of pnos/pair to file
-//  std::ofstream out_file("/Users/mcclement/npnos.tsv");
-//
-//  out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
-//
-//  for (int i = 0; i != nocc_act; ++i) {
-//    for (int j = 0; j != nocc_act; ++j) {
-//      int val = npnos[i * nocc_act + j];
-//      out_file << i << " " << j << " " << val << std::endl;
-//    }
-//  }
-
 
   // Compute and print average number of OSVs per pair
   if (D_prime.world().rank() == 0) {
@@ -1087,10 +1075,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tpno_(kv.value<double>("tpno", 1.e-8)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         pno_update_interval_(kv.value<int>("pno_update_interval", 10)),
-        residual_thresh_(kv.value<double>("residual_thresh", 1e-10)),
-        dE_thresh_(kv.value<double>("dE_thresh", 1e-06)),
+        residual_thresh_(kv.value<double>("residual_thresh", 0)),
+        dE_thresh_(kv.value<double>("dE_thresh", 0)),
         target_in_row_(kv.value<int>("target_in_row", 2)),
-        solver_str_(kv.value<std::string>("solver", "pno")){
+        solver_str_(kv.value<std::string>("solver", "pno")),
+        use_delta_(kv.value<bool>("use_delta", false)),
+        micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
+        macro_thresh_(kv.value<double>("macro_thresh", 1.e-4)),
+        min_micro_(kv.value<int>("min_micro", 2)),
+        print_npnos_(kv.value<bool>("print_npnos", false)){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1109,8 +1102,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto nfzc = nocc - nocc_act;
     iter_count_ = 0;
 
-    // Set start_macro_ to false
+    // Counts how many micro iterations per macro iteration
+    micro_count_ = 1;
+
+    // Set start_macro_ to false to begin with, even though this is technically the start of a macro iteration
     start_macro_ = false;
+
+    // Set dE_old_ to 1 initially
+    dE_old_ = 1.0;
+
+    // Set DE_ to 1 initially
+    DE_ = 1.0;
 
     // Set num_in_row_ to zero
     num_in_row_ = 0;
@@ -1238,17 +1240,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
-//    // Dump # of pnos/pair to file
-//    std::ofstream out_file("/Users/mcclement/npnos-orig.tsv");
-//
-//    out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
-//
-//    for (int i = 0; i != nocc_act_; ++i) {
-//      for (int j = 0; j != nocc_act_; ++j) {
-//        int val = npnos_[i * nocc_act_ + j];
-//        out_file << i << " " << j << " " << val << std::endl;
-//      }
-//    }
+    // Dump # of pnos/pair to file
+    if (print_npnos_) {
+      std::ofstream out_file("/Users/mcclement/npnos-orig.tsv");
+
+      out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+
+      for (int i = 0; i != nocc_act_; ++i) {
+        for (int j = 0; j != nocc_act_; ++j) {
+          int val = npnos_[i * nocc_act_ + j];
+          out_file << i << " " << j << " " << val << std::endl;
+        }
+      }
+    }
+
 
   }
 
@@ -1275,7 +1280,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T delta_t2_abij;
 
    // Perform Jacobi update in full space when PNOs being recomputed
-   if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
+   if (((update_pno_ == true) && (start_macro_ == true) && (iter_count_ > 0) && (micro_count_ > min_micro_))
        || (solver_str_ == "exact_pno")) {
      Vector ens_occ_act = F_occ_act_.diagonal();
      Vector ens_uocc = F_uocc_.diagonal();
@@ -1307,17 +1312,33 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
 
-    if (start_macro_ == true) {
-      if (dE < dE_thresh_) {
-        num_in_row_ += 1;
-      }
-      else {
-        num_in_row_ = 0;
-      }
-      start_macro_ = false;
+//    if (start_macro_ == true) {
+//      if (dE < dE_thresh_) {
+//        num_in_row_ += 1;
+//      }
+//      else {
+//        num_in_row_ = 0;
+//      }
+//      start_macro_ = false;
+//
+//      if (num_in_row_ >= target_in_row_) {
+//        update_pno_ = false;  // once the specified number of macro iterations in a row have had dE < dE_thresh_, stop updating PNOs
+//      }
+//    }
 
-      if (num_in_row_ >= target_in_row_) {
-        update_pno_ = false;  // once the specified number of macro iterations in a row have had dE < dE_thresh_, stop updating PNOs
+//    ExEnv::out0() << "abs(dE) = " << std::abs(dE) << std::endl;
+//    ExEnv::out0() << "abs(DE) = " << std::abs(DE_) << std::endl;
+//    ExEnv::out0() << "iter_count: " << iter_count_ << std::endl;
+    // Upon entering the function update(), compare dE to micro_thresh to determine whether
+    // or not the energy has converged within a particular PNO subspace
+    if ((std::abs(dE) < micro_thresh_) && (iter_count_ > 0) && (micro_count_ > min_micro_)) {
+      start_macro_ = true;
+
+      DE_ = dE - dE_old_;
+      dE_old_ = dE;
+
+      if (std::abs(DE_) < macro_thresh_) {
+        update_pno_ = false;
       }
     }
 
@@ -1326,17 +1347,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
-    // Create copy of old T2
+    // Create copy of pre-update T2 for use when not using Delta
     T t2_old = t2;
     T t2_old_reblock = detail::reblock_t2(t2_old, reblock_i_, reblock_a_);
+
 
     // Whether or not Jacobi update is performed in PNO subspace
     // or full space will be determined within update_only
     update_only(t1, t2, r1_reblock, r2_reblock, dE);
 
 
-    // Recompute PNOs as appropriate
-    if (((update_pno_ == true) && (iter_count_ != 0) && (iter_count_ % pno_update_interval_ == 0))
+    // Recompute PNOs when start_macro == true
+    if (((update_pno_ == true) && (start_macro_ == true) && (iter_count_ > 0))
         || (solver_str_ == "exact_pno")) {
 
       using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -1345,26 +1367,28 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       // Create copy of old pnos
       std::vector<Matrix> old_pnos = pnos_;
 
-
-
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
                             exact_e_mp2_, tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
-//      // Dump # of pnos/pair to file
-//      std::ofstream out_file("/Users/mcclement/npnos" + std::to_string(iter_count_) + ".tsv");
-//
-//      out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
-//
-//      for (int i = 0; i != nocc_act_; ++i) {
-//        for (int j = 0; j != nocc_act_; ++j) {
-//          int val = npnos_[i * nocc_act_ + j];
-//          out_file << i << " " << j << " " << val << std::endl;
-//        }
-//      }
+      // Dump # of pnos/pair to file
+      if (print_npnos_) {
+        std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
 
+        out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+
+        for (int i = 0; i != nocc_act_; ++i) {
+          for (int j = 0; j != nocc_act_; ++j) {
+            int val = npnos_[i * nocc_act_ + j];
+            out_file << i << " " << j << " " << val << std::endl;
+          }
+        }
+      }
+
+
+      // Determine the max principal angle for each change in PNOs
       double max_angle = 0.0;
       int idxi = 0;
       int idxj = 0;
@@ -1390,30 +1414,30 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
             idxi = i;
             idxj = j;
           }
-
-//          ExEnv::out0() << "The principal angle for pair i,j = " << i << "," << j << " is " << angle << " and the smallest sing val is " << smallest_sing_val << std::endl;
         }
       }
 
       ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
 
-//      // Transform T_reblock
-//      T T2 = detail::t2_project_pno(T_reblock, pnos_);
-//      t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
 
-      // Transform t_old_reblock
-      T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
-      t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
+      // Depending on the value of use_delta, either the updated or the unupdated T2s will be transformed
+      if (use_delta_) {
+        //Transform T_reblock
+        T T2 = detail::t2_project_pno(T_reblock, pnos_);
+        t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
+      }
+      else {
+        // Transform t_old_reblock
+        T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
+        t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
+      }
 
       mpqc::cc::TPack<T> r(r1_reblock, r2_reblock);
       mpqc::cc::TPack<T> t(t1, t2);
       this->reset();
       iter_count_ += 1;
-      start_macro_ = true;  // set start_macro_ to true since next CCSD iter is start of macro iter
-
-//      // Recompute and transform all K integrals to PNO space
-//      using Matrix = RowMatrix<typename Tile::numeric_type>;
-//      using Vector = EigenVector<typename Tile::numeric_type>;
+      start_macro_ = false;  // set start_macro_ to false since next CCSD iter is in PNO subspace just entered
+      micro_count_ = 1;
     }
 
     else {
@@ -1428,6 +1452,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       t1 = t.at(0);
       t2 = t.at(1);
       iter_count_ += 1;
+      micro_count_ += 1;
     }
 
 
@@ -1513,9 +1538,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto residual = sqrt(r1_reblock("a,i").reduce(op1).get() +
                          r2_reblock("a,b,i,j").reduce(op2).get()) /
                          (size(r1_reblock) + size(r2_reblock));
-    if (residual < residual_thresh_) {
-      update_pno_ = false;
-    }
+//    if (residual < residual_thresh_) {
+//      update_pno_ = false;
+//    }
 
     return residual;
 
@@ -1562,12 +1587,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
 
+  bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   int num_in_row_;              //!< The number of macro iterations in a row in which the first dE is below dE_thresh_
   double dE_thresh_;            //!< The threshold against which we compare dE at the start of a macro iteration
   int target_in_row_;           //!< Our goal for the number of macro iters in a row for which the first dE is less than the dE_thresh_
 
+  double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
+  double macro_thresh_;         //!< Determines whether or not PNOs should continue to be updated
 
+  double dE_old_;               //!< dE for last micro iteration in macro iteration K - 1
+  double DE_;
+  int micro_count_;
+  int min_micro_;
+  bool print_npnos_;
 
 };  // class: PNO solver
 

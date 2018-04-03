@@ -261,7 +261,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     auto volume = Ddiff.trange().elements_range().volume();
     rms = Ddiff("mu, nu").norm() / volume;
 
-    if ((rms <= thresh) || fabs(ediff) <= thresh) converged = true;
+    if ((rms <= thresh) && fabs(ediff) <= thresh) converged = true;
 
     auto iter_end = mpqc::fenced_now(world);
     auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);

@@ -1,18 +1,18 @@
-MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 36171dc83deb6bc0e2f8dd95a965114cd63e4022
+                 Revision 29174b29cc05b7ff7bb3ce699b81a0ad8afc4140
 
-  Machine:          Darwin-16.4.0-x86_64
+  Machine:          Darwin-17.4.0-x86_64
   User:             xiaowang@Xiaos-MacBook-Pro.local
-  Start Time:       Wed Feb 22 21:42:03 2017 UTC
+  Start Time:       Wed Apr  4 18:08:28 2018 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
     "units": "2010CODATA",
-    "unitcell": {
+    "water": {
         "file_name": "h2o.xyz",
         "sort_input": "true",
         "charge": "0",
@@ -25,10 +25,10 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "basis": {
         "name": "sto-3g",
-        "molecule": "$:unitcell"
+        "atoms": "$:water"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "basis": "$:basis",
         "screen": "schwarz",
         "threshold": "1.0e-20",
@@ -50,7 +50,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "scf": {
         "type": "zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "wfn_world": "$:wfn_world",
         "converge": "1.0e-11",
         "max_iter": "100",
@@ -64,7 +64,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "wfn": {
         "type": "GammaPointMP2",
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "wfn_world": "$:wfn_world",
         "ref": "$:scf",
         "occ_block_size": "2",
@@ -88,15 +88,22 @@ Average: 7
 
 Constructing AOFactory: 
   Screen = schwarz
-  Threshold = 1e-20
+  ScreenThreshold = 1e-12
   Precision = 2.22044604925031e-16
   Iterative inverse = false
 
 
 Constructing LCAOFactory: 
-  Keep partial transform = false
+  Keep partial transform = true
   Accurate time = false
+  Verbose = false
 
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 0
+Updated range of lattice sum for |mu nu_R) = 0 0 0
 
 PeriodicAOFactory computational parameters:
 	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 0]
@@ -104,7 +111,7 @@ PeriodicAOFactory computational parameters:
 	Rd_max (Range of density representation): [0 0 0]
 
 Molecule info:
-	C.O.M: 0 0 0
+	C.O.M:    -1.25931153477541 -8.6675003504468e-05   0.0160224923772627
 	Mass: 18.01056468406
 
 Elements:
@@ -116,47 +123,115 @@ Unit cell info:
 zRHF computational parameters:
   # of k points in each direction: [1 1 1]
 
-Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 7.30156898498535e-07 GB Time: 0.001666869 s
+Computing Two Center Integral for Periodic System: < κ |T| λ >
+ Size: 3.65078449249268e-07 GB Time: 0.00036938 s
 
-Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 7.30156898498535e-07 GB Time: 0.004502103 s
+Computing Two Center Integral for Periodic System: < κ |V| λ >
+ Time: 0.00807396 s
 
-Computing One Body Integral for Periodic System: < κ | λ >
- Size: 7.30156898498535e-07 GB Time: 0.000359239 s
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 3.65078449249268e-07 GB Time: 0.000197463 s
 
 Building Fock Matrix from SOAD Guess ...
 
+Integrals per node:
+  Ints for J on node(0): 637
+  Ints for K on node(0): 637
+
+Total PeriodicFourCenterFock builder time: 0.003905348
+
+SOAD Time: 0.014730572 s
+
 	overlap condition number = 5.59243634140755 at k = 0
+Periodic RHF Init Time: 0.026654151 s
+
 Nuclear Repulsion Energy: 9.15671413339663
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    0     -84.087607846736     -74.930893713339     -84.087607846736       0.230549025565                0.040
-    1     -84.119875862345     -74.963161728948      -0.032268015609       0.024325357059                0.063
-    2     -84.120393340707     -74.963679207311      -0.000517478362       0.006541099935                0.046
-    3     -84.120418381769     -74.963704248372      -0.000025041061       0.001709261657                0.042
-    4     -84.120420043831     -74.963705910434      -0.000001662062       0.000534975788                0.040
-    5     -84.120420184774     -74.963706051378      -0.000000140943       0.000185643833                0.049
-    6     -84.120420201239     -74.963706067842      -0.000000016465       0.000071338237                0.045
-    7     -84.120420203750     -74.963706070353      -0.000000002511       0.000029077901                0.052
-    8     -84.120420204189     -74.963706070792      -0.000000000439       0.000012230332                0.048
-    9     -84.120420204270     -74.963706070873      -0.000000000081       0.000005224932                0.043
-   10     -84.120420204285     -74.963706070888      -0.000000000015       0.000002249834                0.050
-   11     -84.120420204288     -74.963706070891      -0.000000000003       0.000000972747                0.051
+    1     -84.087607846736     -74.930893713339     -84.087607846736       0.004705082154                0.012
+    2     -84.119875862345     -74.963161728948      -0.032268015609       0.000496435858                0.010
+    3     -84.120393340707     -74.963679207311      -0.000517478362       0.000133491835                0.009
+    4     -84.120418381769     -74.963704248372      -0.000025041061       0.000034882891                0.009
+    5     -84.120420043831     -74.963705910434      -0.000001662062       0.000010917873                0.014
+    6     -84.120420184774     -74.963706051378      -0.000000140943       0.000003788650                0.009
+    7     -84.120420201239     -74.963706067842      -0.000000016465       0.000001455882                0.009
+    8     -84.120420203750     -74.963706070353      -0.000000002511       0.000000593427                0.008
+    9     -84.120420204189     -74.963706070792      -0.000000000439       0.000000249599                0.010
+   10     -84.120420204270     -74.963706070873      -0.000000000081       0.000000106631                0.009
+   11     -84.120420204285     -74.963706070888      -0.000000000015       0.000000045915                0.016
+   12     -84.120420204288     -74.963706070891      -0.000000000003       0.000000019852                0.010
+   13     -84.120420204288     -74.963706070891      -0.000000000001       0.000000008602                0.011
+   14     -84.120420204288     -74.963706070892      -0.000000000000       0.000000003732                0.013
+   15     -84.120420204288     -74.963706070892       0.000000000000       0.000000001620                0.009
+   16     -84.120420204288     -74.963706070892      -0.000000000000       0.000000000704                0.014
+   17     -84.120420204288     -74.963706070892      -0.000000000000       0.000000000306                0.012
+   18     -84.120420204288     -74.963706070892       0.000000000000       0.000000000133                0.014
+   19     -84.120420204288     -74.963706070892      -0.000000000000       0.000000000058                0.009
+   20     -84.120420204288     -74.963706070892       0.000000000000       0.000000000025                0.014
+   21     -84.120420204288     -74.963706070892       0.000000000000       0.000000000011                0.011
+   22     -84.120420204288     -74.963706070892      -0.000000000000       0.000000000005                0.009
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -74.9637060708909
+Max LUCO: 16.4058948360068 eV at k = (0 0 0)
+Min LUCO: 16.4058948360068 eV at k = (0 0 0)
+Max HOCO: -10.6564103969191 eV at k = (0 0 0)
+Min HOCO: -10.6564103969191 eV at k = (0 0 0)
+Indirect band gap: 27.0623052329259 eV
+Max direct band gap: 27.0623052329259 eV at k = (0 0 0)
+Min direct band gap: 27.0623052329259 eV at k = (0 0 0)
+
+Total Periodic Hartree-Fock energy = -74.9637060708916
 
 Time(s):
-	Init:                               0.071
-	Coulomb term:                       0.287
-	Exchange term:                      0.261
-	Real->Recip trans:                  0.003
+	Init:                               0.027
+	Coulomb term:                       0.000
+	Exchange term:                      0.000
+	Real->Recip trans:                  0.004
 	Diag + Density:                     0.008
-	Total:                              0.569
+	Total:                              0.241
 
+
+*** test multipole after converged scf ***
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 0
+Updated range of lattice sum for |mu nu_R) = 0 0 0
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 0]
+	Rj_max (range of Coulomb operation): [0 0 0]
+	Rd_max (Range of density representation): [0 0 0]
+
+
+Crystal dimensionality : 0
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+	dipole correction threshold = 0.001
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 4.41744923591614e-05 GB Time: 0.003980475 s
+
+The boundary of Crystal Far Field is 0 0 0
+
+Cannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.
+electronic spherical multipole moments:
+monopole: -10
+dipole m=-1: 0.129402961443489
+dipole m=0:  0.00677450751724085
+dipole m=1:  0.0852989996390766
+quadrupole m=-2: 0.151434597027889
+quadrupole m=-1: -0.0216387140009431
+quadrupole m=0:  1.06237879507804
+quadrupole m=1:  0.00452158290318674
+quadrupole m=2:  -0.0766458692146394
 OccBlockSize: 2
 VirBlockSize: 2
 Obs
@@ -187,17 +262,17 @@ Average: 2
 Computing conventional gamma-point MP2 ...
  Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
  Size: 7.45058059692383e-07 GB
- Time: 0.021060587 s
-    PAO build total time:  0.01995347 s
-        part 1: 0.019631248 s
-        part 2: 0.00015683 s
-    PAO->CO transform time: 0.001107117 s
+ Time: 0.006360789 s
+    PAO build total time:  0.005779155 s
+        part 1: 0.005580892 s
+        part 2: 3.5002e-05 s
+    PAO->CO transform time: 0.000581634 s
 
-Gamma-Point MP2 Energy = -0.0359671653650928
+Gamma-Point MP2 Energy = -0.0359671710643379
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
-    "unitcell": {
+    "water": {
         "file_name": "h2o.xyz",
         "sort_input": "true",
         "charge": "0",
@@ -210,10 +285,10 @@ Gamma-Point MP2 Energy = -0.0359671653650928
     },
     "basis": {
         "name": "sto-3g",
-        "molecule": "$:unitcell"
+        "atoms": "$:water"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "basis": "$:basis",
         "screen": "schwarz",
         "threshold": "1.0e-20",
@@ -235,7 +310,7 @@ Gamma-Point MP2 Energy = -0.0359671653650928
     },
     "scf": {
         "type": "zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "wfn_world": "$:wfn_world",
         "converge": "1.0e-11",
         "max_iter": "100",
@@ -249,7 +324,7 @@ Gamma-Point MP2 Energy = -0.0359671653650928
     },
     "wfn": {
         "type": "GammaPointMP2",
-        "molecule": "$:unitcell",
+        "atoms": "$:water",
         "wfn_world": "$:wfn_world",
         "ref": "$:scf",
         "occ_block_size": "2",
@@ -260,7 +335,7 @@ Gamma-Point MP2 Energy = -0.0359671653650928
         "wfn": "$:wfn",
         "precision": "1.0e-11",
         "value": {
-            "value": "-74.999673236256001"
+            "value": "-74.999673241955989"
         }
     }
 }

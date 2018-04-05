@@ -1,5 +1,5 @@
-set(sources 
-    diis.h
+set(sources
+    tpack.h
     solvers.h
 )
 

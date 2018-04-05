@@ -5,9 +5,9 @@
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/chemistry/qc/lcao/cc/ccsd_hbar.h"
+#include "mpqc/chemistry/qc/lcao/cc/eom/eom_preconditioner.h"
 #include "mpqc/chemistry/qc/lcao/ci/cis.h"
 #include "mpqc/chemistry/qc/properties/excitation_energy.h"
-#include "mpqc/math/linalg/davidson_diag.h"
 
 namespace mpqc {
 namespace lcao {
@@ -28,19 +28,25 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
+   * | davidson_solver | string | multi-state | choose the davidson solver to use, multi-state or single-state  |
    * | max_vector | int | 8 | max number of guess vector per root |
-   * | vector_threshold | double | 1.0e-5 | threshold for the norm of new guess vector |
+   * | vector_threshold | double | 10 * precision of property | threshold for the norm of new guess vector |
+   * | eom_pno | string | none | if to simulate pno, avaialble \c default, which uses first excited state to generate PNOs \c state-average, use average of states to generate PNOs |
+   * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
+   * | eom_tpno | double | 0 | PNO truncation threshold for eom |
+   * | eom_tosv | double | 0 | OSV truncation threshold for eom |
    *
    */
 
   // clang-format on
   EOM_CCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     max_vector_ = kv.value<int>("max_vector", 8);
-    vector_threshold_ = kv.value<double>("vector_threshold", 1.0e-5);
+    // will be overwrited by precision of property if default set
+    vector_threshold_ = kv.value<double>("vector_threshold", 0);
 
     // need to modify the method keyword, CIS only has standard and df
-    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    std::string original_method = kv.value<std::string>("method","");
+    KeyVal &kv_nonconst = const_cast<KeyVal &>(kv);
+    std::string original_method = kv.value<std::string>("method", "");
     std::string cis_method = (this->df_ ? "df" : "standard");
     kv_nonconst.assign("method", cis_method);
 
@@ -48,31 +54,32 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
     cis_guess_wfn_ = std::make_shared<CIS<Tile, Policy>>(kv);
 
     // change method keyword back to original value
-    if(!original_method.empty()){
+    if (!original_method.empty()) {
       kv_nonconst.assign("method", original_method);
     }
+
+    davidson_solver_ = kv.value<std::string>("davidson_solver", "multi-state");
+
+    if (davidson_solver_ != "multi-state" &&
+        davidson_solver_ != "single-state") {
+      throw InputError("Invalid Davidson Solver in EOM-CCSD! \n", __FILE__,
+                       __LINE__, "davidson_solver");
+    }
+
+    eom_pno_ = kv.value<std::string>("eom_pno", "");
+    if (!eom_pno_.empty() &&
+        (eom_pno_ != "default" && eom_pno_ != "state-average")) {
+      throw InputError("Invalid PNO Simulation method in EOM-CCSD! \n",
+                       __FILE__, __LINE__, "eom_pno");
+    }
+    eom_pno_canonical_ = kv.value<bool>("eom_pno_canonical", true);
+    eom_tpno_ = kv.value<double>("eom_tpno", 0.0);
+    eom_tosv_ = kv.value<double>("eom_tosv", 0.0);
   }
 
   void obsolete() override {
     CCSD<Tile, Policy>::obsolete();
     cis_guess_wfn_->obsolete();
-    TArray g_ijab_ = TArray();
-
-    TArray FAB_ = TArray();
-    TArray FIJ_ = TArray();
-    TArray FIA_ = TArray();
-
-    TArray WIbAj_ = TArray();
-    TArray WIbaJ_ = TArray();
-
-    TArray WAbCd_ = TArray();
-    TArray WAbCi_ = TArray();
-
-    TArray WKlIj_ = TArray();
-    TArray WKaIj_ = TArray();
-
-    TArray WAkCd_ = TArray();
-    TArray WKlIc_ = TArray();
   }
 
  protected:
@@ -86,101 +93,42 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
   void evaluate(ExcitationEnergy *ex_energy) override;
 
  private:
-  // preconditioner in DavidsonDiag, approximate the diagonal H_bar matrix
-  struct Preconditioner : public DavidsonDiagPreconditioner<GuessVector> {
-    /// diagonal of F_ij matrix
-    EigenVector<numeric_type> eps_o;
-    /// diagonal of F_ab matrix
-    EigenVector<numeric_type> eps_v;
-
-    Preconditioner(const EigenVector<numeric_type> &eps_O,
-                   const EigenVector<numeric_type> &eps_V)
-        : eps_o(eps_O), eps_v(eps_V) {}
-
-    // default constructor
-    Preconditioner() : eps_o(), eps_v() {}
-
-    virtual void compute(const numeric_type &e, GuessVector &guess) const {
-      const auto &eps_v = this->eps_v;
-      const auto &eps_o = this->eps_o;
-
-      auto task1 = [&eps_v, &eps_o, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result = result_tile[i] / (e + eps_o[i[1]] - eps_v[i[0]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      auto task2 = [&eps_v, &eps_o, e](Tile &result_tile) {
-        const auto &range = result_tile.range();
-        float norm = 0.0;
-        for (const auto &i : range) {
-          const auto result = result_tile[i] / (e - eps_v[i[0]] - eps_v[i[1]] +
-                                                eps_o[i[2]] + eps_o[i[3]]);
-          result_tile[i] = result;
-          norm += result * result;
-        }
-        return std::sqrt(norm);
-      };
-
-      TA::foreach_inplace(guess.at(0), task1);
-      TA::foreach_inplace(guess.at(1), task2);
-
-      guess.at(0).world().gop.fence();
-    }
-  };
-
-  std::size_t max_vector_;   // max number of guess vector
-  double vector_threshold_;  // threshold for norm of new guess vector
-  std::shared_ptr<CIS<Tile,Policy>> cis_guess_wfn_; // CIS Wavefunction to provide guess to EOM-CCSD
-
-  TArray g_ijab_;
-
-  // F intermediates
-  TArray FAB_;
-  TArray FIJ_;
-  TArray FIA_;
-
-  // W intermediates
-  TArray WIbAj_;
-  TArray WIbaJ_;
-  TArray WAbCd_;  // this may not be initialized
-  TArray WAbCi_;
-  TArray WKlIj_;
-  TArray WKaIj_;
-  TArray WAkCd_;
-  TArray WKlIc_;
-  // TArray WKliC_;
-
-  std::vector<GuessVector> C_;  // initial guess vector
-
+  EigenVector<numeric_type> eom_ccsd_davidson_solver(
+      std::size_t n_roots, const std::vector<TArray> &cis_vector,
+      const std::vector<numeric_type> &cis_eigs, std::size_t max_iter,
+      double convergence);
   // compute F and W intermediates
-  void compute_FWintermediates();
+  cc::Intermediates<TArray> compute_FWintermediates();
 
   // compute contractions of HSS, HSD, HDS, and HDD
   //                         with guess vector Ci
   // reference: CPL, 248 (1996), 189
-  TArray compute_HSS_HSD_C(const TArray &Cai, const TArray &Cabij);
-  TArray compute_HDS_HDD_C(const TArray &Cai, const TArray &Cabij);
+  TArray compute_HSS_HSD_C(const TArray &Cai, const TArray &Cabij,
+                           const cc::Intermediates<TArray> &imds);
+  TArray compute_HDS_HDD_C(const TArray &Cai, const TArray &Cabij,
+                           const cc::Intermediates<TArray> &imds);
 
-  void init() {
-    g_ijab_ = this->get_ijab();
-
-    compute_FWintermediates();
+  cc::Intermediates<TArray> init() {
+    auto imds = compute_FWintermediates();
 
     auto remove_integral = [](const Formula &formula) {
       return formula.rank() == 4;
     };
 
     this->lcao_factory().registry().purge_if(remove_integral);
+
+    return imds;
   }
 
-  EigenVector<numeric_type> eom_ccsd_davidson_solver(std::size_t max_iter,
-                                                     double convergence);
+ private:
+  std::shared_ptr<CIS<Tile, Policy>> cis_guess_wfn_;
+  std::size_t max_vector_;   // max number of guess vector
+  double vector_threshold_;  // threshold for norm of new guess vector
+  std::string davidson_solver_;
+  std::string eom_pno_;
+  bool eom_pno_canonical_;
+  double eom_tpno_;
+  double eom_tosv_;
 };
 
 #if TA_DEFAULT_POLICY == 0

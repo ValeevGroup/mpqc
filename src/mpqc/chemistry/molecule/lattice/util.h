@@ -87,6 +87,15 @@ int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i const &nk);
 Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max);
 
 /*!
+ * \brief This takes the ordinal index of a reciprocal lattice and returns the
+ * corresponding 3D index
+ * \param ord_idx the ordinal index in reciprocal space
+ * \param nk number of k points in each direction
+ * \return the 3D index in reciprocal space
+ */
+Vector3i k_3D_idx(const int64_t ord_idx, Vector3i const &nk);
+
+/*!
  * \brief This shifts the position of a Molecule object
  *
  * \note All atom positions will be shifted
@@ -96,6 +105,16 @@ Vector3i direct_3D_idx(const int64_t ord_idx, Vector3i const &lattice_max);
  */
 std::shared_ptr<Molecule> shift_mol_origin(Molecule const &mol,
                                            Vector3d const &shift);
+
+/*!
+ * \brief This determines if a unit cell is included by the give lattice range
+ * \param in_idx 3D index of a unit cell
+ * \param range lattice range
+ * \param center center of \range
+ * \return
+ */
+bool is_in_lattice_range(Vector3i const &in_idx, Vector3i const &range,
+                         Vector3i const &center = {0, 0, 0});
 
 }  // namespace detail
 }  // namespace mpqc

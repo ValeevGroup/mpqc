@@ -35,12 +35,17 @@ cd ${BUILD_PREFIX}
 mkdir -p mpqc4
 cd mpqc4
 
+
+if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then
+    export CODECOVCXXFLAGS="--coverage -O0"
+fi
+
 cmake ${TRAVIS_BUILD_DIR} \
     -DTiledArray_DIR="${INSTALL_PREFIX}/TA/lib/cmake/tiledarray" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS}" \
+    -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS} ${CODECOVCXXFLAGS}" \
     -DLIBINT2_INSTALL_DIR="${INSTALL_PREFIX}/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true
 
@@ -52,7 +57,9 @@ setarch `uname -m` -R make -j1 check
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples
 cd mp2
-  cmake . -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  cmake . \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DCMAKE_CXX_FLAGS=$CODECOVCXXFLAGS
   make mp2
   setarch `uname -m` -R ./mp2 ./mp2.json
 cd ..

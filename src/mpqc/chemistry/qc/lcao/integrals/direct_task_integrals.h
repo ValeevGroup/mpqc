@@ -252,8 +252,8 @@ direct_dense_integrals(
 template <typename Tile>
 DirectArray<Tile, TA::DensePolicy,
             DirectDFIntegralBuilder<Tile, TA::DensePolicy>>
-df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
-                    TA::DistArray<Tile, TA::DensePolicy> &ket,
+df_direct_integrals(const TA::DistArray<Tile, TA::DensePolicy> &bra,
+                    const TA::DistArray<Tile, TA::DensePolicy> &ket,
                     Formula::Notation notation = Formula::Notation::Chemical) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];
@@ -304,8 +304,8 @@ df_direct_integrals(TA::DistArray<Tile, TA::DensePolicy> &bra,
 template <typename Tile>
 DirectArray<Tile, TA::SparsePolicy,
             DirectDFIntegralBuilder<Tile, TA::SparsePolicy>>
-df_direct_integrals(TA::DistArray<Tile, TA::SparsePolicy> &bra,
-                    TA::DistArray<Tile, TA::SparsePolicy> &ket,
+df_direct_integrals(const TA::DistArray<Tile, TA::SparsePolicy> &bra,
+                    const TA::DistArray<Tile, TA::SparsePolicy> &ket,
                     Formula::Notation notation = Formula::Notation::Chemical) {
   std::vector<TA::TiledRange1> vec_tr1(4);
   vec_tr1[0] = bra.trange().data()[1];

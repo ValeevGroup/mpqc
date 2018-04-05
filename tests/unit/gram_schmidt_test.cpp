@@ -29,7 +29,7 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
         TA::get_default_world(), vec, tr_n, tr_v);
   }
 
-  gram_schmidt(vecs);
+  gram_schmidt(vecs,0);
 
   const double tolerance = std::numeric_limits<double>::epsilon() * 100;
 
@@ -56,7 +56,7 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
         TA::get_default_world(), vec, tr_n, tr_v);
   }
 
-  gram_schmidt(vecs, vecs2);
+  gram_schmidt(vecs, vecs2, 0);
 
   for (auto i = 0; i < v; ++i) {
     for (auto j = 0; j < v; ++j) {

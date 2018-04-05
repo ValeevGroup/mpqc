@@ -125,7 +125,7 @@ class GammaPointMP2 : public RMP2<Tile, Policy> {
         lcao_factory_->pao_factory().unitcell().total_atomic_number() - charge;
     auto n_occ = nelectrons / 2;
     std::size_t n_frozen = 0;
-    auto t2 = d_abij(g_abij, eps_, n_occ, n_frozen);
+    auto t2 = detail::d_abij(g_abij, eps_, n_occ, n_frozen);
 
     auto time0 = mpqc::now(world, false);
 

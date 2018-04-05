@@ -1,12 +1,19 @@
 set(cc_sources
         ccsd.h
         ccsd_hbar.h
+        ccsd_intermediates.h
+        ccsd_r1_r2.h
         ccsd.cpp
         ccsd_t.h
         ccsd_t.cpp
         eom/eom_ccsd.h
         eom/eom_ccsd_impl.h
+        eom/eom_preconditioner.h
         eom/eom_ccsd.cpp
+        eom/eom_ea_ccsd.h
+        eom/eom_ea_ccsd_impl.h
+        eom/eom_ip_ccsd.h
+        eom/eom_ip_ccsd_impl.h
         gamma_point_ccsd.h
         gamma_point_ccsd.cpp
         laplace_transform.h
@@ -31,6 +38,7 @@ set(ccsdt_sources
         ccsdt.cpp
         cc3.h
         cc3.cpp
+        ccsdt_linkage.h
         solvers.h
         )
 

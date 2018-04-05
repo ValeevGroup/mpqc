@@ -13,5 +13,6 @@ set(sources
   timestamp.h
 )
 
-add_mpqc_library(util_misc sources sources "MADworld;tbb;MPQCutil_c++;MPQCutil_keyval" "mpqc/util/misc")
-target_link_libraries(MPQCutil_misc PUBLIC MPQC_Eigen)
+add_mpqc_library(util_misc sources sources "MADworld;MPQCutil_c++;MPQCutil_keyval" "mpqc/util/misc")
+# since FindTBB does not create an interface target, we can't just use it as a dependence in add_mpqc_library call
+target_link_libraries(MPQCutil_misc PUBLIC tbb MPQC_Eigen)

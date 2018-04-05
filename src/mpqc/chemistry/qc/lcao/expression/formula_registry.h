@@ -45,7 +45,8 @@ class Registry {
   /// return the registry
   const container_type& registry() const { return registry_; }
 
-  /// insert to registry by std::pair<Key, Value>
+  /// insert to registry by std::pair<Key, Value>, throw error if key already
+  /// exist
   void insert(const value_type& val) {
     auto insert_result = registry_.insert(val);
     if (insert_result.second == false) {
@@ -56,12 +57,23 @@ class Registry {
 
   /// insert {Key,Value} pair
   /// @note \c val is copied
-  void insert(const Key& key, const Value& val) { registry_[key] = val; }
-
-  /// insert {Key,std::shared_ptr<Value>} pair
-  void insert(const Key& key, std::shared_ptr<Value> val) {
+  void insert(const Key& key, const Value& val) {
     insert(std::make_pair(key, val));
   }
+
+  /// update value which already exsist in registry
+  void update(const Key& key, const Value& val) {
+    auto iter = find(key);
+    if (iter == registry_.end()) {
+      throw ProgrammingError("Registry::update: Key not Found!\n", __FILE__,
+                             __LINE__);
+    } else {
+      *iter = val;
+    }
+  }
+
+  /// update value which already exsist in registry
+  void update(const value_type& val) { update(val.first, val.second); }
 
   /// remove Value by Key
   void remove(const Key& key) { registry_.erase(key); }
@@ -87,7 +99,7 @@ class Registry {
   Value& retrieve(const Key& key) {
     auto iter = registry_.find(key);
     if (iter == registry_.end()) {
-      throw ProgrammingError("Registry::retrieve: key not found", __FILE__,
+      throw ProgrammingError("Registry::retrieve: Key not Found", __FILE__,
                              __LINE__);
     }
     return iter->second;
@@ -201,9 +213,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges the Formula object that equals \c formula from the registry
   void purge_formula(const Formula& formula) {
-    auto pred = [&formula](const Formula& item) {
-      return item == formula;
-    };
+    auto pred = [&formula](const Formula& item) { return item == formula; };
 
     this->purge_if(pred);
   }
@@ -216,9 +226,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
   /// purges formulae that contain index \c idx
   void purge_index(const OrbitalIndex& idx) {
-    auto pred = [&idx](const Formula& item) {
-      return item.has_index(idx);
-    };
+    auto pred = [&idx](const Formula& item) { return item.has_index(idx); };
 
     this->purge_if(pred);
   }

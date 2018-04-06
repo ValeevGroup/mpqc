@@ -628,6 +628,7 @@ TA::DistArray<Tile, Policy> form_T_from_K (
     const int j = arg_tile.range().lobound()[3];
 
     Matrix pno_ij = pnos[i*nocc_act + j];
+
     auto npno = pno_ij.cols();
     Matrix F_pno = pno_ij.transpose() * F_uocc * pno_ij;
 
@@ -734,7 +735,7 @@ void construct_pno(
 
     // Form D_ij from T_ij and T_ji
     Matrix D_ij = (1.0 / (1.0 + delta_ij)) * (4.0 * T_ji * T_ij - 2.0 * T_ij * T_ij +
-                                            4.0 * T_ij * T_ji - 2.0 * T_ji * T_ji);
+                                              4.0 * T_ij * T_ji - 2.0 * T_ji * T_ji);
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -852,81 +853,89 @@ void construct_pno(
     const int i = arg_tile.range().lobound()[2];
     const int j = arg_tile.range().lobound()[3];
     const int ij = i * nocc_act + j;
+    const int ji = j * nocc_act + i;
 
     // Form D_ij matrix from arg_tile
     Matrix D_ij = TA::eigen_map(arg_tile, nuocc, nuocc);
 
-    // Diagonalize D_ij
-    es.compute(D_ij);
-    Matrix pno_ij = es.eigenvectors();
-    auto occ_ij = es.eigenvalues();
+    // Only form PNOs for i <= j
+    if (i <= j) {
+      // Diagonalize D_ij
+      es.compute(D_ij);
+      Matrix pno_ij = es.eigenvectors();
+      auto occ_ij = es.eigenvalues();
 
-    // Determine number of PNOs to be dropped
-    std::size_t pnodrop = 0;
+      // Determine number of PNOs to be dropped
+      std::size_t pnodrop = 0;
 
-    if (tpno != 0.0) {
-      for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
-        if (!(occ_ij(k) >= tpno))
-          ++pnodrop;
-        else
-          break;
+      if (tpno != 0.0) {
+        for (std::size_t k = 0; k != occ_ij.rows(); ++k) {
+          if (!(occ_ij(k) >= tpno))
+            ++pnodrop;
+          else
+            break;
+        }
       }
-    }
 
-    // Calculate the number of PNOs kept and store in vector npnos
-    // for calculating average npno later
-    const auto npno = nuocc - pnodrop;
-    npnos[ij] = npno;
+      // Calculate the number of PNOs kept and store in vector npnos
+      // for calculating average npno later
+      const auto npno = nuocc - pnodrop;
+      npnos[ij] = npno;
+      npnos[ji] = npno;
 
-    // Truncate PNO matrix and store in pnos_
+      // Truncate PNO matrix and store in pnos_
 
-    // Declare matrix pno_trunc to hold truncated set of PNOs
-    Matrix pno_trunc;
+      // Declare matrix pno_trunc to hold truncated set of PNOs
+      Matrix pno_trunc;
 
-    // If npno = 0, substitute a single fake "PNO" with all coefficients
-    // equal to zero. All other code will behave the same way
-    if (npno == 0) {
-      // resize pno_trunc to be size nocc_act x 1
-      pno_trunc.resize(nuocc, 1);
+      // If npno = 0, substitute a single fake "PNO" with all coefficients
+      // equal to zero. All other code will behave the same way
+      if (npno == 0) {
+        // resize pno_trunc to be size nocc_act x 1
+        pno_trunc.resize(nuocc, 1);
 
-      // Create a zero matrix of size nuocc x 1
-      Matrix pno_zero = Matrix::Zero(nuocc, 1);
+        // Create a zero matrix of size nuocc x 1
+        Matrix pno_zero = Matrix::Zero(nuocc, 1);
 
-      // Set pno_trunc eqaul to pno_zero matrix
-      pno_trunc = pno_zero;
-    }
+        // Set pno_trunc eqaul to pno_zero matrix
+        pno_trunc = pno_zero;
+      }
 
-    // If npno != zero, use actual zet of truncated PNOs
-    else {
-      pno_trunc.resize(nuocc, npno);
-      pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
-    }
+        // If npno != zero, use actual zet of truncated PNOs
+      else {
+        pno_trunc.resize(nuocc, npno);
+        pno_trunc = pno_ij.block(0, pnodrop, nuocc, npno);
+      }
 
-    // Store truncated PNOs
-    pnos[ij] = pno_trunc;
+      // Store truncated PNOs
+      pnos[ij] = pno_trunc;
+      pnos[ji] = pno_trunc;
 
-    // Transform F to PNO space
-    Matrix F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
+      // Transform F to PNO space
+      Matrix F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
-    // Store just the diagonal elements of F_pno_ij
-    F_pno_diag[ij] = F_pno_ij.diagonal();
+      // Store just the diagonal elements of F_pno_ij
+      F_pno_diag[ij] = F_pno_ij.diagonal();
+      F_pno_diag[ji] = F_pno_diag[ij];
 
-    // Transform PNOs to canonical PNOs if pno_canonical_ == true
+      // Transform PNOs to canonical PNOs if pno_canonical_ == true
 
-    if (pno_canonical && npno > 0) {
-      //          if (pno_canonical_ == "true") {
-      // Compute eigenvectors of F in PNO space
-      es.compute(F_pno_ij);
-      Matrix pno_transform_ij = es.eigenvectors();
+      if (pno_canonical && npno > 0) {
+        //          if (pno_canonical_ == "true") {
+        // Compute eigenvectors of F in PNO space
+        es.compute(F_pno_ij);
+        Matrix pno_transform_ij = es.eigenvectors();
 
-      // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
-      Matrix can_pno_ij = pno_trunc * pno_transform_ij;
+        // Transform pno_ij to canonical PNO space; pno_ij -> can_pno_ij
+        Matrix can_pno_ij = pno_trunc * pno_transform_ij;
 
-      // Replace standard with canonical PNOs
-      pnos[ij] = can_pno_ij;
-      F_pno_diag[ij] = es.eigenvalues();
-    }  // pno_canonical
-
+        // Replace standard with canonical PNOs
+        pnos[ij] = can_pno_ij;
+        pnos[ji] = can_pno_ij;
+        F_pno_diag[ij] = es.eigenvalues();
+        F_pno_diag[ji] = F_pno_diag[ij];
+      }  // pno_canonical
+    } // i <= j
 
     // Transform D_ij into a tile
     auto norm = 0.0;

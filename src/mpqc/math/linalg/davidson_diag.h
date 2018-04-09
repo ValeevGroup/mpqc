@@ -188,7 +188,10 @@ class DavidsonDiag {
   // clang-format on
   std::tuple<EigenVector<element_type>, EigenVector<element_type>> extrapolate(
       value_type& HB, value_type& B, const DavidsonDiagPred<D>* const pred) {
+
     TA_ASSERT(HB.size() == B.size());
+    auto& world = TA::get_default_world();
+
     // size of new vector
     const auto n_b = B.size();
     // size of original subspace
@@ -238,83 +241,90 @@ class DavidsonDiag {
     //    std::cout << "G: " << std::endl;
     //    std::cout << G << std::endl;
 
-    TA::get_default_world().gop.fence();
-    // do eigen solve locally
+    world.gop.fence();
+
     result_type E(n_roots_);
     RowMatrix<element_type> C(n_v, n_roots_);
 
-    // symmetric matrix
-    if (symmetric_) {
-      // this return eigenvalue and eigenvector
-      Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(subspace_);
+    // do eigen solve on node 0
+    if(world.rank() == 0){
+      // symmetric matrix
+      if (symmetric_) {
+        // this return eigenvalue and eigenvector
+        Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(subspace_);
 
-      RowMatrix<element_type> v = es.eigenvectors();
-      EigenVector<element_type> e = es.eigenvalues();
-
-      if (es.info() != Eigen::Success) {
-        throw AlgorithmException("Eigen::SelfAdjointEigenSolver Failed!\n",
-                                 __FILE__, __LINE__);
-      }
-
-      //        std::cout << es.eigenvalues() << std::endl;
-
-      E = e.segment(0, n_roots_);
-      C = v.leftCols(n_roots_);
-    }
-    // non-symmetric matrix
-    else {
-      // do eigen solve on T
-      Eigen::EigenSolver<RowMatrix<element_type>> es(subspace_);
-
-      // sort eigen values
-      std::vector<EigenPair> eg;
-      {
-        RowMatrix<element_type> v = es.eigenvectors().real();
-        EigenVector<element_type> e = es.eigenvalues().real();
+        RowMatrix<element_type> v = es.eigenvectors();
+        EigenVector<element_type> e = es.eigenvalues();
 
         if (es.info() != Eigen::Success) {
-          throw AlgorithmException("Eigen::EigenSolver Failed!\n", __FILE__,
-                                   __LINE__);
+          throw AlgorithmException("Eigen::SelfAdjointEigenSolver Failed!\n",
+                                   __FILE__, __LINE__);
         }
 
-        //        std::cout << e << std::endl;
+        //        std::cout << es.eigenvalues() << std::endl;
 
-        for (std::size_t i = 0; i < n_v; ++i) {
-          eg.emplace_back(e[i], v.col(i));
+        E = e.segment(0, n_roots_);
+        C = v.leftCols(n_roots_);
+      }
+        // non-symmetric matrix
+      else {
+        // do eigen solve on T
+        Eigen::EigenSolver<RowMatrix<element_type>> es(subspace_);
+
+        // sort eigen values
+        std::vector<EigenPair> eg;
+        {
+          RowMatrix<element_type> v = es.eigenvectors().real();
+          EigenVector<element_type> e = es.eigenvalues().real();
+
+          if (es.info() != Eigen::Success) {
+            throw AlgorithmException("Eigen::EigenSolver Failed!\n", __FILE__,
+                                     __LINE__);
+          }
+
+          //        std::cout << e << std::endl;
+
+          for (std::size_t i = 0; i < n_v; ++i) {
+            eg.emplace_back(e[i], v.col(i));
+          }
+
+          std::sort(eg.begin(), eg.end());
         }
 
-        std::sort(eg.begin(), eg.end());
+        // obtain final eigen value and eigen vector
+        for (std::size_t i = 0; i < n_roots_; ++i) {
+          E[i] = eg[i].eigen_value;
+          C.col(i) = eg[i].eigen_vector;
+        }
+
+        // orthonormalize C
+        //      RowMatrix<element_type> Q = C;
+        //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(Q);
+        //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(C);
+        //      C = qr.householderQ();
+
+        //      const auto tolerance =
+        //          std::numeric_limits<typename D::element_type>::epsilon() *
+        //          100;
+        //      for (auto i = 0; i < n_roots_; ++i) {
+        //        for (auto j = i; j < n_roots_; ++j) {
+        //          const auto test = C.col(i).dot(C.col(j));
+        //          if (i == j) {
+        //            TA_ASSERT(test - 1.0 < tolerance);
+        //          } else {
+        //            TA_ASSERT(test < tolerance);
+        //          }
+        //          std::cout << "i= " << i << " j= " << j << " dot= " << test
+        //                    << std::endl;
+        //        }
+        //      }
       }
-
-      // obtain final eigen value and eigen vector
-      for (std::size_t i = 0; i < n_roots_; ++i) {
-        E[i] = eg[i].eigen_value;
-        C.col(i) = eg[i].eigen_vector;
-      }
-
-      // orthonormalize C
-      //      RowMatrix<element_type> Q = C;
-      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(Q);
-      //      Eigen::ColPivHouseholderQR<RowMatrix<element_type>> qr(C);
-      //      C = qr.householderQ();
-
-      //      const auto tolerance =
-      //          std::numeric_limits<typename D::element_type>::epsilon() *
-      //          100;
-      //      for (auto i = 0; i < n_roots_; ++i) {
-      //        for (auto j = i; j < n_roots_; ++j) {
-      //          const auto test = C.col(i).dot(C.col(j));
-      //          if (i == j) {
-      //            TA_ASSERT(test - 1.0 < tolerance);
-      //          } else {
-      //            TA_ASSERT(test < tolerance);
-      //          }
-      //          std::cout << "i= " << i << " j= " << j << " dot= " << test
-      //                    << std::endl;
-      //        }
-      //      }
     }
-    TA::get_default_world().gop.fence();
+    // broadcast data to all nodes
+    world.gop.broadcast_serializable(E,0);
+    world.gop.broadcast_serializable(C,0);
+
+    world.gop.fence();
 
     // compute eigen_vector at current iteration and store it
     // X(i) = B(i)*C(i)
@@ -332,6 +342,7 @@ class DavidsonDiag {
       eigen_vector_.pop_front();
     }
     eigen_vector_.push_back(X);
+    world.gop.fence();
 
     // compute residual
     // R(i) = (H - e(i)I)*B(i)*C(i)
@@ -347,6 +358,7 @@ class DavidsonDiag {
       }
       norms[i] = pred->norm(residual[i]);
     }
+    world.gop.fence();
 
     // precondition
     // user should define preconditioner
@@ -354,6 +366,7 @@ class DavidsonDiag {
     // where H_D is the diagonal element of H
     // but H_D can be approximated and computed on the fly
     pred->operator()(E, residual);
+    world.gop.fence();
 
     // subspace collapse
     // restart with new vector and most recent eigen vector
@@ -387,6 +400,7 @@ class DavidsonDiag {
       //        TA_ASSERT(m > 1.0e-3);
       //      }
     }
+    world.gop.fence();
 
 // test if orthonomalized
 //#ifndef NDEBUG

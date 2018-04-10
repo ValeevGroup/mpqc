@@ -667,6 +667,19 @@ TA::DistArray<Tile, Policy> form_T_from_K (
   return T2;
 };  // form T from K
 
+//template <typename T>
+//void copy_pnoij(
+//    std::size_t ji,
+//    const RowMatrix<T> pno,
+//    const EigenVector<T> f_diag,
+//    std::vector<RowMatrix<T>>& pnos,
+//    std::vector<std::size_t>& npnos,
+//    std::vector<EigenVector<T>>& F_pno_diag) {
+//  int num_pno = pno.cols();
+//  pnos[ji] = pno;
+//  npnos[ji] = num_pno;
+//  F_pno_diag[ji] = f_diag;
+//};
 
 /**
  *
@@ -881,7 +894,6 @@ void construct_pno(
       // for calculating average npno later
       const auto npno = nuocc - pnodrop;
       npnos[ij] = npno;
-      npnos[ji] = npno;
 
       // Truncate PNO matrix and store in pnos_
 
@@ -909,19 +921,16 @@ void construct_pno(
 
       // Store truncated PNOs
       pnos[ij] = pno_trunc;
-      pnos[ji] = pno_trunc;
 
       // Transform F to PNO space
       Matrix F_pno_ij = pno_trunc.transpose() * F_uocc * pno_trunc;
 
       // Store just the diagonal elements of F_pno_ij
       F_pno_diag[ij] = F_pno_ij.diagonal();
-      F_pno_diag[ji] = F_pno_diag[ij];
 
       // Transform PNOs to canonical PNOs if pno_canonical_ == true
 
       if (pno_canonical && npno > 0) {
-        //          if (pno_canonical_ == "true") {
         // Compute eigenvectors of F in PNO space
         es.compute(F_pno_ij);
         Matrix pno_transform_ij = es.eigenvectors();
@@ -931,11 +940,11 @@ void construct_pno(
 
         // Replace standard with canonical PNOs
         pnos[ij] = can_pno_ij;
-        pnos[ji] = can_pno_ij;
         F_pno_diag[ij] = es.eigenvalues();
-        F_pno_diag[ji] = F_pno_diag[ij];
       }  // pno_canonical
     } // i <= j
+
+
 
     // Transform D_ij into a tile
     auto norm = 0.0;
@@ -972,27 +981,29 @@ void construct_pno(
 
     // Compute and print average number of PNOs per pair
 
+    int unique_pairs = (nocc_act * (nocc_act + 1)) / 2;
+
     auto tot_pno = 0;
-    for (int i = 0; i != npnos.size(); ++i) {
+    for (int i = 0; i !=  unique_pairs; ++i) {
       tot_pno += npnos[i];
     }
 
-    auto ave_npno = tot_pno / (nocc_act * nocc_act);
+    auto ave_npno = tot_pno / unique_pairs;
     ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
                   << std::endl;
   }  // end if D_prime_.world == 0
 
-  // Form K_pno and T2_pno
-  const TA::DistArray<Tile, Policy>& K_pno = detail::pno_transform_abij(K_reblock, pnos);
-  const TA::DistArray<Tile, Policy>& T2_pno = detail::form_T_from_K(K_pno, F_occ_act, F_uocc, pnos, nocc_act);
-
-  // Compute the MP2 energy in the space of the truncated PNOs
-  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
-
-  // Compute exact MP2 energy - PNO MP2 energy
-  auto mp2_correction = exact_e_mp2 - pno_e_mp2;
-  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+//  // Form K_pno and T2_pno
+//  const TA::DistArray<Tile, Policy>& K_pno = detail::pno_transform_abij(K_reblock, pnos);
+//  const TA::DistArray<Tile, Policy>& T2_pno = detail::form_T_from_K(K_pno, F_occ_act, F_uocc, pnos, nocc_act);
+//
+//  // Compute the MP2 energy in the space of the truncated PNOs
+//  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
+//  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+//
+//  // Compute exact MP2 energy - PNO MP2 energy
+//  auto mp2_correction = exact_e_mp2 - pno_e_mp2;
+//  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
 
 };  // construct_pno
 
@@ -1057,6 +1068,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   using Tile = typename T::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
+
+  using WorldObject_ = madness::WorldObject<PNOSolver<T, DT>>;
 
   // clang-format off
   /**
@@ -1246,6 +1259,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+    transfer_pnos();
+
+  // Form K_pno and T2_pno
+  T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
+  T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
+
+  // Compute the MP2 energy in the space of the truncated PNOs
+  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
+  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+
+  // Compute exact MP2 energy - PNO MP2 energy
+  auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
+  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+
     // Dump # of pnos/pair to file
     if (print_npnos_) {
       std::ofstream out_file("/Users/mcclement/npnos-orig.tsv");
@@ -1318,10 +1345,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
 
-
-//    ExEnv::out0() << "abs(dE) = " << std::abs(dE) << std::endl;
-//    ExEnv::out0() << "abs(DE) = " << std::abs(DE_) << std::endl;
-//    ExEnv::out0() << "iter_count: " << iter_count_ << std::endl;
     // Upon entering the function update(), compare dE to micro_thresh to determine whether
     // or not the energy has converged within a particular PNO subspace
     if ((std::abs(dE) < micro_thresh_) && (iter_count_ > 0) && (micro_count_ > min_micro_)) {
@@ -1366,6 +1389,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+      transfer_pnos();
+
+      // Form K_pno and T2_pno
+      T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
+      T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
+
+      // Compute the MP2 energy in the space of the truncated PNOs
+      auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
+      ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+
+      // Compute exact MP2 energy - PNO MP2 energy
+      auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
+      ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+
       // Dump # of pnos/pair to file
       if (print_npnos_) {
         std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
@@ -1381,36 +1418,36 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
 
-      // Determine the max principal angle for each change in PNOs
-      double max_angle = 0.0;
-      int idxi = 0;
-      int idxj = 0;
-
-      for (int i = 0; i != nocc_act_; ++i) {
-        for (int j = i; j != nocc_act_; ++j) {
-          Matrix old_u = old_pnos[i * nocc_act_ + j];
-          Matrix new_u = pnos_[i * nocc_act_ + j];
-
-          Matrix product = old_u.transpose() * new_u;
-
-          Eigen::JacobiSVD<Matrix> svd(product);
-
-          Vector sing_vals = svd.singularValues();
-          int length = sing_vals.size();
-
-          double smallest_sing_val = sing_vals[length - 1];
-
-          double angle = acos(smallest_sing_val);
-
-          if (angle > max_angle) {
-            max_angle = angle;
-            idxi = i;
-            idxj = j;
-          }
-        }
-      }
-
-      ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
+//      // Determine the max principal angle for each change in PNOs
+//      double max_angle = 0.0;
+//      int idxi = 0;
+//      int idxj = 0;
+//
+//      for (int i = 0; i != nocc_act_; ++i) {
+//        for (int j = i; j != nocc_act_; ++j) {
+//          Matrix old_u = old_pnos[i * nocc_act_ + j];
+//          Matrix new_u = pnos_[i * nocc_act_ + j];
+//
+//          Matrix product = old_u.transpose() * new_u;
+//
+//          Eigen::JacobiSVD<Matrix> svd(product);
+//
+//          Vector sing_vals = svd.singularValues();
+//          int length = sing_vals.size();
+//
+//          double smallest_sing_val = sing_vals[length - 1];
+//
+//          double angle = acos(smallest_sing_val);
+//
+//          if (angle > max_angle) {
+//            max_angle = angle;
+//            idxi = i;
+//            idxj = j;
+//          }
+//        }
+//      }
+//
+//      ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
 
 
       // Depending on the value of use_delta, either the updated or the unupdated T2s will be transformed
@@ -1539,6 +1576,34 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
  private:
+
+  void transfer_pnos() {
+    auto pmap = K_reblock_.pmap();
+    auto tile_extent = K_reblock_.trange().tiles_range().extent_data();
+
+    for(auto i = 0; i < tile_extent[2]; ++i) {
+      for (auto j = i + 1; j < tile_extent[3]; ++j) {
+        if(!K_reblock_.is_zero({0,0,i,j}) && K_reblock_.is_local({0,0,i,j})) {
+          auto ji_owner = pmap->owner(j * nocc_act_ + i);
+          const auto ij = i * nocc_act_ + j;
+          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], F_pno_diag_[ij]);
+        }
+      }
+    }
+
+    K_reblock_.world().gop.fence();
+  }
+
+  void copy_pnoij(int i, int j, Matrix pno, Vector f_diag) {
+    int my_i = j;
+    int my_j = i;
+    int my_ij = my_i * nocc_act_ + my_j;
+    int num_pno = pno.cols();
+    pnos_[my_ij] = pno;
+    npnos_[my_ij] = num_pno;
+    F_pno_diag_[my_ij] = f_diag;
+  }
+
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV

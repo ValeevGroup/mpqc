@@ -1,0 +1,380 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision a52892c49774b36826f9c4a2a91f3c3c77485d89
+
+  Machine:          Darwin-16.7.0-x86_64
+  User:             mcclemen@Marjorys-MacBook-Pro.local
+  Start Time:       Tue Apr 10 21:06:09 2018 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RI-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSD",
+        "min_iter": "1",
+        "max_iter": "45",
+        "min_micro": "1",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "direct_df",
+        "solver": "pno",
+        "pno_canonical": "true",
+        "tpno": "0",
+        "tosv": "0",
+        "update_pno": "true",
+        "micro_thresh": "1.0e-04",
+        "macro_thresh": "0",
+        "use_delta": "false",
+        "print_npnos": "false",
+        "occ_block_size": "4",
+        "unocc_block_size": "8"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-08",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 6-31G
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis = cc-pVDZ
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization. 
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 50.5531878082312
+
+Starting SCF:
+	Threshold: 1e-10
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.172009821117
+	abs(Energy Change): 0.278588911860425
+	(Gradient Norm)/n^2: 0.00233094621893437
+	Scf Time: 0.003597821
+		Density Time: 0.00166436
+		Fock Build Time: 0.00128324
+		DF Fock builder:
+			W time: 0.000337934
+			J time: 0.000360495
+			K time: 0.000277647
+			Total exchange time: 0.000615581
+iteration: 1
+	Energy: -76.2140757286778
+	abs(Energy Change): 0.0420659075607972
+	(Gradient Norm)/n^2: 0.00111729007317779
+	Scf Time: 0.005799042
+		Density Time: 0.002364806
+		Fock Build Time: 0.002324856
+		DF Fock builder:
+			W time: 0.00026028
+			J time: 0.00156652
+			K time: 0.000253198
+			Total exchange time: 0.000513478
+iteration: 2
+	Energy: -76.2239081527738
+	abs(Energy Change): 0.00983242409600393
+	(Gradient Norm)/n^2: 0.000143551463877292
+	Scf Time: 0.004404366
+		Density Time: 0.001826098
+		Fock Build Time: 0.001334441
+		DF Fock builder:
+			W time: 0.000245352
+			J time: 0.000318879
+			K time: 0.000510432
+			Total exchange time: 0.000755784
+iteration: 3
+	Energy: -76.224179404067
+	abs(Energy Change): 0.000271251293227692
+	(Gradient Norm)/n^2: 2.08758073190256e-05
+	Scf Time: 0.004306558
+		Density Time: 0.001844879
+		Fock Build Time: 0.001123167
+		DF Fock builder:
+			W time: 0.00023954
+			J time: 0.000333766
+			K time: 0.000271108
+			Total exchange time: 0.000510648
+iteration: 4
+	Energy: -76.2241830588949
+	abs(Energy Change): 3.65482789277394e-06
+	(Gradient Norm)/n^2: 1.52468495838461e-06
+	Scf Time: 0.004268992
+		Density Time: 0.001678206
+		Fock Build Time: 0.001081366
+		DF Fock builder:
+			W time: 0.000221828
+			J time: 0.000310175
+			K time: 0.00026207
+			Total exchange time: 0.000483898
+iteration: 5
+	Energy: -76.2241830968481
+	abs(Energy Change): 3.79532423266937e-08
+	(Gradient Norm)/n^2: 2.57160622457132e-07
+	Scf Time: 0.004574211
+		Density Time: 0.002149608
+		Fock Build Time: 0.000963844
+		DF Fock builder:
+			W time: 0.000197966
+			J time: 0.000283014
+			K time: 0.000250367
+			Total exchange time: 0.000448333
+iteration: 6
+	Energy: -76.2241830985432
+	abs(Energy Change): 1.69502811786515e-09
+	(Gradient Norm)/n^2: 8.13417220478935e-08
+	Scf Time: 0.004305336
+		Density Time: 0.001725566
+		Fock Build Time: 0.0009848
+		DF Fock builder:
+			W time: 0.00021463
+			J time: 0.000311055
+			K time: 0.000240751
+			Total exchange time: 0.000455381
+iteration: 7
+	Energy: -76.2241830987047
+	abs(Energy Change): 1.61506363838271e-10
+	(Gradient Norm)/n^2: 5.89483144816229e-09
+	Scf Time: 0.004146758
+		Density Time: 0.001656207
+		Fock Build Time: 0.001069619
+		DF Fock builder:
+			W time: 0.000239782
+			J time: 0.000358001
+			K time: 0.000249219
+			Total exchange time: 0.000489001
+iteration: 8
+	Energy: -76.2241830987056
+	abs(Energy Change): 9.09494701772928e-13
+	(Gradient Norm)/n^2: 1.5233318718859e-09
+	Scf Time: 0.004155099
+		Density Time: 0.001688411
+		Fock Build Time: 0.00104175
+		DF Fock builder:
+			W time: 0.000241303
+			J time: 0.00028592
+			K time: 0.00029648
+			Total exchange time: 0.000537783
+iteration: 9
+	Energy: -76.2241830987056
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 3.29601993600965e-10
+	Scf Time: 0.004042396
+		Density Time: 0.001633735
+		Fock Build Time: 0.000996473
+		DF Fock builder:
+			W time: 0.000209809
+			J time: 0.000296296
+			K time: 0.00024312
+			Total exchange time: 0.000452929
+iteration: 10
+	Energy: -76.2241830987058
+	abs(Energy Change): 1.84741111297626e-13
+	(Gradient Norm)/n^2: 9.18506669851097e-11
+	Scf Time: 0.003947761
+		Density Time: 0.001629264
+		Fock Build Time: 0.000958826
+		DF Fock builder:
+			W time: 0.000205084
+			J time: 0.000283907
+			K time: 0.000235863
+			Total exchange time: 0.000440947
+  Frozen Core: 2 electrons
+Occ Range
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+ActiveOcc Range
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Unocc Range
+( tiles = [ 0, 1 ), elements = [ 0, 8 ) )
+Min and Max block size: 8 8
+Average: 8
+
+Obs Range
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+Exact MP2 correlation energy: -0.116778998485794
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91852375600143e-11
+Use Direct-DF CCSD Compute 
+Integral Prepare Time: 0.003928745
+Start Iteration
+Max Iteration: 45
+Target Precision: 1e-08
+AccurateTime: 0
+PrintDetail: 0
+  Printing size information for U_aaoo
+    Full     = 2.1632e-05 GB
+    Sparse   = 2.1632e-05 GB
+    Low Rank = 0 GB
+  iter 	     deltaE 	   residual 	          energy 	   u time/s 	 total time/s 
+    1 	 1.17984e-01 	 6.62688e-05 	 -0.117984088968 	        0.1 	        0.1 
+    2 	 2.44405e-03 	 2.14292e-05 	 -0.120428139417 	        0.1 	        0.1 
+    3 	 2.42270e-04 	 3.45853e-06 	 -0.120670409430 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91852098044387e-11
+    4 	 2.84434e-06 	 8.43658e-07 	 -0.120673253769 	        0.1 	        0.1 
+    5 	 2.41878e-07 	 8.65933e-07 	 -0.120673011891 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456609
+MP2 correction: -2.91851681710753e-11
+    6 	 3.89843e-07 	 3.15366e-07 	 -0.120673401734 	        0.1 	        0.1 
+    7 	 2.48616e-07 	 3.27304e-07 	 -0.120673153118 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91852514378022e-11
+    8 	 5.51390e-08 	 1.35278e-07 	 -0.120673097979 	        0.1 	        0.1 
+    9 	 8.27370e-08 	 1.40335e-07 	 -0.120673015242 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91851820488631e-11
+   10 	 3.92981e-08 	 5.87195e-08 	 -0.120672975944 	        0.1 	        0.1 
+   11 	 3.33472e-08 	 6.05946e-08 	 -0.120672942597 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91852930711656e-11
+   12 	 2.12588e-08 	 2.57581e-08 	 -0.120672921338 	        0.1 	        0.1 
+   13 	 1.29738e-08 	 2.64750e-08 	 -0.120672908364 	        0.1 	        0.1 
+The average number of OSVs per pair is 8
+The average number of PNOs per pair is 8
+PNO MP2 correlation energy: -0.116778998456608
+MP2 correction: -2.91852375600143e-11
+   14 	 9.69562e-09 	 1.13638e-08 	 -0.120672898668 	        0.1 	        0.1 
+   15 	 5.22694e-09 	 1.16399e-08 	 -0.120672893442 	        0.1 	        0.1 
+   16 	 4.25397e-09 	 5.03883e-09 	 -0.120672889188 	        0.1 	        0.1 
+CCSD Energy     -0.120672889187538
+CCSD Time in CCSD: 1.523272125 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "type": "Basis",
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "type": "Basis",
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf": {
+        "type": "RI-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSD",
+        "min_iter": "1",
+        "max_iter": "45",
+        "min_micro": "1",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "direct_df",
+        "solver": "pno",
+        "pno_canonical": "true",
+        "tpno": "0",
+        "tosv": "0",
+        "update_pno": "true",
+        "micro_thresh": "1.0e-04",
+        "macro_thresh": "0",
+        "use_delta": "false",
+        "print_npnos": "false",
+        "occ_block_size": "4",
+        "unocc_block_size": "8"
+    },
+    "property": {
+        "type": "Energy",
+        "precision": "1e-08",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-76.344855987893339"
+        }
+    }
+}
+

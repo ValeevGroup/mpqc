@@ -950,36 +950,6 @@ void construct_pno(
   world.gop.fence();
 
 
-//  // Sum together vectors of npnos and nosvs on each node
-//  world.gop.sum(npnos.data(), npnos.size());
-//  world.gop.sum(nosvs.data(), nosvs.size());
-//
-//
-//  // Compute and print average number of OSVs per pair
-//  if (D_prime.world().rank() == 0) {
-//    auto tot_osv = 0;
-//    for (int i = 0; i != nosvs.size(); ++i) {
-//      tot_osv += nosvs[i];
-//    }
-//
-//    auto ave_nosv = tot_osv / nocc_act;
-//    ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
-//                  << std::endl;
-//
-//    // Compute and print average number of PNOs per pair
-//
-//    int unique_pairs = (nocc_act * (nocc_act + 1)) / 2;
-//
-//    auto tot_pno = 0;
-//    for (int i = 0; i !=  unique_pairs; ++i) {
-//      tot_pno += npnos[i];
-//    }
-//
-//    auto ave_npno = tot_pno / unique_pairs;
-//    ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
-//                  << std::endl;
-//  }  // end if D_prime_.world == 0
-
 };  // construct_pno
 
 
@@ -1218,7 +1188,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     auto T2 = TA::foreach(K, form_T);
     world.gop.fence();
-    //      std::cout << "Successfully transformed K to T" << std::endl;
 
     // Form exact MP2 correlation energy for use in computing PNO incompleteness correction
     exact_e_mp2_ = detail::compute_mp2(K, T2);
@@ -1348,7 +1317,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       using Vector = EigenVector<typename Tile::numeric_type>;
 
       // Create copy of old pnos
-      std::vector<Matrix> old_pnos = pnos_;
+//      std::vector<Matrix> old_pnos = pnos_;
+//      old_pnos_ = pnos_;
 
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
@@ -1384,7 +1354,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 //
 //      for (int i = 0; i != nocc_act_; ++i) {
 //        for (int j = i; j != nocc_act_; ++j) {
-//          Matrix old_u = old_pnos[i * nocc_act_ + j];
+//          Matrix old_u = old_pnos_[i * nocc_act_ + j];
 //          Matrix new_u = pnos_[i * nocc_act_ + j];
 //
 //          Matrix product = old_u.transpose() * new_u;
@@ -1630,7 +1600,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<int> npnos_;
   std::vector<Matrix> pnos_;
   std::vector<Vector> F_pno_diag_;
-
+  std::vector<Matrix> old_pnos_;
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis

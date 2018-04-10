@@ -950,35 +950,35 @@ void construct_pno(
   world.gop.fence();
 
 
-  // Sum together vectors of npnos and nosvs on each node
-  world.gop.sum(npnos.data(), npnos.size());
-  world.gop.sum(nosvs.data(), nosvs.size());
-
-
-  // Compute and print average number of OSVs per pair
-  if (D_prime.world().rank() == 0) {
-    auto tot_osv = 0;
-    for (int i = 0; i != nosvs.size(); ++i) {
-      tot_osv += nosvs[i];
-    }
-
-    auto ave_nosv = tot_osv / nocc_act;
-    ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
-                  << std::endl;
-
-    // Compute and print average number of PNOs per pair
-
-    int unique_pairs = (nocc_act * (nocc_act + 1)) / 2;
-
-    auto tot_pno = 0;
-    for (int i = 0; i !=  unique_pairs; ++i) {
-      tot_pno += npnos[i];
-    }
-
-    auto ave_npno = tot_pno / unique_pairs;
-    ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
-                  << std::endl;
-  }  // end if D_prime_.world == 0
+//  // Sum together vectors of npnos and nosvs on each node
+//  world.gop.sum(npnos.data(), npnos.size());
+//  world.gop.sum(nosvs.data(), nosvs.size());
+//
+//
+//  // Compute and print average number of OSVs per pair
+//  if (D_prime.world().rank() == 0) {
+//    auto tot_osv = 0;
+//    for (int i = 0; i != nosvs.size(); ++i) {
+//      tot_osv += nosvs[i];
+//    }
+//
+//    auto ave_nosv = tot_osv / nocc_act;
+//    ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
+//                  << std::endl;
+//
+//    // Compute and print average number of PNOs per pair
+//
+//    int unique_pairs = (nocc_act * (nocc_act + 1)) / 2;
+//
+//    auto tot_pno = 0;
+//    for (int i = 0; i !=  unique_pairs; ++i) {
+//      tot_pno += npnos[i];
+//    }
+//
+//    auto ave_npno = tot_pno / unique_pairs;
+//    ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
+//                  << std::endl;
+//  }  // end if D_prime_.world == 0
 
 };  // construct_pno
 
@@ -1236,6 +1236,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     transfer_pnos();
 
+    print_npnos_per_pair();
+
   // Form K_pno and T2_pno
   T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
   T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
@@ -1365,6 +1367,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
       transfer_pnos();
+
+      print_npnos_per_pair();
 
       // Form K_pno and T2_pno
       T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
@@ -1577,6 +1581,35 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     pnos_[my_ij] = pno;
     npnos_[my_ij] = num_pno;
     F_pno_diag_[my_ij] = f_diag;
+  }
+
+  void print_npnos_per_pair() {
+
+    K_reblock_.world().gop.sum(npnos_.data(), npnos_.size());
+    K_reblock_.world().gop.sum(nosvs_.data(), nosvs_.size());
+
+    if (K_reblock_.world().rank() == 0) {
+      auto tot_osv = 0;
+      for (int i = 0; i != nosvs_.size(); ++i) {
+        tot_osv += nosvs_[i];
+      }
+
+      auto ave_nosv = tot_osv / nocc_act_;
+      ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
+                    << std::endl;
+
+      // Compute and print average number of PNOs per pair
+      auto tot_pno = 0;
+      for (int i = 0; i != npnos_.size(); ++i) {
+        tot_pno += npnos_[i];
+      }
+
+      auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
+      ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
+                    << std::endl;
+    }  // end if K_reblock.world().rank() == 0
+
+
   }
 
   Factory<T, DT>& factory_;

@@ -667,19 +667,6 @@ TA::DistArray<Tile, Policy> form_T_from_K (
   return T2;
 };  // form T from K
 
-//template <typename T>
-//void copy_pnoij(
-//    std::size_t ji,
-//    const RowMatrix<T> pno,
-//    const EigenVector<T> f_diag,
-//    std::vector<RowMatrix<T>>& pnos,
-//    std::vector<std::size_t>& npnos,
-//    std::vector<EigenVector<T>>& F_pno_diag) {
-//  int num_pno = pno.cols();
-//  pnos[ji] = pno;
-//  npnos[ji] = num_pno;
-//  F_pno_diag[ji] = f_diag;
-//};
 
 /**
  *
@@ -992,18 +979,6 @@ void construct_pno(
     ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
                   << std::endl;
   }  // end if D_prime_.world == 0
-
-//  // Form K_pno and T2_pno
-//  const TA::DistArray<Tile, Policy>& K_pno = detail::pno_transform_abij(K_reblock, pnos);
-//  const TA::DistArray<Tile, Policy>& T2_pno = detail::form_T_from_K(K_pno, F_occ_act, F_uocc, pnos, nocc_act);
-//
-//  // Compute the MP2 energy in the space of the truncated PNOs
-//  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-//  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
-//
-//  // Compute exact MP2 energy - PNO MP2 energy
-//  auto mp2_correction = exact_e_mp2 - pno_e_mp2;
-//  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
 
 };  // construct_pno
 

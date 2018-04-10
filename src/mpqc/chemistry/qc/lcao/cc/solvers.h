@@ -1238,17 +1238,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     print_npnos_per_pair();
 
-  // Form K_pno and T2_pno
-  T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
-  T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
-
-  // Compute the MP2 energy in the space of the truncated PNOs
-  auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-  ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
-
-  // Compute exact MP2 energy - PNO MP2 energy
-  auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
-  ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+    compute_pno_mp2_correction();
 
     // Dump # of pnos/pair to file
     if (print_npnos_) {
@@ -1370,17 +1360,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
       print_npnos_per_pair();
 
-      // Form K_pno and T2_pno
-      T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
-      T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
-
-      // Compute the MP2 energy in the space of the truncated PNOs
-      auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-      ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
-
-      // Compute exact MP2 energy - PNO MP2 energy
-      auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
-      ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+      compute_pno_mp2_correction();
 
       // Dump # of pnos/pair to file
       if (print_npnos_) {
@@ -1608,8 +1588,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
                     << std::endl;
     }  // end if K_reblock.world().rank() == 0
+  }
 
+  void compute_pno_mp2_correction() {
+    // Form K_pno and T2_pno
+    T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
+    T T2_pno = detail::form_T_from_K(K_pno, F_occ_act_, F_uocc_, pnos_, nocc_act_);
 
+    // Compute the MP2 energy in the space of the truncated PNOs
+    auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
+    ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+
+    // Compute exact MP2 energy - PNO MP2 energy
+    auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
+    ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
   }
 
   Factory<T, DT>& factory_;

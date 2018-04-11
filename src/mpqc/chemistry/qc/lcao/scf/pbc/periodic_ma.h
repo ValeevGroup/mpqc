@@ -136,7 +136,8 @@ class PeriodicMA {
   template <typename T, unsigned int lmax = MULTIPOLE_MAX_ORDER>
   using MultipoleMoment = std::array<T, (lmax + 1) * (lmax + 1)>;
   template <typename T, unsigned int lmax = MULTIPOLE_MAX_ORDER>
-  using Shell2KernelMap = std::unordered_map<size_t, MultipoleMoment<double, 2 * lmax>>;
+  using Shell2KernelMap =
+      std::unordered_map<size_t, MultipoleMoment<double, 2 * lmax>>;
 
   /*!
    * @brief This constructs PeriodicMA using a \c PeriodicAOFactory object
@@ -144,12 +145,20 @@ class PeriodicMA {
    * @param e_thresh threshold of multipole expansion error
    * @param ws well-separateness criterion
    */
-  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0, double extent_thresh = 1.0e-6, double extent_smallval = 0.01, double dipole_thresh = 1e-3)
-      : ao_factory_(ao_factory), e_thresh_(e_thresh), ws_(ws), extent_thresh_(extent_thresh), extent_smallval_(extent_smallval), dipole_thresh_(dipole_thresh) {
+  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0,
+             double extent_thresh = 1.0e-6, double extent_smallval = 0.01,
+             double dipole_thresh = 1e-3)
+      : ao_factory_(ao_factory),
+        e_thresh_(e_thresh),
+        ws_(ws),
+        extent_thresh_(extent_thresh),
+        extent_smallval_(extent_smallval),
+        dipole_thresh_(dipole_thresh) {
     auto &world = ao_factory_.world();
     mpqc::time_point t0, t1;
 
-    assert(libint2::operator_traits<Oper>::nopers == (MULTIPOLE_MAX_ORDER + 1) * (MULTIPOLE_MAX_ORDER + 1));
+    assert(libint2::operator_traits<Oper>::nopers ==
+           (MULTIPOLE_MAX_ORDER + 1) * (MULTIPOLE_MAX_ORDER + 1));
 
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
 
@@ -173,7 +182,8 @@ class PeriodicMA {
                   << "\n\tenergy threshold = " << e_thresh_
                   << "\n\twell-separateness criterion = " << ws_
                   << "\n\tprimitive pair extent threshold = " << extent_thresh_
-                  << "\n\tprimitive pair extent small value = " << extent_smallval_
+                  << "\n\tprimitive pair extent small value = "
+                  << extent_smallval_
                   << "\n\tdipole correction threshold = " << dipole_thresh_
                   << std::endl;
 
@@ -202,7 +212,8 @@ class PeriodicMA {
     max_distance_to_refcenter_ = ref_pairs_->max_distance_to(ref_com_);
     // compute squared minimum requirement for the distance between any CFF cell
     // to the reference cell (used in condition #2 for CFF)
-    squared_min_dist_ = 4.0 * ws_ * ws_ * max_distance_to_refcenter_ * max_distance_to_refcenter_;
+    squared_min_dist_ = 4.0 * ws_ * ws_ * max_distance_to_refcenter_ *
+                        max_distance_to_refcenter_;
     // determine CFF boundary
     cff_boundary_ = compute_CFF_boundary(RJ_max_);
     t1 = mpqc::fenced_now(world);
@@ -213,7 +224,8 @@ class PeriodicMA {
 
     t0 = mpqc::fenced_now(world);
     if (!CFF_reached()) {
-      ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.\n";
+      ExEnv::out0() << "\nCannot reach CFF within the given `rjmax`. Skip the "
+                       "rest of multipole approximation calculation.\n";
     } else {
       // compute spherical multipole moments for nuclei (the charged version)
       O_nuc_ = compute_nuc_multipole_moments(ref_com_);
@@ -235,41 +247,28 @@ class PeriodicMA {
                     << "\tCFF boundary:             " << t_boundary << " s\n"
                     << "\tnuclear multipole + misc: " << t_nuc << " s\n";
     }
-
-
-    // test against Mathematica
-//    {
-//      auto M = build_interaction_kernel<2 * MULTIPOLE_MAX_ORDER>(Vector3d({-100.0, -100.0, -100.0}));
-//      auto L = build_local_potential(O_nuc_, M);
-//      double e = compute_energy(O_nuc_, L);
-//
-//      ExEnv::out0() << "\n****** TEST ******\n";
-//      for (auto op = 0; op != L.size(); ++op) {
-//        auto l = O_ord_to_lm_map_[op].first;
-//        auto m = O_ord_to_lm_map_[op].second;
-//        ExEnv::out0() << "op=" << op << ", l=" << l << ", m=" << m
-//                      << ", Mlm=" << L[op] << "\n";
-//      }
-//      ExEnv::out0() << "MA energy for nuclei = " << e << std::endl;
-//      ExEnv::out0() << "\n****** TEST COMPLETED ******\n";
-//    }
-
   }
 
  private:
   Factory &ao_factory_;
-  const double e_thresh_;  /// multipole approximation is considered converged when Coulomb contribution from a spherical shell of unit cells is below this value
-  const double ws_;         /// well-separateness criterion
-  const double extent_thresh_;  /// threshold used in computing extent of a pair of primitives
-  const double extent_smallval_;  /// a small value is used when the extent of a pair of primitives is not computable
-  const double dipole_thresh_;  /// turn on dipole correction if dipole moment is greater than this value
+  const double e_thresh_;  /// multipole approximation is considered converged
+                           /// when Coulomb contribution from a spherical shell
+                           /// of unit cells is below this value
+  const double ws_;        /// well-separateness criterion
+  const double extent_thresh_;  /// threshold used in computing extent of a pair
+                                /// of primitives
+  const double extent_smallval_;  /// a small value is used when the extent of a
+                                  /// pair of primitives is not computable
+  const double dipole_thresh_;    /// turn on dipole correction if dipole moment
+                                  /// is greater than this value
 
-  int dimensionality_;  // dimensionality of crystal
+  int dimensionality_;  /// dimensionality of crystal
 
   MultipoleMoment<TArray> sphemm_;
   MultipoleMoment<double> O_nuc_;
 
-  static constexpr unsigned int nopers_ = libint2::operator_traits<Oper>::nopers;
+  static constexpr unsigned int nopers_ =
+      libint2::operator_traits<Oper>::nopers;
 
   Shell2KernelMap<double> cff_shell_to_M_map_;
   Shell2KernelMap<double, 1> cff_shell_to_M_map_dipole_;
@@ -284,7 +283,7 @@ class PeriodicMA {
   Vector3i R_max_;
   Vector3i RJ_max_;
   Vector3i RD_max_;
-  Vector3d ref_com_;  // center of mass of the reference unit cell
+  Vector3d ref_com_;  /// center of mass of the reference unit cell
 
   std::shared_ptr<detail::BasisPairInfo> ref_pairs_;
   double max_distance_to_refcenter_;
@@ -340,12 +339,15 @@ class PeriodicMA {
       O_tot[op] = O_elec[op] + O_nuc_[op];
     }
 
-    // do dipole correction if dipole moments are non-zero (i.e. the system has permanent
-    // dipole)
-    bool do_dipole_correction = (std::abs(O_tot[1]) > dipole_thresh_ || std::abs(O_tot[2]) > dipole_thresh_ || std::abs(O_tot[3]) > dipole_thresh_);
+    // do dipole correction if dipole moments are non-zero (i.e. the system has
+    // permanent dipole)
+    bool do_dipole_correction = (std::abs(O_tot[1]) > dipole_thresh_ ||
+                                 std::abs(O_tot[2]) > dipole_thresh_ ||
+                                 std::abs(O_tot[3]) > dipole_thresh_);
 
     // separate dipoles from multipole moments
-    // note: by doing so we neglect the interaction between dipole and higher-order multipoles
+    // note: by doing so we neglect the interaction between dipole and
+    // higher-order multipoles
     MultipoleMoment<double, 1> O_dipole;
     if (do_dipole_correction) {
       for (auto op = 0; op <= 3; ++op) {
@@ -357,17 +359,21 @@ class PeriodicMA {
     t_build_M_ = 0.0;
     t_build_L_ = 0.0;
     if (do_dipole_correction) {
-      ExEnv::out0() << "\nComputing multipole interaction without dipole ..." << std::endl;
+      ExEnv::out0() << "\nComputing multipole interaction without dipole ..."
+                    << std::endl;
     }
     MultipoleMoment<double> L;
-    std::tie(energy_cff_, L) = solve_multipole_approx<MULTIPOLE_MAX_ORDER>(O_tot, O_ord_to_lm_map_, M_ord_to_lm_map_, cff_shell_to_M_map_);
+    std::tie(energy_cff_, L) = solve_multipole_approx<MULTIPOLE_MAX_ORDER>(
+        O_tot, O_ord_to_lm_map_, M_ord_to_lm_map_, cff_shell_to_M_map_);
 
     // compute dipole-dipole interaction until it is converged
     if (do_dipole_correction) {
       ExEnv::out0() << "\nComputing dipole-dipole interaction ..." << std::endl;
       double energy_dipole;
       MultipoleMoment<double, 1> L_dipole;
-      std::tie(energy_dipole, L_dipole) = solve_multipole_approx<1>(O_dipole, O_ord_to_lm_map_dipole_, M_ord_to_lm_map_dipole_, cff_shell_to_M_map_dipole_);
+      std::tie(energy_dipole, L_dipole) = solve_multipole_approx<1>(
+          O_dipole, O_ord_to_lm_map_dipole_, M_ord_to_lm_map_dipole_,
+          cff_shell_to_M_map_dipole_);
 
       // add up energy and local potential contributions
       energy_cff_ += energy_dipole;
@@ -408,7 +414,6 @@ class PeriodicMA {
                     << "\tbuild Fock (CFF):      " << t_fock << " s\n"
                     << "\nTotal MA builder time: " << t_ma << " s\n";
     }
-
   }
 
   /// compute electronic multipole moments for the reference unit cell
@@ -416,26 +421,48 @@ class PeriodicMA {
     return compute_elec_multipole_moments(sphemm_, D);
   }
 
+  /*!
+   * @brief This returns the contribution of Fock matrix from Crystal Far Field
+   * @return
+   */
   const TArray &get_fock() {
     if (fock_computed_) {
       return fock_cff_;
     } else {
-      throw ProgrammingError("Fock cannot be retrieved before it is computed", __FILE__, __LINE__);
+      throw ProgrammingError("Fock cannot be retrieved before it is computed",
+                             __FILE__, __LINE__);
     }
   }
 
+  /*!
+   * @brief This returns the contribution of energy from Crystal Far Field
+   * @return
+   */
   double get_energy() {
     if (energy_computed_) {
       return energy_cff_;
     } else {
-      throw ProgrammingError("Energy cannot be retrieved before it is computed", __FILE__, __LINE__);
+      throw ProgrammingError("Energy cannot be retrieved before it is computed",
+                             __FILE__, __LINE__);
     }
   }
 
+  /*!
+   * @brief This determines whether Crystal Far Field has been reached for
+   * user-specified \c rjmax
+   * @return true if CFF has been reached in any direction, false otherwise
+   */
   bool CFF_reached() {
-    return std::any_of(cff_reached_.begin(), cff_reached_.end(), [](bool x){return x;});
+    return std::any_of(cff_reached_.begin(), cff_reached_.end(),
+                       [](bool x) { return x; });
   }
 
+  /*!
+   * @brief This determines whether Crystal Far Field has been reached for
+   * user-specified \c rjmax for a given direction
+   * @param dim 0 for x direction, 1 for y direction, 2 for z direction
+   * @return true if CFF has been reached in direction \c dim, false otherwise
+   */
   bool CFF_reached(int dim) { return cff_reached_[dim]; }
 
  private:
@@ -451,8 +478,8 @@ class PeriodicMA {
     auto basis = shift_basis_origin(*obs_, uc_vec);
     auto basis_neighbour = shift_basis_origin(*obs_, uc_vec, R_max_, dcell_);
 
-    return std::make_shared<detail::BasisPairInfo>(basis, basis_neighbour,
-                                                   extent_thresh_, extent_smallval_);
+    return std::make_shared<detail::BasisPairInfo>(
+        basis, basis_neighbour, extent_thresh_, extent_smallval_);
   }
 
   /*!
@@ -461,7 +488,6 @@ class PeriodicMA {
    */
   bool is_uc_in_CFF(const Vector3i &uc_ket,
                     const Vector3i &uc_bra = {0, 0, 0}) {
-
     // CFF condition #1: all shell pairs of the two cells are well separated
     bool condition1 = is_uc_in_CFF_condition1(uc_ket, uc_bra);
     // CFF condition #2: |L| >= ws * (r0_max + r1_max)
@@ -513,7 +539,6 @@ class PeriodicMA {
     return condition1;
   }
 
-
   /*!
    * \brief This determines if a unit cell \c uc_ket is in the crystal far
    * field of the bra unit cell \c uc_bra using Condition #2:
@@ -542,7 +567,6 @@ class PeriodicMA {
 
     for (auto dim = 0; dim <= 2; ++dim) {
       if (limit3d(dim) > 0) {
-
         Vector3i uc_idx({0, 0, 0});
         auto idx1 = 0;
         bool is_in_CFF, condition1, condition2;
@@ -566,7 +590,9 @@ class PeriodicMA {
 
         if (!is_in_CFF) {
           ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
-                        << "\nThe range limit in dimension " << dim << " is not enough to reach Crystal Far Field. Use larger `rjmax` in the input."
+                        << "\nThe range limit in dimension " << dim
+                        << " is not enough to reach Crystal Far Field. Use "
+                           "larger `rjmax` in the input."
                         << std::endl;
         } else {
           cff_reached_[dim] = true;
@@ -623,7 +649,7 @@ class PeriodicMA {
    * @return an array of doubles with array size = number of components in
    * \c Oper
    */
-  template<unsigned int lmax>
+  template <unsigned int lmax>
   MultipoleMoment<double, lmax> build_interaction_kernel(const Vector3d &c12) {
     const auto c12_norm = c12.norm();
     MPQC_ASSERT(c12_norm > 0.0);
@@ -638,19 +664,24 @@ class PeriodicMA {
     // case cosθ = 1 or -1, and then associated Legendre polynomials
     // P_{l, m}(cosθ) = 0 if m != 0
     // P_{l, m}(cosθ) = (cosθ)^l if m == 0
-    if (c12_xy_norm < std::numeric_limits<double>::epsilon() * 10.0) {  // in case of c12_xy_norm ~ epsilon, let's multiply epsilon by 10
+    if (c12_xy_norm < std::numeric_limits<double>::epsilon() *
+                          10.0) {  // in case of c12_xy_norm ~ epsilon, let's
+                                   // multiply epsilon by 10
       for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
         auto cos_theta_l = ((cos_theta > 0.0) || (l % 2 == 0)) ? 1.0 : -1.0;
-        auto result_l_0 = factorial<double>(l) / std::pow(c12_norm, l + 1) * cos_theta_l;
+        auto result_l_0 =
+            factorial<double>(l) / std::pow(c12_norm, l + 1) * cos_theta_l;
         for (auto m = -l; m <= l; ++m, ++ord_idx) {
           result[ord_idx] = (m == 0) ? result_l_0 : 0.0;
         }
       }
       return result;
     } else {
-      // build a map that returns cos(m * phi) for each m using recurrence relation
+      // build a map that returns cos(m * phi) for each m using recurrence
+      // relation
       auto cos_m_phi_map = cos_m_phi_map_recursive<lmax>(c12);
-      // build a map that returns sin(m * phi) for each m using recurrence relation
+      // build a map that returns sin(m * phi) for each m using recurrence
+      // relation
       auto sin_m_phi_map = sin_m_phi_map_recursive<lmax>(c12);
       // build a map that returns associated Legendre polynomial P_{l, m}(cosθ)
       // for each ordinal index of (l, m) pair, using recurrence relation
@@ -691,7 +722,7 @@ class PeriodicMA {
    * @return an array of doubles with array size = number of components in
    * \c Oper
    */
-  template<unsigned int lmax>
+  template <unsigned int lmax>
   MultipoleMoment<double, lmax> build_multipole_expansion(const Vector3d &r) {
     const auto r_norm = r.norm();
 
@@ -710,22 +741,28 @@ class PeriodicMA {
       // case cosθ = 1 or -1, and then associated Legendre polynomials
       // P_{l, m}(cosθ) = 0 if m != 0
       // P_{l, m}(cosθ) = (cosθ)^l if m == 0
-      if (r_xy_norm < std::numeric_limits<double>::epsilon() * 10.0) {  // in case of r_xy_norm ~ epsilon, let's multiply epsilon by 10
+      if (r_xy_norm < std::numeric_limits<double>::epsilon() *
+                          10.0) {  // in case of r_xy_norm ~ epsilon, let's
+                                   // multiply epsilon by 10
         for (auto l = 0, ord_idx = 0; l <= lmax; ++l) {
           auto cos_theta_l = ((cos_theta > 0.0) || (l % 2 == 0)) ? 1.0 : -1.0;
-          auto result_l_0 = std::pow(r_norm, l) / factorial<double>(l) * cos_theta_l;
+          auto result_l_0 =
+              std::pow(r_norm, l) / factorial<double>(l) * cos_theta_l;
           for (auto m = -l; m <= l; ++m, ++ord_idx) {
             result[ord_idx] = (m == 0) ? result_l_0 : 0.0;
           }
         }
         return result;
       } else {
-        // build a map that returns cos(m * phi) for each m using recurrence relation
+        // build a map that returns cos(m * phi) for each m using recurrence
+        // relation
         auto cos_m_phi_map = cos_m_phi_map_recursive<lmax>(r);
-        // build a map that returns sin(m * phi) for each m using recurrence relation
+        // build a map that returns sin(m * phi) for each m using recurrence
+        // relation
         auto sin_m_phi_map = sin_m_phi_map_recursive<lmax>(r);
-        // build a map that returns associated Legendre polynomial P_{l, m}(cosθ)
-        // for each ordinal index of (l, m) pair, using recurrence relation
+        // build a map that returns associated Legendre polynomial P_{l,
+        // m}(cosθ) for each ordinal index of (l, m) pair, using recurrence
+        // relation
         auto legendre_map = associated_legendre_map_recursive<lmax>(cos_theta);
 
         // fill the result
@@ -733,8 +770,10 @@ class PeriodicMA {
           const auto num = std::pow(r_norm, l);
           for (auto m = -l; m <= l; ++m, ++ord_idx) {
             const auto inv_denom = 1.0 / factorial<double>(l + m);
-            const auto phi_part = (m >= 0) ? cos_m_phi_map[m] : sin_m_phi_map[m];
-            result[ord_idx] = num * inv_denom * legendre_map[ord_idx] * phi_part;
+            const auto phi_part =
+                (m >= 0) ? cos_m_phi_map[m] : sin_m_phi_map[m];
+            result[ord_idx] =
+                num * inv_denom * legendre_map[ord_idx] * phi_part;
           }
         }
 
@@ -744,12 +783,13 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This builds a map that returns sin(m * phi) for each m using recurrence relation
+   * @brief This builds a map that returns sin(m * phi) for each m using
+   * recurrence relation
    * @tparam lmax
    * @param r
    * @return
    */
-  template<unsigned int lmax>
+  template <unsigned int lmax>
   std::unordered_map<int, double> sin_m_phi_map_recursive(const Vector3d &r) {
     const auto r_xy_norm = std::sqrt(r(0) * r(0) + r(1) * r(1));
     MPQC_ASSERT(r_xy_norm >= std::numeric_limits<double>::epsilon());
@@ -768,7 +808,8 @@ class PeriodicMA {
     }
     if (lmax >= 2) {
       for (auto m = 2; m <= lmax; ++m) {
-        sin_m_phi_map[m] = 2.0 * sin_m_phi_map[m - 1] * cos_phi - sin_m_phi_map[m - 2];
+        sin_m_phi_map[m] =
+            2.0 * sin_m_phi_map[m - 1] * cos_phi - sin_m_phi_map[m - 2];
         sin_m_phi_map[-m] = -sin_m_phi_map[m];
       }
     }
@@ -777,12 +818,13 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This builds a map that returns cos(m * phi) for each m using recurrence relation
+   * @brief This builds a map that returns cos(m * phi) for each m using
+   * recurrence relation
    * @tparam lmax
    * @param r
    * @return
    */
-  template<unsigned int lmax>
+  template <unsigned int lmax>
   std::unordered_map<int, double> cos_m_phi_map_recursive(const Vector3d &r) {
     const auto r_xy_norm = std::sqrt(r(0) * r(0) + r(1) * r(1));
     MPQC_ASSERT(r_xy_norm >= std::numeric_limits<double>::epsilon());
@@ -799,7 +841,8 @@ class PeriodicMA {
     }
     if (lmax >= 2) {
       for (auto m = 2; m <= lmax; ++m) {
-        cos_m_phi_map[m] = 2.0 * cos_m_phi_map[m - 1] * cos_phi - cos_m_phi_map[m - 2];
+        cos_m_phi_map[m] =
+            2.0 * cos_m_phi_map[m - 1] * cos_phi - cos_m_phi_map[m - 2];
         cos_m_phi_map[-m] = cos_m_phi_map[m];
       }
     }
@@ -808,14 +851,15 @@ class PeriodicMA {
   }
 
   /*!
-   * This builds a map that returns associated Legendre polynomial P_{l, m}(cosθ)
-   * for each ordinal index of (l, m) pair, using recurrence relation
+   * This builds a map that returns associated Legendre polynomial P_{l,
+   * m}(cosθ) for each ordinal index of (l, m) pair, using recurrence relation
    * @tparam lmax
    * @param cos_theta
    * @return
    */
-  template<unsigned int lmax>
-  std::unordered_map<int, double> associated_legendre_map_recursive(double cos_theta) {
+  template <unsigned int lmax>
+  std::unordered_map<int, double> associated_legendre_map_recursive(
+      double cos_theta) {
     using namespace boost::math;
 
     double sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
@@ -829,10 +873,12 @@ class PeriodicMA {
       legendre_map[2] = cos_theta;  // (l = 1, m = 0)
       if (lmax >= 2) {
         for (auto l = 2; l <= lmax; ++l) {
-          const auto ord_l_0 = l * l + l;  // (l, 0)
-          const auto ord_lm1_0 = l * l - l;  // (l - 1, 0)
+          const auto ord_l_0 = l * l + l;            // (l, 0)
+          const auto ord_lm1_0 = l * l - l;          // (l - 1, 0)
           const auto ord_lm2_0 = l * l - 3 * l + 2;  // (l - 2, 0)
-          legendre_map[ord_l_0] = legendre_next(l - 1, 0, cos_theta, legendre_map[ord_lm1_0], legendre_map[ord_lm2_0]);
+          legendre_map[ord_l_0] =
+              legendre_next(l - 1, 0, cos_theta, legendre_map[ord_lm1_0],
+                            legendre_map[ord_lm2_0]);
         }
       }
 
@@ -843,23 +889,32 @@ class PeriodicMA {
 
         const auto ord_m_m = m2 + m + m;  // (l = m, m)
         const auto ord_mm1_mm1 = m2 - 1;  // (l = m - 1, m - 1)
-        legendre_map[ord_m_m] = -1.0 * (2.0 * m - 1.0) * sin_theta * legendre_map[ord_mm1_mm1];
-        legendre_map[m2] = sign * legendre_map[ord_m_m] / factorial<double>(m + m);  // (l = m, -m)
+        legendre_map[ord_m_m] =
+            -1.0 * (2.0 * m - 1.0) * sin_theta * legendre_map[ord_mm1_mm1];
+        legendre_map[m2] = sign * legendre_map[ord_m_m] /
+                           factorial<double>(m + m);  // (l = m, -m)
 
         if (lmax >= 2 && lmax >= m + 1) {
           const auto ord_mp1_m = m2 + 4 * m + 2;  // (l = m + 1, m)
-          legendre_map[ord_mp1_m] = (2.0 * m + 1.0) * cos_theta * legendre_map[ord_m_m];
-          legendre_map[ord_mp1_m - 2 * m] = sign * legendre_map[ord_mp1_m] / factorial<double>(2 * m + 1);  // (l = m + 1, -m)
+          legendre_map[ord_mp1_m] =
+              (2.0 * m + 1.0) * cos_theta * legendre_map[ord_m_m];
+          legendre_map[ord_mp1_m - 2 * m] =
+              sign * legendre_map[ord_mp1_m] /
+              factorial<double>(2 * m + 1);  // (l = m + 1, -m)
         }
 
         if (lmax >= 3 && lmax >= m + 2) {
           for (auto l = m + 2; l <= lmax; ++l) {
             const auto l2 = l * l;
-            const auto ord_l_m = l2 + l + m;  // (l, m)
-            const auto ord_lm1_m = l2 - l + m;  // (l - 1, m)
+            const auto ord_l_m = l2 + l + m;            // (l, m)
+            const auto ord_lm1_m = l2 - l + m;          // (l - 1, m)
             const auto ord_lm2_m = l2 - 3 * l + 2 + m;  // (l - 2, m)
-            legendre_map[ord_l_m] = legendre_next(l - 1, m, cos_theta, legendre_map[ord_lm1_m], legendre_map[ord_lm2_m]);
-            legendre_map[ord_l_m - 2 * m] = sign * factorial<double>(l - m) * legendre_map[ord_l_m] / factorial<double>(l + m);  // (l, -m)
+            legendre_map[ord_l_m] =
+                legendre_next(l - 1, m, cos_theta, legendre_map[ord_lm1_m],
+                              legendre_map[ord_lm2_m]);
+            legendre_map[ord_l_m - 2 * m] =
+                sign * factorial<double>(l - m) * legendre_map[ord_l_m] /
+                factorial<double>(l + m);  // (l, -m)
           }
         }
       }
@@ -880,7 +935,8 @@ class PeriodicMA {
    */
   template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
   std::pair<MultipoleMoment<double, lmax>, MultipoleMoment<double, lmax>>
-  form_symm_and_antisymm_moments(const MultipoleMoment<double, lmax> &M, Ord2lmMap &ord_to_lm_map) {
+  form_symm_and_antisymm_moments(const MultipoleMoment<double, lmax> &M,
+                                 Ord2lmMap &ord_to_lm_map) {
     assert(M.size() == nopers);
     assert(ord_to_lm_map.size() == nopers);
     MultipoleMoment<double, lmax> Mplus, Mminus;
@@ -909,16 +965,19 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This builds the local multipole expansion of the potential at the origin
-   * created by a remote unit cell
-   * @param O multipole moments of the charge distribution of the remote unit cell
-   * @param M multipole interaction kernel between the origin and the remote unit cell
+   * @brief This builds the local multipole expansion of the potential at the
+   * origin created by a remote unit cell
+   * @param O multipole moments of the charge distribution of the remote unit
+   * cell
+   * @param M multipole interaction kernel between the origin and the remote
+   * unit cell
    * @return
    */
   template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
-  MultipoleMoment<double, lmax> build_local_potential(const MultipoleMoment<double, lmax>& O,
-                                                      const MultipoleMoment<double, 2 * lmax> &M,
-                                                      Ord2lmMap &O_ord_to_lm_map, Ord2lmMap &M_ord_to_lm_map) {
+  MultipoleMoment<double, lmax> build_local_potential(
+      const MultipoleMoment<double, lmax> &O,
+      const MultipoleMoment<double, 2 * lmax> &M, Ord2lmMap &O_ord_to_lm_map,
+      Ord2lmMap &M_ord_to_lm_map) {
     MultipoleMoment<double, lmax> result;
 
     // form O+, O-
@@ -931,7 +990,8 @@ class PeriodicMA {
     auto &M_plus = M_pm.first;
     auto &M_minus = M_pm.second;
 
-    // form multipole expansion of local potential created by the remote unit cell
+    // form multipole expansion of local potential created by the remote unit
+    // cell
     for (auto op1 = 0; op1 != nopers; ++op1) {
       auto l1 = O_ord_to_lm_map[op1].first;
       auto m1 = O_ord_to_lm_map[op1].second;
@@ -955,12 +1015,13 @@ class PeriodicMA {
   }
 
   /*!
-   * @brief This computes multipole interaction energy for give multipole moments and local potential
+   * @brief This computes multipole interaction energy for give multipole
+   * moments and local potential
    * @param O multipole moments
    * @param L local potential created by distant charges
    * @return
    */
-  template<unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
+  template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1)>
   double compute_energy(const MultipoleMoment<double, lmax> &O,
                         const MultipoleMoment<double, lmax> &L,
                         Ord2lmMap &O_ord_to_lm_map) {
@@ -1090,14 +1151,16 @@ class PeriodicMA {
         }
       }
     } else {
-      throw ProgrammingError("Invalid crystal dimensionality.", __FILE__, __LINE__);
+      throw ProgrammingError("Invalid crystal dimensionality.", __FILE__,
+                             __LINE__);
     }
 
     return result;
   }
 
   /*!
-   * @brief This computes electronic multipole moments for the reference unit cell
+   * @brief This computes electronic multipole moments for the reference unit
+   * cell
    * @param sphemm
    * @param D
    * @return
@@ -1107,7 +1170,10 @@ class PeriodicMA {
     MultipoleMoment<double> result;
     using ::mpqc::pbc::detail::dot_product;
     for (auto op = 0; op != nopers_; ++op) {
-      result[op] = -2.0 * dot_product(sphemm[op], D, R_max_, RD_max_);  // 2 = alpha + beta, -1 = electron charge
+      result[op] =
+          -2.0 *
+          dot_product(sphemm[op], D, R_max_,
+                      RD_max_);  // 2 = alpha + beta, -1 = electron charge
     }
 
     return result;
@@ -1118,7 +1184,8 @@ class PeriodicMA {
    * @param center expansion center
    * @return
    */
-  MultipoleMoment<double> compute_nuc_multipole_moments(const Vector3d &center) {
+  MultipoleMoment<double> compute_nuc_multipole_moments(
+      const Vector3d &center) {
     const auto &atoms = ao_factory_.unitcell().atoms();
     const auto natoms = atoms.size();
 
@@ -1141,7 +1208,6 @@ class PeriodicMA {
     return result;
   }
 
-
   /*!
    * @brief This computes Coulomb interaction for the reference cell contributed
    * from all cells in CFF. Energy contribution is computed per spherical shell
@@ -1155,12 +1221,12 @@ class PeriodicMA {
    * @param cff_shell_to_M_map
    * @return
    */
-  template<unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1), unsigned int nopers_doubled_lmax = (2 * lmax + 1) * (2 * lmax + 1)>
+  template <unsigned int lmax, unsigned int nopers = (lmax + 1) * (lmax + 1),
+            unsigned int nopers_doubled_lmax = (2 * lmax + 1) * (2 * lmax + 1)>
   std::pair<double, MultipoleMoment<double, lmax>> solve_multipole_approx(
-      const MultipoleMoment<double, lmax> &O,
-      Ord2lmMap &O_ord_to_lm_map, Ord2lmMap &M_ord_to_lm_map,
+      const MultipoleMoment<double, lmax> &O, Ord2lmMap &O_ord_to_lm_map,
+      Ord2lmMap &M_ord_to_lm_map,
       Shell2KernelMap<double, lmax> &cff_shell_to_M_map) {
-
     auto &world = ao_factory_.world();
     mpqc::time_point t0, t1;
 
@@ -1199,7 +1265,8 @@ class PeriodicMA {
 
         // build a list of unit cells for a spherical shell (outermost cells of
         // the sphere)
-        auto unitcell_list = build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
+        auto unitcell_list =
+            build_unitcells_on_a_sphere(cff_boundary_, cff_shell_idx);
 
         // for each unit cell in the spherical shell, compute the interaction
         // kernel w.r.t. the reference cell, and then compress it to \c M_shell
@@ -1211,14 +1278,16 @@ class PeriodicMA {
         world.gop.fence();
 
         // save the shell-level M into a map so it can be reused
-        M_shell_iter = cff_shell_to_M_map.insert({cff_shell_idx, M_shell}).first;
+        M_shell_iter =
+            cff_shell_to_M_map.insert({cff_shell_idx, M_shell}).first;
       }
       t1 = mpqc::fenced_now(world);
       t_build_M_ += mpqc::duration_in_s(t0, t1);
 
       t0 = mpqc::fenced_now(world);
       // compute local potential created by all cells in a spherical shell
-      auto L_shell = build_local_potential<lmax>(O, M_shell_iter->second, O_ord_to_lm_map, M_ord_to_lm_map);
+      auto L_shell = build_local_potential<lmax>(
+          O, M_shell_iter->second, O_ord_to_lm_map, M_ord_to_lm_map);
       // compute Coulomb energy contribution from a spherical shell
       e_shell = compute_energy<lmax>(O, L_shell, O_ord_to_lm_map);
 
@@ -1242,8 +1311,8 @@ class PeriodicMA {
         }
       }
       Vector3i corner_idx_next = cff_boundary_ + sphere_thickness_next;
-      if (corner_idx_next(0) > RJ_max_(0) || corner_idx_next(1) > RJ_max_(1)
-          || corner_idx_next(2) > RJ_max_(2)) {
+      if (corner_idx_next(0) > RJ_max_(0) || corner_idx_next(1) > RJ_max_(1) ||
+          corner_idx_next(2) > RJ_max_(2)) {
         out_of_rjmax = true;
       }
 
@@ -1252,20 +1321,22 @@ class PeriodicMA {
 
     if (!converged) {
       ExEnv::out0() << "\n!!!!!! Warning !!!!!!"
-                    << "\nMultipole approximation is not converged to the given threshold!"
-                    << "\nEnergy contribution from spherical shell [" << cff_shell_idx - 1 << "] is " << e_shell
-                    << " while MA threshold is " << e_thresh_
-                    << std::endl;
+                    << "\nMultipole approximation is not converged to the "
+                       "given threshold!"
+                    << "\nEnergy contribution from spherical shell ["
+                    << cff_shell_idx - 1 << "] is " << e_shell
+                    << " while MA threshold is " << e_thresh_ << std::endl;
     } else {
-      ExEnv::out0() << "\nMultipole approximation is converged after spherical shell [" << cff_shell_idx - 1 << "]"
-                    << std::endl;
+      ExEnv::out0()
+          << "\nMultipole approximation is converged after spherical shell ["
+          << cff_shell_idx - 1 << "]" << std::endl;
     }
 
-    ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = " << energy_cff << std::endl;
+    ExEnv::out0() << "\nCoulomb energy contributed from CFF so far = "
+                  << energy_cff << std::endl;
 
     return std::make_pair(energy_cff, L);
   }
-
 };
 
 }  // namespace ma

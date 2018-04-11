@@ -2,15 +2,25 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_FOUR_CENTER_J_CADF_K_FOCK_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_cadf_k_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma.h"
 
 namespace mpqc {
 namespace scf {
 
+/*!
+ * @brief PeriodicMAFourCenterJCADFKFockBuilder is an implementation of
+ * PeriodicFockBuilder with multipole-accelerated 4-center Coulomb and CADF
+ * exchange. For Coulomb, multipole approximation is used in Crystal Far
+ * Field and 4-center-J in Crystal Near Field. For exchange, CADF-K is always
+ * used.
+ * @tparam Tile
+ * @tparam Policy
+ */
 template <typename Tile, typename Policy>
-class PeriodicMAFourCenterJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
+class PeriodicMAFourCenterJCADFKFockBuilder
+    : public PeriodicFockBuilder<Tile, Policy> {
  public:
   using factory_type = ::mpqc::lcao::gaussian::PeriodicAOFactory<Tile, Policy>;
   using array_type = typename factory_type::TArray;
@@ -18,17 +28,21 @@ class PeriodicMAFourCenterJCADFKFockBuilder : public PeriodicFockBuilder<Tile, P
   using J_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
   using K_Builder = PeriodicCADFKBuilder<Tile, Policy, factory_type>;
 
-  PeriodicMAFourCenterJCADFKFockBuilder(factory_type &factory, double force_shape_threshold = 0.0,
-                                        double ma_e_thresh = 1e-9, double ma_ws = 3.0,
+  PeriodicMAFourCenterJCADFKFockBuilder(factory_type &factory,
+                                        double force_shape_threshold = 0.0,
+                                        double ma_e_thresh = 1e-9,
+                                        double ma_ws = 3.0,
                                         double ma_extent_thresh = 1e-6,
                                         double ma_extent_smallval = 0.01,
-                                        double ma_dipole_thresh = 1e-3) : ao_factory_(factory) {
+                                        double ma_dipole_thresh = 1e-3)
+      : ao_factory_(factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
     ma_builder_ = std::make_unique<MA_Builder>(
-        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
+        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval,
+        ma_dipole_thresh);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 
@@ -120,7 +134,6 @@ class PeriodicMAFourCenterJCADFKFockBuilder : public PeriodicFockBuilder<Tile, P
   array_type compute_K(const array_type &D, double target_precision) {
     return k_builder_->operator()(D, target_precision);
   }
-
 };
 
 }  // namespace scf

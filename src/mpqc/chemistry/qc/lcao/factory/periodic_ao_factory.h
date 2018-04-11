@@ -203,10 +203,10 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// This computes a vector of direct integrals for periodic systems
   std::vector<DirectTArray> compute_direct_vector(const Formula &formula);
 
-  /// wrapper to compute_array<libint2_oper> function template
+  /// wrapper to compute<libint2_oper> function template
   template <libint2::Operator libint2_oper>
-  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute(const std::wstring &formula_string);
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> compute(
+      const std::wstring &formula_string);
 
   /*!
    * @brief This computes integrals by \c Formula for those operators that have
@@ -217,8 +217,8 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    * @return an array of \c TA::DistArray with the array size = \c nopers
    */
   template <libint2::Operator libint2_oper>
-  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute(const Formula &formula);
+  std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> compute(
+      const Formula &formula);
 
   /*!
    * \brief This computes sparse complex array
@@ -247,18 +247,17 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    * @param world MADNESS World
    * @param engine a \c utility::TSPool object
    * @param bases \c std::array of \c Basis
-   * @param p_screen Screenerd
+   * @param p_screen Screener
    * @return \c std::array of \c TA::DistArray
    */
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute_integrals(madness::World &world,
-                             ShrPool<libint2::Engine> &engine,
-                             BasisVector const &bases,
-                             std::shared_ptr<Screener> p_screen =
-                                 std::make_shared<Screener>(Screener{})) {
-    auto result = sparse_integrals<libint2_oper>(world, engine, bases,
-                                                          p_screen, op_);
+  compute_integrals(madness::World &world, ShrPool<libint2::Engine> &engine,
+                    BasisVector const &bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result =
+        sparse_integrals<libint2_oper>(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -336,6 +335,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     RJ_size_ = 1 + direct_ord_idx(RJ_max_, RJ_max_);
   }
 
+  /// @brief This sets parameters for a libint2 operator
   void set_libint2_operator_params(libint2::any oper_params) {
     libint2_oper_params_ = oper_params;
   }
@@ -437,10 +437,9 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    */
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  sparse_integrals(madness::World &world,
-                            ShrPool<libint2::Engine> shr_pool,
-                            BasisVector const &bases,
-                            std::shared_ptr<Screener> screen, Op op);
+  sparse_integrals(madness::World &world, ShrPool<libint2::Engine> shr_pool,
+                   BasisVector const &bases, std::shared_ptr<Screener> screen,
+                   Op op);
 
   /// This renews R_max_ and R_size_ based on the range of significant shell
   /// pairs
@@ -521,8 +520,7 @@ template <typename Tile, typename Policy>
 template <libint2::Operator libint2_oper>
 std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
            libint2::operator_traits<libint2_oper>::nopers>
-PeriodicAOFactory<Tile, Policy>::compute(
-    const std::wstring &formula_string) {
+PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string) {
   auto formula = Formula(formula_string);
   return compute<libint2_oper>(formula);
 }
@@ -558,11 +556,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       auto bases = BasisVector{{*bra_basis, *ket_basis}};
       auto engine_pool = make_engine_pool(
           libint2_oper, utility::make_array_of_refs(*bra_basis, *ket_basis),
-          libint2::BraKet::x_x,
-          libint2_oper_params_);
+          libint2::BraKet::x_x, libint2_oper_params_);
 
-      result =
-          compute_integrals<libint2_oper>(world, engine_pool, bases);
+      result = compute_integrals<libint2_oper>(world, engine_pool, bases);
     }
   } else {
     throw FeatureNotImplemented("Operator rank != 2 not supported");
@@ -1373,8 +1369,10 @@ PeriodicAOFactory<Tile, Policy>::sparse_integrals(
   const auto tvolume = trange.tiles_range().volume();
 
   using TileVec = std::vector<std::pair<unsigned long, Tile>>;
-  using NormArray = std::array<TA::TensorF, libint2::operator_traits<libint2_oper>::nopers>;
-  using TilePtrArray = std::array<Tile *, libint2::operator_traits<libint2_oper>::nopers>;
+  using NormArray =
+      std::array<TA::TensorF, libint2::operator_traits<libint2_oper>::nopers>;
+  using TilePtrArray =
+      std::array<Tile *, libint2::operator_traits<libint2_oper>::nopers>;
 
   TileVec tiles(tvolume);
 
@@ -1392,13 +1390,16 @@ PeriodicAOFactory<Tile, Policy>::sparse_integrals(
       std::move(shr_pool), std::move(shr_bases), std::move(screen),
       std::move(op));
 
-  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng, NormArray *norms_array_ptr, TilePtrArray *tileptr_array_ptr) {
+  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
+                    NormArray *norms_array_ptr,
+                    TilePtrArray *tileptr_array_ptr) {
     // This is why builder was made into a shared_ptr.
     auto &builder = *builder_ptr;
     auto &norms_array = *norms_array_ptr;
     auto &tileptr_array = *tileptr_array_ptr;
 
-    auto ta_tile_array = builder.template integrals<libint2_oper>(idx, std::move(rng));
+    auto ta_tile_array =
+        builder.template integrals<libint2_oper>(idx, std::move(rng));
 
     for (auto oper = 0; oper != nopers; ++oper) {
       const auto tile_volume = ta_tile_array[oper].range().volume();
@@ -1416,7 +1417,8 @@ PeriodicAOFactory<Tile, Policy>::sparse_integrals(
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-  using TileVecArray = std::array<TileVec, libint2::operator_traits<libint2_oper>::nopers>;
+  using TileVecArray =
+      std::array<TileVec, libint2::operator_traits<libint2_oper>::nopers>;
   TileVecArray array_of_tilevec;
   array_of_tilevec.fill(tiles);
 
@@ -1424,14 +1426,17 @@ PeriodicAOFactory<Tile, Policy>::sparse_integrals(
   for (auto const ord : *pmap) {
     for (auto oper = 0u; oper != nopers; ++oper) {
       array_of_tilevec[oper][ord].first = ord;
-      vector_of_array_of_tileptr[ord][oper] = &(array_of_tilevec[oper][ord].second);
+      vector_of_array_of_tileptr[ord][oper] =
+          &(array_of_tilevec[oper][ord].second);
     }
     detail::IdxVec idx = trange.tiles_range().idx(ord);
-    world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord), &array_of_tile_norms, &(vector_of_array_of_tileptr[ord]));
+    world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord),
+                    &array_of_tile_norms, &(vector_of_array_of_tileptr[ord]));
   }
   world.gop.fence();
 
-  using TArrayArray = std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>;
+  using TArrayArray =
+      std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>;
   TArrayArray result;
 
   for (auto oper = 0u; oper != nopers; ++oper) {
@@ -1439,7 +1444,8 @@ PeriodicAOFactory<Tile, Policy>::sparse_integrals(
     TA::SparseShape<float> shape(world, norms, trange);
     TArray &tarray = result[oper];
     tarray = TArray(world, trange, shape, pmap);
-    if (norms.norm() >= norms.range().volume() * TA::SparseShape<float>::threshold()) {
+    if (norms.norm() >=
+        norms.range().volume() * TA::SparseShape<float>::threshold()) {
       detail::set_array(array_of_tilevec[oper], tarray);
     }
   }

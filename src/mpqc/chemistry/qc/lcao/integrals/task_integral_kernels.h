@@ -46,6 +46,19 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 4> shell_ptrs,
                             Screener &screen, const math::PetiteList &plist);
 
+/*!
+ * @brief This computes an \c std::array of integrals for operators that have
+ * \c nopers components, e.g. multipole moments, geometrical derivatives,
+ * etc. Note that only one tile is computed for each component, and all
+ * \c nopers tiles share the same index and range.
+ * @tparam libint2_oper libint2 operator type
+ * @param eng libint2 Engine type
+ * @param rng range of the target tile
+ * @param shell_ptrs array of shell clusters \c c1 and \c c2 as in <c1|O|c2>
+ * @param screen Screener
+ * @param plist
+ * @return
+ */
 template <libint2::Operator libint2_oper>
 std::array<TA::TensorD, libint2::operator_traits<libint2_oper>::nopers>
 integral_kernel(Engine &eng, TA::Range &&rng,
@@ -79,8 +92,7 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 
   // grab pointers to the result tiles to make addressing more efficient
   using ResultPtrType =
-      std::array<data_pointer,
-                 libint2::operator_traits<libint2_oper>::nopers>;
+      std::array<data_pointer, libint2::operator_traits<libint2_oper>::nopers>;
   ResultPtrType array_of_tile_ptr0;
   const auto nopers = libint2::operator_traits<libint2_oper>::nopers;
   for (auto op = 0u; op != nopers; ++op) {
@@ -96,7 +108,6 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     const auto nf0 = sh0.size();
 
     if (plist.is_canonical(bf_offset0)) {
-
       auto cf_offset1 = 0u;
       auto bf_offset1 = basis_func_offset_cluster1;
       for (auto idx_sh1 = 0ul; idx_sh1 < nshells1; ++idx_sh1) {
@@ -117,7 +128,8 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                 const auto cf1_offset = (f0 + cf_offset0) * ext_c1;
                 for (auto f1 = 0ul; f1 != nf1; ++f1, ++f01) {
                   const auto cf01 = cf1_offset + f1 + cf_offset1;
-                  const auto mult_int = permutational_multiplicity * ints_ptr[f01];
+                  const auto mult_int =
+                      permutational_multiplicity * ints_ptr[f01];
                   tile_ptr[cf01] = mult_int;
                 }
               }

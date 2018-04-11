@@ -2,26 +2,43 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_FOUR_CENTER_K_FOCK_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_builder.h"
 
 namespace mpqc {
 namespace scf {
 
+/*!
+ * @brief PeriodicMARIJFourCenterKFockBuilder is an implementation of
+ * PeriodicFockBuilder with multipole-accelerated RI-J and 4-center exchange.
+ * For Coulomb, multipole approximation is used in Crystal Far Field and RI-J in
+ * Crystal Near Field. For exchange, 4-center-K is always used.
+ * @tparam Tile
+ * @tparam Policy
+ */
 template <typename Tile, typename Policy>
-class PeriodicMARIJFourCenterKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
+class PeriodicMARIJFourCenterKFockBuilder
+    : public PeriodicFockBuilder<Tile, Policy> {
  public:
   using factory_type = ::mpqc::lcao::gaussian::PeriodicAOFactory<Tile, Policy>;
   using array_type = typename factory_type::TArray;
   using J_Builder = PeriodicMARIJBuilder<Tile, Policy, factory_type>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01, double ma_dipole_thresh = 1e-3) : ao_factory_(ao_factory) {
+  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory,
+                                      double ma_e_thresh = 1e-9,
+                                      double ma_ws = 3.0,
+                                      double ma_extent_thresh = 1e-6,
+                                      double ma_extent_smallval = 0.01,
+                                      double ma_dipole_thresh = 1e-3)
+      : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic MA-RI-J builder
     auto t0_j_init = mpqc::fenced_now(world);
-    j_builder_ = std::make_unique<J_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
+    j_builder_ = std::make_unique<J_Builder>(
+        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval,
+        ma_dipole_thresh);
     auto t1_j_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 
@@ -39,7 +56,8 @@ class PeriodicMARIJFourCenterKFockBuilder : public PeriodicFockBuilder<Tile, Pol
 
   ~PeriodicMARIJFourCenterKFockBuilder() {}
 
-  array_type operator()(array_type const &D, double target_precision, bool) override {
+  array_type operator()(array_type const &D, double target_precision,
+                        bool) override {
     array_type G;
 
     const auto J = compute_J(D, target_precision);
@@ -78,9 +96,7 @@ class PeriodicMARIJFourCenterKFockBuilder : public PeriodicFockBuilder<Tile, Pol
     }
   }
 
-  J_Builder &coulomb_builder() {
-    return *j_builder_;
-  }
+  J_Builder &coulomb_builder() { return *j_builder_; }
 
  private:
   factory_type &ao_factory_;
@@ -95,7 +111,6 @@ class PeriodicMARIJFourCenterKFockBuilder : public PeriodicFockBuilder<Tile, Pol
   array_type compute_K(const array_type &D, double target_precision) {
     return k_builder_->operator()(D, target_precision, false);
   }
-
 };
 
 }  // namespace scf

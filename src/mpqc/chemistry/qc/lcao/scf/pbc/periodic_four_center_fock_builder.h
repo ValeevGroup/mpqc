@@ -3144,7 +3144,8 @@ class PeriodicFourCenterFockBuilder
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basis1 = basisR_;
-    const auto Rrho_vec = ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+    const auto Rrho_vec =
+        ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
 
     // shift origin of a cluster of shells
     auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
@@ -3512,15 +3513,16 @@ class PeriodicFourCenterFockBuilder
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basis1 = basisR_;
-    const auto Rrho_vec = ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+    const auto Rrho_vec =
+        ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
 
     // shift origin of a cluster of shells
     auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
       ShellVec result;
       for (auto shell : cluster) {
         std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
-                                                shell.O[1] + shift(1),
-                                                shell.O[2] + shift(2)}};
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
         shell.move(new_origin);
         result.push_back(shell);
       }

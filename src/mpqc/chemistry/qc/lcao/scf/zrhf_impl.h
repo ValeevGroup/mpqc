@@ -9,9 +9,9 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_four_center_k_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
@@ -361,7 +361,6 @@ void zRHF<Tile, Policy>::solve(double thresh) {
                   << "\nquadrupole m=0:  " << elec_moments[6]
                   << "\nquadrupole m=1:  " << elec_moments[7]
                   << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
-
   }
 }
 
@@ -393,71 +392,78 @@ zRHF<Tile, Policy>::compute_density() {
   auto fock_eig = array_ops::array_to_eigen(Fk_);
 
   // parallel impl for F_k diagonalization and D_k build
-  auto compute_recip_density = [this](MatrixZ *F_ptr, MatrixZ *X_ptr, MatrixZ *C_old_ptr, MatrixZ *C_ptr, VectorD *eps_ptr, MatrixZ *D_ptr, bool is_gamma_point, bool do_level_shift) {
-    // get references to matrix pointers
-    const auto &F = *F_ptr;
-    const auto &X = *X_ptr;
-    auto &C = *C_ptr;
-    auto &eps = *eps_ptr;
-    auto &D = *D_ptr;
+  auto compute_recip_density =
+      [this](MatrixZ* F_ptr, MatrixZ* X_ptr, MatrixZ* C_old_ptr, MatrixZ* C_ptr,
+             VectorD* eps_ptr, MatrixZ* D_ptr, bool is_gamma_point,
+             bool do_level_shift) {
+        // get references to matrix pointers
+        const auto& F = *F_ptr;
+        const auto& X = *X_ptr;
+        auto& C = *C_ptr;
+        auto& eps = *eps_ptr;
+        auto& D = *D_ptr;
 
-    // symmetrize Fock
-    MatrixZ F_symm = 0.5 * (F.transpose().conjugate() + F);
-    if (is_gamma_point) {
-      F_symm = this->reverse_phase_factor(F_symm);
-    }
+        // symmetrize Fock
+        MatrixZ F_symm = 0.5 * (F.transpose().conjugate() + F);
+        if (is_gamma_point) {
+          F_symm = this->reverse_phase_factor(F_symm);
+        }
 
-    // diagonalize Fock
-    if (do_level_shift) {
-      // transform Fock from AO to CO basis
-      const auto &C_old = *C_old_ptr;
-      MatrixZ FCO = C_old.transpose().conjugate() * F_symm * C_old;
-      // add energy level shift to diagonal elements of unoccupied orbitals
-      auto nobs = FCO.cols();
-      for (auto a = docc_; a != nobs; ++a) {
-        FCO(a, a) += level_shift_;
-      }
-      // diagonalize Fock in CO basis
-      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
-      VectorD eps_temp = comp_eig_solver_fco.eigenvalues();
-      MatrixZ C_temp = comp_eig_solver_fco.eigenvectors();
-      // when k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (is_gamma_point) {
-        C_temp = this->reverse_phase_factor(C_temp);
-      }
-      // transform eigenvectors back to CO coefficients
-      C = C_old * C_temp;
-      // remove energy level shift from eigenvalues
-      for (auto p = 0; p != nobs; ++p) {
-        eps(p) = (p < docc_) ? eps_temp(p) : eps_temp(p) - level_shift_;
-      }
-    } else {
-      // Orthogonalize Fock matrix: F' = Xt * F * X
-      MatrixZ Ft = X.transpose().conjugate() * F_symm * X;
-      // Diagonalize F'
-      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
-      eps = comp_eig_solver.eigenvalues();
-      MatrixZ Ctemp = comp_eig_solver.eigenvectors();
-      // When k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (is_gamma_point) {
-        Ctemp = this->reverse_phase_factor(Ctemp);
-      }
-      // transform eigenvectors back to CO coefficients
-      C = X * Ctemp;
-    }
+        // diagonalize Fock
+        if (do_level_shift) {
+          // transform Fock from AO to CO basis
+          const auto& C_old = *C_old_ptr;
+          MatrixZ FCO = C_old.transpose().conjugate() * F_symm * C_old;
+          // add energy level shift to diagonal elements of unoccupied orbitals
+          auto nobs = FCO.cols();
+          for (auto a = docc_; a != nobs; ++a) {
+            FCO(a, a) += level_shift_;
+          }
+          // diagonalize Fock in CO basis
+          Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
+          VectorD eps_temp = comp_eig_solver_fco.eigenvalues();
+          MatrixZ C_temp = comp_eig_solver_fco.eigenvectors();
+          // when k=0 (gamma point), reverse phase factor of complex
+          // eigenvectors
+          if (is_gamma_point) {
+            C_temp = this->reverse_phase_factor(C_temp);
+          }
+          // transform eigenvectors back to CO coefficients
+          C = C_old * C_temp;
+          // remove energy level shift from eigenvalues
+          for (auto p = 0; p != nobs; ++p) {
+            eps(p) = (p < docc_) ? eps_temp(p) : eps_temp(p) - level_shift_;
+          }
+        } else {
+          // Orthogonalize Fock matrix: F' = Xt * F * X
+          MatrixZ Ft = X.transpose().conjugate() * F_symm * X;
+          // Diagonalize F'
+          Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
+          eps = comp_eig_solver.eigenvalues();
+          MatrixZ Ctemp = comp_eig_solver.eigenvectors();
+          // When k=0 (gamma point), reverse phase factor of complex
+          // eigenvectors
+          if (is_gamma_point) {
+            Ctemp = this->reverse_phase_factor(Ctemp);
+          }
+          // transform eigenvectors back to CO coefficients
+          C = X * Ctemp;
+        }
 
-    // compute_density
-    MatrixZ C_occ = C_ptr->leftCols(docc_);
-    D = C_occ.conjugate() * C_occ.transpose();
-  };
+        // compute_density
+        MatrixZ C_occ = C_ptr->leftCols(docc_);
+        D = C_occ.conjugate() * C_occ.transpose();
+      };
 
   bool do_level_shift = (level_shift_ > 0.0 && iter_ > 0);
   for (int64_t k = 0; k != k_size_; ++k) {
     bool is_gamma_point = (k_size_ > 1 && k == ((k_size_ - 1) / 2));
-    MatrixZ *C_old = do_level_shift ? &C_[k] : nullptr;
+    MatrixZ* C_old = do_level_shift ? &C_[k] : nullptr;
     F_recip_vec[k] = fock_eig.block(0, k * ext0, ext0, ext0);
 
-    world.taskq.add(compute_recip_density, &(F_recip_vec[k]), &(X_[k]), C_old, &(C_[k]), &(eps_[k]), &(D_recip_vec[k]), is_gamma_point, do_level_shift);
+    world.taskq.add(compute_recip_density, &(F_recip_vec[k]), &(X_[k]), C_old,
+                    &(C_[k]), &(eps_[k]), &(D_recip_vec[k]), is_gamma_point,
+                    do_level_shift);
   }
   world.gop.fence();
 
@@ -468,13 +474,15 @@ zRHF<Tile, Policy>::compute_density() {
 
   // parallel impl for D_r
   const auto denom_inv = 1.0 / double(nk_(0) * nk_(1) * nk_(2));
-  auto transform_recip2real = [ext0, denom_inv, this](MatrixZ *D_recip_ptr, RowMatrixXd *D_real_ptr, int64_t R) {
+  auto transform_recip2real = [ext0, denom_inv, this](MatrixZ* D_recip_ptr,
+                                                      RowMatrixXd* D_real_ptr,
+                                                      int64_t R) {
     using ::mpqc::detail::k_vector;
     using ::mpqc::detail::direct_vector;
 
     // get references to all matrix pointers
-    const auto &D_recip = *D_recip_ptr;
-    auto &D_real = *D_real_ptr;
+    const auto& D_recip = *D_recip_ptr;
+    auto& D_real = *D_real_ptr;
 
     auto vec_R = direct_vector(R, RD_max_, dcell_);
     D_real.setZero(ext0, ext0);
@@ -487,7 +495,8 @@ zRHF<Tile, Policy>::compute_density() {
   };
 
   for (int64_t Rd = 0; Rd != RD_size_; ++Rd) {
-    world.taskq.add(transform_recip2real, &result_recip_eig, &(D_real_vec[Rd]), Rd);
+    world.taskq.add(transform_recip2real, &result_recip_eig, &(D_real_vec[Rd]),
+                    Rd);
   }
   world.gop.fence();
 
@@ -816,8 +825,9 @@ template <typename Tile, typename Policy>
 void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMARIJCADFKFockBuilder<
       Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ =
-      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(
+      this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_,
+      ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .coulomb_builder()
                                  .multipole_builder()
@@ -864,7 +874,9 @@ MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(
+      this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_,
+      ma_extent_smallval_, ma_dipole_threshold_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .coulomb_builder()
                                  .multipole_builder()
@@ -911,7 +923,9 @@ MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(
+      this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_,
+      ma_extent_smallval_, ma_dipole_threshold_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .multipole_builder()
                                  .CFF_reached();
@@ -957,17 +971,19 @@ MAFourCenterJCADFKzRHF<Tile, Policy>::MAFourCenterJCADFKzRHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void MAFourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_, ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(
+      this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_,
+      ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
-      .multipole_builder()
-      .CFF_reached();
+                                 .multipole_builder()
+                                 .CFF_reached();
 }
 
 template <typename Tile, typename Policy>
 typename MAFourCenterJCADFKzRHF<Tile, Policy>::array_type
 MAFourCenterJCADFKzRHF<Tile, Policy>::build_F(const array_type& D,
-                                        const array_type& H,
-                                        const Vector3i& H_lattice_range) {
+                                              const array_type& H,
+                                              const Vector3i& H_lattice_range) {
   auto G_cnf = this->f_builder_->operator()(D);
   const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
   auto F_cnf =
@@ -984,7 +1000,6 @@ MAFourCenterJCADFKzRHF<Tile, Policy>::build_F(const array_type& D,
 
   return F_cnf;
 }
-
 
 }  // namespace lcao
 }  // namespace mpqc

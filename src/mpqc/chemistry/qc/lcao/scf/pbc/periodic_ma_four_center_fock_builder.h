@@ -8,6 +8,15 @@
 namespace mpqc {
 namespace scf {
 
+/*!
+ * @brief PeriodicMAFourCenterFockBuilder is an implementation of
+ * PeriodicFockBuilder with multipole-accelerated 4-center Coulomb and 4-center
+ * exchange. For Coulomb, multipole approximation is used in Crystal Far
+ * Field and 4-center-J in Crystal Near Field. For exchange, 4-center-K is
+ * always used.
+ * @tparam Tile
+ * @tparam Policy
+ */
 template <typename Tile, typename Policy>
 class PeriodicMAFourCenterFockBuilder
     : public PeriodicFockBuilder<Tile, Policy> {
@@ -17,13 +26,19 @@ class PeriodicMAFourCenterFockBuilder
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
   using JK_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMAFourCenterFockBuilder(factory_type &factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01, double ma_dipole_thresh = 1e-3)
+  PeriodicMAFourCenterFockBuilder(factory_type &factory,
+                                  double ma_e_thresh = 1e-9, double ma_ws = 3.0,
+                                  double ma_extent_thresh = 1e-6,
+                                  double ma_extent_smallval = 0.01,
+                                  double ma_dipole_thresh = 1e-3)
       : ao_factory_(factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
+    ma_builder_ = std::make_unique<MA_Builder>(
+        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval,
+        ma_dipole_thresh);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 
@@ -65,14 +80,14 @@ class PeriodicMAFourCenterFockBuilder
 
   array_type operator()(array_type const &D, double target_precision,
                         bool is_density_diagonal) override {
-
     const auto J = compute_J(D, target_precision, is_density_diagonal);
     const auto K = compute_K(D, target_precision, is_density_diagonal);
     const auto J_lattice_range = j_builder_->fock_lattice_range();
     const auto K_lattice_range = k_builder_->fock_lattice_range();
 
     // '2.0' and the '-' sign are embedded in J and K builders, respectively
-    return ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 1.0, 1.0);
+    return ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 1.0,
+                                    1.0);
   }
 
   void register_fock(const array_type &fock,
@@ -100,9 +115,7 @@ class PeriodicMAFourCenterFockBuilder
     }
   }
 
-  MA_Builder &multipole_builder() {
-    return *ma_builder_;
-  }
+  MA_Builder &multipole_builder() { return *ma_builder_; }
 
  private:
   factory_type &ao_factory_;
@@ -110,7 +123,8 @@ class PeriodicMAFourCenterFockBuilder
   std::unique_ptr<JK_Builder> j_builder_;
   std::unique_ptr<JK_Builder> k_builder_;
 
-  array_type compute_J(const array_type &D, double target_precision, bool is_density_diagonal) {
+  array_type compute_J(const array_type &D, double target_precision,
+                       bool is_density_diagonal) {
     if (ma_builder_->CFF_reached()) {
       ma_builder_->compute_multipole_approx(D, target_precision);
     }
@@ -118,10 +132,10 @@ class PeriodicMAFourCenterFockBuilder
     return j_builder_->operator()(D, target_precision, is_density_diagonal);
   }
 
-  array_type compute_K(const array_type &D, double target_precision, bool is_density_diagonal) {
+  array_type compute_K(const array_type &D, double target_precision,
+                       bool is_density_diagonal) {
     return k_builder_->operator()(D, target_precision, is_density_diagonal);
   }
-
 };
 
 }  // namespace scf

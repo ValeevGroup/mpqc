@@ -53,9 +53,8 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
  */
 std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
                                           const Vector3d &shift_base,
-                                          const std::vector<Vector3i> & shifts,
+                                          const std::vector<Vector3i> &shifts,
                                           const Vector3d &dcell);
-
 
 /*!
  * \brief This computes shell offsets for every cluster in a basis

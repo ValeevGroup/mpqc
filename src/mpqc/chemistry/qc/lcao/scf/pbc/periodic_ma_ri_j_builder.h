@@ -11,6 +11,14 @@
 namespace mpqc {
 namespace scf {
 
+/*!
+ * @brief PeriodicMARIJBuilder is a Coulomb matrix builder that uses
+ * multipole-accelerated RI-J approximation, i.e. multipole approximation in
+ * Crystal Far Field and RI-J in Crystal Near Field.
+ * @tparam Tile
+ * @tparam Policy
+ * @tparam Factory
+ */
 template <typename Tile, typename Policy, typename Factory>
 class PeriodicMARIJBuilder {
  public:
@@ -18,12 +26,18 @@ class PeriodicMARIJBuilder {
   using RIJ_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<Factory>;
 
-  PeriodicMARIJBuilder(Factory &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0, double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01, double ma_dipole_thresh = 1e-3) : ao_factory_(ao_factory) {
+  PeriodicMARIJBuilder(Factory &ao_factory, double ma_e_thresh = 1e-9,
+                       double ma_ws = 3.0, double ma_extent_thresh = 1e-6,
+                       double ma_extent_smallval = 0.01,
+                       double ma_dipole_thresh = 1e-3)
+      : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval, ma_dipole_thresh);
+    ma_builder_ = std::make_unique<MA_Builder>(
+        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval,
+        ma_dipole_thresh);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 
@@ -51,7 +65,7 @@ class PeriodicMARIJBuilder {
     double tmp1 = boost::math::legendre_p(0, 0.5);
     ExEnv::out0() << "\nLegendre P(0, 0.5) = " << tmp1 << std::endl;
 
-//    const auto RJ_max = ao_factory_.RJ_max();
+    //    const auto RJ_max = ao_factory_.RJ_max();
     // test CNF and CFF
     //    for (auto x = -RJ_max(0); x <= RJ_max(0); ++x) {
     //      for (auto y = -RJ_max(1); y <= RJ_max(1); ++y) {
@@ -75,7 +89,6 @@ class PeriodicMARIJBuilder {
   ~PeriodicMARIJBuilder() {}
 
   array_type operator()(array_type const &D, double target_precision) {
-
     if (ma_builder_->CFF_reached()) {
       compute_MAJ(D, target_precision);
     }
@@ -83,9 +96,7 @@ class PeriodicMARIJBuilder {
     return compute_RIJ(D, target_precision);
   }
 
-  MA_Builder &multipole_builder() {
-    return *ma_builder_;
-  }
+  MA_Builder &multipole_builder() { return *ma_builder_; }
 
  private:
   Factory &ao_factory_;

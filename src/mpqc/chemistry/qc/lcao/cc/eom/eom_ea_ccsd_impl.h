@@ -83,17 +83,24 @@ EOM_EA_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   TA::TiledRange trange_ca = {range_v};
   TA::TiledRange trange_cabi = {range_v, range_v, range_o};
 
+#if TA_DEFAULT_POLICY == 1
   // making fake shape of 1
   TA::SparseShape<float> shape_v(TA::Tensor<float>(trange_ca.tiles_range(), 1),
                                  trange_ca);
-
   TA::SparseShape<float> shape_vvo(
       TA::Tensor<float>(trange_cabi.tiles_range(), 0.0), trange_cabi);
+#endif
 
   for (std::size_t i = 0; i < n_roots; ++i) {
     // Ca
     guess_vector[i] = ::mpqc::cc::TPack<TArray>(2);
+
+#if TA_DEFAULT_POLICY == 0
+    guess_vector[i][0] = TA::DistArray<Tile, Policy>(world, trange_ca);
+#elif TA_DEFAULT_POLICY == 1
     guess_vector[i][0] = TA::DistArray<Tile, Policy>(world, trange_ca, shape_v);
+#endif
+
     guess_vector[i][0].fill(0.0);
     // make unit vector
     std::vector<std::size_t> element_idx = {i};
@@ -107,8 +114,12 @@ EOM_EA_CCSD<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     guess_vector[i][0].truncate();
 
     // Cabi
+#if TA_DEFAULT_POLICY == 0
+    guess_vector[i][1] = TA::DistArray<Tile, Policy>(world, trange_cabi);
+#elif TA_DEFAULT_POLICY == 1
     guess_vector[i][1] =
         TA::DistArray<Tile, Policy>(world, trange_cabi, shape_vvo);
+#endif
     guess_vector[i][1].fill(0.0);
     guess_vector[i][1].truncate();
   }

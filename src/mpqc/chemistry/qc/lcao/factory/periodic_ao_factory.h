@@ -206,7 +206,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   /// wrapper to compute_array<libint2_oper> function template
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute_array(const std::wstring &formula_string);
+  compute(const std::wstring &formula_string);
 
   /*!
    * @brief This computes integrals by \c Formula for those operators that have
@@ -218,7 +218,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    */
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute_array(const Formula &formula);
+  compute(const Formula &formula);
 
   /*!
    * \brief This computes sparse complex array
@@ -252,12 +252,12 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    */
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  compute_array_of_integrals(madness::World &world,
+  compute_integrals(madness::World &world,
                              ShrPool<libint2::Engine> &engine,
                              BasisVector const &bases,
                              std::shared_ptr<Screener> p_screen =
                                  std::make_shared<Screener>(Screener{})) {
-    auto result = array_of_sparse_integrals<libint2_oper>(world, engine, bases,
+    auto result = sparse_integrals<libint2_oper>(world, engine, bases,
                                                           p_screen, op_);
     return result;
   }
@@ -437,7 +437,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    */
   template <libint2::Operator libint2_oper>
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers>
-  array_of_sparse_integrals(madness::World &world,
+  sparse_integrals(madness::World &world,
                             ShrPool<libint2::Engine> shr_pool,
                             BasisVector const &bases,
                             std::shared_ptr<Screener> screen, Op op);
@@ -521,17 +521,17 @@ template <typename Tile, typename Policy>
 template <libint2::Operator libint2_oper>
 std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
            libint2::operator_traits<libint2_oper>::nopers>
-PeriodicAOFactory<Tile, Policy>::compute_array(
+PeriodicAOFactory<Tile, Policy>::compute(
     const std::wstring &formula_string) {
   auto formula = Formula(formula_string);
-  return compute_array<libint2_oper>(formula);
+  return compute<libint2_oper>(formula);
 }
 
 template <typename Tile, typename Policy>
 template <libint2::Operator libint2_oper>
 std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
            libint2::operator_traits<libint2_oper>::nopers>
-PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
+PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   const auto mpqc_oper = formula.oper().type();
   MPQC_ASSERT(detail::to_libint2_operator(mpqc_oper) == libint2_oper);
 
@@ -562,7 +562,7 @@ PeriodicAOFactory<Tile, Policy>::compute_array(const Formula &formula) {
           libint2_oper_params_);
 
       result =
-          compute_array_of_integrals<libint2_oper>(world, engine_pool, bases);
+          compute_integrals<libint2_oper>(world, engine_pool, bases);
     }
   } else {
     throw FeatureNotImplemented("Operator rank != 2 not supported");
@@ -1363,7 +1363,7 @@ template <typename Tile, typename Policy>
 template <libint2::Operator libint2_oper>
 std::array<typename PeriodicAOFactory<Tile, Policy>::TArray,
            libint2::operator_traits<libint2_oper>::nopers>
-PeriodicAOFactory<Tile, Policy>::array_of_sparse_integrals(
+PeriodicAOFactory<Tile, Policy>::sparse_integrals(
     madness::World &world, ShrPool<libint2::Engine> shr_pool,
     BasisVector const &bases, std::shared_ptr<Screener> screen, Op op) {
   const auto nopers = libint2::operator_traits<libint2_oper>::nopers;

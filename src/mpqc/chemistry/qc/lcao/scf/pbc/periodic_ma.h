@@ -192,7 +192,7 @@ class PeriodicMA {
     // compute spherical multipole moments (the chargeless version, before being
     // contracted with density matrix) for electrons
     t0 = mpqc::fenced_now(world);
-    sphemm_ = ao_factory_.template compute_array<Oper>(L"<κ|O|λ>");
+    sphemm_ = ao_factory_.template compute<Oper>(L"<κ|O|λ>");
     t1 = mpqc::fenced_now(world);
     auto t_ints = mpqc::duration_in_s(t0, t1);
 

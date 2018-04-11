@@ -393,7 +393,7 @@ zRHF<Tile, Policy>::compute_density() {
   auto fock_eig = array_ops::array_to_eigen(Fk_);
 
   // parallel impl for F_k diagonalization and D_k build
-  auto compute_recip_density = [ext0, this](MatrixZ *F_ptr, MatrixZ *X_ptr, MatrixZ *C_old_ptr, MatrixZ *C_ptr, VectorD *eps_ptr, MatrixZ *D_ptr, bool is_gamma_point, bool do_level_shift) {
+  auto compute_recip_density = [this](MatrixZ *F_ptr, MatrixZ *X_ptr, MatrixZ *C_old_ptr, MatrixZ *C_ptr, VectorD *eps_ptr, MatrixZ *D_ptr, bool is_gamma_point, bool do_level_shift) {
     // get references to matrix pointers
     const auto &F = *F_ptr;
     const auto &X = *X_ptr;

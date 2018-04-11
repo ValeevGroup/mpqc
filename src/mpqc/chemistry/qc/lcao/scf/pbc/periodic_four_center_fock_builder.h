@@ -3551,7 +3551,6 @@ class PeriodicFourCenterFockBuilder
     const auto &rng2 = trange_eri4_.dim(2).tile(tile2);
     const auto &rng3 = trange_eri4_.dim(3).tile(tile3_R3);
     const auto rng1_size = rng1.second - rng1.first;
-    const auto rng2_size = rng2.second - rng2.first;
     const auto rng3_size = rng3.second - rng3.first;
 
     // 2-d tile ranges describing the Fock contribution blocks produced by this

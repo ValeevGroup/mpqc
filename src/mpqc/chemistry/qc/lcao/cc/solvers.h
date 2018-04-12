@@ -1316,9 +1316,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       using Matrix = RowMatrix<typename Tile::numeric_type>;
       using Vector = EigenVector<typename Tile::numeric_type>;
 
-      // Create copy of old pnos
+
+
+//      Create copy of old pnos
 //      std::vector<Matrix> old_pnos = pnos_;
-//      old_pnos_ = pnos_;
+      if (K_reblock_.world().size() == 1) {
+        old_pnos_ = pnos_;
+      }
+
 
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
@@ -1347,37 +1352,39 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
 
-//      // Determine the max principal angle for each change in PNOs
-//      double max_angle = 0.0;
-//      int idxi = 0;
-//      int idxj = 0;
-//
-//      for (int i = 0; i != nocc_act_; ++i) {
-//        for (int j = i; j != nocc_act_; ++j) {
-//          Matrix old_u = old_pnos_[i * nocc_act_ + j];
-//          Matrix new_u = pnos_[i * nocc_act_ + j];
-//
-//          Matrix product = old_u.transpose() * new_u;
-//
-//          Eigen::JacobiSVD<Matrix> svd(product);
-//
-//          Vector sing_vals = svd.singularValues();
-//          int length = sing_vals.size();
-//
-//          double smallest_sing_val = sing_vals[length - 1];
-//
-//          double angle = acos(smallest_sing_val);
-//
-//          if (angle > max_angle) {
-//            max_angle = angle;
-//            idxi = i;
-//            idxj = j;
-//          }
-//        }
-//      }
-//
-//      ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
+      // Determine the max principal angle for each change in PNOs
+      if (K_reblock_.world().size() == 1) {
+        double max_angle = 0.0;
+        int idxi = 0;
+        int idxj = 0;
 
+        for (int i = 0; i != nocc_act_; ++i) {
+          for (int j = i; j != nocc_act_; ++j) {
+            Matrix old_u = old_pnos_[i * nocc_act_ + j];
+            Matrix new_u = pnos_[i * nocc_act_ + j];
+
+            Matrix product = old_u.transpose() * new_u;
+
+            Eigen::JacobiSVD<Matrix> svd(product);
+
+            Vector sing_vals = svd.singularValues();
+            int length = sing_vals.size();
+
+            double smallest_sing_val = sing_vals[length - 1];
+
+            double angle = acos(smallest_sing_val);
+
+            if (angle > max_angle) {
+              max_angle = angle;
+              idxi = i;
+              idxj = j;
+            }
+          }
+        }
+
+        ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", "
+                      << idxj << std::endl;
+      }
 
       // Depending on the value of use_delta, either the updated or the unupdated T2s will be transformed
       if (use_delta_) {

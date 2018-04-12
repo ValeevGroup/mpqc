@@ -214,7 +214,7 @@ void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
   this->f_pq_diagonal_ =
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(),false);
 
   // create shape
   auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
@@ -266,7 +266,7 @@ std::tuple<TA::DistArray<Tile, TA::SparsePolicy>,
 RMP2F12<Tile>::compute_T() {
   TA::DistArray<Tile, TA::SparsePolicy> g_abij, t2;
   g_abij("a,b,i,j") = this->lcao_factory().compute(L"<i j|G|a b>")("i,j,a,b");
-  t2 = d_abij(g_abij, *(this->orbital_energy()),
+  t2 = detail::d_abij(g_abij, *(this->orbital_energy()),
               this->trange1_engine()->get_occ(),
               this->trange1_engine()->get_nfrozen());
 
@@ -295,6 +295,24 @@ double RMP2F12<Tile>::compute_cabs_singles() {
 
 template <typename Tile>
 RIRMP2F12<Tile>::RIRMP2F12(const KeyVal& kv) : RMP2F12<Tile>(kv) {}
+
+
+template <typename Tile>
+void RIRMP2F12<Tile>::init(double ref_precision) {
+  this->init_sdref(this->ref_wfn_, ref_precision);
+
+  this->f_pq_diagonal_ =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(),true);
+
+  // create shape
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
+  TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
+  this->ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
+
+  // initialize cabs
+  closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()),
+                                 this->trange1_engine(), this->unocc_block());
+}
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_B() {
@@ -337,7 +355,7 @@ RIRMP2F12<Tile>::compute_T() {
   TA::DistArray<Tile, TA::SparsePolicy> g_abij, t2;
   g_abij("a,b,i,j") =
       this->lcao_factory().compute(L"<i j|G|a b>[df]")("i,j,a,b");
-  t2 = d_abij(g_abij, *(this->orbital_energy()),
+  t2 = detail::d_abij(g_abij, *(this->orbital_energy()),
               this->trange1_engine()->get_occ(),
               this->trange1_engine()->get_nfrozen());
 

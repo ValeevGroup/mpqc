@@ -612,7 +612,6 @@ quadrupole m=2:  -0.0465037490251397
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
-        "print_detail": "false",
         "max_condition_num": "1e8",
         "k_points": [
             "1",

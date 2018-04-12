@@ -22,9 +22,7 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
                    .class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
     lcao_factory_ = construct_periodic_lcao_factory<Tile, Policy>(kv);
 
-    max_iter_ = kv.value<int64_t>("max_iter", 30);
     converge_ = kv.value<double>("converge", 1.0E-7);
-    print_detail_ = kv.value<bool>("print_detail", false);
   }
 
   void obsolete() override {
@@ -106,7 +104,7 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
 
       TArray t1, t2;
 
-      gp_ccsd_corr_energy_ = this->compute_ccsd_conventional(t1, t2);
+      gp_ccsd_corr_energy_ = this->compute_ccsd(t1, t2);
 
       this->computed_ = true;
       this->set_value(result, ref_energy + gp_ccsd_corr_energy_);
@@ -138,24 +136,14 @@ class GammaPointCCSD : public CCSD<Tile, Policy> {
     return lcao_factory_->compute(L"<i a|G|b c>");
   }
 
-  /// <ai|bc>
-  const TArray get_aibc() override {
-    return lcao_factory_->compute(L"<a i|G|b c>");
-  }
-
-  /// <ij|ak>
-  const TArray get_ijak() override {
-    return lcao_factory_->compute(L"<i j|G|a k>");
-  }
-
   /// <ij|ka>
   const TArray get_ijka() override {
     return lcao_factory_->compute(L"<i j|G|k a>");
   }
 
   /// <a|F|i>
-  const TArray get_fock_ai() override {
-    return lcao_factory_->compute(L"<a|F|i>");
+  const TArray get_fock_ia() override {
+    return lcao_factory_->compute(L"<i|F|a>");
   }
 };
 

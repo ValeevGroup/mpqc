@@ -2,21 +2,25 @@
 // Created by Chong Peng on 10/1/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_LCAO_MBPT_DENOM_H_
+#define SRC_MPQC_CHEMISTRY_QC_LCAO_MBPT_DENOM_H_
 
 #include <tiledarray.h>
 
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
+namespace lcao {
+
+namespace detail {
 
 // reduce matrix 1/(ei + ej - ea - eb)
 template <typename Tile, typename Policy>
 void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
-                    const Eigen::VectorXd &ens, std::size_t n_occ,
-                    std::size_t n_frozen) {
-  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile) {
+                    const EigenVector<typename Tile::numeric_type> &ens,
+                    std::size_t n_occ, std::size_t n_frozen,
+                    typename Tile::numeric_type shift = 0.0) {
+  auto convert = [&ens, n_occ, n_frozen, shift](Tile &result_tile) {
 
     // compute index
     const auto a0 = result_tile.range().lobound()[0];
@@ -29,18 +33,17 @@ void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
     const auto jn = result_tile.range().upbound()[3];
 
     auto tile_idx = 0;
-    typename Tile::value_type norm = 0.0;
+    typename Tile::numeric_type norm = 0.0;
     for (auto a = a0; a < an; ++a) {
-      const auto e_a = ens[a + n_occ];
+      const auto e_a = shift - ens[a + n_occ];
       for (auto b = b0; b < bn; ++b) {
-        const auto e_b = ens[b + n_occ];
+        const auto e_ab = e_a - ens[b + n_occ];
         for (auto i = i0; i < in; ++i) {
-          const auto e_i = ens[i + n_frozen];
+          const auto e_abi = e_ab + ens[i + n_frozen];
           for (auto j = j0; j < jn; ++j, ++tile_idx) {
-            const auto e_j = ens[j + n_frozen];
-            const auto e_iajb = e_i + e_j - e_a - e_b;
+            const auto e_abij = e_abi + ens[j + n_frozen];
             const auto old = result_tile[tile_idx];
-            const auto result_abij = old / (e_iajb);
+            const auto result_abij = old / (e_abij);
             norm += result_abij * result_abij;
             result_tile[tile_idx] = result_abij;
           }
@@ -110,12 +113,13 @@ TA::DistArray<Tile, Policy> d_abcijk(
   return result;
 }
 
-template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> d_abij(
-    TA::DistArray<Tile, Policy> &abij, const EigenVectorX &ens,
-    std::size_t n_occ, std::size_t n_frozen) {
-  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile,
-                                         const Tile &arg_tile) {
+    const TA::DistArray<Tile, Policy> &abij,
+    const EigenVector<typename Tile::numeric_type> &ens, std::size_t n_occ,
+    std::size_t n_frozen, typename Tile::numeric_type shift = 0.0) {
+  auto convert = [&ens, n_occ, n_frozen, shift](Tile &result_tile,
+                                                const Tile &arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -130,19 +134,18 @@ TA::DistArray<Tile, Policy> d_abij(
     const auto jn = result_tile.range().upbound()[3];
 
     auto tile_idx = 0;
-    typename Tile::scalar_type norm = 0.0;
+    typename Tile::numeric_type norm = 0.0;
     for (auto a = a0; a < an; ++a) {
-      const auto e_a = ens[a + n_occ];
+      const auto e_a = shift - ens[a + n_occ];
       for (auto b = b0; b < bn; ++b) {
-        const auto e_b = ens[b + n_occ];
+        const auto e_ab = e_a - ens[b + n_occ];
         for (auto i = i0; i < in; ++i) {
-          const auto e_i = ens[i + n_frozen];
+          const auto e_abi = e_ab + ens[i + n_frozen];
           for (auto j = j0; j < jn; ++j, ++tile_idx) {
-            const auto e_j = ens[j + n_frozen];
-            const auto e_iajb = e_i + e_j - e_a - e_b;
+            const auto e_abij = e_abi + ens[j + n_frozen];
             const auto old = arg_tile[tile_idx];
-            const auto result_abij = old / (e_iajb);
-            norm += std::abs(result_abij) * std::abs(result_abij);
+            const auto result_abij = old / (e_abij);
+            norm += result_abij * result_abij;
             result_tile[tile_idx] = result_abij;
           }
         }
@@ -157,13 +160,13 @@ TA::DistArray<Tile, Policy> d_abij(
 }
 
 // create matrix d("a,i") = 1/(ei - ea)
-template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+template <typename Tile, typename Policy>
 TA::DistArray<
     Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
                                   TA::SparsePolicy>::type>
 create_d_ai(madness::World &world, const TA::TiledRange &trange,
-            const EigenVectorX ens, std::size_t n_occ,
-            std::size_t n_frozen) {
+            const EigenVector<typename Tile::numeric_type> ens,
+            std::size_t n_occ, std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
   auto make_tile = [&ens, n_occ, n_frozen](const range_type &range, std::size_t ord,
@@ -271,6 +274,8 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
   return result;
 }
 
+}  // namespace detail
+}  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_LCAO_MBPT_DENOM_H_

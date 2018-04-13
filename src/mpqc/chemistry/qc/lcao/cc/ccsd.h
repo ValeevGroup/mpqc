@@ -17,6 +17,7 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/mpqc_config.h"
+#include "mpqc/math/tensor/clr/cp_als.h"
 
 namespace mpqc {
 namespace lcao {
@@ -74,6 +75,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver) |
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
+   * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |
+   * | @c rank | double | @c 0.6 | CP rank set to number of auxillary basis functions * @c rank |
+   * | @c cp_precision | double | @c 0.1 | ALS threshold for CP decomposition
    */
 
   // clang-format on
@@ -108,6 +112,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", false);
+
+    if (df_){
+      cp_ccsd_ = kv.value<bool>("cp_ccsd", false);
+      if(cp_ccsd_){
+        cp_precision_ = kv.value<double>("cp_precision", 0.1);
+        rank_ = kv.value<double>("rank", 0.6);
+      }
+    }
   }
 
   virtual ~CCSD() {}
@@ -131,6 +143,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   double computed_precision_ = std::numeric_limits<double>::max();
   bool verbose_;
   double ccsd_corr_energy_;
+  bool cp_ccsd_;
+  double cp_precision_;
+  double rank_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
   std::shared_ptr<const EigenVector<typename Tile::numeric_type>>
       f_pq_diagonal_;
@@ -285,7 +300,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     ints.Gijka = this->get_ijka();
 
     if (method_ == "standard" || (method_ == "df" && !reduced_abcd_memory_)) {
-      ints.Gabcd = this->get_abcd();
+      if(!cp_ccsd_) {
+        ints.Gabcd = this->get_abcd();
+      }
       ints.Giabc = this->get_iabc();
     } else if (method_ == "direct") {
       ints.Giabc = this->get_iabc();
@@ -295,6 +312,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       ints.Xai = this->get_Xai();
       ints.Xij = this->get_Xij();
       ints.Xab = this->get_Xab();
+    }
+
+    if(cp_ccsd_){
+      this->get_factors(ints.Xab_factors);
     }
 
     if (method_ == "direct" || method_ == "direct_df") {
@@ -477,6 +498,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   /// get three center integral (X|ai)
   const TArray get_Xai() {
     return this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
+  }
+
+  const void get_factors(std::vector<TArray> & factors){
+    auto Xab = this->get_Xab();
+    auto Aux_size = Xab.trange().dim(0).extent();
+    auto block_size = this->trange1_engine()->get_vir_blocks();
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * rank_, true);
+    // TODO Find optimal Regularized parameters to compute this decomposition quickly
+    //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
   }
 
   // get two electron integrals

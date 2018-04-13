@@ -50,6 +50,9 @@ struct Integrals {
   // mo coefficients
   Array Ci;
   Array Ca;
+
+  // CP decompositions of mo three center integrals
+  std::vector<Array> Xab_factors;
 };
 
 /**
@@ -297,8 +300,8 @@ Array compute_cs_ccsd_r2(const Array& t1, const Array& t2, const Array& tau,
  * @param tau T2("a,b,i,j") + T1("a,i")*T1("b,j")
  * @param ints cc::Integrals, requires Fia, FIJ, FAB, Xai, Xab, Xij, Gijab,
  * Giajb, Gijka, Gijkl  and  Giabc with Gabcd
- * if Giabc and Gabcd is not initialized, it will evaluated with lazy
- * density-fitting if U is initialized, Giabc and Gabcd won't be used
+ * if Giabc and Gabcd is not initialized, it will evaluated with lazy density-fitting
+ * if U is initialized, Giabc and Gabcd won't be used
  * @param u half transformed intermediates U("p,r,i,j") =
  * (Tau("a,b,i,j")*Ca("q,a")*Ca("s,b"))*(p q|r s)
  * @return R2 residual
@@ -381,13 +384,99 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
     Array b_abij;
 
     if (!u.is_initialized()) {
+      auto time1 = std::chrono::high_resolution_clock::now();
+      auto time2 = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> time_span = time2 - time1;
+
       if (ints.Gabcd.is_initialized()) {
+        time1 = std::chrono::high_resolution_clock::now();
         b_abij("a,b,i,j") = tau("c,d,i,j") * ints.Gabcd("a,b,c,d");
+        time2 = std::chrono::high_resolution_clock::now();
+        time_span = time2 - time1;
+
+        double old_time = time_span.count();
+        //std::cout << "Time to compute G with contraction is " << old_time << std::endl;
+
         Array tmp;
         tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
         b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
         b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
 
+      }
+      // if cp_ccsd_ compute the contraction of t_ijcd g_cdab with factor matrices
+      else if(!ints.Xab_factors.empty()) {
+        time1 = std::chrono::high_resolution_clock::now();
+        Array temp, Zrrp;
+        Zrrp("r, rp") = ints.Xab_factors[0]("X, r") * ints.Xab_factors[0]("X, rp");
+
+        auto &world = Zrrp.world();
+        Zrrp.make_replicated();
+        world.gop.fence();
+
+        temp("i, j, r, rp") = (tau("c,d,i,j") * ints.Xab_factors[1]("c, r")) * ints.Xab_factors[1]("d, rp");
+
+        auto text = temp.trange().tiles_range().extent_data();
+        auto ni = text[0];
+        auto nr = text[2];
+
+        auto hadamard = [&Zrrp](int r, int rp, TA::Tensor<double> tile) {
+          if(Zrrp.is_zero({r,rp})){
+            const auto volume = tile.range().volume();
+            std::fill(tile.data(), tile.data() + volume, 0.0);
+            return 0.0;
+          }
+          auto Zt = Zrrp.find({r, rp}).get();
+
+          auto lo = tile.range().lobound_data();
+          auto up = tile.range().upbound_data();
+
+          for (auto k = lo[0]; k < up[0]; ++k) {
+            for (auto l = lo[1]; l < up[1]; ++l) {
+              for(auto R = lo[2]; R < up[2]; ++R) {
+                for (auto Rp = lo[3]; Rp < up[3]; ++Rp) {
+                  tile(k,l,R,Rp) *= Zt(R,Rp);
+                }
+              }
+            }
+          }
+          return tile.norm();
+        };
+
+        //TODO Foreach in place
+
+        for (int i = 0; i < ni; ++i) {
+          for (int j = 0; j < ni; ++j) {
+            for (int r = 0; r < nr; ++r) {
+              for (int rp = 0; rp < nr; ++rp) {
+
+                if (!temp.is_local({i, j, r, rp}) || temp.is_zero({i, j, r, rp})) {
+                  continue;
+                }
+
+                auto tile = temp.find({i, j, r, rp});
+
+                world.taskq.add(hadamard, r, rp, tile);
+
+              }
+            }
+          }
+        }
+
+        world.gop.fence();
+        temp.truncate();
+
+        b_abij("a,b,i,j") = (temp("i, j, r, rp") * ints.Xab_factors[2]("b, rp")) * ints.Xab_factors[2]("a, r");
+
+        time2 = std::chrono::high_resolution_clock::now();
+        time_span = time2 - time1;
+
+        double old_time = time_span.count();
+        //std::cout << "Time to compute G with CP is " << old_time << std::endl;
+
+        Array tmp;
+        tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
+        b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
+        b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
       } else {
         Array X_ab_t1;
         X_ab_t1("K,a,b") =

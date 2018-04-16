@@ -506,7 +506,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     auto block_size = this->trange1_engine()->get_vir_blocks();
     math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * rank_, true);
     // TODO Find optimal Regularized parameters to compute this decomposition quickly
-    //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_, true);
+    math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
   }
 
   // get two electron integrals

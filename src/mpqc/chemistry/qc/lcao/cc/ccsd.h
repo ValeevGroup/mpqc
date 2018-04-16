@@ -1127,7 +1127,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2, dE);
+        solver_->update(t1, t2, r1, r2, E1);
 
         if (verbose_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -1165,7 +1165,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
           ExEnv::out0() << "Switching now to PNO solver" << std::endl;
           solver_ = std::make_shared<cc::PNOSolver<TArray,typename LCAOFactory<Tile, Policy>::DirectTArray>>(kv_, this->lcao_factory());
           assert(solver_);
-          solver_->update(t1, t2, r1, r2, dE);
+          solver_->update(t1, t2, r1, r2, E1);
 
           // recompute tau
           tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");

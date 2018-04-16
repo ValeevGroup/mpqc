@@ -757,6 +757,9 @@ void construct_pno(
   // Diagonalize each D_ij matrix to get the PNOs and occupation
   // numbers
 
+  ExEnv::out0() << "tpno = " << tpno << std::endl;
+  ExEnv::out0() << "tosv = " << tosv << std::endl;
+
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
                    &F_uocc, &nosvs, tosv, nuocc, nocc_act,
@@ -1050,7 +1053,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-9)),
         macro_thresh_(kv.value<double>("macro_thresh", 1.e-7)),
         min_micro_(kv.value<int>("min_micro", 2)),
-        print_npnos_(kv.value<bool>("print_npnos", false)){
+        print_npnos_(kv.value<bool>("print_npnos", false)),
+        energy_ratio_(kv.value<double>("energy_ratio", 10.0)){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1080,6 +1084,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Set DE_ to 1 initially
     DE_ = 1.0;
+
+    // Set E_0_ to 0 initially
+    E_0_ = 0.0;
+
+    // Set E_i_ to 0 initially
+    E_i_ = 0.0;
 
     // Form Fock array
     auto F = fac.compute(L"<p|F|q>[df]");
@@ -1203,26 +1213,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+    // Transfer PNOs to the node that owns them
     transfer_pnos();
 
-    print_npnos_per_pair();
+    // Print ave nPNOs/pair
+    print_ave_npnos_per_pair();
 
+    // Compute PNO-MP2 correction
     compute_pno_mp2_correction();
 
     // Dump # of pnos/pair to file
     if (print_npnos_) {
-      std::ofstream out_file("/Users/mcclement/npnos-orig.tsv");
-
-      out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
-
-      for (int i = 0; i != nocc_act_; ++i) {
-        for (int j = 0; j != nocc_act_; ++j) {
-          int val = npnos_[i * nocc_act_ + j];
-          out_file << i << " " << j << " " << val << std::endl;
-        }
-      }
+      print_npnos_per_pair();
     }
-
 
   }
 
@@ -1243,7 +1246,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
 
-  void update_only(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
+  void update_only(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
 
     T delta_t1_ai;
     T delta_t2_abij;
@@ -1279,7 +1282,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   }
 
-  void update(T& t1, T& t2, const T& r1, const T& r2, double dE) override {
+  void update(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
+
+    E_f_ = E1;
+    double dE = std::abs(E_f_ - E_i_);
+    E_i_ = E1;
 
     // Upon entering the function update(), compare dE to micro_thresh to determine whether
     // or not the energy has converged within a particular PNO subspace
@@ -1288,6 +1295,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
       DE_ = dE - dE_old_;
       dE_old_ = dE;
+
+      ExEnv::out0() << "micro_thresh = " << micro_thresh_ << std::endl;
 
       if (std::abs(DE_) < macro_thresh_) {
         update_pno_ = false;
@@ -1306,7 +1315,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Whether or not Jacobi update is performed in PNO subspace
     // or full space will be determined within update_only
-    update_only(t1, t2, r1_reblock, r2_reblock, dE);
+    update_only(t1, t2, r1_reblock, r2_reblock, E1);
 
 
     // Recompute PNOs when start_macro == true
@@ -1331,59 +1340,23 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+      // Copy PNOs to node that owns them
       transfer_pnos();
 
-      print_npnos_per_pair();
+      // Print average number of PNOs per pair
+      print_ave_npnos_per_pair();
 
+      // Compute PNO-MP2 correction
       compute_pno_mp2_correction();
+
+      // Compute max principal angle between PNO subspaces
+      if (K_reblock_.world().size() == 1) {
+        compute_max_principal_angle();
+      }
 
       // Dump # of pnos/pair to file
       if (print_npnos_) {
-        std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
-
-        out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
-
-        for (int i = 0; i != nocc_act_; ++i) {
-          for (int j = 0; j != nocc_act_; ++j) {
-            int val = npnos_[i * nocc_act_ + j];
-            out_file << i << " " << j << " " << val << std::endl;
-          }
-        }
-      }
-
-
-      // Determine the max principal angle for each change in PNOs
-      if (K_reblock_.world().size() == 1) {
-        double max_angle = 0.0;
-        int idxi = 0;
-        int idxj = 0;
-
-        for (int i = 0; i != nocc_act_; ++i) {
-          for (int j = i; j != nocc_act_; ++j) {
-            Matrix old_u = old_pnos_[i * nocc_act_ + j];
-            Matrix new_u = pnos_[i * nocc_act_ + j];
-
-            Matrix product = old_u.transpose() * new_u;
-
-            Eigen::JacobiSVD<Matrix> svd(product);
-
-            Vector sing_vals = svd.singularValues();
-            int length = sing_vals.size();
-
-            double smallest_sing_val = sing_vals[length - 1];
-
-            double angle = acos(smallest_sing_val);
-
-            if (angle > max_angle) {
-              max_angle = angle;
-              idxi = i;
-              idxj = j;
-            }
-          }
-        }
-
-        ExEnv::out0() << "The max principal angle is " << max_angle << " and occurs for pair i,j = " << idxi << ", "
-                      << idxj << std::endl;
+        print_npnos_per_pair();
       }
 
       // Depending on the value of use_delta, either the updated or the unupdated T2s will be transformed
@@ -1540,7 +1513,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     F_pno_diag_[my_ij] = f_diag;
   }
 
-  void print_npnos_per_pair() {
+  void print_ave_npnos_per_pair() {
 
     K_reblock_.world().gop.sum(npnos_.data(), npnos_.size());
     K_reblock_.world().gop.sum(nosvs_.data(), nosvs_.size());
@@ -1567,6 +1540,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     }  // end if K_reblock.world().rank() == 0
   }
 
+  void print_npnos_per_pair() {
+    std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
+
+    out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
+
+    for (int i = 0; i != nocc_act_; ++i) {
+      for (int j = 0; j != nocc_act_; ++j) {
+        int val = npnos_[i * nocc_act_ + j];
+        out_file << i << " " << j << " " << val << std::endl;
+      }
+    }
+  }
+
+
   void compute_pno_mp2_correction() {
     // Form K_pno and T2_pno
     T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
@@ -1580,6 +1567,41 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
     ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
   }
+
+  void compute_max_principal_angle() {
+
+    double max_angle = 0.0;
+    int idxi = 0;
+    int idxj = 0;
+
+    for (int i = 0; i != nocc_act_; ++i) {
+      for (int j = i; j != nocc_act_; ++j) {
+        Matrix old_u = old_pnos_[i * nocc_act_ + j];
+        Matrix new_u = pnos_[i * nocc_act_ + j];
+
+        Matrix product = old_u.transpose() * new_u;
+
+        Eigen::JacobiSVD<Matrix> svd(product);
+
+        Vector sing_vals = svd.singularValues();
+        int length = sing_vals.size();
+
+        double smallest_sing_val = sing_vals[length - 1];
+
+        double angle = acos(smallest_sing_val);
+
+        if (angle > max_angle) {
+          max_angle = angle;
+          idxi = i;
+          idxj = j;
+        }
+      }
+    }
+
+    ExEnv::out0() << "The max principal angle is " << max_angle
+                  << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
+  };
+
 
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
@@ -1625,6 +1647,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   int micro_count_;
   int min_micro_;
   bool print_npnos_;
+
+  double E_0_;                  //!< The energy of the final micro iteration in the previous macro iteration
+  double E_i_;                  //!< The energy of the previous micro iteration in the current macro iteration
+  double E_f_;                  //!< The energy of the current micro iteration in the current macro iteration
+  double energy_ratio_;         //!< The value by which E_f_ - E_0_ is divided
 
 };  // class: PNO solver
 

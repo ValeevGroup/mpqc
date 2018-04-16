@@ -66,7 +66,7 @@ void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_siz
 template <typename Array>
 void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices, int block_size = 1, bool recompose = false,
                           int rank = 1, bool direct = true, bool calculate_epsilon = false, int step = 1, int max_als = 1000,
-                          double ALSThresh = 0.1, bool SVD_initial_guess = false, int SVD_rank = 0);
+                          double ALSThresh = 0.1, bool SVD_initial_guess = false, int SVD_rank = 0, bool symm = false);
 
 template <typename Array>
 void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_size,
@@ -163,7 +163,7 @@ void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_siz
 template <typename Array>
 void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices, int block_size, bool recompose,
                           int rank, bool direct, bool calculate_epsilon, int step, int max_als,
-                          double ALSThresh, bool SVD_initial_guess, int SVD_rank){
+                          double ALSThresh, bool SVD_initial_guess, int SVD_rank, bool symm){
   auto & world = reference.world();
   auto one_node = (world.size() == 1);
 
@@ -181,7 +181,7 @@ void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices
     auto t1 = std::chrono::high_resolution_clock::now();
     btas::CP_RALS<decltype(btas_array)> CP(btas_array);
     auto diff = CP.compute_rank(rank, direct, calculate_epsilon, step, max_als, ALSThresh,
-                      SVD_initial_guess, SVD_rank);
+                      SVD_initial_guess, SVD_rank, symm);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span = t2 - t1;
     //std::cout << "Time to compute cp-rals is " << time_span.count() << " diff is " << diff << std::endl;

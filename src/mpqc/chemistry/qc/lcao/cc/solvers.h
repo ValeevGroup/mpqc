@@ -1252,8 +1252,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T delta_t2_abij;
 
    // Perform Jacobi update in full space when PNOs being recomputed
-   if (((update_pno_ == true) && (start_macro_ == true) && (iter_count_ > 0) && (micro_count_ > min_micro_))
-       || (solver_str_ == "exact_pno")) {
+    if (((update_pno_ == true) && (start_macro_ == true)) || solver_str_ == "exact_pno") {
      Vector ens_occ_act = F_occ_act_.diagonal();
      Vector ens_uocc = F_uocc_.diagonal();
 
@@ -1319,16 +1318,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
     // Recompute PNOs when start_macro == true
-    if (((update_pno_ == true) && (start_macro_ == true) && (iter_count_ > 0))
-        || (solver_str_ == "exact_pno")) {
+    if (((update_pno_ == true) && (start_macro_ == true)) || solver_str_ == "exact_pno") {
 
       using Matrix = RowMatrix<typename Tile::numeric_type>;
       using Vector = EigenVector<typename Tile::numeric_type>;
 
 
-
-//      Create copy of old pnos
-//      std::vector<Matrix> old_pnos = pnos_;
       if (K_reblock_.world().size() == 1) {
         old_pnos_ = pnos_;
       }

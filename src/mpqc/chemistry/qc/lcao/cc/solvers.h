@@ -1034,6 +1034,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | micro_thresh | double | 1e-9 | When dE falls below this threshold, recompute PNOs |
    * | min_micro | int | 2 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
+   * | energy_ratio | double | 10.0 | The value used in computing new micro_thresh |
+   * | update_scheme | string | "two" | Which of the two PNO update schemes to use |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)

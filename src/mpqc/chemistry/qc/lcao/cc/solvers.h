@@ -1032,7 +1032,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | solver_string | string | "pno" | The CCSD solver to use |
    * | use_delta | bool | false | Whether or not to add Delta^(K) to T^(K) when updating PNOs |
    * | micro_thresh | double | 1e-9 | When dE falls below this threshold, recompute PNOs |
-   * | macro_thresh | double | 1e-7 | When DE falls below this threshold, change update_pno to false |
    * | min_micro | int | 2 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    */
@@ -1048,7 +1047,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-9)),
-        macro_thresh_(kv.value<double>("macro_thresh", 1.e-7)),
         min_micro_(kv.value<int>("min_micro", 2)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         energy_ratio_(kv.value<double>("energy_ratio", 10.0)),
@@ -1654,7 +1652,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
-  double macro_thresh_;         //!< Determines whether or not PNOs should continue to be updated
   double old_micro_thresh_;
 
   int micro_count_;

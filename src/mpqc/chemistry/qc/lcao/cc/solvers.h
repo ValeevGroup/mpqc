@@ -757,9 +757,6 @@ void construct_pno(
   // Diagonalize each D_ij matrix to get the PNOs and occupation
   // numbers
 
-  ExEnv::out0() << "tpno = " << tpno << std::endl;
-  ExEnv::out0() << "tosv = " << tosv << std::endl;
-
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
                    &F_uocc, &nosvs, tosv, nuocc, nocc_act,
@@ -1054,7 +1051,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         macro_thresh_(kv.value<double>("macro_thresh", 1.e-7)),
         min_micro_(kv.value<int>("min_micro", 2)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        energy_ratio_(kv.value<double>("energy_ratio", 10.0)){
+        energy_ratio_(kv.value<double>("energy_ratio", 10.0)),
+        update_scheme_(kv.value<std::string>("update_scheme", "two")){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1074,22 +1072,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     iter_count_ = 0;
 
     // Counts how many micro iterations per macro iteration
-    micro_count_ = 1;
+    micro_count_ = 0;
+
+    // Counts how many macro iterations in the calculation
+    macro_count_ = 1;
 
     // Set start_macro_ to false to begin with, even though this is technically the start of a macro iteration
     start_macro_ = false;
 
-    // Set dE_old_ to 1 initially
-    dE_old_ = 1.0;
-
-    // Set DE_ to 1 initially
-    DE_ = 1.0;
-
-    // Set E_0_ to 0 initially
-    E_0_ = 0.0;
-
-    // Set E_i_ to 0 initially
-    E_i_ = 0.0;
+    E_11_ = 0.0;
+    E_12_ = 0.0;
+    E_21_ = 0.0;
+    E_22_ = 0.0;
 
     // Form Fock array
     auto F = fac.compute(L"<p|F|q>[df]");
@@ -1283,24 +1277,40 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
 
-    E_f_ = E1;
-    double dE = std::abs(E_f_ - E_i_);
-    E_i_ = E1;
+    E_22_ = E1;
+
+    double dE_1 = E_12_ - E_11_;
+    double dE_2 = E_22_ - E_21_;
+
+    double DE_1 = dE_2 - dE_1;
+    double DE_2 = E_22_ - E_12_;
+
+    // During first macro iteration, use the value of micro_thresh provided in the input file
+    // During subsequent macro iterations, recompute micro_thresh
+    if (macro_count_ != 1) {
+      if (update_scheme_ == "one") {
+        micro_thresh_ = std::abs(DE_1) / energy_ratio_;
+      }
+      else {
+        micro_thresh_ = std::abs(DE_2) / energy_ratio_;
+      }
+    }
+
+
+
 
     // Upon entering the function update(), compare dE to micro_thresh to determine whether
     // or not the energy has converged within a particular PNO subspace
-    if ((std::abs(dE) < micro_thresh_) && (iter_count_ > 0) && (micro_count_ > min_micro_)) {
+    if ((std::abs(dE_2) < micro_thresh_) && (iter_count_ > 0) && (micro_count_ >= min_micro_)) {
       start_macro_ = true;
+      old_micro_thresh_ = micro_thresh_;
 
-      DE_ = dE - dE_old_;
-      dE_old_ = dE;
+      E_11_ = E_21_;
+      E_12_ = E_22_;
 
-      ExEnv::out0() << "micro_thresh = " << micro_thresh_ << std::endl;
-
-      if (std::abs(DE_) < macro_thresh_) {
-        update_pno_ = false;
-      }
     }
+
+    E_21_ = E1;
 
 
     // Reblock r1 and r2
@@ -1324,6 +1334,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       using Vector = EigenVector<typename Tile::numeric_type>;
 
 
+      // We only compute the max principal angle between PNO subspaces when nproc = 1
       if (K_reblock_.world().size() == 1) {
         old_pnos_ = pnos_;
       }
@@ -1337,17 +1348,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
       // Copy PNOs to node that owns them
       transfer_pnos();
-
-      // Print average number of PNOs per pair
-      print_ave_npnos_per_pair();
-
-      // Compute PNO-MP2 correction
-      compute_pno_mp2_correction();
-
-      // Compute max principal angle between PNO subspaces
-      if (K_reblock_.world().size() == 1) {
-        compute_max_principal_angle();
-      }
 
       // Dump # of pnos/pair to file
       if (print_npnos_) {
@@ -1371,12 +1371,31 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       this->reset();
       iter_count_ += 1;
       start_macro_ = false;  // set start_macro_ to false since next CCSD iter is in PNO subspace just entered
-      micro_count_ = 1;
+      micro_count_ = 0;
+      macro_count_ += 1;
     }
 
     else {
 
-    // transform residuals to the PNO space for the sake of extrapolation
+      // Print right before first micro iteration of the macro iteration is logged
+      if ((iter_count_ > 0) && (micro_count_ == 0)) {
+
+        // Print the value of micro_thresh_ used to move to current PNO subspace
+        ExEnv::out0() << "micro_thresh = " << old_micro_thresh_ << std::endl;
+
+        // Print average number of PNOs per pair
+        print_ave_npnos_per_pair();
+
+        // Compute max principal angle between PNO subspaces when nproc = 1
+        if (K_reblock_.world().size() == 1) {
+          compute_max_principal_angle();
+        }
+
+        // Compute PNO-MP2 correction
+        compute_pno_mp2_correction();
+      }
+
+      // transform residuals to the PNO space for the sake of extrapolation
       T r1_osv = detail::osv_transform_ai(r1_reblock, osvs_);
       T r2_pno = detail::pno_transform_abij(r2_reblock, pnos_);
       mpqc::cc::TPack<T> r(r1_osv, r2_pno);
@@ -1636,17 +1655,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
   double macro_thresh_;         //!< Determines whether or not PNOs should continue to be updated
+  double old_micro_thresh_;
 
-  double dE_old_;               //!< dE for last micro iteration in macro iteration K - 1
-  double DE_;
   int micro_count_;
   int min_micro_;
+  int macro_count_;
   bool print_npnos_;
+  std::string update_scheme_;
 
-  double E_0_;                  //!< The energy of the final micro iteration in the previous macro iteration
-  double E_i_;                  //!< The energy of the previous micro iteration in the current macro iteration
-  double E_f_;                  //!< The energy of the current micro iteration in the current macro iteration
-  double energy_ratio_;         //!< The value by which E_f_ - E_0_ is divided
+  double energy_ratio_;         //!< The value DE is divided to form micro_thresh
+
+  double E_11_;                 //!< The energy of the second to last micro iteration of the previous macro iteration
+  double E_12_;                 //!< The energy of the last micro iteration of the previuos macro iteration
+  double E_21_;                 //!< The energy of the second to last micro iteration of the current macro iteration
+  double E_22_;                 //!< The energy of the last micro iteration of the current macro iteration
 
 };  // class: PNO solver
 

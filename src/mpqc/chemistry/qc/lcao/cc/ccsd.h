@@ -113,11 +113,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", false);
 
-    if (df_){
-      cp_ccsd_ = kv.value<bool>("cp_ccsd", false);
-      cp_precision_ = kv.value<double>("cp_precision", 0.1);
-      rank_ = kv.value<double>("rank", 0.6);
-    }
+    cp_ccsd_ = ( (df_) ? kv.value<bool>("cp_ccsd", false) : false);
+    cp_precision_ = kv.value<double>("cp_precision", 0.1);
+    rank_ = ( (cp_ccsd_) ? kv.value<double>("rank", 0.6) : 0);
   }
 
   virtual ~CCSD() {}

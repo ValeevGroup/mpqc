@@ -115,10 +115,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     if (df_){
       cp_ccsd_ = kv.value<bool>("cp_ccsd", false);
-      if(cp_ccsd_){
-        cp_precision_ = kv.value<double>("cp_precision", 0.1);
-        rank_ = kv.value<double>("rank", 0.6);
-      }
+      cp_precision_ = kv.value<double>("cp_precision", 0.1);
+      rank_ = kv.value<double>("rank", 0.6);
     }
   }
 

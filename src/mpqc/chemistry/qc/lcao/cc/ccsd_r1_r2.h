@@ -474,9 +474,18 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         //std::cout << "Time to compute G with CP is " << old_time << std::endl;
 
         Array tmp;
-        tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
-        b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
-        b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
+
+        if(!ints.Giabc.is_initialized()){
+          Array tmpXij;
+          tmpXij("X,i,j") = ints.Xab("X, c, d") * tau("c,d,i,j");
+
+          b_abij("a,b,i,j") -= ints.Xai("X, a, k") * t1("b,k")  * tmpXij("X, j, i");
+          b_abij("a,b,i,j") -= ints.Xai("X, b, k") * t1("a,k") * tmpXij("X, i, j");
+        }else {
+          tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
+          b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
+          b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
+        }
       } else {
         Array X_ab_t1;
         X_ab_t1("K,a,b") =

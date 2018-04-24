@@ -54,26 +54,21 @@ namespace math {
  * reference.
  */
 
-template <typename Array>
-void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_size = 1,
-            bool recompose = false, bool optimized_rank = true,
-            bool geometric = false, double tcutCP = 0.01, int rank = 0,
-            bool direct = true, bool calculate_epsilon = false,
-            int geometric_step = 1, int step = 1, int max_rank = 1e4,
-            double max_als = 1e3, double tcutALS = 0.1,
-            bool SVD_initial_guess = false, int SVD_rank = 0, bool symm = false);
+;
 
 template <typename Array>
 void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices, int block_size = 1, bool recompose = false,
                           int rank = 1, bool direct = true, bool calculate_epsilon = false, int step = 1, int max_als = 1000,
                           double ALSThresh = 0.1, bool SVD_initial_guess = false, int SVD_rank = 0, bool symm = false);
 
-template <typename Array>
-void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_size,
-            bool recompose, bool optimized_rank, bool geometric, double tcutCP,
-            int rank, bool direct, bool calculate_epsilon, int geometric_step,
-            int step, int max_rank, double max_als, double tcutALS,
-            bool SVD_initial_guess, int SVD_rank, bool symm) {
+    template <typename Array>
+    void cp_als(Array &reference, std::vector<Array> &factor_matrices, int block_size = 1,
+                bool recompose = false, bool optimized_rank = true,
+                bool geometric = false, double tcutCP = 0.01, int rank = 0,
+                bool direct = true, bool calculate_epsilon = false,
+                int geometric_step = 1, int step = 1, int max_rank = 1e4,
+                double max_als = 1e3, double tcutALS = 0.1,
+                bool SVD_initial_guess = false, int SVD_rank = 0, bool symm = false) {
   madness::World &world = reference.world();
   auto one_node = (world.size() == 1);
 

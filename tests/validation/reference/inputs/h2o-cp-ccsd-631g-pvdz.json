@@ -33,12 +33,13 @@
     "method" : "df",
     "reduced_abcd_memory" : "true",
     "cp_ccsd" : "true",
+    "cp_precision" : 1e-7,
     "occ_block_size" : 2,
     "unocc_block_size" : 2
   },
   "property" : {
     "type" : "Energy",
-    "precision" : "1e-11",
+    "precision" : "1e-8",
     "wfn" : "$:wfn"
   }
 }

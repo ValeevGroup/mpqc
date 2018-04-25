@@ -38,9 +38,10 @@ class Property : public Task {
  * property using a visiting Wavefunction .
  *
  * This is to be used as a base class for ALL properties of Wavefunction
- * classes.
- */
-
+ * classes. To create a new wavefunction property class @c P:
+ * - derive class @c P from WavefunctionProperty<Value> and implement WavefunctionProperty<Value>::do_evaluate() as @c P::do_evaluate()
+ * - define class @c P::Provider to be used as a public base of any Wavefunction that can compute it
+*/
 template <typename Value>
 class WavefunctionProperty
     : public math::TaylorExpansionFunction<Value, MolecularCoordinates>,

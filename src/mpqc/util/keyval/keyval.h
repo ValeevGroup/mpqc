@@ -24,6 +24,7 @@
 #include <boost/serialization/export.hpp>
 
 #include "mpqc/util/meta/predicates.h"
+#include "mpqc/util/meta/stream.h"
 
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
@@ -1229,7 +1230,7 @@ KeyVal::value(const key_type& path, Validator&& validator) const {
   auto result = T(stree_kv);
   if (validator(result) == false) {
     std::ostringstream oss;
-    oss << "value " << result << " did not pass validation";
+    oss << "value " << utility::to_ostream(result) << " did not pass validation";
     throw KeyVal::bad_input(oss.str(), to_absolute_path(path));
   }
   return result;

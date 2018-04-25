@@ -103,4 +103,7 @@ std::shared_ptr<KeyVal::ptree> KeyVal::tree() const {
   return result;
 }
 
+const KeyVal::is_nonnegative_t KeyVal::is_nonnegative{};
+const KeyVal::is_positive_t KeyVal::is_positive{};
+
 }  // namespace mpqc

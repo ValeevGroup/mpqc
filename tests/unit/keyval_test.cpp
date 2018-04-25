@@ -85,6 +85,19 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.value<bool>(":z:0") == false);
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
+  // can use deprecated paths
+  REQUIRE(kv.value<double>(":z:1", 0.0, "") == +2.35);
+  REQUIRE(kv.value<double>(":z:2", 0.0, ":z:1") == +2.35);
+  REQUIRE(kv.value<double>(":z:2", 1.0, "") == 1.0);
+  REQUIRE(kv.value<double>(":z:2", 1.0, ":z:3") == 1.0);
+  REQUIRE(kv.value<double>(":z:2", 1.0, ":z:1") == +2.35);
+
+  // can validate values
+  REQUIRE(kv.value<double>(":z:1", [](auto v) { return v > 0.0; }) == +2.35);
+  REQUIRE_THROWS(kv.value<double>(":z:1", [](auto v) { return v < 0.0; }));
+  REQUIRE_THROWS(kv.value<double>(":z:2", -1.0, ":z:1", [](auto v) { return v < 0.0; }));
+  REQUIRE(kv.value<double>(":z:2", -1.0, "", [](auto v) { return v < 0.0; }) == -1.0);
+
   // sequences are written as Arrays, types are lost, hence can write a vector
   // and read as an array
   kv.assign(":z:a:0", vector<int>{{0, 1, 2}});

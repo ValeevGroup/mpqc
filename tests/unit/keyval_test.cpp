@@ -381,6 +381,11 @@ a 1";
     REQUIRE(bases.size() == 3);
     for (int i=0; i!=3; ++i)
       REQUIRE(bases[i].value() == i);
+
+    // now try with validation
+    REQUIRE_NOTHROW(kv.value<std::vector<Base>>("bases", [](const Base& v) { return v.value() >= 0 && v.value() <= 2;}));
+    REQUIRE_THROWS(kv.value<std::vector<Base>>("bases", [](const Base& v) { return v.value() < 0 || v.value() > 2;}));
+
   }
 
   SECTION("Basis Test"){

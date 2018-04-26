@@ -621,7 +621,7 @@ class KeyVal {
                 not KeyVal::is_sequence<T>::value &&
                 not utility::meta::can_construct<T, const KeyVal&>::value &&
                 std::is_same<bool, decltype(std::declval<Validator>()(
-                                       std::declval<T>()))>::value>>
+                                       std::declval<const T&>()))>::value>>
   T value(const key_type& path, Validator&& validator = Validator{}) const {
     T result;
     try {
@@ -662,7 +662,7 @@ class KeyVal {
   std::enable_if_t<not KeyVal::is_sequence<T>::value &&
                        utility::meta::can_construct<T, const KeyVal&>::value &&
                        std::is_same<bool, decltype(std::declval<Validator>()(
-                                              std::declval<T>()))>::value,
+                                              std::declval<const T&>()))>::value,
                    T>
   value(const key_type& path, Validator&& validator = Validator{}) const;
 
@@ -682,8 +682,8 @@ class KeyVal {
       std::enable_if_t<
           KeyVal::is_sequence<SequenceContainer>::value &&
           std::is_same<bool, decltype(std::declval<Validator>()(
-                                 std::declval<typename SequenceContainer::
-                                                  value_type>()))>::value>* =
+                                 std::declval<const typename SequenceContainer::
+                                                  value_type&>()))>::value>* =
           nullptr) const;  // implemented after SubTreeKeyval is implemented
 
   /// return value corresponding to a path and convert to the desired type.
@@ -705,7 +705,7 @@ class KeyVal {
             typename = std::enable_if_t<
                 not KeyVal::is_sequence<T>::value &&
                 std::is_same<bool, decltype(std::declval<Validator>()(
-                                       std::declval<T>()))>::value>>
+                                       std::declval<const T&>()))>::value>>
   T value(const key_type& path, const T& default_value,
           const key_type& deprecated_path,
           Validator&& validator = Validator{}) const {
@@ -748,7 +748,7 @@ class KeyVal {
             typename = std::enable_if_t<
                 not KeyVal::is_sequence<T>::value &&
                 std::is_same<bool, decltype(std::declval<Validator>()(
-                                       std::declval<T>()))>::value>>
+                                       std::declval<const T&>()))>::value>>
   T value(const key_type& path, const T& default_value,
           Validator&& validator = Validator{}) const {
     T result = default_value;
@@ -1177,14 +1177,14 @@ class SubTreeKeyVal : public KeyVal {
 template <typename SequenceContainer, typename Validator>
 SequenceContainer KeyVal::value(
     const key_type& path,
-    Validator&& validator,
+    Validator&& validator_,
     std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value &&
         std::is_same<bool, decltype(std::declval<Validator>()(
-            std::declval<typename SequenceContainer::
-            value_type>()))>::value>*) const {
+            std::declval<const typename SequenceContainer::
+            value_type&>()))>::value>*) const {
   using value_type = typename SequenceContainer::value_type;
   SequenceContainer result;
-
+  std::remove_reference_t<Validator> validator(std::forward<Validator>(validator_));
   if (auto vec_ptree_opt = this->get_subtree(path)) {
     try {
       auto vec_ptree = vec_ptree_opt.get();
@@ -1223,7 +1223,7 @@ template <typename T, typename Validator>
 std::enable_if_t<not KeyVal::is_sequence<T>::value &&
                      utility::meta::can_construct<T, const KeyVal&>::value &&
     std::is_same<bool, decltype(std::declval<Validator>()(
-        std::declval<T>()))>::value,
+        std::declval<const T&>()))>::value,
                  T>
 KeyVal::value(const key_type& path, Validator&& validator) const {
   const detail::SubTreeKeyVal stree_kv(this->get_subtree(path).get(), *this);

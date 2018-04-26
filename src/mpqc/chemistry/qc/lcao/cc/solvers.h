@@ -1035,7 +1035,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | min_micro | int | 2 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    * | energy_ratio | double | 10.0 | The value used in computing new micro_thresh |
-   * | update_scheme | string | "two" | Which of the two PNO update schemes to use |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
@@ -1051,8 +1050,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-9)),
         min_micro_(kv.value<int>("min_micro", 2)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        energy_ratio_(kv.value<double>("energy_ratio", 10.0)),
-        update_scheme_(kv.value<std::string>("update_scheme", "two")){
+        energy_ratio_(kv.value<double>("energy_ratio", 10.0)) {
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1279,21 +1277,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     E_22_ = E1;
 
-    double dE_1 = E_12_ - E_11_;
     double dE_2 = E_22_ - E_21_;
-
-    double DE_1 = dE_2 - dE_1;
     double DE_2 = E_22_ - E_12_;
 
     // During first macro iteration, use the value of micro_thresh provided in the input file
     // During subsequent macro iterations, recompute micro_thresh
     if (macro_count_ != 1) {
-      if (update_scheme_ == "one") {
-        micro_thresh_ = std::abs(DE_1) / energy_ratio_;
-      }
-      else {
-        micro_thresh_ = std::abs(DE_2) / energy_ratio_;
-      }
+      micro_thresh_ = std::abs(DE_2) / energy_ratio_;
     }
 
 
@@ -1660,7 +1650,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   int min_micro_;
   int macro_count_;
   bool print_npnos_;
-  std::string update_scheme_;
 
   double energy_ratio_;         //!< The value DE is divided to form micro_thresh
 

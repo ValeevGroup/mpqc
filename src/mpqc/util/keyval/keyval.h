@@ -719,7 +719,7 @@ class KeyVal {
       read_path = &deprecated_path;
       auto result_optional = subtree.get().template get_value_optional<T>();
       if (result_optional) {
-        result = result_optional.value();
+        result = result_optional.get();
         std::cerr << "KeyVal read value from deprecated path "
                   << deprecated_path << std::endl;
       }

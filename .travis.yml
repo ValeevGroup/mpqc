@@ -56,16 +56,6 @@ matrix:
            - g++-5
            - gfortran-5
     - compiler: gcc
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-6
-           - gfortran-6
-    - compiler: gcc
       env: GCC_VERSION=6 BUILD_TYPE=Release
       addons:
         apt:
@@ -75,16 +65,6 @@ matrix:
            - *base_packages
            - g++-6
            - gfortran-6
-    - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-7
-           - gfortran-7
     - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Release
       addons:
@@ -114,6 +94,28 @@ matrix:
           sources:
            - *base_sources
            - *clang_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - gfortran-7
+           - clang-5.0
+  allow_failures:  # internal comppiler failures
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-6
+           - gfortran-6
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
           packages:
            - *base_packages
            - g++-7

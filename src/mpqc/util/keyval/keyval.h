@@ -24,6 +24,7 @@
 #include <boost/serialization/export.hpp>
 
 #include "mpqc/util/meta/predicates.h"
+#include "mpqc/util/meta/stream.h"
 
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
@@ -55,8 +56,8 @@ struct customize_stream<Ch, Traits, E*, void> {
     }
   }
 };
-}
-}  // namespace boost::property_tree
+}  // namespace property_tree
+}  // namespace boost
 
 namespace mpqc {
 
@@ -116,7 +117,7 @@ using Describable = std::is_base_of<DescribedClass, T>;
 class DescribedClass {
  public:
   DescribedClass() = default;
-  virtual ~DescribedClass() { }
+  virtual ~DescribedClass() {}
 
   ///
   typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(
@@ -307,7 +308,7 @@ class DescribedClass {
   }                                                                \
   }                                                                \
   }                                                                \
-/**/
+  /**/
 
 /// @}
 
@@ -407,7 +408,8 @@ class KeyVal {
   /// make_ptree is a helper to implement KeyVal::assign() for recursive data
   /// structures
 
-  /// This specialization makes a ptree from an object of non-class non-sequence type.
+  /// This specialization makes a ptree from an object of non-class non-sequence
+  /// type.
   /// @tparam T a type which is not a sequence and not a class
   /// @param value a non-sequence object to put at the path
   template <typename T>
@@ -469,8 +471,7 @@ class KeyVal {
     bool bad_path = false;
     try {
       resolved_path = resolve_path(path);
-    }
-    catch (KeyVal::bad_input&) {
+    } catch (KeyVal::bad_input&) {
       bad_path = true;
     }
     return bad_path ? false : exists_(resolved_path);
@@ -485,7 +486,8 @@ class KeyVal {
     auto iter = dc_registry_->find(resolve_path(path));
     if (iter != dc_registry_->end()) {
       auto weak_ptr = iter->second;
-      // if have unexpired cached ptr report true, otherwise false (and purge the expired ptr)
+      // if have unexpired cached ptr report true, otherwise false (and purge
+      // the expired ptr)
       if (weak_ptr.expired())
         dc_registry_->erase(iter);
       else
@@ -527,7 +529,8 @@ class KeyVal {
   /// @tparam SequenceContainer any container for which
   /// KeyVal::is_sequence<SequenceContainer> is a \c std::true_type,
   ///         currently any of the following is allowed: \c std::array, \c
-  ///         std::vector, \c std::list . Can be a recursive sequence, i.e. sequence of sequence.
+  ///         std::vector, \c std::list . Can be a recursive sequence, i.e.
+  ///         sequence of sequence.
   /// @param path the target path
   /// @param value a sequence container to put at the path
   /// @param json_style if true, use empty keys so that JSON arrays are produced
@@ -576,25 +579,55 @@ class KeyVal {
     return *this;
   }
 
+  // validators
+  struct dummy_validator_t {
+    template <typename... Args>
+    constexpr bool operator()(Args&&... args) const {
+      return true;
+    }
+  };
+  static constexpr dummy_validator_t dummy_validator{};
+  struct is_nonnegative_t {
+    template <typename Arg>
+    constexpr bool operator()(Arg&& arg) const {
+      return arg >= 0;
+    }
+  };
+  static const is_nonnegative_t is_nonnegative;
+  struct is_positive_t {
+    template <typename Arg>
+    constexpr bool operator()(Arg&& arg) const {
+      return arg > 0;
+    }
+  };
+  static const is_positive_t is_positive;
+
   /// return the result of converting the value at the given path to the desired
   /// type.
 
   /// @tparam T the desired value type, must be a "simple" type that can be
   /// accepted by KeyVal::assign()
+  /// @tparam Validator the type of @c validator
   /// @param path the path to the value
+  /// @param validator a callable for which @c validator(T) returns a boolean.
+  ///        Before returning a value, it will be validated by @c validator .
+  ///        The default is a dummy validator that always returns @c true.
   /// @return value stored at \c path converted to type \c T
   /// @throws KeyVal::bad_input if path not found or cannot convert value
   /// representation to the desired type
-  template <typename T,
+  /// @throws KeyVal::bad_input if validation failed.
+  template <typename T, typename Validator = dummy_validator_t,
             typename = std::enable_if_t<
                 not KeyVal::is_sequence<T>::value &&
-                not utility::meta::can_construct<T, const KeyVal&>::value>>
-  T value(const key_type& path) const {
+                not utility::meta::can_construct<T, const KeyVal&>::value &&
+                std::is_same<bool, decltype(std::declval<Validator>()(
+                                       std::declval<const T&>()))>::value>>
+  T value(const key_type& path, Validator&& validator = Validator{}) const {
     T result;
     try {
-      if (auto subtree = this->get_subtree(path))
+      if (auto subtree = this->get_subtree(path)) {
         result = subtree.get().get_value<T>();
-      else
+      } else
         throw KeyVal::bad_input(std::string("path not found"),
                                 to_absolute_path(path));
     } catch (boost::property_tree::ptree_bad_data& x) {
@@ -602,6 +635,11 @@ class KeyVal {
           std::string("value ") + x.data<KeyVal::value_type>() +
               " could not be converted to the desired datatype",
           to_absolute_path(path));
+    }
+    if (validator(result) == false) {
+      std::ostringstream oss;
+      oss << "value " << result << " did not pass validation";
+      throw KeyVal::bad_input(oss.str(), to_absolute_path(path));
     }
     return result;
   }
@@ -611,39 +649,120 @@ class KeyVal {
 
   /// @tparam T the desired value type, must be a "simple" type that can be
   /// accepted by KeyVal::assign()
+  /// @tparam Validator the type of @c validator
   /// @param path the path to the value
+  /// @param validator a callable for which @c validator(T) returns a boolean.
+  ///        Before returning a value, it will be validated by @c validator .
+  ///        The default is a dummy validator that always returns @c true.
   /// @return value stored at \c path converted to type \c T
   /// @throws KeyVal::bad_input if path not found or cannot convert value
+  /// @throws KeyVal::bad_input if validation failed.
   /// representation to the desired type
-  template <typename T>
+  template <typename T, typename Validator = dummy_validator_t>
   std::enable_if_t<not KeyVal::is_sequence<T>::value &&
-                       utility::meta::can_construct<T, const KeyVal&>::value,
+                       utility::meta::can_construct<T, const KeyVal&>::value &&
+                       std::is_same<bool, decltype(std::declval<Validator>()(
+                                              std::declval<const T&>()))>::value,
                    T>
-  value(const key_type& path) const;
+  value(const key_type& path, Validator&& validator = Validator{}) const;
 
   /// return value corresponding to a path and convert to a std::vector.
   /// @tparam T the desired value type
+  /// @tparam Validator the type of @c validator
   /// @param path the path
+  /// @param validator a callable for which @c validator(T) returns a boolean.
+  ///        Before returning a value, it will be validated by @c validator .
+  ///        The default is a dummy validator that always returns @c true.
   /// @throw KeyVal::bad_input if \c path is bad
+  /// @throws KeyVal::bad_input if validation failed.
   /// @return value of type \c T
-  template <typename SequenceContainer>
+  template <typename SequenceContainer, typename Validator = dummy_validator_t>
   SequenceContainer value(
-      const key_type& path,
-      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
+      const key_type& path, Validator&& validator = Validator{},
+      std::enable_if_t<
+          KeyVal::is_sequence<SequenceContainer>::value &&
+          std::is_same<bool, decltype(std::declval<Validator>()(
+                                 std::declval<const typename SequenceContainer::
+                                                  value_type&>()))>::value>* =
           nullptr) const;  // implemented after SubTreeKeyval is implemented
 
   /// return value corresponding to a path and convert to the desired type.
   /// @tparam T the desired value type
-  /// @param path the path
-  /// @param default_value
+  /// @tparam Validator the type of @c validator
+  /// @param path the path to the value
+  /// @param default_value the default value will be returned if @c path is not
+  /// found.
+  /// @param deprecated_path a deprecated path will only be queried if its not
+  ///        empty and @c path not found;
+  ///        if its value is used a message will be added
+  ///        to @std::cerr. The default is an empty string.
+  /// @param validator a callable for which @c validator(T) returns a boolean.
+  ///        Before returning a value, it will be validated by @c validator .
+  ///        The default is a dummy validator that always returns @c true.
   /// @return value of type \c T
-  template <typename T,
-            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
-  T value(const key_type& path, const T& default_value) const {
-    if (auto subtree = this->get_subtree(path))
-      return subtree.get().template get_value<T>(default_value);
-    else
-      return default_value;
+  /// @throws KeyVal::bad_input if validation failed.
+  template <typename T, typename Validator = dummy_validator_t,
+            typename = std::enable_if_t<
+                not KeyVal::is_sequence<T>::value &&
+                std::is_same<bool, decltype(std::declval<Validator>()(
+                                       std::declval<const T&>()))>::value>>
+  T value(const key_type& path, const T& default_value,
+          const key_type& deprecated_path,
+          Validator&& validator = Validator{}) const {
+    T result = default_value;
+    const key_type* read_path = &path;
+
+    if (auto subtree = this->get_subtree(path)) {
+      result = subtree.get().template get_value<T>(default_value);
+    } else if (!deprecated_path.empty() &&
+               (subtree = this->get_subtree(deprecated_path))) {
+      read_path = &deprecated_path;
+      auto result_optional = subtree.get().template get_value_optional<T>();
+      if (result_optional) {
+        result = result_optional.get();
+        std::cerr << "KeyVal read value from deprecated path "
+                  << deprecated_path << std::endl;
+      }
+    }
+
+    if (validator(result) == false) {
+      std::ostringstream oss;
+      oss << "value " << result << " did not pass validation";
+      throw KeyVal::bad_input(oss.str(), to_absolute_path(*read_path));
+    }
+    return result;
+  }
+
+  /// return value corresponding to a path and convert to the desired type.
+  /// @tparam T the desired value type
+  /// @tparam Validator the type of @c validator
+  /// @param path the path to the value
+  /// @param default_value the default value will be returned if @c path is not
+  /// found.
+  /// @param validator a callable for which @c validator(T) returns a boolean.
+  ///        Before returning a value, it will be validated by @c validator .
+  ///        The default is a dummy validator that always returns @c true.
+  /// @return value of type \c T
+  /// @throws KeyVal::bad_input if validation failed.
+  template <typename T, typename Validator = dummy_validator_t,
+            typename = std::enable_if_t<
+                not KeyVal::is_sequence<T>::value &&
+                std::is_same<bool, decltype(std::declval<Validator>()(
+                                       std::declval<const T&>()))>::value>>
+  T value(const key_type& path, const T& default_value,
+          Validator&& validator = Validator{}) const {
+    T result = default_value;
+
+    if (auto subtree = this->get_subtree(path)) {
+      result = subtree.get().template get_value<T>(default_value);
+    }
+
+    if (validator(result) == false) {
+      std::ostringstream oss;
+      oss << "value " << result << " did not pass validation";
+      throw KeyVal::bad_input(oss.str(), to_absolute_path(path));
+    }
+    return result;
   }
 
   /// return a pointer to an object at the given path
@@ -777,15 +896,12 @@ class KeyVal {
   /// @}
 
   /// @return the path from the root of top tree to this subtree
-  std::string path() const {
-    return path_;
-  }
+  std::string path() const { return path_; }
 
  private:
   std::shared_ptr<ptree> top_tree_;
   // 'dc' = DescribedClass
-  using dc_registry_type =
-      std::map<std::string, std::weak_ptr<DescribedClass>>;
+  using dc_registry_type = std::map<std::string, std::weak_ptr<DescribedClass>>;
   std::shared_ptr<dc_registry_type> dc_registry_;
   const key_type path_;  //!< path from the top of \c top_tree_ to this subtree
 
@@ -1058,13 +1174,17 @@ class SubTreeKeyVal : public KeyVal {
 };
 }  // namespace detail
 
-template <typename SequenceContainer>
+template <typename SequenceContainer, typename Validator>
 SequenceContainer KeyVal::value(
     const key_type& path,
-    std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>*) const {
+    Validator&& validator_,
+    std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value &&
+        std::is_same<bool, decltype(std::declval<Validator>()(
+            std::declval<const typename SequenceContainer::
+            value_type&>()))>::value>*) const {
   using value_type = typename SequenceContainer::value_type;
   SequenceContainer result;
-
+  std::remove_reference_t<Validator> validator(std::forward<Validator>(validator_));
   if (auto vec_ptree_opt = this->get_subtree(path)) {
     try {
       auto vec_ptree = vec_ptree_opt.get();
@@ -1077,9 +1197,9 @@ SequenceContainer KeyVal::value(
                elem_ptree.first ==
                    std::to_string(
                        count)  // 0-based array keys, a la ipv2, usable with XML
-               );
+        );
         detail::SubTreeKeyVal stree_kv(elem_ptree.second, *this);
-        *iter = stree_kv.value<value_type>("");
+        *iter = stree_kv.value<value_type>("", validator);
         ++iter;
         ++count;
       }
@@ -1099,13 +1219,21 @@ SequenceContainer KeyVal::value(
                             to_absolute_path(path));
 }
 
-template <typename T>
+template <typename T, typename Validator>
 std::enable_if_t<not KeyVal::is_sequence<T>::value &&
-                     utility::meta::can_construct<T, const KeyVal&>::value,
+                     utility::meta::can_construct<T, const KeyVal&>::value &&
+    std::is_same<bool, decltype(std::declval<Validator>()(
+        std::declval<const T&>()))>::value,
                  T>
-KeyVal::value(const key_type& path) const {
+KeyVal::value(const key_type& path, Validator&& validator) const {
   const detail::SubTreeKeyVal stree_kv(this->get_subtree(path).get(), *this);
-  return T(stree_kv);
+  auto result = T(stree_kv);
+  if (validator(result) == false) {
+    std::ostringstream oss;
+    oss << "value " << utility::to_ostream(result) << " did not pass validation";
+    throw KeyVal::bad_input(oss.str(), to_absolute_path(path));
+  }
+  return result;
 }
 
 static_assert(utility::meta::can_construct<double, const KeyVal&>::value ==

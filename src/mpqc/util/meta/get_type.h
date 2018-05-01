@@ -68,6 +68,6 @@ auto back(T &&t, Ts &&... ts) {
 
 }  // namespace meta
 }  // namespace utility
-}  // namespace MPQC
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_UTIL_META_GET_TYPE_H_

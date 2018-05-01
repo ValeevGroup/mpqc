@@ -416,15 +416,18 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         temp("i, j, r, rp") = (tau("c,d,i,j") * ints.Xab_factors[1]("c, r")) * ints.Xab_factors[1]("d, rp");
 
         auto text = temp.trange().tiles_range().extent_data();
-        auto ni = text[0];
-        auto nr = text[2];
+        auto ni = text[0]; // tile range for ij dimension
+        auto nr = text[2]; // tile range for the r dimension
 
+        // for each tile in temp scale said tile by a value in Z(r,r')
         auto hadamard = [&Zrrp](int r, int rp, TA::Tensor<double> tile) {
+          // if the scaling factor is 0 fill the tile with 0s
           if(Zrrp.is_zero({r,rp})){
             const auto volume = tile.range().volume();
             std::fill(tile.data(), tile.data() + volume, 0.0);
             return 0.0;
           }
+          // use future to get the correct tile of Z(r r')
           auto Zt = Zrrp.find({r, rp}).get();
 
           auto lo = tile.range().lobound_data();
@@ -443,18 +446,21 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         };
 
         //TODO Foreach in place
-
+        // These loops go over the tiles of temp and compute the scaling
         for (int i = 0; i < ni; ++i) {
           for (int j = 0; j < ni; ++j) {
             for (int r = 0; r < nr; ++r) {
               for (int rp = 0; rp < nr; ++rp) {
 
+                // If the processor doesn't have the tile of temp or the tile of temp is 0 it is skipped
                 if (!temp.is_local({i, j, r, rp}) || temp.is_zero({i, j, r, rp})) {
                   continue;
                 }
 
+                // Future grabs the tile
                 auto tile = temp.find({i, j, r, rp});
 
+                // tasks of hadamard on tiles are distributed in parallel processing.
                 world.taskq.add(hadamard, r, rp, tile);
 
               }
@@ -476,11 +482,12 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         Array tmp;
 
         if(!ints.Giabc.is_initialized()){
-          Array tmpXij;
-          tmpXij("X,i,j") = ints.Xab("X, c, d") * tau("c,d,i,j");
+          auto giabc = gaussian::df_direct_integrals(
+                  ints.Xai, ints.Xab);
+          tmp("k, a, i, j") = giabc("c,k,a,d") * tau("c,d,i,j");
+          b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");
+          b_abij("a,b,i,j") -= tmp("k,b,i,j") * t1("a,k");
 
-          b_abij("a,b,i,j") -= ints.Xai("X, a, k") * t1("b,k")  * tmpXij("X, j, i");
-          b_abij("a,b,i,j") -= ints.Xai("X, b, k") * t1("a,k") * tmpXij("X, i, j");
         }else {
           tmp("k,a,i,j") = ints.Giabc("k,a,c,d") * tau("c,d,i,j");
           b_abij("a,b,i,j") -= tmp("k,a,j,i") * t1("b,k");

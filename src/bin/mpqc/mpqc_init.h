@@ -156,6 +156,7 @@ to_string(MPQCInit::InputFormat f) {
     | <tt>-v</tt>     | no           | print the version number and exit                     |
     | <tt>-w</tt>     | no           | print the warranty and exit                           |
     | <tt>-L</tt>     | no           | print the license and exit                            |
+    | <tt>-k</tt>     | no           | print all registered (KeyVal-constructible) DescribedClass classes |
     | <tt>-h</tt>     | no           | print the usage info and exit                         |
     | <tt>-d</tt>     | no           | start the program and attach a debugger               |
 

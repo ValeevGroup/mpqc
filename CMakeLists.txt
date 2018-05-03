@@ -230,7 +230,7 @@ validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
 ##### Boost #####
-# Treating boost the "Modern CMake" (https://rix0r.nl/blog/2015/08/13/cmake-guide/)
+# Treating boost the "Modern CMake" way (https://rix0r.nl/blog/2015/08/13/cmake-guide/)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization filesystem)
 add_library(boost INTERFACE IMPORTED)
 set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES 

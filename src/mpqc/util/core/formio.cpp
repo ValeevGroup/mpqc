@@ -230,7 +230,7 @@ std::ostream&
 FormIO::copyright(std::ostream& o)
 {
   o << indent
-    << "Copyright (C) 2014-2017 Virginia Tech."
+    << "Copyright (C) 2014-2018 Virginia Tech."
     << std::endl;
 
   return o;

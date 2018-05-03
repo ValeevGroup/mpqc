@@ -58,7 +58,7 @@ string_distance(const std::string& str1,
 
 DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
     const std::string& type_name) {
-  auto& registry = keyval_ctor_registry();
+  auto& registry = keyval_ctor_registry_instance();
   auto iter = registry.find(type_name);
   if (iter == registry.end()) {
     // check if the name was simply misspelled

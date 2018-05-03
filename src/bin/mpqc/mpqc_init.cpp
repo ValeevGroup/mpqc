@@ -251,6 +251,8 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
+  options->enroll("k", GetLongOpt::NoValue,
+                  "print all registered (KeyVal-constructible) DescribedClass classes");
   options->enroll("h", GetLongOpt::NoValue, "print this message");
 
   return options;
@@ -272,34 +274,41 @@ std::tuple<std::string, std::string> process_options(
   auto output_opt = options->retrieve("o");
   std::string output_filename = output_opt ? *output_opt : std::string();
 
-  if (options->retrieve("h")) {
+  auto print_std_header = []() {
     ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
                   << indent << "compiled for " << TARGET_ARCH << std::endl
                   << FormIO::copyright << std::endl;
+  };
+
+  if (options->retrieve("h")) {
+    print_std_header();
     options->usage(ExEnv::out0());
     std::exit(0);
   }
 
   if (options->retrieve("v")) {
-    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
-                  << indent << "compiled for " << TARGET_ARCH << std::endl
-                  << FormIO::copyright;
+    print_std_header();
     std::exit(0);
   }
 
   if (options->retrieve("w")) {
-    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
-                  << indent << "compiled for " << TARGET_ARCH << std::endl
-                  << FormIO::copyright << std::endl
-                  << FormIO::warranty;
+    print_std_header();
+    ExEnv::out0() << FormIO::warranty << std::endl;
     std::exit(0);
   }
 
   if (options->retrieve("L")) {
-    ExEnv::out0() << indent << "MPQC version " << MPQC_VERSION << std::endl
-                  << indent << "compiled for " << TARGET_ARCH << std::endl
-                  << FormIO::copyright << std::endl
-                  << FormIO::license;
+    print_std_header();
+    ExEnv::out0() << FormIO::license << std::endl;
+    std::exit(0);
+  }
+
+  if (options->retrieve("k")) {
+    print_std_header();
+    ExEnv::out0() << std::endl << indent << "DescribedClass KeyVal-ctor registry:" << incindent << std::endl;
+    for(const auto& entry : DescribedClass::keyval_ctor_registry()) {
+      ExEnv::out0() << indent << entry.first << std::endl;
+    }
     std::exit(0);
   }
 

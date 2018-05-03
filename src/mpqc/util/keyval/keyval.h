@@ -131,7 +131,7 @@ class DescribedClass {
     const char* guid_T = mpqc::detail::guid<T>();
     assert(guid_T != nullptr);
     const std::string type_name(guid_T);
-    auto& registry = keyval_ctor_registry();
+    auto& registry = keyval_ctor_registry_instance();
     assert(registry.find(type_name) == registry.end());
     registry.insert(std::make_pair(
         type_name,
@@ -145,7 +145,7 @@ class DescribedClass {
   /// completed (i.e. after main() has started)
   template <typename T>
   static bool is_registered() {
-    const auto& registry = keyval_ctor_registry();
+    const auto& registry = keyval_ctor_registry_instance();
     for (const auto& elem : registry) {
       if (typeid(T) == elem.second.second) return true;
     }
@@ -160,7 +160,7 @@ class DescribedClass {
   /// completed (i.e. after main() has started)
   template <typename T>
   static std::string class_key() {
-    const auto& registry = keyval_ctor_registry();
+    const auto& registry = keyval_ctor_registry_instance();
     for (const auto& elem : registry) {
       if (typeid(T) == elem.second.second) return elem.first;
     }
@@ -173,7 +173,7 @@ class DescribedClass {
   /// @warning cannot call this function before global object initialization has
   /// completed (i.e. after main() has started)
   std::string class_key() const {
-    const auto& registry = keyval_ctor_registry();
+    const auto& registry = keyval_ctor_registry_instance();
     for (const auto& elem : registry) {
       if (typeid(*this) == elem.second.second) return elem.first;
     }
@@ -199,7 +199,7 @@ class DescribedClass {
                          std::reference_wrapper<const std::type_info>>>;
 
   // this is needed to force registry initialization BEFORE its use
-  static keyval_ctor_registry_type& keyval_ctor_registry() {
+  static keyval_ctor_registry_type& keyval_ctor_registry_instance() {
     static keyval_ctor_registry_type keyval_ctor_registry_;
     return keyval_ctor_registry_;
   }
@@ -208,6 +208,13 @@ class DescribedClass {
   static std::shared_ptr<DescribedClass> keyval_ctor_wrapper(const KeyVal& kv) {
     return std::make_shared<T>(kv);
   }
+
+ public:
+  /// returns const ref to the keyval ctor registry
+  static const keyval_ctor_registry_type& keyval_ctor_registry() {
+    return const_cast<const keyval_ctor_registry_type&>(keyval_ctor_registry_instance());
+  }
+
 };
 }  // namespace mpqc
 

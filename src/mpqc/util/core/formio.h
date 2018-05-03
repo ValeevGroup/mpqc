@@ -38,6 +38,7 @@ namespace mpqc {
 class FormIO {
   private:
     static char *default_basename_;
+    static char *default_work_dir_;
     static int  ready_;
     static int  xalloc_inited_;
     static long nindent_;
@@ -69,8 +70,13 @@ class FormIO {
 
     static void set_default_basename(const char *);
     static const char *default_basename();
+    static void set_default_work_dir(const char *);
+    static const char *default_work_dir();
     static char *fileext_to_filename(const char *extension);
     static std::string fileext_to_filename_string(const char *extension);
+
+    /// return the new whole path file name with extension
+    static std::string fileext_to_fullpathname_string(const char* extension);
 
     static void init_ostream(std::ostream &);
 

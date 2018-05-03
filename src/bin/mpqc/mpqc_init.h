@@ -113,7 +113,10 @@ class MPQCInit {
   /// Initialize the resource limits.
   void init_limits();
   /// Initialize the default ConsumableResources object.
-  void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
+//  void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
+
+  /// Initialize the MPQC_WORK_DIR, the path to store file
+  void init_work_dir();
 
   /// Initialize formatted I/O.
   /// \param[in] world the top World object in which MPQC will execute

@@ -67,6 +67,9 @@ different environments, as well as optimization hints:
   \endcode
 </ol>
 
+\section mpqcenv MPQC Environmental Variables
+- <tt>MPQC_WORK_DIR</tt>: the directory to store large files, default is current directory
+
 \section mpqcmpi Running on a Distributed Memory Multiprocessor with MPI
 
 Whwreas

@@ -51,7 +51,7 @@ Formula::Formula(std::wstring string) {
   }
 
   TA_ASSERT((*bra_symbol == L'<' && *ket_symbol == L'>') ||
-            (*bra_symbol == L'(') && *ket_symbol == L')');
+            (*bra_symbol == L'(' && *ket_symbol == L')'));
 
   if (*bra_symbol == L'<') {
     notation_ = Notation::Physical;

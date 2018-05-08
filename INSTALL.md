@@ -7,7 +7,6 @@ The following are mandatory top-level prerequisites
 - [CMake](https://cmake.org/), version 3.1 and higher
 - [TiledArray](https://github.com/ValeevGroup/tiledarray), source from the master branch
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
-- [Eigen](http://eigen.tuxfamily.org), version 3.0 or higher
 - [Boost libraries](www.boost.org/)
 - Intel Thread Building Blocks (TBB), available in a [commercial](software.intel.com/tbb‎) or
   an [open-source](https://www.threadingbuildingblocks.org/) form
@@ -15,6 +14,7 @@ The following are mandatory top-level prerequisites
 
 The following are transitive dependencies of the above:
 - [MADNESS parallel runtime](https://github.com/m-a-d-n-e-s-s/madness)
+- [Eigen](http://eigen.tuxfamily.org), version 3.3 or higher
 - BLAS and LAPACK libraries
 
 ## Compile TiledArray

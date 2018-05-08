@@ -8,7 +8,14 @@ The following are mandatory top-level prerequisites
 - [TiledArray](https://github.com/ValeevGroup/tiledarray), source from the master branch
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
 - [Eigen](http://eigen.tuxfamily.org), version 3.0 or higher
-- [Boost libraries](www.boost.org/)
+- [Boost libraries](www.boost.org/). The following Boost components are used:
+  - [Boost.Algorithm](https://www.boost.org/doc/libs/master/libs/algorithm/doc/html/index.html) -- misc algorithms
+  - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- to be replaced by the C++ Standard Library Filesystem component
+  - [Boost.Locale](https://www.boost.org/doc/libs/master/libs/locale/doc/html/index.html) -- to be replaced by the C++ Standard Library facilities
+  - [Boost.Math](https://www.boost.org/doc/libs/master/libs/math/doc/html/index.html) -- misc special functions
+  - [Boost.Optional](https://www.boost.org/doc/libs/master/libs/optional/doc/html/index.html) -- to be replaced by C++17 std::optional
+  - [Boost.PropertyTree](https://www.boost.org/doc/libs/master/doc/html/property_tree.html) -- used to implement KeyVal class
+  - [Boost.Serialization](https://www.boost.org/doc/libs/master/libs/serialization/doc/index.html) -- class GUID registration
 - Intel Thread Building Blocks (TBB), available in a [commercial](software.intel.com/tbb‎) or
   an [open-source](https://www.threadingbuildingblocks.org/) form
 - (for documentation only) Doxygen

@@ -68,8 +68,8 @@ different environments, as well as optimization hints:
   \endcode
 </ol>
 
-\section mpqcenv MPQC Environmental Variables
-- <tt>MPQC_WORK_DIR</tt>: the directory to store large files, default is current directory
+\section mpqcenv MPQC Environment Variables
+- <tt>MPQC_WORK_DIR</tt>: the directory for POSIX I/O of large text/binary files, needs to be writable by all MPI processes; the default on each process is the current working directory of that MPI process
 
 \section mpqcmpi Running on a Distributed Memory Multiprocessor with MPI
 

@@ -33,7 +33,7 @@ namespace mpqc {
 ///                additional MPQC-specific options will be enrolled
 void initialize(int &argc, char **argv,
                 const madness::World& top_world,
-                std::shared_ptr<GetLongOpt> opt = std::shared_ptr<GetLongOpt>());
+    std::shared_ptr<GetLongOpt> opt = std::shared_ptr<GetLongOpt>());
 
 /// Finalize MPQC.
 void finalize();
@@ -58,12 +58,12 @@ class MPQCInit {
 
   /// \return the reference to the only instance of this object
   /// \throw mpqc::ProgrammingError if mpqc::initialize() had not been called
-  static MPQCInit& instance();
+  static MPQCInit &instance();
 
   /// \return the command-line argument count
-  const int& argc() const { return argc_; }
+  const int &argc() const { return argc_; }
   /// \return the command-line arguments
-  char** argv() const { return argv_; }
+  char **argv() const { return argv_; }
   /// \return the command-line options parser
   std::shared_ptr<const GetLongOpt> opt() const {
     return std::const_pointer_cast<const GetLongOpt, GetLongOpt>(opt_);
@@ -74,7 +74,7 @@ class MPQCInit {
   /// The file will be read by one of the processes in \c world and broadcast to
   /// every other process.
   /// \note Must be called on every process in \c world
-  std::shared_ptr<mpqc::KeyVal> make_keyval(madness::World& world,
+  std::shared_ptr<mpqc::KeyVal> make_keyval(madness::World &world,
                                             const std::string &filename);
 
   /// Set the name used to construct data file names. A noncollective operation.
@@ -106,21 +106,22 @@ class MPQCInit {
   ///
   /// \param[in] world the top World object in which MPQC will execute
   MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
-           const madness::World& world);
+           const madness::World &world);
 
   /// Initialize the floating point control word.
   void init_fp();
   /// Initialize the resource limits.
   void init_limits();
   /// Initialize the default ConsumableResources object.
-//  void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
+  //  void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
 
-  /// Initialize the MPQC_WORK_DIR, the path to store file
+  /// Initialize the MPQC_WORK_DIR, the path to store file, default is current
+  /// path, all nodes must be able to write to this directory
   void init_work_dir();
 
   /// Initialize formatted I/O.
   /// \param[in] world the top World object in which MPQC will execute
-  void init_io(const madness::World& top_world);
+  void init_io(const madness::World &top_world);
   /// Calls all of the initialize routines in the proper sequence.
   /// The parse member for the GetLongOpt object given to the
   /// constructor must have been called before this is called.
@@ -130,7 +131,7 @@ class MPQCInit {
 
 inline std::string
 to_string(MPQCInit::InputFormat f) {
-  switch(f) {
+  switch (f) {
     case MPQCInit::InputFormat::json:
       return "JSON";
     case MPQCInit::InputFormat::xml:

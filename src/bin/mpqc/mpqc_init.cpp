@@ -23,14 +23,14 @@
 // if have c++17
 #if __cplusplus > 201402L
 #include <filesystem>
-using std::filesystem::path;
 using std::filesystem::current_path;
 using std::filesystem::exists;
+using std::filesystem::path;
 #else
 #include <boost/filesystem.hpp>
-using boost::filesystem::path;
 using boost::filesystem::current_path;
 using boost::filesystem::exists;
+using boost::filesystem::path;
 #endif
 
 #include "mpqc/util/keyval/keyval.h"
@@ -217,7 +217,7 @@ void MPQCInit::init_io(const madness::World &top_world) {
 
 void MPQCInit::init_work_dir() {
   char *mpqc_work_dir;
-  mpqc_work_dir = getenv("MPQC_WORK_DIR");
+  mpqc_work_dir = std::getenv("MPQC_WORK_DIR");
 
   // if not user defined, use current path
   if (mpqc_work_dir == nullptr) {
@@ -227,10 +227,12 @@ void MPQCInit::init_work_dir() {
   } else {
     // check the correctness of path
     path work_path(mpqc_work_dir);
-    bool exsists_path = exists(work_path);
-    if (!exsists_path) {
-      throw std::invalid_argument(
-          "MPQC_WORK_DIR does not exsits! Please update this environment!\n");
+    bool exists_path = exists(work_path);
+    if (!exists_path) {
+      throw FileOperationFailed(
+          "Path ${MPQC_WORK_DIR} does not exsits! Please set environment "
+          "variable MPQC_WORK_DIR to a valid path.\n",
+          __FILE__, __LINE__, mpqc_work_dir);
     }
     // set the work dir in FormIO
     FormIO::set_default_work_dir(mpqc_work_dir);
@@ -289,8 +291,9 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
-  options->enroll("k", GetLongOpt::NoValue,
-                  "print all registered (KeyVal-constructible) DescribedClass classes");
+  options->enroll(
+      "k", GetLongOpt::NoValue,
+      "print all registered (KeyVal-constructible) DescribedClass classes");
   options->enroll("h", GetLongOpt::NoValue, "print this message");
 
   return options;
@@ -343,8 +346,11 @@ std::tuple<std::string, std::string> process_options(
 
   if (options->retrieve("k")) {
     print_std_header();
-    ExEnv::out0() << std::endl << indent << "DescribedClass KeyVal-ctor registry:" << incindent << std::endl;
-    for(const auto& entry : DescribedClass::keyval_ctor_registry()) {
+    ExEnv::out0() << std::endl
+                  << indent
+                  << "DescribedClass KeyVal-ctor registry:" << incindent
+                  << std::endl;
+    for (const auto &entry : DescribedClass::keyval_ctor_registry()) {
       ExEnv::out0() << indent << entry.first << std::endl;
     }
     std::exit(0);

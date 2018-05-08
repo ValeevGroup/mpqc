@@ -7,7 +7,6 @@ The following are mandatory top-level prerequisites
 - [CMake](https://cmake.org/), version 3.1 and higher
 - [TiledArray](https://github.com/ValeevGroup/tiledarray), source from the master branch
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
-- [Eigen](http://eigen.tuxfamily.org), version 3.0 or higher
 - [Boost libraries](www.boost.org/). The following Boost components are used:
   - [Boost.Algorithm](https://www.boost.org/doc/libs/master/libs/algorithm/doc/html/index.html) -- misc algorithms
   - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- only used if C++17 support is not enabled
@@ -22,6 +21,7 @@ The following are mandatory top-level prerequisites
 
 The following are transitive dependencies of the above:
 - [MADNESS parallel runtime](https://github.com/m-a-d-n-e-s-s/madness)
+- [Eigen](http://eigen.tuxfamily.org), version 3.3 or higher
 - BLAS and LAPACK libraries
 
 ## Compile TiledArray

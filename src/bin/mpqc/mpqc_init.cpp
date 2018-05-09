@@ -230,7 +230,7 @@ void MPQCInit::init_work_dir() {
     bool exists_path = exists(work_path);
     if (!exists_path) {
       throw FileOperationFailed(
-          "Path ${MPQC_WORK_DIR} does not exsits! Please set environment "
+          "Path ${MPQC_WORK_DIR} does not exists! Please set environment "
           "variable MPQC_WORK_DIR to a valid path.\n",
           __FILE__, __LINE__, mpqc_work_dir);
     }

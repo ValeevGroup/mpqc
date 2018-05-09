@@ -68,21 +68,19 @@ class FormIO {
   static int get_debug() { return debug_; }
   static void init_mp(int me);
   static int get_node() { return me_; }
-  /// set the default base name for file
+  /// set the default base name for temporary files
   static void set_default_basename(const char*);
-  /// return the default base name for file
+  /// @return the default base name for temporary files
   static const char* default_basename();
-  /// return set the default work directory, all nodes must be able to write to
-  /// this directory
+  /// set the default work directory for POSIX I/O of large files.
   static void set_default_work_dir(const char*);
-  /// return the default work directory, all nodes must be able to write to this
-  /// directory
+  /// @return the default work directory for POSIX I/O of large files
   static const char* default_work_dir();
-  /// return the new file name with extension
+  /// @return the new file name with extension
   static char* fileext_to_filename(const char* extension);
-  /// return the new file name with extension in std::string
+  /// @return the new file name with extension in std::string
   static std::string fileext_to_filename_string(const char* extension);
-  /// return the new whole path file name with extension in std::string
+  /// @return the new whole path file name with extension in std::string
   static std::string fileext_to_fullpathname_string(const char* extension);
 
   static void init_ostream(std::ostream&);

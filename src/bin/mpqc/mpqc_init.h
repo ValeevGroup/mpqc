@@ -115,11 +115,13 @@ class MPQCInit {
   /// Initialize the default ConsumableResources object.
   //  void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
 
-  /// Initialize the MPQC_WORK_DIR, the path to store file, default is current
-  /// path, all nodes must be able to write to this directory
+  /// Initialize the path to directory used for POSIX I/O of large text/binary files.
+  /// Input read from the environment variable MPQC_WORK_DIR . The default is the current working
+  /// directory of this process.
+  /// @note The existence of this path will be checked in every rank of the World object used to initialize MPQCInit .
   void init_work_dir();
 
-  /// Initialize formatted I/O.
+  /// Initialize formatted I/O. This is a collective operation.
   /// \param[in] world the top World object in which MPQC will execute
   void init_io(const madness::World &top_world);
   /// Calls all of the initialize routines in the proper sequence.

@@ -9,7 +9,7 @@ The following are mandatory top-level prerequisites
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
 - [Boost libraries](www.boost.org/). The following Boost components are used:
   - [Boost.Algorithm](https://www.boost.org/doc/libs/master/libs/algorithm/doc/html/index.html) -- misc algorithms
-  - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- only used if C++17 support is not enabled
+  - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- only used if C++17 support is not enabled; __N.B.__ this is the only Boost library used by MPQC that must be compiled (i.e. it cannot be used as a header-only library)
   - [Boost.Locale](https://www.boost.org/doc/libs/master/libs/locale/doc/html/index.html) -- to be replaced by the C++ Standard Library facilities
   - [Boost.Math](https://www.boost.org/doc/libs/master/libs/math/doc/html/index.html) -- misc special functions
   - [Boost.Optional](https://www.boost.org/doc/libs/master/libs/optional/doc/html/index.html) -- to be replaced by C++17 std::optional

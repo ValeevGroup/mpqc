@@ -25,11 +25,13 @@
 #include <filesystem>
 using std::filesystem::current_path;
 using std::filesystem::exists;
+using std::filesystem::is_directory;
 using std::filesystem::path;
 #else
 #include <boost/filesystem.hpp>
 using boost::filesystem::current_path;
 using boost::filesystem::exists;
+using boost::filesystem::is_directory;
 using boost::filesystem::path;
 #endif
 
@@ -227,12 +229,19 @@ void MPQCInit::init_work_dir() {
   } else {
     // check the correctness of path
     path work_path(mpqc_work_dir);
-    bool exists_path = exists(work_path);
-    if (!exists_path) {
+    bool path_exists = exists(work_path);
+    if (!path_exists) {
       throw FileOperationFailed(
           "Path ${MPQC_WORK_DIR} does not exists! Please set environment "
           "variable MPQC_WORK_DIR to a valid path.\n",
-          __FILE__, __LINE__, mpqc_work_dir);
+          __FILE__, __LINE__, mpqc_work_dir, FileOperationFailed::Exists);
+    }
+    bool is_dir = is_directory(work_path);
+    if (!is_dir) {
+      throw FileOperationFailed(
+          "Path ${MPQC_WORK_DIR} is not a directory! Please set environment "
+          "variable MPQC_WORK_DIR to an existing directory.\n",
+          __FILE__, __LINE__, mpqc_work_dir, FileOperationFailed::Chdir);
     }
     // set the work dir in FormIO
     FormIO::set_default_work_dir(mpqc_work_dir);

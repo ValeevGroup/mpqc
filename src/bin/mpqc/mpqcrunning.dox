@@ -69,7 +69,7 @@ different environments, as well as optimization hints:
 </ol>
 
 \section mpqcenv MPQC Environment Variables
-- <tt>MPQC_WORK_DIR</tt>: the directory for POSIX I/O of large text/binary files, needs to be writable by all MPI processes; the default on each process is the current working directory of that MPI process
+- <tt>MPQC_WORK_DIR</tt>: the directory for POSIX I/O of large text/binary files; it needs to be valid in every MPI process; the default on each process is the current working directory of that MPI process
 
 \section mpqcmpi Running on a Distributed Memory Multiprocessor with MPI
 

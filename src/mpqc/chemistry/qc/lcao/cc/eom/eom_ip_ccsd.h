@@ -31,7 +31,7 @@ class EOM_IP_CCSD : public CCSD<Tile, Policy>,
   * | Keyword | Type | Default| Description |
   * |---------|------|--------|-------------|
   * | max_vector | int | 8 | max number of guess vector per root |
-  * | vector_threshold | double | 1.0e-5 | threshold for the norm of new guess vector |
+  * | vector_threshold | real | 1.0e-5 | threshold for the norm of new guess vector |
   */
 
   // clang-format on

@@ -87,11 +87,11 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    *  |\c rmax  | array<int, 3> | none | This gives range of expansion of Bloch Gaussians in AO Gaussians. |
    *  |\c rdmax | array<int, 3> | none | This gives range of Coulomb operation. |
    *  |\c rjmax | array<int, 3> | none | This gives range of density representation. |
-   *  |\c engine_precision | double | machine epsilon | This gives integral engine precision. |
+   *  |\c engine_precision | real | machine epsilon | This gives integral engine precision. |
    *  |\c screen | string | schwarz | This gives method of screening, qqr or schwarz. |
-   *  |\c threshold | double | 1e-20 | This gives threshold for schwarz or qqr screening. |
-   *  |\c shell_pair_threshold | double | 1e-12 | This gives threshold for screeing non-negligible shell pairs. |
-   *  |\c density_threshold | double | sparse shape threshold | This gives threshold for screening density blocks in Fock build. |
+   *  |\c threshold | real | 1e-20 | This gives threshold for schwarz or qqr screening. |
+   *  |\c shell_pair_threshold | real | 1e-12 | This gives threshold for screeing non-negligible shell pairs. |
+   *  |\c density_threshold | real | sparse shape threshold | This gives threshold for screening density blocks in Fock build. |
    *  |\c print_detail | bool | false | Print more details if true. |
    *
    *  example input:

@@ -12,7 +12,7 @@
 namespace mpqc {
 namespace lcao {
 
-// close-shell eom-ccsd
+/// Implements closed-shell EOM-EA-CCSD
 template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
@@ -23,8 +23,9 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   // clang-format off
   /**
-   * KeyVal constructor
-   * @param kv
+   * The KeyVal constructor.
+   *
+   * @param kv KeyVal object; it will be queried for all keywords of ::mpqc::lcao::CCSD , as well as the following additional keywords:
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|

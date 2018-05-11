@@ -69,7 +69,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
     eom_pno_ = kv.value<std::string>("eom_pno", "");
     if (!eom_pno_.empty() &&
-        (eom_pno_ != "default" && eom_pno_ != "state-average")) {
+        (eom_pno_ != "default" && eom_pno_ != "state-average" &&
+         eom_pno_ != "state-merged")) {
       throw InputError("Invalid PNO Simulation method in EOM-CCSD! \n",
                        __FILE__, __LINE__, "eom_pno");
     }

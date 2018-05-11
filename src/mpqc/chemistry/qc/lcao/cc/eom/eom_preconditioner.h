@@ -386,6 +386,51 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
   }
 };
 
+/// state merged PNO preconditioner for EOM-CCSD, the only difference is the
+/// constructor
+
+template <typename Array>
+class StateMergedPNOEEPred : public PNOEEPred<Array> {
+public:
+  using typename PNOEEPred<Array>::Matrix;
+  using typename PNOEEPred<Array>::Vector;
+  StateMergedPNOEEPred() = default;
+
+  StateMergedPNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
+                        const Vector &eps_o, const Matrix &F_uocc, double tpno,
+                        double tosv, bool pno_canonical)
+      : PNOEEPred<Array>() {
+    this->tpno_ = tpno;
+    this->tosv_ = tosv;
+    this->pno_canonical_ = pno_canonical;
+    this->n_roots_ = n_roots;
+    this->eps_o_ = eps_o;
+
+    this->init_reblock(T2[0]);
+
+    // compute average of D
+    Array D;
+    {
+      Array Ds;
+      for (std::size_t i = 0; i < n_roots; i++) {
+        auto T_reblock =
+            detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        Ds = detail::construct_density(T_reblock);
+
+        if (i == 0) {
+          D("a,b,i,j") = Ds("a,b,i,j");
+        } else {
+          D("a,b,i,j") += Ds("a,b,i,j");
+        }
+      }
+    }
+
+    detail::construct_pno(D, F_uocc, this->tpno_, this->tosv_, this->pnos_,
+                          this->F_pno_diag_, this->osvs_, this->F_osv_diag_,
+                          this->pno_canonical_);
+  }
+};
+
 /// State Specific PNO preconditioner for EOM-CCSD
 
 template <typename Array>

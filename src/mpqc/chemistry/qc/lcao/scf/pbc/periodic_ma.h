@@ -393,8 +393,9 @@ class PeriodicMA {
         auto l = O_ord_to_lm_map_[op].first;
         auto m = O_ord_to_lm_map_[op].second;
         auto signl = (l % 2 == 0) ? 1.0 : -1.0;  // (-1)^l
-        auto signm = (m < 0 && (m % 2 != 0)) ? -1.0 : 1.0;
-        auto prefactor = -1.0 * signl * signm * L[op];
+        auto signm1 = (m < 0 && (m % 2 == 0)) ? -1.0 : 1.0;
+        auto signm2 = (m == 0) ? 1.0 : 2.0;
+        auto prefactor = -1.0 * signl * signm1 * signm2 * L[op];
         fock_cff_("mu, nu") += prefactor * sphemm_[op]("mu, nu");
       }
     }

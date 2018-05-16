@@ -1528,8 +1528,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
       auto ave_nosv = tot_osv / nocc_act_;
-//      ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
-//                    << std::endl;
 
       // Compute and print average number of PNOs per pair
       auto tot_pno = 0;
@@ -1538,8 +1536,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
       auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
-//      ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
-//                    << std::endl;
 
       ExEnv::out0() << "ave. nPNOs/pair: " << ave_npno << ", ave nOSVs/pair: " << ave_nosv << std::endl;
     }  // end if K_reblock.world().rank() == 0
@@ -1566,11 +1562,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Compute the MP2 energy in the space of the truncated PNOs
     auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-//    ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
 
     // Compute exact MP2 energy - PNO MP2 energy
     auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
-//    ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+
 
     ExEnv::out0() << "PNO-MP2 correlation energy: " << pno_e_mp2 << ", PNO-MP2 correction: " << mp2_correction << std::endl;
   }

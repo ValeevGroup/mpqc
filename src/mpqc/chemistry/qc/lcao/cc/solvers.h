@@ -7,6 +7,8 @@
 #include "mpqc/chemistry/qc/lcao/factory/factory.h"
 #include "mpqc/math/linalg/diagonal_array.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "../../../../util/core/exenv.h"
+#include "../../cc/solvers.h"
 
 namespace mpqc {
 namespace lcao {
@@ -1016,6 +1018,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   using WorldObject_ = madness::WorldObject<PNOSolver<T, DT>>;
 
+
+
   // clang-format off
   /**
    * @brief The KeyVal constructor.
@@ -1047,7 +1051,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tosv_(kv.value<double>("tosv", 1.e-9)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
-        micro_thresh_(kv.value<double>("micro_thresh", 1.e-9)),
+        micro_thresh_(kv.value<double>("micro_thresh", 1.e-8)),
         min_micro_(kv.value<int>("min_micro", 2)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         energy_ratio_(kv.value<double>("energy_ratio", 10.0)) {
@@ -1238,6 +1242,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   /// @note must override DIISSolver::update() also since the update must be
   ///      followed by backtransform updated amplitudes to the full space
 
+  bool is_converged(double target_precision, double error, double dE) const override {
+    // dE is the difference between last two microiterations
+    // DE is the difference between the current energy and the last macroiteration energy
+    const auto DE = dE + (E_21_ - E_12_);
+    double micro_target_precision = target_precision / 3.0;
+    return (dE <= micro_target_precision && DE <= target_precision && error <= target_precision);
+  }
+
   void update_only(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
 
     T delta_t1_ai;
@@ -1277,21 +1289,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     E_22_ = E1;
 
-    double dE_2 = E_22_ - E_21_;
-    double DE_2 = E_22_ - E_12_;
+    double deltaE = std::abs(E_22_ - E_21_);  // compare to micro_thresh_; used to be called dE_2
+    auto DeltaE = std::abs(E_22_ - E_12_);  // used to be called DE_2
 
     // During first macro iteration, use the value of micro_thresh provided in the input file
     // During subsequent macro iterations, recompute micro_thresh
     if (macro_count_ != 1) {
-      micro_thresh_ = std::abs(DE_2) / energy_ratio_;
+      micro_thresh_ = DeltaE / energy_ratio_;
     }
 
-
-
-
-    // Upon entering the function update(), compare dE to micro_thresh to determine whether
-    // or not the energy has converged within a particular PNO subspace
-    if ((std::abs(dE_2) < micro_thresh_) && (iter_count_ > 0) && (micro_count_ >= min_micro_)) {
+    // Compare dE to micro_thresh to determine whether or not to update PNOs
+    if ((deltaE < micro_thresh_) && (iter_count_ > 0) && (micro_count_ >= min_micro_)) {
       start_macro_ = true;
       old_micro_thresh_ = micro_thresh_;
 
@@ -1361,17 +1369,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       this->reset();
       iter_count_ += 1;
       start_macro_ = false;  // set start_macro_ to false since next CCSD iter is in PNO subspace just entered
-      micro_count_ = 0;
+      micro_count_ = 1;
       macro_count_ += 1;
     }
 
     else {
 
       // Print right before first micro iteration of the macro iteration is logged
-      if ((iter_count_ > 0) && (micro_count_ == 0)) {
-
-        // Print the value of micro_thresh_ used to move to current PNO subspace
-        ExEnv::out0() << "micro_thresh = " << old_micro_thresh_ << std::endl;
+      if (macro_count_ > 1 && micro_count_ == 1) {
 
         // Print average number of PNOs per pair
         print_ave_npnos_per_pair();
@@ -1397,10 +1402,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       iter_count_ += 1;
       micro_count_ += 1;
     }
-
-
-
-
 
   }
 
@@ -1486,8 +1487,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   }
 
-
-
  private:
 
   void transfer_pnos() {
@@ -1529,8 +1528,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
       auto ave_nosv = tot_osv / nocc_act_;
-      ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
-                    << std::endl;
+//      ExEnv::out0() << "The average number of OSVs per pair is " << ave_nosv
+//                    << std::endl;
 
       // Compute and print average number of PNOs per pair
       auto tot_pno = 0;
@@ -1539,8 +1538,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
 
       auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
-      ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
-                    << std::endl;
+//      ExEnv::out0() << "The average number of PNOs per pair is " << ave_npno
+//                    << std::endl;
+
+      ExEnv::out0() << "ave. nPNOs/pair: " << ave_npno << ", ave nOSVs/pair: " << ave_nosv << std::endl;
     }  // end if K_reblock.world().rank() == 0
   }
 
@@ -1565,11 +1566,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Compute the MP2 energy in the space of the truncated PNOs
     auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
-    ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
+//    ExEnv::out0() << "PNO MP2 correlation energy: " << pno_e_mp2 << std::endl;
 
     // Compute exact MP2 energy - PNO MP2 energy
     auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
-    ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+//    ExEnv::out0() << "MP2 correction: " << mp2_correction << std::endl;
+
+    ExEnv::out0() << "PNO-MP2 correlation energy: " << pno_e_mp2 << ", PNO-MP2 correction: " << mp2_correction << std::endl;
   }
 
   void compute_max_principal_angle() {
@@ -1604,7 +1607,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     ExEnv::out0() << "The max principal angle is " << max_angle
                   << " and occurs for pair i,j = " << idxi << ", " << idxj << std::endl;
-  };
+  }
 
 
   Factory<T, DT>& factory_;

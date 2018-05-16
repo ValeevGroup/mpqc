@@ -57,6 +57,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
   CCSD() = default;
 
+
   // clang-format off
 
   /**
@@ -1123,8 +1124,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (iter < min_iter_ || dE >= target_precision_ || error >= target_precision_ || iter == 0) {
+      if (iter == 0 || iter < min_iter_ || !solver_->is_converged(target_precision_, error, dE)) {
         tmp_time0 = mpqc::now(world, accurate_time);
+
+//        ExEnv::out0() << "iter: " << iter << ", dE: " << dE << ", DeltaE: " << DeltaE << ", error: " << error << std::endl;
 
         assert(solver_);
         solver_->update(t1, t2, r1, r2, E1);

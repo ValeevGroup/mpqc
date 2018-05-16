@@ -61,6 +61,8 @@ class Solver {
     return std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
         (size(r1) + size(r2));
   }
+
+  virtual bool is_converged(double target_precision, double error, double dE) const = 0;
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS
@@ -87,6 +89,7 @@ class DIISSolver : public Solver<T> {
       : diis_(kv.value<int>("diis_start", 1), kv.value<int>("n_diis", 8), kv.value<double>("diis_damp", 0.0),
               kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)), diis_pristine_(diis_) {}
   virtual ~DIISSolver() = default;
+
 
   /// Update the amplitudes using update_only() and extrapolate using DIIS.
   /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
@@ -123,6 +126,10 @@ class DIISSolver : public Solver<T> {
     t1 = t[0];
     t2 = t[1];
     t3 = t[2];
+  }
+
+  bool is_converged(double target_precision, double error, double dE) const override {
+   return (dE <= target_precision && error <= target_precision);
   }
 
   void reset() {

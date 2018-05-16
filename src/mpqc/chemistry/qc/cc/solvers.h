@@ -62,6 +62,11 @@ class Solver {
         (size(r1) + size(r2));
   }
 
+  /// Checks to see if the solver has converged
+  /// @param target_precision The desired precision for the final energy
+  /// @param error The value of the error computed from the one- and two-body residuals
+  /// @param dE The energy change between two consecutive solver iterations
+  /// @return Whether or not the solver has converged
   virtual bool is_converged(double target_precision, double error, double dE) const = 0;
 };
 
@@ -128,10 +133,16 @@ class DIISSolver : public Solver<T> {
     t3 = t[2];
   }
 
+  /// Checks to see if the solver has converged
+  /// @param target_precision The desired precision for the final energy
+  /// @param error The value of the error computed from the one- and two-body residuals
+  /// @param dE The energy change between two consecutive solver iterations
+  /// @return Whether or not the solver has converged
   bool is_converged(double target_precision, double error, double dE) const override {
    return (dE <= target_precision && error <= target_precision);
   }
 
+  /// Resets the DIIS solver; used when switching to a new solver subspace
   void reset() {
     diis_ = diis_pristine_;
   }

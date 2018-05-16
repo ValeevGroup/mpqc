@@ -20,6 +20,21 @@
 #include <fenv.h>
 #endif
 
+// if have c++17
+#if __cplusplus > 201402L
+#include <filesystem>
+using std::filesystem::current_path;
+using std::filesystem::exists;
+using std::filesystem::is_directory;
+using std::filesystem::path;
+#else
+#include <boost/filesystem.hpp>
+using boost::filesystem::current_path;
+using boost::filesystem::exists;
+using boost::filesystem::is_directory;
+using boost::filesystem::path;
+#endif
+
 #include "mpqc/util/keyval/keyval.h"
 //#include "mpqc/util/misc/consumableresources.h"
 #include "mpqc/util/core/exception.h"
@@ -61,7 +76,7 @@ MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
   ExEnv::init(argc_, argv_);
   init_fp();
   init_limits();
-
+  init_work_dir();
   libint2::initialize();
 
   init_io(top_world);
@@ -202,6 +217,37 @@ void MPQCInit::init_io(const madness::World &top_world) {
 //  }
 //}
 
+void MPQCInit::init_work_dir() {
+  char *mpqc_work_dir;
+  mpqc_work_dir = std::getenv("MPQC_WORK_DIR");
+
+  // if not user defined, use current path
+  if (mpqc_work_dir == nullptr) {
+    path curr_path = current_path();
+    // set the work dir in FormIO
+    FormIO::set_default_work_dir(curr_path.c_str());
+  } else {
+    // check the correctness of path
+    path work_path(mpqc_work_dir);
+    bool path_exists = exists(work_path);
+    if (!path_exists) {
+      throw FileOperationFailed(
+          "Path ${MPQC_WORK_DIR} does not exists! Please set environment "
+          "variable MPQC_WORK_DIR to a valid path.\n",
+          __FILE__, __LINE__, mpqc_work_dir, FileOperationFailed::Exists);
+    }
+    bool is_dir = is_directory(work_path);
+    if (!is_dir) {
+      throw FileOperationFailed(
+          "Path ${MPQC_WORK_DIR} is not a directory! Please set environment "
+          "variable MPQC_WORK_DIR to an existing directory.\n",
+          __FILE__, __LINE__, mpqc_work_dir, FileOperationFailed::Chdir);
+    }
+    // set the work dir in FormIO
+    FormIO::set_default_work_dir(mpqc_work_dir);
+  }
+}
+
 void MPQCInit::set_basename(const std::string &input_filename,
                             const std::string &output_filename) {
   // get the basename for output files:
@@ -231,7 +277,10 @@ std::shared_ptr<GetLongOpt> make_options() {
   // parse commandline options
   std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
-  options->usage("[options] [input_file.{json|xml|info}]\nThe input file name can be given as the last argument unless an option with omitted optional value is used (e.g. -D)");
+  options->usage(
+      "[options] [input_file.{json|xml|info}]\nThe input file name can be "
+      "given as the last argument unless an option with omitted optional value "
+      "is used (e.g. -D)");
   options->enroll("i", GetLongOpt::MandatoryValue,
                   "the name of the input file");
   options->enroll("o", GetLongOpt::MandatoryValue,
@@ -251,8 +300,9 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
-  options->enroll("k", GetLongOpt::NoValue,
-                  "print all registered (KeyVal-constructible) DescribedClass classes");
+  options->enroll(
+      "k", GetLongOpt::NoValue,
+      "print all registered (KeyVal-constructible) DescribedClass classes");
   options->enroll("h", GetLongOpt::NoValue, "print this message");
 
   return options;
@@ -305,8 +355,11 @@ std::tuple<std::string, std::string> process_options(
 
   if (options->retrieve("k")) {
     print_std_header();
-    ExEnv::out0() << std::endl << indent << "DescribedClass KeyVal-ctor registry:" << incindent << std::endl;
-    for(const auto& entry : DescribedClass::keyval_ctor_registry()) {
+    ExEnv::out0() << std::endl
+                  << indent
+                  << "DescribedClass KeyVal-ctor registry:" << incindent
+                  << std::endl;
+    for (const auto &entry : DescribedClass::keyval_ctor_registry()) {
       ExEnv::out0() << indent << entry.first << std::endl;
     }
     std::exit(0);
@@ -317,7 +370,8 @@ std::tuple<std::string, std::string> process_options(
   std::string input_filename;
   if (input_opt) {
     input_filename = *input_opt;
-  } else if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
+  } else if (MPQCInit::instance().argc() - options->first_unprocessed_arg() ==
+             1) {
     input_filename =
         MPQCInit::instance().argv()[options->first_unprocessed_arg()];
   } else {

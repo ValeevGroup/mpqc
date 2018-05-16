@@ -28,6 +28,7 @@
   "wfn":{
     "type": "CCSD",
     "wfn_world": "$:wfn_world",
+    "export_orbital" : true,
     "atoms" : "$:atoms",
     "ref": "$:scf",
     "method" : "df",

@@ -50,7 +50,7 @@ add_dependencies(install-libmpqc install-mpqc)
 set(main_source mpqc.cpp)
 add_mpqc_library(main  main_source ""
         "MPQCmpqc" "mpqc")
-target_link_libraries(MPQCmain PUBLIC ${MPQC_FEATURE_LIBS})
+target_link_libraries(MPQCmain PUBLIC ${MPQC_FEATURE_LIBS} ${BOOST_FILESYSTEM_LIBRARY})
 target_compile_definitions(MPQCmain PUBLIC ${MPQC_FEATURE_DEFINITIONS})
 
 ##################### MPQC executable ###########################

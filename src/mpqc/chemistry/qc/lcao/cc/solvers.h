@@ -1074,6 +1074,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     iter_count_ = 0;
 
     // Counts how many micro iterations per macro iteration
+    // In subsequent macro iterations, this will start at 1
     micro_count_ = 0;
 
     // Counts how many macro iterations in the calculation
@@ -1107,10 +1108,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
     // Compute all K_aibj
-    // auto K = fac.compute(L"(a b|G|i j)");
     K = fac.compute(L"<a b|G|i j>[df]");
     const auto ktrange = K.trange();
-
 
     // Create TiledRange1 objects for uocc transformation arrays
     std::vector<std::size_t> uocc_blocks{0, nuocc};
@@ -1238,18 +1237,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   const auto& npnos(int i, int j) const { return npnos_[i * nocc_act_ + j]; }
 
  private:
-  /// Overrides DIISSolver::update_only() .
-  /// @note must override DIISSolver::update() also since the update must be
-  ///      followed by backtransform updated amplitudes to the full space
 
+  /// Overrides DIISSolver::is_converged()
   bool is_converged(double target_precision, double error, double dE) const override {
-    // dE is the difference between last two microiterations
-    // DE is the difference between the current energy and the last macroiteration energy
+    // dE = E_22_ - E_21_: the difference in energy between the two most recent micro iterations
+    // DE = E_22_ - E_12_: the difference in energy between the current micro iteration and the last micro
+    // iteration of the previuos macro iteration
     const auto DE = dE + (E_21_ - E_12_);
-    double micro_target_precision = target_precision / 3.0;
+    double micro_target_precision = target_precision / 3.0; //!< Converge tighter w/in macro iteration
     return (dE <= micro_target_precision && DE <= target_precision && error <= target_precision);
   }
 
+  /// Overrides DIISSolver::update_only() .
+  /// @note must override DIISSolver::update() also since the update must be
+  ///      followed by backtransform updated amplitudes to the full space
   void update_only(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
 
     T delta_t1_ai;
@@ -1289,8 +1290,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     E_22_ = E1;
 
-    double deltaE = std::abs(E_22_ - E_21_);  // compare to micro_thresh_; used to be called dE_2
-    auto DeltaE = std::abs(E_22_ - E_12_);  // used to be called DE_2
+    double deltaE = std::abs(E_22_ - E_21_);  //!< Equivalent to dE in the definition of is_converged()
+    auto DeltaE = std::abs(E_22_ - E_12_);    //!< Equivalent to DE in the definition of is_converged()
 
     // During first macro iteration, use the value of micro_thresh provided in the input file
     // During subsequent macro iterations, recompute micro_thresh
@@ -1301,7 +1302,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // Compare dE to micro_thresh to determine whether or not to update PNOs
     if ((deltaE < micro_thresh_) && (iter_count_ > 0) && (micro_count_ >= min_micro_)) {
       start_macro_ = true;
-      old_micro_thresh_ = micro_thresh_;
 
       E_11_ = E_21_;
       E_12_ = E_22_;
@@ -1337,7 +1337,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         old_pnos_ = pnos_;
       }
 
-
+      // Recompute the PNOs
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       detail::construct_pno(T_reblock, K_reblock_, F_occ_act_, F_uocc_,
                             exact_e_mp2_, tpno_, tosv_,
@@ -1368,14 +1368,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       mpqc::cc::TPack<T> t(t1, t2);
       this->reset();
       iter_count_ += 1;
-      start_macro_ = false;  // set start_macro_ to false since next CCSD iter is in PNO subspace just entered
+      start_macro_ = false;  //!< set start_macro_ to false since next CCSD iter is in PNO subspace just entered
       micro_count_ = 1;
       macro_count_ += 1;
     }
 
     else {
 
-      // Print right before first micro iteration of the macro iteration is logged
+      // Print right before first micro iteration of the macro iteration is logged for
+      // all macro iterations after the first one
       if (macro_count_ > 1 && micro_count_ == 1) {
 
         // Print average number of PNOs per pair
@@ -1489,6 +1490,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
  private:
 
+  /// Transfers the PNOs from the node that owns pair i,j to the node that owns pair j,i
   void transfer_pnos() {
     auto pmap = K_reblock_.pmap();
     auto tile_extent = K_reblock_.trange().tiles_range().extent_data();
@@ -1506,16 +1508,25 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     K_reblock_.world().gop.fence();
   }
 
-  void copy_pnoij(int i, int j, Matrix pno, Vector f_diag) {
+  /**
+   * Copies the PNOs for pair i,j to pair j,i
+   * @param i The first occupied index
+   * @param j The second occupied index
+   * @param pno_ij The Matrix of PNOs associated with pair i,j
+   * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
+   *        transformed to the i,j PNO space
+   */
+  void copy_pnoij(int i, int j, Matrix pno_ij, Vector f_pno_diag_ij) {
     int my_i = j;
     int my_j = i;
     int my_ij = my_i * nocc_act_ + my_j;
-    int num_pno = pno.cols();
-    pnos_[my_ij] = pno;
+    int num_pno = pno_ij.cols();
+    pnos_[my_ij] = pno_ij;
     npnos_[my_ij] = num_pno;
-    F_pno_diag_[my_ij] = f_diag;
+    F_pno_diag_[my_ij] = f_pno_diag_ij;
   }
 
+  /// Prints the average number of PNOs and OSVs per pair
   void print_ave_npnos_per_pair() {
 
     K_reblock_.world().gop.sum(npnos_.data(), npnos_.size());
@@ -1541,6 +1552,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     }  // end if K_reblock.world().rank() == 0
   }
 
+  /// Prints the number of PNOs for each occupied pair
   void print_npnos_per_pair() {
     std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
 
@@ -1554,7 +1566,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     }
   }
 
-
+  /// Computes the PNO-MP2 correction
   void compute_pno_mp2_correction() {
     // Form K_pno and T2_pno
     T K_pno = detail::pno_transform_abij(K_reblock_, pnos_);
@@ -1563,13 +1575,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // Compute the MP2 energy in the space of the truncated PNOs
     auto pno_e_mp2 = detail::compute_mp2(K_pno, T2_pno);
 
-    // Compute exact MP2 energy - PNO MP2 energy
+    // Compute difference between the MP2 energy and the PNO-MP2 energy
     auto mp2_correction = exact_e_mp2_ - pno_e_mp2;
 
 
     ExEnv::out0() << "PNO-MP2 correlation energy: " << pno_e_mp2 << ", PNO-MP2 correction: " << mp2_correction << std::endl;
   }
 
+
+  /// Computes the max principal angles between consecutive PNO subspaces
   void compute_max_principal_angle() {
 
     double max_angle = 0.0;
@@ -1608,22 +1622,22 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
-  bool update_pno_;            //!< whether or not to update PNOs with at specified intervals
+  bool update_pno_;            //!< whether or not to update PNOs
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold
   int nocc_act_;               //!< the number of active occupied orbitals
   int nuocc_;                  //!< the number of unoccupied orbitals
-  T T_;                        //!< the array of MP2 T amplitudes
+  T T_;                        //!< the array of MP1 T amplitudes
 
   int iter_count_;             //!< the CCSD iteration
 
-  T reblock_i_;
-  T reblock_a_;
+  T reblock_i_;                //!< The array used to reblock the occ dimension
+  T reblock_a_;                //!< The array used to reblock the unocc dimension
 
   T K;                         //!< the T2 like array of eris; has dimensions "a,b,i,j"
   T K_reblock_;                //!< the T2 like array of eris reblocked to have a single occupied elem per tile
-  Matrix F_occ_act_;
-  Matrix F_uocc_;
+  Matrix F_occ_act_;           //!< The occ_act-occ_act portion of the Fock matrix
+  Matrix F_uocc_;              //!< The unocc-unocc portion of the Fock matrix
 
   double exact_e_mp2_;         //!< the exact MP2 correlation energy
 
@@ -1642,19 +1656,18 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
-  double old_micro_thresh_;
 
-  int micro_count_;
-  int min_micro_;
-  int macro_count_;
-  bool print_npnos_;
+  int micro_count_;             //!< Keeps track of the number of micro iterations in the current macro iteration
+  int min_micro_;               //!< The minimum number of micro iterations per macro iteration
+  int macro_count_;             //!< Keeps track of the total number of macro iterations
+  bool print_npnos_;            //!< Whether or not nPNOs for each pair should be printed
 
-  double energy_ratio_;         //!< The value DE is divided to form micro_thresh
+  double energy_ratio_;         //!< The value DE is divided to update micro_thresh
 
   double E_11_;                 //!< The energy of the second to last micro iteration of the previous macro iteration
-  double E_12_;                 //!< The energy of the last micro iteration of the previuos macro iteration
-  double E_21_;                 //!< The energy of the second to last micro iteration of the current macro iteration
-  double E_22_;                 //!< The energy of the last micro iteration of the current macro iteration
+  double E_12_;                 //!< The energy of the last micro iteration of the previous macro iteration
+  double E_21_;                 //!< The energy of the previous micro iteration of the current macro iteration
+  double E_22_;                 //!< The energy of the current micro iteration of the current macro iteration
 
 };  // class: PNO solver
 

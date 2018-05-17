@@ -598,7 +598,6 @@ double compute_mp2(
   return e_mp2;
 }
 
-// Form T from K
 /**
  *
  * @tparam Tile
@@ -672,11 +671,24 @@ TA::DistArray<Tile, Policy> form_T_from_K (
 
 /**
  *
- * @param t2
- * @param pnos
- * @param F_pno_diags
- * @param osvs
- * @param F_osv_diags
+ * @tparam Tile
+ * @tparam Policy
+ * @param t2            T2-like array with dimension "a,b,i,j"
+ * @param K_reblock     T2-like array reblocked: one occ elem per tile, all unocc elem per tile
+ * @param F_occ_act     active occupied-active occupied portion of the Fock matrix
+ * @param F_uocc        unocc-unocc portion of the Fock matrix
+ * @param exact_e_mp2   "exact" MP2 energy
+ * @param tpno          PNO truncation threshold
+ * @param tosv          OSV truncation threshold
+ * @param pnos          vector of PNO matrices
+ * @param npnos         vector of nPNO values
+ * @param F_pno_diag    vector of Vectors, where each Vector contains the diagonal elements of
+ *                      the PNO-transformed Fock matrix
+ * @param osvs          vector of OSV matrices
+ * @param nosvs         vector of nOSV values
+ * @param F_osv_diag    vector of Vectors, where each Vector contains the diagonal elements of
+ *                      the OSV-transformed Fock matrix
+ * @param pno_canonical whether or not to canonicalize the PNOs
  */
 template <typename Tile, typename Policy>
 void construct_pno(
@@ -715,9 +727,6 @@ void construct_pno(
   F_osv_diag.resize(nocc_act);
   std::fill(nosvs.begin(), nosvs.end(), 0);
 
-
-  /// Step (2): Transform T to D
-
   // lambda function to transform T to D; implement using a for_each
   auto form_D = [nuocc](Tile& result_tile, const Tile& arg_tile) {
 
@@ -754,10 +763,6 @@ void construct_pno(
 
   auto D = TA::foreach (t2, form_D);
   D.world().gop.fence();
-
-  /// Step (3): Form PNO_ij from D_ij
-  // Diagonalize each D_ij matrix to get the PNOs and occupation
-  // numbers
 
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
@@ -954,12 +959,10 @@ void construct_pno(
 
 };  // construct_pno
 
-
-
-
 }  // namespace detail
 
-// // JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
+
+// JacobiDIISSolver updates the CC T amplitudes using standard Jacobi+DIIS
 template <typename T>
 class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T> {
  public:
@@ -1033,10 +1036,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | update_pno | bool | false | Whether or not to recompute the PNOs |
-   * | solver_string | string | "pno" | The CCSD solver to use |
+   * | solver_str | string | "pno" | The CCSD solver to use |
    * | use_delta | bool | false | Whether or not to add Delta^(K) to T^(K) when updating PNOs |
-   * | micro_thresh | double | 1e-9 | When dE falls below this threshold, recompute PNOs |
-   * | min_micro | int | 2 | The minimum number of micro iterations to perform per macro iteration |
+   * | micro_thresh | double | 1e-6 | When dE falls below this threshold, recompute PNOs |
+   * | min_micro | int | 5 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    * | energy_ratio | double | 10.0 | The value used in computing new micro_thresh |
    */
@@ -1051,8 +1054,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tosv_(kv.value<double>("tosv", 1.e-9)),
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
-        micro_thresh_(kv.value<double>("micro_thresh", 1.e-8)),
-        min_micro_(kv.value<int>("min_micro", 2)),
+        micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
+        min_micro_(kv.value<int>("min_micro", 5)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         energy_ratio_(kv.value<double>("energy_ratio", 10.0)) {
     // part of WorldObject initialization

@@ -17,13 +17,15 @@ class PeriodicFourCenterJCADFKFockBuilder
   using K_Builder = PeriodicCADFKBuilder<Tile, Policy, Factory>;
 
   PeriodicFourCenterJCADFKFockBuilder(Factory &ao_factory,
-                                      const double force_shape_threshold = 0.0)
+                                      const double force_shape_threshold = 0.0,
+                                      bool permut_symm_J = true)
       : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic four-center J builder
     auto t0_j_init = mpqc::fenced_now(world);
-    j_builder_ = std::make_unique<J_Builder>(ao_factory_, true, false);
+    j_builder_ = std::make_unique<J_Builder>(ao_factory_, true, false,
+                                             permut_symm_J, false);
     auto t1_j_init = mpqc::fenced_now(world);
     double t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 

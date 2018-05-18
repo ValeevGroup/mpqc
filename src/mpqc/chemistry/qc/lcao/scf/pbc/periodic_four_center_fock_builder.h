@@ -87,7 +87,8 @@ class PeriodicFourCenterFockBuilder
       int64_t RD_size, bool compute_J, bool compute_K,
       std::string screen = "schwarz", double screen_threshold = 1.0e-20,
       double shell_pair_threshold = 1.0e-12,
-      double density_threshold = Policy::shape_type::threshold())
+      double density_threshold = Policy::shape_type::threshold(),
+      bool permut_symm_J = true, bool permut_symm_K = true)
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -103,7 +104,9 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         bra_basis_(bra_basis),
-        ket_basis_(ket_basis) {
+        ket_basis_(ket_basis),
+        permut_symm_J_(permut_symm_J),
+        permut_symm_K_(permut_symm_K) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -114,14 +117,23 @@ class PeriodicFourCenterFockBuilder
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
     } else if (compute_J_) {
-      init_J_aaaa();
+      if (permut_symm_J_) {
+        init_J_aaaa();
+      } else {
+        init();
+      }
     } else {
-      init_K_aaaa();
+      if (permut_symm_K_) {
+        init_K_aaaa();
+      } else {
+        init();
+      }
     }
   }
 
   PeriodicFourCenterFockBuilder(Factory &ao_factory, bool compute_J,
-                                bool compute_K)
+                                bool compute_K, bool permut_symm_J = true,
+                                bool permut_symm_K = true)
       : WorldObject_(ao_factory.world()),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -137,7 +149,9 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(ao_factory.RJ_size()),
         RD_size_(ao_factory.RD_size()),
         bra_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
-        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))) {
+        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
+        permut_symm_J_(permut_symm_J),
+        permut_symm_K_(permut_symm_K) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -148,9 +162,17 @@ class PeriodicFourCenterFockBuilder
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
     } else if (compute_J_) {
-      init_J_aaaa();
+      if (permut_symm_J_) {
+        init_J_aaaa();
+      } else {
+        init();
+      }
     } else {
-      init_K_aaaa();
+      if (permut_symm_K_) {
+        init_K_aaaa();
+      } else {
+        init();
+      }
     }
   }
 
@@ -164,16 +186,14 @@ class PeriodicFourCenterFockBuilder
 
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       // validate preconditions
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        auto ntilesRJ = basisRJ_[RJ]->nclusters();
-        auto ntilesRD = basisRD_[RJ]->nclusters();
-        auto nbf_RJ = basisRJ_[RJ]->nfunctions();
-        auto nbf_RD = basisRD_[RJ]->nfunctions();
-        assert(elements_range.extent(0) == nbf_RJ);
-        assert(elements_range.extent(1) == nbf_RD);
-        assert(tiles_range.extent(0) == ntilesRJ);
-        assert(tiles_range.extent(1) == ntilesRD);
-      }
+      auto ntilesRJ = ket_basis_->nclusters();
+      auto ntilesRD = ntilesRJ * RD_size_;
+      auto nbf_RJ = ket_basis_->nfunctions();
+      auto nbf_RD = nbf_RJ * RD_size_;
+      assert(elements_range.extent(0) == nbf_RJ);
+      assert(elements_range.extent(1) == nbf_RD);
+      assert(tiles_range.extent(0) == ntilesRJ);
+      assert(tiles_range.extent(1) == ntilesRD);
 
       if (!compute_J_) {
         return compute_K_abcd(D, target_precision);
@@ -182,9 +202,17 @@ class PeriodicFourCenterFockBuilder
       }
     } else {
       if (compute_J_) {
-        return compute_J_aaaa(D, target_precision);
+        if (permut_symm_J_) {
+          return compute_J_aaaa(D, target_precision);
+        } else {
+          return compute_JK_abcd(D, target_precision, is_density_diagonal);
+        }
       } else {
-        return compute_K_aaaa(D, target_precision, is_density_diagonal);
+        if (permut_symm_K_) {
+          return compute_K_aaaa(D, target_precision, is_density_diagonal);
+        } else {
+          return compute_K_abcd(D, target_precision);
+        }
       }
     }
   }
@@ -198,7 +226,11 @@ class PeriodicFourCenterFockBuilder
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       return R_max_;
     } else {
-      return RF_max_;
+      if (compute_J_ && !permut_symm_J_) {
+        return R_max_;
+      } else {
+        return RF_max_;
+      }
     }
   }
 
@@ -230,19 +262,21 @@ class PeriodicFourCenterFockBuilder
     // make shell block norm of D
     using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
     assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
-    auto ref_uc = (RJ_size_ - 1) / 2;
     auto shblk_norm_D =
-        compute_shellblock_norm(*ket_basis_, *(basisRD_[ref_uc]), D_repl);
+        compute_shellblock_norm(*ket_basis_, *basisRD_ket_, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
     // initialize engines
     {
+      using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
       using ::mpqc::lcao::gaussian::make_engine_pool;
+
       auto oper_type = libint2::Operator::coulomb;
       const auto basis0 = *bra_basis_;
       const auto basisR = *basisR_;
-      const auto basisRJ = *(basisRJ_[ref_uc]);
-      const auto basisRD = *(basisRD_[ref_uc]);
+      const auto basisRJ = *ket_basis_;
+      const auto basisRD =
+          *(shift_basis_origin(basisRJ, Vector3d::Zero(), RD_max_, dcell_));
       if (compute_J_) {
         j_engines_ = make_engine_pool(
             oper_type,
@@ -1513,11 +1547,14 @@ class PeriodicFourCenterFockBuilder
   const int64_t RD_size_;
   std::shared_ptr<const Basis> bra_basis_;
   std::shared_ptr<const Basis> ket_basis_;
+  const bool permut_symm_J_;
+  const bool permut_symm_K_;
 
   // mutated by compute_ functions
   mutable std::shared_ptr<lcao::Screener> j_p_screener_;
   mutable std::shared_ptr<lcao::Screener> k_p_screener_;
   mutable std::shared_ptr<Basis> basisR_;
+  mutable std::shared_ptr<Basis> basisRD_ket_;
   mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
   mutable std::vector<std::shared_ptr<Basis>> basisRD_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
@@ -1578,6 +1615,8 @@ class PeriodicFourCenterFockBuilder
     assert(bra_basis_->nclusters() == ket_basis_->nclusters());
     ntiles_per_uc_ = bra_basis_->nclusters();
 
+    auto &world = this->get_world();
+
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
     using ::mpqc::detail::direct_vector;
@@ -1587,22 +1626,14 @@ class PeriodicFourCenterFockBuilder
 
     // make compound basis set for bra1
     basisR_ = shift_basis_origin(*bra_basis_, Vector3d::Zero(), R_max_, dcell_);
+    // make compound basis set for ket1
+    basisRD_ket_ =
+        shift_basis_origin(*ket_basis_, Vector3d::Zero(), RD_max_, dcell_);
 
     const auto basis0 = *bra_basis_;
     const auto basisR = *basisR_;
 
     auto oper_type = libint2::Operator::coulomb;
-
-    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      // make compound basis sets for ket0 and ket1
-      basisRJ_.emplace_back(shift_basis_origin(*ket_basis_, vec_RJ));
-      basisRD_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_RJ, RD_max_, dcell_));
-    }
-
-    auto &world = this->get_world();
-
     // compute significant shell pair list
     {
       using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
@@ -1737,6 +1768,7 @@ class PeriodicFourCenterFockBuilder
               lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_threshold_));
         }
       }
+
       if (compute_K_) {
         if (compute_J_) {
           std::shared_ptr<Qmatrix> Qbra, Qket;
@@ -2120,14 +2152,31 @@ class PeriodicFourCenterFockBuilder
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basisR = basisR_;
-    const auto &basisRJ = basisRJ_[RJ];
-    const auto &basisRD = basisRD_[RJ];
+    const auto &basis2 = ket_basis_;
+    const auto &basis2RD = basisRD_ket_;
+
+    const auto RJ_vec = ::mpqc::detail::direct_vector(RJ, RJ_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
 
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];
     const auto &clusterR = basisR->cluster_shells()[tileR];
-    const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
-    const auto &clusterRD = basisRD->cluster_shells()[tileRD];
+    const auto &clusterRJ_unshifted = basis2->cluster_shells()[tileRJ];
+    const auto &clusterRD_unshifted = basis2RD->cluster_shells()[tileRD];
+    const auto &clusterRJ = shift_origin(clusterRJ_unshifted, RJ_vec);
+    const auto &clusterRD = shift_origin(clusterRD_unshifted, RJ_vec);
 
     // number of shells in each cluster
     const auto nshells0 = cluster0.size();
@@ -2336,7 +2385,7 @@ class PeriodicFourCenterFockBuilder
         const auto sh0_offset = basis0_shell_offset_map_[tile0];
         const auto shRJ_offset =
             k_basisRJ_shell_offset_map_[tileRJ +
-                                        RJ * basisRJ->cluster_shells().size()];
+                                        RJ * basis2->cluster_shells().size()];
         const auto shR_offset =
             k_basisR_shell_offset_map_[tileR % ncluster_bra_per_uc];
         const auto shRD_offset =

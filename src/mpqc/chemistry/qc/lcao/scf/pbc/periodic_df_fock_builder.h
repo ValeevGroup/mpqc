@@ -16,7 +16,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
   using J_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicDFFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
+  PeriodicDFFockBuilder(Factory &ao_factory, bool permut_symm_K = true)
+      : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic RI-J builder
@@ -27,7 +28,8 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct exact perioic 4-center K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true);
+    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true, false,
+                                             permut_symm_K);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

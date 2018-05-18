@@ -25,12 +25,10 @@ class PeriodicMARIJFourCenterKFockBuilder
   using J_Builder = PeriodicMARIJBuilder<Tile, Policy, factory_type>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory,
-                                      double ma_e_thresh = 1e-9,
-                                      double ma_ws = 3.0,
-                                      double ma_extent_thresh = 1e-6,
-                                      double ma_extent_smallval = 0.01,
-                                      double ma_dipole_thresh = 1e-3)
+  PeriodicMARIJFourCenterKFockBuilder(
+      factory_type &ao_factory, double ma_e_thresh = 1e-9, double ma_ws = 3.0,
+      double ma_extent_thresh = 1e-6, double ma_extent_smallval = 0.01,
+      double ma_dipole_thresh = 1e-3, bool permut_symm_K = true)
       : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
@@ -44,7 +42,8 @@ class PeriodicMARIJFourCenterKFockBuilder
 
     // Construct exact perioic 4-center K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true);
+    k_builder_ = std::make_unique<K_Builder>(ao_factory_, false, true, false,
+                                             permut_symm_K);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

@@ -746,14 +746,17 @@ typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::build_F(
  */
 
 template <typename Tile, typename Policy>
-DFzRHF<Tile, Policy>::DFzRHF(const KeyVal& kv) : zRHF<Tile, Policy>(kv) {}
+DFzRHF<Tile, Policy>::DFzRHF(const KeyVal& kv) : zRHF<Tile, Policy>(kv) {
+  permut_symm_K_ = kv.value<bool>("permut_symm_K", true);
+}
 
 template <typename Tile, typename Policy>
 void DFzRHF<Tile, Policy>::init_fock_builder() {
   using Builder =
       scf::PeriodicDFFockBuilder<Tile, Policy,
                                  DFzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->f_builder_ =
+      std::make_unique<Builder>(this->ao_factory(), permut_symm_K_);
 }
 
 /**
@@ -762,12 +765,16 @@ void DFzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 FourCenterzRHF<Tile, Policy>::FourCenterzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {}
+    : zRHF<Tile, Policy>(kv) {
+  permut_symm_J_ = kv.value<bool>("permut_symm_J", true);
+  permut_symm_K_ = kv.value<bool>("permut_symm_K", true);
+}
 
 template <typename Tile, typename Policy>
 void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicFourCenterFockBuilder<Tile, Policy>;
-  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), true, true);
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory(), true, true,
+                                               permut_symm_J_, permut_symm_K_);
 }
 
 /**
@@ -796,14 +803,15 @@ template <typename Tile, typename Policy>
 FourCenterJCADFKzRHF<Tile, Policy>::FourCenterJCADFKzRHF(const KeyVal& kv)
     : zRHF<Tile, Policy>(kv) {
   force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  permut_symm_J_ = kv.value<bool>("permut_symm_J", true);
 }
 
 template <typename Tile, typename Policy>
 void FourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicFourCenterJCADFKFockBuilder<
       Tile, Policy, FourCenterJCADFKzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ =
-      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(
+      this->ao_factory(), force_shape_threshold_, permut_symm_J_);
 }
 
 /**
@@ -869,6 +877,7 @@ MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal& kv)
   ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
   ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
   ma_dipole_threshold_ = kv.value<double>("ma_dipole_threshold", 1e-3);
+  permut_symm_K_ = kv.value<bool>("permut_symm_K", true);
 }
 
 template <typename Tile, typename Policy>
@@ -876,7 +885,7 @@ void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
   this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_,
-      ma_extent_smallval_, ma_dipole_threshold_);
+      ma_extent_smallval_, ma_dipole_threshold_, permut_symm_K_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .coulomb_builder()
                                  .multipole_builder()
@@ -918,6 +927,8 @@ MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal& kv)
   ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
   ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
   ma_dipole_threshold_ = kv.value<double>("ma_dipole_threshold", 1e-3);
+  permut_symm_J_ = kv.value<bool>("permut_symm_J", true);
+  permut_symm_K_ = kv.value<bool>("permut_symm_K", true);
 }
 
 template <typename Tile, typename Policy>
@@ -925,7 +936,8 @@ void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
   this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), ma_energy_threshold_, ma_ws_, ma_extent_threshold_,
-      ma_extent_smallval_, ma_dipole_threshold_);
+      ma_extent_smallval_, ma_dipole_threshold_, permut_symm_J_,
+      permut_symm_K_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .multipole_builder()
                                  .CFF_reached();
@@ -966,6 +978,7 @@ MAFourCenterJCADFKzRHF<Tile, Policy>::MAFourCenterJCADFKzRHF(const KeyVal& kv)
   ma_extent_threshold_ = kv.value<double>("ma_extent_threshold", 1e-6);
   ma_extent_smallval_ = kv.value<double>("ma_extent_small_value", 0.01);
   ma_dipole_threshold_ = kv.value<double>("ma_dipole_threshold", 1e-3);
+  permut_symm_J_ = kv.value<bool>("permut_symm_J", true);
 }
 
 template <typename Tile, typename Policy>
@@ -973,7 +986,8 @@ void MAFourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
   this->f_builder_ = std::make_unique<Builder>(
       this->ao_factory(), force_shape_threshold_, ma_energy_threshold_, ma_ws_,
-      ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_);
+      ma_extent_threshold_, ma_extent_smallval_, ma_dipole_threshold_,
+      permut_symm_J_);
   this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
                                  .multipole_builder()
                                  .CFF_reached();

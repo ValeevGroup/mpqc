@@ -311,7 +311,18 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
         pred = std::make_shared<cc::StateAveragePNOEEPred<TArray>>(
             guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
             eom_pno_canonical_);
-      } else {
+      } else if(eom_pno_ == "state-merged"){
+        std::vector<TArray> guess(n_roots);
+        for (std::size_t i = 0; i < n_roots; i++) {
+          guess[i] = compute_cis_d_double_amplitude(
+              this->lcao_factory(), cis_vector[i], cis_eigs[i], this->is_df());
+        }
+
+        pred = std::make_shared<cc::StateMergedPNOEEPred<TArray>>(
+            guess, n_roots, eps_o, FAB_eigen, eom_tpno_, eom_tosv_,
+            eom_pno_canonical_);
+      }
+      else {
         throw InputError("Invalid option!", __FILE__, __LINE__, "eom_pno",
                          eom_pno_.c_str());
       }

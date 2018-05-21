@@ -928,8 +928,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
-   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
-   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
+   * | tpno | real | 1e-8 | The PNO construction threshold. This non-negative number specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tosv | real | 1e-9 | The OSV construction threshold. This non-negative number specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | tiling_method | string | flexible | How the basis set is tiled. Valid values are: \c flexible , \c rigid . |
    */
@@ -1486,8 +1486,8 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | pno_method | string | standard | The PNO construction method. Valid values are: \c standard . |
-   * | tpno | double | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
-   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
+   * | tpno | real | 1e-8 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | tosv | real | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
    */
   // clang-format on
   SVOSolver(const KeyVal& kv, Factory<T, DT>& factory)

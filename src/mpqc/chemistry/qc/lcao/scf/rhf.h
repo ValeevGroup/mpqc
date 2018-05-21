@@ -42,9 +42,9 @@ class RHF
    * | localize | bool | false | if localize in DensityBuilder |
    * | localization_method | string | boys-foster | localization method; valid choices are "boys-foster" (localize all occupied orbitals; this is the default), "boys-foster(valence)" (do not localize the core). |
    * | clustered_coeffs | bool | false | if to recluster coeffs in DensityBuilder, if localize with "boys-foster(valence)", this option can not be true |
-   * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
+   * | t_cut_c | real | 0.0 | threshold in DensityBuilder, SparsePolicy only |
    * | decompo_type | string | conditioned | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
-   * | s_tolerance | double | 1.0e8 | S condition number threshold in DensityBuilder, valid when decompo_type is set to conditioned |
+   * | s_tolerance | real | 1.0e8 | S condition number threshold in DensityBuilder, valid when decompo_type is set to conditioned |
    *
    */
   // clang-format on

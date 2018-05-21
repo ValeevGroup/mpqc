@@ -5,6 +5,7 @@ set(public_headers
     predicates.h
     sfinae.h
     store_variadic_pack.h
+    stream.h
     type_traits.h
    )
    

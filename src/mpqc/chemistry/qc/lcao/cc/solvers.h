@@ -671,7 +671,7 @@ void construct_pno(
   // Diagonalize each D_ij matrix to get the PNOs and occupation
   // numbers
 
-  auto form_osv = [&F_osv_diag, &F_uocc, &nosvs, tosv, nuocc, nocc_act,
+  auto form_osv = [&F_osv_diag, &F_uocc, &nosvs, tosv, nuocc,
                    pno_canonical](std::size_t i, const Tile& D_ii,
                                   std::vector<Matrix>* osvs_ptr) {
 
@@ -1817,8 +1817,8 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
 
       // lambda function to convert K to T
 
-      auto form_T = [eps_o, eps_v, this](Tile& result_tile,
-                                         const Tile& arg_tile) {
+      auto form_T = [eps_o, eps_v](Tile& result_tile,
+                                   const Tile& arg_tile) {
 
         result_tile = Tile(arg_tile.range());
 
@@ -2401,8 +2401,8 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
       const Eigen::MatrixXd& F_occ_act,
       const std::vector<Eigen::VectorXd>& F_svo1_diag,
       const std::vector<Eigen::MatrixXd>& svo1s) {
-    auto update1 = [F_occ_act, F_svo1_diag, svo1s, this](Tile& result_tile,
-                                                         const Tile& arg_tile) {
+    auto update1 = [F_occ_act, F_svo1_diag, svo1s](Tile& result_tile,
+                                                   const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
 
@@ -2516,7 +2516,7 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
   TA::DistArray<Tile, Policy> svo_transform_ai(
       const TA::DistArray<Tile, Policy>& ai,
       const std::vector<Eigen::MatrixXd>& svo1s) {
-    auto tform = [svo1s, this](Tile& result_tile, const Tile& arg_tile) {
+    auto tform = [svo1s](Tile& result_tile, const Tile& arg_tile) {
 
       // determine i index
       const auto i = arg_tile.range().lobound()[1];

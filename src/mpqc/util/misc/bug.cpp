@@ -124,7 +124,6 @@ void Debugger::handle(int sig) {
 
 void Debugger::release(int sig) {
     if (sig >= NSIG) return;
-    typedef void (*handler_type)(int);
     signal(sig, SIG_DFL);
     signals[sig] = nullptr;
     mysigs_[sig] = 0;

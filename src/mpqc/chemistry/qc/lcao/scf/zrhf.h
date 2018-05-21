@@ -48,21 +48,21 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | max_iter | int | 30 | maximum number of iteration |
-   * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
-   * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
-   * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
-   * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
-   * | fock_mixing | double | 0.0 | mixing of Fock matrices in reciprocal space |
-   * | level_shift | double | 0.0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
-   * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
-   * | diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
-   * | diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
-   * | diis_damping | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
-   * | diis_mixing | double | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
-   * | diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
-   * | diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
+   * | @c max_iter | int | 30 | maximum number of iteration |
+   * | @c soad_guess | bool | true | if true, use SOAD guess for initial Fock build |
+   * | @c print_detail | bool | false | if print extra computation&time info |
+   * | @c max_condition_num | real | 1.0e8 | maximum condition number for overlap matrix |
+   * | @c k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
+   * | @c print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
+   * | @c fock_mixing | real | 0.0 | mixing of Fock matrices in reciprocal space |
+   * | @c level_shift | real | 0.0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
+   * | @c diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
+   * | @c diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
+   * | @c diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
+   * | @c diis_damping | real | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
+   * | @c diis_mixing | real | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
+   * | @c diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
+   * | @c diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
    *
    * example input:
    *

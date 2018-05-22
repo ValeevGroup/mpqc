@@ -172,12 +172,13 @@ class LCAOWavefunction : public Wavefunction {
         Eigen::VectorXd op(n_mo);
         op << occs, unoccs;
 
-        // set orbital energy to fake zero
-        auto occs_energy = Eigen::VectorXd::Constant(C_p_eig.cols(), 0.0);
+        // set orbital energy to zeroes
+        auto energies = Eigen::VectorXd::Constant(C_p_eig.cols(), 0.0);
+        // set orbital irrep labels to A
+        std::vector<std::string> labels(n_mo, "A");
 
         libint2::molden::Export xport(libint2_atoms, libint2_shells, C_p_eig,
-                                          op, occs_energy);
-
+                                      op, energies, labels);
 
         std::string filename = FormIO::fileext_to_fullpathname_string(".orbital.molden");
         xport.write(filename);

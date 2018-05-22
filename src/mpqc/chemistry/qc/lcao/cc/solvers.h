@@ -1037,7 +1037,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | update_pno | bool | false | Whether or not to recompute the PNOs |
    * | solver_str | string | "pno" | The CCSD solver to use |
-   * | use_delta | bool | false | Whether or not to add Delta^(K) to T^(K) when updating PNOs |
    * | micro_thresh | double | 1e-6 | When dE falls below this threshold, recompute PNOs |
    * | min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
@@ -1054,7 +1053,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tpno_(kv.value<double>("tpno", 1.e-7)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         solver_str_(kv.value<std::string>("solver", "pno")),
-        use_delta_(kv.value<bool>("use_delta", false)),
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
@@ -1358,17 +1356,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         print_npnos_per_pair();
       }
 
-      // Depending on the value of use_delta, either the updated or the unupdated T2s will be transformed
-      if (use_delta_) {
-        //Transform T_reblock
-        T T2 = detail::t2_project_pno(T_reblock, pnos_);
-        t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
-      }
-      else {
-        // Transform t_old_reblock
-        T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
-        t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
-      }
+
+
+      // Transform t_old_reblock
+      T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
+      t2 = detail::unblock_t2(T2, reblock_i_, reblock_a_);
+
 
       mpqc::cc::TPack<T> r(r1_reblock, r2_reblock);
       mpqc::cc::TPack<T> t(t1, t2);
@@ -1659,7 +1652,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
 
-  bool use_delta_;              //!< Indicates whether or not Delta^(K) should be added to T^(K) before T projected into and out of PNO subspace
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
 

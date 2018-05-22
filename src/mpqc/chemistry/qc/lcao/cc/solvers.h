@@ -1039,9 +1039,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | solver_str | string | "pno" | The CCSD solver to use |
    * | use_delta | bool | false | Whether or not to add Delta^(K) to T^(K) when updating PNOs |
    * | micro_thresh | double | 1e-6 | When dE falls below this threshold, recompute PNOs |
-   * | min_micro | int | 5 | The minimum number of micro iterations to perform per macro iteration |
+   * | min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
-   * | energy_ratio | double | 10.0 | The value used in computing new micro_thresh |
+   * | energy_ratio | double | 3.0 | The value used in computing new micro_thresh |
+   * | micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
@@ -1055,9 +1056,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         solver_str_(kv.value<std::string>("solver", "pno")),
         use_delta_(kv.value<bool>("use_delta", false)),
         micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
-        min_micro_(kv.value<int>("min_micro", 5)),
+        min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        energy_ratio_(kv.value<double>("energy_ratio", 10.0)) {
+        energy_ratio_(kv.value<double>("energy_ratio", 3.0)),
+        micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
     // part of WorldObject initialization
     this->process_pending();
 
@@ -1247,8 +1249,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // DE = E_22_ - E_12_: the difference in energy between the current micro iteration and the last micro
     // iteration of the previuos macro iteration
     const auto DE = dE + (E_21_ - E_12_);
-    double micro_target_precision = target_precision / 3.0; //!< Converge tighter w/in macro iteration
-    return (dE <= micro_target_precision && DE <= target_precision && error <= target_precision);
+    double macro_target_precision = target_precision / 10.0;
+    double micro_target_precision = macro_target_precision / micro_ratio_; //!< Converge tighter w/in macro iteration
+    return (dE <= micro_target_precision && DE <= macro_target_precision && error <= target_precision);
   }
 
   /// Overrides DIISSolver::update_only() .
@@ -1503,7 +1506,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         if(!K_reblock_.is_zero({0,0,i,j}) && K_reblock_.is_local({0,0,i,j})) {
           auto ji_owner = pmap->owner(j * nocc_act_ + i);
           const auto ij = i * nocc_act_ + j;
-          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], F_pno_diag_[ij]);
+          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij]);
         }
       }
     }
@@ -1516,16 +1519,16 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * @param i The first occupied index
    * @param j The second occupied index
    * @param pno_ij The Matrix of PNOs associated with pair i,j
+   * @param npno_ij The number of PNOs axxociated with pair i,j
    * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
    *        transformed to the i,j PNO space
    */
-  void copy_pnoij(int i, int j, Matrix pno_ij, Vector f_pno_diag_ij) {
+  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij) {
     int my_i = j;
     int my_j = i;
     int my_ij = my_i * nocc_act_ + my_j;
-    int num_pno = pno_ij.cols();
     pnos_[my_ij] = pno_ij;
-    npnos_[my_ij] = num_pno;
+    npnos_[my_ij] = npno_ij;
     F_pno_diag_[my_ij] = f_pno_diag_ij;
   }
 
@@ -1672,6 +1675,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   double E_21_;                 //!< The energy of the previous micro iteration of the current macro iteration
   double E_22_;                 //!< The energy of the current micro iteration of the current macro iteration
 
+  double micro_ratio_;
 };  // class: PNO solver
 
 }  // namespace cc

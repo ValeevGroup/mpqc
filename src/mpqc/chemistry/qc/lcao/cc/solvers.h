@@ -2401,8 +2401,8 @@ class SVOSolver : public ::mpqc::cc::DIISSolver<T>,
       const Eigen::MatrixXd& F_occ_act,
       const std::vector<Eigen::VectorXd>& F_svo1_diag,
       const std::vector<Eigen::MatrixXd>& svo1s) {
-    auto update1 = [F_occ_act, F_svo1_diag, svo1s](Tile& result_tile,
-                                                   const Tile& arg_tile) {
+      auto update1 = [F_occ_act, F_svo1_diag, svo1s](Tile& result_tile,
+                                                     const Tile& arg_tile) {
 
       result_tile = Tile(arg_tile.range());
 

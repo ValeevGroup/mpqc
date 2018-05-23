@@ -99,6 +99,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
 
   // Nuclear-attraction
+  array_type V_unsymm;
   {
     ExEnv::out0()
         << "\nComputing Two Center Integral for Periodic System: < κ |V| λ >"
@@ -106,7 +107,9 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
     auto t0 = mpqc::fenced_now(world);
     using Builder = scf::PeriodicTwoCenterBuilder<Tile, Policy>;
     auto two_center_builder = std::make_unique<Builder>(ao_factory);
-    V_ = two_center_builder->eval(Operator::Type::Nuclear);
+    V_unsymm = two_center_builder->eval(Operator::Type::Nuclear);
+    // force hermiticity of nuclear attraction matrix contributed from CNF
+    V_ = pbc::detail::symmetrize_matrix(V_unsymm);
     auto t1 = mpqc::fenced_now(world);
     auto dur = mpqc::duration_in_s(t0, t1);
     ExEnv::out0() << " Time: " << dur << " s" << std::endl;
@@ -123,7 +126,13 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
     ExEnv::out0() << "\nUsing CORE guess for initial Fock ..." << std::endl;
     F_init = H_;
   } else {
-    F_init = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
+    // note that the two-body Fock matrix in SOAD is computed without
+    // symmetrization. Thus, in order to treat one- and two-body contributions
+    // consistently, the unsymmetrized nuclear attraction matrix has to be
+    // provided here
+    array_type H_unsymm;
+    H_unsymm("mu, nu") = T_("mu, nu") + V_unsymm("mu, nu");
+    F_init = gaussian::periodic_fock_soad(world, unitcell, H_unsymm, ao_factory);
   }
 
   // transform Fock from real to reciprocal space

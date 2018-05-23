@@ -386,8 +386,9 @@ class PeriodicMA {
 
     // compute Fock contribution from CFF
     t0 = mpqc::fenced_now(world);
-    fock_cff_ = sphemm_[0];
-    fock_cff_("mu, nu") = -1.0 * L[0] * fock_cff_("mu, nu");
+    TArray fock_cff_unsymm;
+    fock_cff_unsymm = sphemm_[0];
+    fock_cff_unsymm("mu, nu") = -1.0 * L[0] * fock_cff_unsymm("mu, nu");
     if (MULTIPOLE_MAX_ORDER >= 1) {
       for (auto op = 1; op != nopers_; ++op) {
         auto l = O_ord_to_lm_map_[op].first;
@@ -396,9 +397,11 @@ class PeriodicMA {
         auto signm1 = (m < 0 && (m % 2 == 0)) ? -1.0 : 1.0;
         auto signm2 = (m == 0) ? 1.0 : 2.0;
         auto prefactor = -1.0 * signl * signm1 * signm2 * L[op];
-        fock_cff_("mu, nu") += prefactor * sphemm_[op]("mu, nu");
+        fock_cff_unsymm("mu, nu") += prefactor * sphemm_[op]("mu, nu");
       }
     }
+    // force hermiticity of Fock contributed from CFF
+    fock_cff_ = ::mpqc::pbc::detail::symmetrize_matrix(fock_cff_unsymm);
     t1 = mpqc::fenced_now(world);
     auto t_fock = mpqc::duration_in_s(t0, t1);
 

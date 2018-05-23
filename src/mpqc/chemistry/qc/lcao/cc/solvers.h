@@ -1080,8 +1080,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // In subsequent macro iterations, this will start at 1
     micro_count_ = 0;
 
-    // Counts how many macro iterations in the calculation
-    macro_count_ = 1;
+
+    // Whether or not PNOs have been updated at least once
+    pnos_relaxed_ = false;
 
     // Set start_macro_ to false to begin with, even though this is technically the start of a macro iteration
     start_macro_ = false;
@@ -1243,13 +1244,24 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   /// Overrides DIISSolver::is_converged()
   bool is_converged(double target_precision, double error, double dE) const override {
-    // dE = E_22_ - E_21_: the difference in energy between the two most recent micro iterations
-    // DE = E_22_ - E_12_: the difference in energy between the current micro iteration and the last micro
+    // dE = std::abs(E_22_ - E_21_): the difference in energy between the two most recent micro iterations
+    // DE = std::abs(E_22_ - E_12_): the difference in energy between the current micro iteration and the last micro
     // iteration of the previuos macro iteration
-    const auto DE = dE + (E_21_ - E_12_);
-    double macro_target_precision = target_precision / 10.0;
-    double micro_target_precision = macro_target_precision / micro_ratio_; //!< Converge tighter w/in macro iteration
-    return (dE <= micro_target_precision && DE <= macro_target_precision && error <= target_precision);
+
+    const auto DE = std::abs(E_22_ - E_12_);
+    return (pnos_relaxed_ && dE < target_precision / 10.0 && DE < target_precision / 10.0);
+  }
+
+  bool is_converged_within_subspace(double dE) {
+    const auto DE = std::abs(E_22_ - E_12_);
+
+    // Check that dE satisfies the following requirement
+    bool energy_check = pnos_relaxed_ ? (dE < DE / micro_ratio_) : (dE < std::abs(E_22_) / 1.0e-04);
+
+    // Check that micro_count_ is greater than or equal to min_micro_
+    bool micro_check = micro_count_ >= min_micro_;
+
+    return (energy_check && micro_check);
   }
 
   /// Overrides DIISSolver::update_only() .
@@ -1297,19 +1309,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     double deltaE = std::abs(E_22_ - E_21_);  //!< Equivalent to dE in the definition of is_converged()
     auto DeltaE = std::abs(E_22_ - E_12_);    //!< Equivalent to DE in the definition of is_converged()
 
-    // During first macro iteration, use the value of micro_thresh provided in the input file
-    // During subsequent macro iterations, recompute micro_thresh
-    if (macro_count_ != 1) {
-      micro_thresh_ = DeltaE / energy_ratio_;
-    }
-
-    // Compare dE to micro_thresh to determine whether or not to update PNOs
-    if ((deltaE < micro_thresh_) && (iter_count_ > 0) && (micro_count_ >= min_micro_)) {
+    if (is_converged_within_subspace(deltaE)) {
       start_macro_ = true;
-
       E_11_ = E_21_;
       E_12_ = E_22_;
-
     }
 
     E_21_ = E1;
@@ -1319,7 +1322,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T r2_reblock = detail::reblock_t2(r2, reblock_i_, reblock_a_);
     T r1_reblock = detail::reblock_t1(r1, reblock_i_, reblock_a_);
 
-    // Create copy of pre-update T2 for use when not using Delta
+    // Create copy of pre-update T2 for recomputing PNOs without adding Delta
     T t2_old = t2;
     T t2_old_reblock = detail::reblock_t2(t2_old, reblock_i_, reblock_a_);
 
@@ -1348,6 +1351,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+      pnos_relaxed_ = true;
+
       // Copy PNOs to node that owns them
       transfer_pnos();
 
@@ -1355,8 +1360,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       if (print_npnos_) {
         print_npnos_per_pair();
       }
-
-
 
       // Transform t_old_reblock
       T T2 = detail::t2_project_pno(t2_old_reblock, pnos_);
@@ -1369,14 +1372,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       iter_count_ += 1;
       start_macro_ = false;  //!< set start_macro_ to false since next CCSD iter is in PNO subspace just entered
       micro_count_ = 1;
-      macro_count_ += 1;
     }
 
     else {
 
       // Print right before first micro iteration of the macro iteration is logged for
       // all macro iterations after the first one
-      if (macro_count_ > 1 && micro_count_ == 1) {
+      if (pnos_relaxed_ && micro_count_ == 1) {
 
         // Print average number of PNOs per pair
         print_ave_npnos_per_pair();
@@ -1657,7 +1659,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   int micro_count_;             //!< Keeps track of the number of micro iterations in the current macro iteration
   int min_micro_;               //!< The minimum number of micro iterations per macro iteration
-  int macro_count_;             //!< Keeps track of the total number of macro iterations
   bool print_npnos_;            //!< Whether or not nPNOs for each pair should be printed
 
   double energy_ratio_;         //!< The value DE is divided to update micro_thresh
@@ -1668,6 +1669,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   double E_22_;                 //!< The energy of the current micro iteration of the current macro iteration
 
   double micro_ratio_;
+
+  bool pnos_relaxed_;           //!< Whether or not PNOs have been updated at least once
 };  // class: PNO solver
 
 }  // namespace cc

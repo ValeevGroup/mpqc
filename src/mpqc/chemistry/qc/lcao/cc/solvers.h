@@ -1037,10 +1037,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | update_pno | bool | false | Whether or not to recompute the PNOs |
    * | solver_str | string | "pno" | The CCSD solver to use |
-   * | micro_thresh | double | 1e-6 | When dE falls below this threshold, recompute PNOs |
    * | min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
-   * | energy_ratio | double | 3.0 | The value used in computing new micro_thresh |
    * | micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
    */
   // clang-format on
@@ -1053,10 +1051,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tpno_(kv.value<double>("tpno", 1.e-7)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
         solver_str_(kv.value<std::string>("solver", "pno")),
-        micro_thresh_(kv.value<double>("micro_thresh", 1.e-6)),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        energy_ratio_(kv.value<double>("energy_ratio", 3.0)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
     // part of WorldObject initialization
     this->process_pending();
@@ -1272,24 +1268,24 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     T delta_t1_ai;
     T delta_t2_abij;
 
-   // Perform Jacobi update in full space when PNOs being recomputed
+    // Perform Jacobi update in full space when PNOs being recomputed
     if (((update_pno_ == true) && (start_macro_ == true)) || solver_str_ == "exact_pno") {
-     Vector ens_occ_act = F_occ_act_.diagonal();
-     Vector ens_uocc = F_uocc_.diagonal();
+      Vector ens_occ_act = F_occ_act_.diagonal();
+      Vector ens_uocc = F_uocc_.diagonal();
 
-     delta_t1_ai =
-         detail::jacobi_update_t1_ai(r1, ens_occ_act, ens_uocc);
-     delta_t2_abij =
-         detail::jacobi_update_t2_abij(r2, ens_occ_act, ens_uocc);
-   }
+      delta_t1_ai =
+        detail::jacobi_update_t1_ai(r1, ens_occ_act, ens_uocc);
+      delta_t2_abij =
+        detail::jacobi_update_t2_abij(r2, ens_occ_act, ens_uocc);
+    }
 
-   // Perform Jacobi update in PNO space on specified iterations
-   else {
-     delta_t1_ai =
-       detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
-     delta_t2_abij =
-       detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
-   }
+    // Perform Jacobi update in PNO space on specified iterations
+    else {
+      delta_t1_ai =
+        detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+      delta_t2_abij =
+        detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+    }
 
 
     // Reblock delta_t1_ai and delta_t2_abij to match original tiling
@@ -1304,17 +1300,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   void update(T& t1, T& t2, const T& r1, const T& r2, double E1) override {
 
+    // E_22_ set to current energy
     E_22_ = E1;
 
+    // Compute dE from the current energy and the previous micro iteration of the same macro iteration
     double deltaE = std::abs(E_22_ - E_21_);  //!< Equivalent to dE in the definition of is_converged()
-    auto DeltaE = std::abs(E_22_ - E_12_);    //!< Equivalent to DE in the definition of is_converged()
 
+    // Check to see if energy has converged within current subspace
     if (is_converged_within_subspace(deltaE)) {
-      start_macro_ = true;
-      E_11_ = E_21_;
-      E_12_ = E_22_;
+      start_macro_ = true;  //!< Time to recompute PNOs
+      E_11_ = E_21_;        //!< Current macro iter becomes previous macro iter
+      E_12_ = E_22_;        //!< Current macro iter becomes previuos macro iter
     }
 
+    // Redefine the energy of the previous micro iteration of the current macro iteration
     E_21_ = E1;
 
 
@@ -1332,7 +1331,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     update_only(t1, t2, r1_reblock, r2_reblock, E1);
 
 
-    // Recompute PNOs when start_macro == true
+    // Recompute PNOs when start_macro_ == true
     if (((update_pno_ == true) && (start_macro_ == true)) || solver_str_ == "exact_pno") {
 
       using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -1351,6 +1350,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+      // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;
 
       // Copy PNOs to node that owns them
@@ -1371,15 +1371,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       this->reset();
       iter_count_ += 1;
       start_macro_ = false;  //!< set start_macro_ to false since next CCSD iter is in PNO subspace just entered
-      micro_count_ = 1;
+      micro_count_ = 1;      //!< reset count of micro iterations in the new subspace
     }
 
     else {
-
       // Print right before first micro iteration of the macro iteration is logged for
       // all macro iterations after the first one
       if (pnos_relaxed_ && micro_count_ == 1) {
-
         // Print average number of PNOs per pair
         print_ave_npnos_per_pair();
 
@@ -1655,22 +1653,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<Vector> F_osv_diag_;
 
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
-  double micro_thresh_;         //!< Determines whether or not the energy has converged within a PNO subspace
+  bool pnos_relaxed_;           //!< Whether or not PNOs have been updated at least once
 
   int micro_count_;             //!< Keeps track of the number of micro iterations in the current macro iteration
   int min_micro_;               //!< The minimum number of micro iterations per macro iteration
   bool print_npnos_;            //!< Whether or not nPNOs for each pair should be printed
-
-  double energy_ratio_;         //!< The value DE is divided to update micro_thresh
 
   double E_11_;                 //!< The energy of the second to last micro iteration of the previous macro iteration
   double E_12_;                 //!< The energy of the last micro iteration of the previous macro iteration
   double E_21_;                 //!< The energy of the previous micro iteration of the current macro iteration
   double E_22_;                 //!< The energy of the current micro iteration of the current macro iteration
 
-  double micro_ratio_;
+  double micro_ratio_;          //!< For determining whether or not the energy has converged within a subspace
 
-  bool pnos_relaxed_;           //!< Whether or not PNOs have been updated at least once
+
 };  // class: PNO solver
 
 }  // namespace cc

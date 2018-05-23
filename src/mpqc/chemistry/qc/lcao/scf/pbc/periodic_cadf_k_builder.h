@@ -42,19 +42,20 @@ class PeriodicCADFKBuilder
    * \param force_shape_threshold threshold used to construct the shape of
    * F(Υ, μ, ν) using the shape of Q(Y, ρ, ν).
    */
-  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory,
-                       const double force_shape_threshold = 0.0)
-      : WorldObject_(world), ao_factory_(ao_factory) {
+  PeriodicCADFKBuilder(Factory &ao_factory)
+      : WorldObject_(ao_factory.world()), ao_factory_(ao_factory) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
+    target_precision_ = std::numeric_limits<double>::epsilon();
 
     print_detail_ = ao_factory_.print_detail();
     screen_threshold_ = ao_factory_.screen_threshold();
     density_threshold_ = ao_factory_.density_threshold();
-    force_shape_threshold_ = force_shape_threshold;
+    force_hermiticity_ = ao_factory_.force_hermiticity();
+    force_shape_threshold_ = ao_factory_.keyval()->template value<double>(
+        "force_shape_threshold", 0.0);
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
                   << std::endl;
-    target_precision_ = std::numeric_limits<double>::epsilon();
 
     // by-cluster orbital basis and df basis
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
@@ -157,6 +158,7 @@ class PeriodicCADFKBuilder
   double density_threshold_;
   double force_shape_threshold_;
   double target_precision_ = std::numeric_limits<double>::epsilon();
+  bool force_hermiticity_;
 
   int64_t R_size_;
   std::shared_ptr<Basis> basisR_;
@@ -312,7 +314,15 @@ class PeriodicCADFKBuilder
 
       // compute K(μ_0, ν_R) = F(Y, ρ_Rj, μ_0) Q(Y, ρ_Rj, ν_R)
       t0 = mpqc::fenced_now(world);
-      K = compute_contr_FQ(F, Q);
+      array_type K_unsymm;
+      K_unsymm = compute_contr_FQ(F, Q);
+      if (force_hermiticity_) {
+        // force hermiticity of exchange
+        K = pbc::detail::symmetrize_matrix(K_unsymm);
+      } else {
+        // leave exchange as non-hermitian (due to finite lattice range)
+        K = K_unsymm;
+      }
       t1 = mpqc::fenced_now(world);
       t_K = mpqc::duration_in_s(t0, t1);
     }

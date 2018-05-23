@@ -88,7 +88,7 @@ class PeriodicFourCenterFockBuilder
       std::string screen = "schwarz", double screen_threshold = 1.0e-20,
       double shell_pair_threshold = 1.0e-12,
       double density_threshold = Policy::shape_type::threshold(),
-      bool permut_symm_J = true, bool permut_symm_K = true)
+      bool force_hermiticity = true)
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -105,8 +105,7 @@ class PeriodicFourCenterFockBuilder
         RD_size_(RD_size),
         bra_basis_(bra_basis),
         ket_basis_(ket_basis),
-        permut_symm_J_(permut_symm_J),
-        permut_symm_K_(permut_symm_K) {
+        force_hermiticity_(force_hermiticity) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -117,13 +116,13 @@ class PeriodicFourCenterFockBuilder
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
     } else if (compute_J_) {
-      if (permut_symm_J_) {
+      if (force_hermiticity_) {
         init_J_aaaa();
       } else {
         init();
       }
     } else {
-      if (permut_symm_K_) {
+      if (force_hermiticity_) {
         init_K_aaaa();
       } else {
         init();
@@ -132,8 +131,7 @@ class PeriodicFourCenterFockBuilder
   }
 
   PeriodicFourCenterFockBuilder(Factory &ao_factory, bool compute_J,
-                                bool compute_K, bool permut_symm_J = true,
-                                bool permut_symm_K = true)
+                                bool compute_K)
       : WorldObject_(ao_factory.world()),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -150,8 +148,7 @@ class PeriodicFourCenterFockBuilder
         RD_size_(ao_factory.RD_size()),
         bra_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
         ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
-        permut_symm_J_(permut_symm_J),
-        permut_symm_K_(permut_symm_K) {
+        force_hermiticity_(ao_factory.force_hermiticity()){
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -162,13 +159,13 @@ class PeriodicFourCenterFockBuilder
     if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
     } else if (compute_J_) {
-      if (permut_symm_J_) {
+      if (force_hermiticity_) {
         init_J_aaaa();
       } else {
         init();
       }
     } else {
-      if (permut_symm_K_) {
+      if (force_hermiticity_) {
         init_K_aaaa();
       } else {
         init();
@@ -202,13 +199,13 @@ class PeriodicFourCenterFockBuilder
       }
     } else {
       if (compute_J_) {
-        if (permut_symm_J_) {
+        if (force_hermiticity_) {
           return compute_J_aaaa(D, target_precision);
         } else {
           return compute_JK_abcd(D, target_precision, is_density_diagonal);
         }
       } else {
-        if (permut_symm_K_) {
+        if (force_hermiticity_) {
           return compute_K_aaaa(D, target_precision, is_density_diagonal);
         } else {
           return compute_K_abcd(D, target_precision);
@@ -223,14 +220,11 @@ class PeriodicFourCenterFockBuilder
   }
 
   Vector3i fock_lattice_range() override {
-    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
+    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_) ||
+        (!force_hermiticity_)) {
       return R_max_;
     } else {
-      if (compute_J_ && !permut_symm_J_) {
-        return R_max_;
-      } else {
-        return RF_max_;
-      }
+      return RF_max_;
     }
   }
 
@@ -1547,8 +1541,7 @@ class PeriodicFourCenterFockBuilder
   const int64_t RD_size_;
   std::shared_ptr<const Basis> bra_basis_;
   std::shared_ptr<const Basis> ket_basis_;
-  const bool permut_symm_J_;
-  const bool permut_symm_K_;
+  const bool force_hermiticity_;
 
   // mutated by compute_ functions
   mutable std::shared_ptr<lcao::Screener> j_p_screener_;

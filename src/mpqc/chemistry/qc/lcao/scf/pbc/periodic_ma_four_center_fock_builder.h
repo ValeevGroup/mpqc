@@ -26,21 +26,13 @@ class PeriodicMAFourCenterFockBuilder
   using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
   using JK_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicMAFourCenterFockBuilder(factory_type &factory,
-                                  double ma_e_thresh = 1e-9, double ma_ws = 3.0,
-                                  double ma_extent_thresh = 1e-6,
-                                  double ma_extent_smallval = 0.01,
-                                  double ma_dipole_thresh = 1e-3,
-                                  bool permut_symm_J = true,
-                                  bool permut_symm_K = true)
+  PeriodicMAFourCenterFockBuilder(factory_type &factory)
       : ao_factory_(factory) {
     auto &world = ao_factory_.world();
 
     // Construct multipole approximation builder
     auto t0_ma_init = mpqc::fenced_now(world);
-    ma_builder_ = std::make_unique<MA_Builder>(
-        ao_factory_, ma_e_thresh, ma_ws, ma_extent_thresh, ma_extent_smallval,
-        ma_dipole_thresh);
+    ma_builder_ = std::make_unique<MA_Builder>(ao_factory_);
     auto t1_ma_init = mpqc::fenced_now(world);
     auto t_ma_init = mpqc::duration_in_s(t0_ma_init, t1_ma_init);
 
@@ -60,15 +52,13 @@ class PeriodicMAFourCenterFockBuilder
 
     // Construct exact periodic 4-center J builder
     auto t0_j_init = mpqc::fenced_now(world);
-    j_builder_ = std::make_unique<JK_Builder>(ao_factory_, true, false,
-                                              permut_symm_J, false);
+    j_builder_ = std::make_unique<JK_Builder>(ao_factory_, true, false);
     auto t1_j_init = mpqc::fenced_now(world);
     auto t_j_init = mpqc::duration_in_s(t0_j_init, t1_j_init);
 
     // Construct exact periodic 4-center K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ = std::make_unique<JK_Builder>(ao_factory_, false, true, false,
-                                              permut_symm_K);
+    k_builder_ = std::make_unique<JK_Builder>(ao_factory_, false, true);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

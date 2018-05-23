@@ -16,9 +16,7 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
   using J_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
   using K_Builder = PeriodicCADFKBuilder<Tile, Policy, Factory>;
 
-  PeriodicRIJCADFKFockBuilder(Factory &ao_factory,
-                              const double force_shape_threshold = 0.0)
-      : ao_factory_(ao_factory) {
+  PeriodicRIJCADFKFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic RI-J builder
@@ -29,8 +27,7 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 
     // Construct periodic CADF-K builder
     auto t0_k_init = mpqc::fenced_now(world);
-    k_builder_ =
-        std::make_unique<K_Builder>(world, ao_factory_, force_shape_threshold);
+    k_builder_ = std::make_unique<K_Builder>(ao_factory_);
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 

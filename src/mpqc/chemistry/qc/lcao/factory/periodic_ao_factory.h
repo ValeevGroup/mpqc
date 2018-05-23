@@ -113,7 +113,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
    */
   // clang-format on
   PeriodicAOFactory(const KeyVal &kv)
-      : PeriodicAOFactoryBase<Tile, Policy>(kv) {
+      : PeriodicAOFactoryBase<Tile, Policy>(kv), kv_(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -139,21 +139,14 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     engine_precision_ =
         kv.value<double>(prefix + "engine_precision", default_precision);
     detail::integral_engine_precision = engine_precision_;
-    ExEnv::out0() << indent << "Engine precision = " << engine_precision_
-                  << "\n";
 
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-20);
     shell_pair_threshold_ =
         kv.value<double>(prefix + "shell_pair_threshold", 1.0e-12);
-    ExEnv::out0() << indent << "Non-negligible shell-pair threshold = "
-                  << shell_pair_threshold_ << "\n";
-
     density_threshold_ = kv.value<double>(prefix + "density_threshold",
                                           Policy::shape_type::threshold());
-    ExEnv::out0() << indent
-                  << "Density sparse threshold = " << density_threshold_
-                  << "\n";
+    force_hermiticity_ = kv.value<bool>(prefix + "force_hermiticity", true);
 
     // This functor converts TensorD to TensorZ
     // Uncomment if \tparam Tile = TensorZ
@@ -340,6 +333,17 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
     libint2_oper_params_ = oper_params;
   }
 
+  /// @brief whether to force hermiticity of Fock matrix
+  bool force_hermiticity() { return force_hermiticity_; }
+
+  /// @return integral engine precision
+  double engine_precision() { return engine_precision_; }
+
+  /// @return the input keyval
+  std::shared_ptr<const KeyVal> keyval() {
+    return std::make_shared<const KeyVal>(kv_);
+  }
+
  private:
   /// compute integrals that has two dimensions for periodic systems
   TArray compute2(const Formula &formula);
@@ -446,6 +450,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   void renew_overlap_lattice_range();
 
  private:
+  const KeyVal kv_;
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
 
   Op op_;
@@ -470,6 +475,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   double screen_threshold_;
   double shell_pair_threshold_;
   double density_threshold_;
+  bool force_hermiticity_;
   std::vector<DirectTArray> gj_;
   std::vector<DirectTArray> gk_;
   std::vector<DirectTArray> g_3idx_;
@@ -1522,6 +1528,15 @@ std::ostream &operator<<(std::ostream &os,
      << "]" << std::endl;
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
+  os << "\tEngine precision = " << pao.engine_precision() << std::endl;
+  os << "\tNon-negligible shell-pair threshold = " << pao.shell_pair_threshold()
+     << std::endl;
+  os << "\tDensity threshold = " << pao.density_threshold() << std::endl;
+  os << "\tScreen threshold = " << pao.screen_threshold() << std::endl;
+
+  auto hermiticity = pao.force_hermiticity() ? "True" : "False";
+  os << "\tForce Fock hermiticity: " << hermiticity << std::endl;
+
   return os;
 }
 

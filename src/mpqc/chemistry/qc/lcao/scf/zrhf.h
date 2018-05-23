@@ -274,8 +274,6 @@ class DFzRHF : public zRHF<Tile, Policy> {
  private:
   /// initializes necessary arrays for DFzRHF Fock builder
   void init_fock_builder() override;
-  /// whether permutational symmetry in K is turned on
-  bool permut_symm_K_;
 };
 
 /*!
@@ -314,10 +312,6 @@ class FourCenterzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
-  /// whether permutational symmetry in J is turned on
-  bool permut_symm_J_;
-  /// whether permutational symmetry in K is turned on
-  bool permut_symm_K_;
 };
 
 /*!
@@ -363,7 +357,6 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
-  double force_shape_threshold_;
 };
 
 /*!
@@ -383,13 +376,6 @@ class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
-
-  double force_shape_threshold_;
-  double ma_energy_threshold_;
-  double ma_extent_threshold_;
-  double ma_extent_smallval_;
-  double ma_dipole_threshold_;
-  double ma_ws_;
 };
 
 /*!
@@ -436,9 +422,6 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
-  double force_shape_threshold_;
-  /// whether permutational symmetry in J is turned on
-  bool permut_symm_J_;
 };
 
 /*!
@@ -459,14 +442,6 @@ class MARIJFourCenterKzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
-
-  double ma_energy_threshold_;
-  double ma_extent_threshold_;
-  double ma_extent_smallval_;
-  double ma_dipole_threshold_;
-  double ma_ws_;
-  /// whether permutational symmetry in K is turned on
-  bool permut_symm_K_;
 };
 
 /*!
@@ -487,16 +462,6 @@ class MAFourCenterzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
-
-  double ma_energy_threshold_;
-  double ma_extent_threshold_;
-  double ma_extent_smallval_;
-  double ma_dipole_threshold_;
-  double ma_ws_;
-  /// whether permutational symmetry in J is turned on
-  bool permut_symm_J_;
-  /// whether permutational symmetry in K is turned on
-  bool permut_symm_K_;
 };
 
 /*!
@@ -517,15 +482,6 @@ class MAFourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
   void init_fock_builder() override;
   array_type build_F(const array_type& D, const array_type& H,
                      const Vector3i& H_lattice_range) override;
-
-  double force_shape_threshold_;
-  double ma_energy_threshold_;
-  double ma_extent_threshold_;
-  double ma_extent_smallval_;
-  double ma_dipole_threshold_;
-  double ma_ws_;
-  /// whether permutational symmetry in J is turned on
-  bool permut_symm_J_;
 };
 
 #if TA_DEFAULT_POLICY == 0

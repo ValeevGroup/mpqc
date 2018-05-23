@@ -127,7 +127,7 @@ template <typename Factory,
           libint2::Operator Oper = libint2::Operator::sphemultipole>
 class PeriodicMA {
  public:
-  using TArray = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
+  using TArray = typename Factory::TArray;
   using Shell = ::mpqc::lcao::gaussian::Shell;
   using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
@@ -145,15 +145,15 @@ class PeriodicMA {
    * @param e_thresh threshold of multipole expansion error
    * @param ws well-separateness criterion
    */
-  PeriodicMA(Factory &ao_factory, double e_thresh = 1.0e-9, double ws = 3.0,
-             double extent_thresh = 1.0e-6, double extent_smallval = 0.01,
-             double dipole_thresh = 1e-3)
-      : ao_factory_(ao_factory),
-        e_thresh_(e_thresh),
-        ws_(ws),
-        extent_thresh_(extent_thresh),
-        extent_smallval_(extent_smallval),
-        dipole_thresh_(dipole_thresh) {
+  PeriodicMA(Factory &ao_factory) : ao_factory_(ao_factory) {
+    auto kv = ao_factory_.keyval();
+
+    e_thresh_ = kv->template value<double>("ma_energy_threshold", 1e-9);
+    ws_ = kv->template value<double>("ma_well_separateness", 3.0);
+    extent_thresh_ = kv->template value<double>("ma_extent_threshold", 1e-6);
+    extent_smallval_ = kv->template value<double>("ma_extent_small_value", 0.01);
+    dipole_thresh_ = kv->template value<double>("ma_dipole_threshold", 1e-3);
+
     auto &world = ao_factory_.world();
     mpqc::time_point t0, t1;
 
@@ -166,6 +166,7 @@ class PeriodicMA {
     R_max_ = ao_factory_.R_max();
     RJ_max_ = ao_factory_.RJ_max();
     RD_max_ = ao_factory_.RD_max();
+    force_hermiticity_ = ao_factory_.force_hermiticity();
 
     // determine dimensionality of crystal
     dimensionality_ = 0;
@@ -251,16 +252,17 @@ class PeriodicMA {
 
  private:
   Factory &ao_factory_;
-  const double e_thresh_;  /// multipole approximation is considered converged
-                           /// when Coulomb contribution from a spherical shell
-                           /// of unit cells is below this value
-  const double ws_;        /// well-separateness criterion
-  const double extent_thresh_;  /// threshold used in computing extent of a pair
-                                /// of primitives
-  const double extent_smallval_;  /// a small value is used when the extent of a
-                                  /// pair of primitives is not computable
-  const double dipole_thresh_;    /// turn on dipole correction if dipole moment
-                                  /// is greater than this value
+  double e_thresh_;         /// multipole approximation is considered converged
+                            /// when Coulomb contribution from a spherical shell
+                            /// of unit cells is below this value
+  double ws_;               /// well-separateness criterion
+  double extent_thresh_;    /// threshold used in computing extent of a pair
+                            /// of primitives
+  double extent_smallval_;  /// a small value is used when the extent of a
+                            /// pair of primitives is not computable
+  double dipole_thresh_;    /// turn on dipole correction if dipole moment
+                            /// is greater than this value
+  bool force_hermiticity_;  /// force hermiticity of Fock contributed from CFF
 
   int dimensionality_;  /// dimensionality of crystal
 
@@ -400,8 +402,14 @@ class PeriodicMA {
         fock_cff_unsymm("mu, nu") += prefactor * sphemm_[op]("mu, nu");
       }
     }
-    // force hermiticity of Fock contributed from CFF
-    fock_cff_ = ::mpqc::pbc::detail::symmetrize_matrix(fock_cff_unsymm);
+
+    if (force_hermiticity_) {
+      // force hermiticity of Fock contributed from CFF
+      fock_cff_ = ::mpqc::pbc::detail::symmetrize_matrix(fock_cff_unsymm);
+    } else {
+      // leave Fock as non-hermitian (due to finite lattice range)
+      fock_cff_ = fock_cff_unsymm;
+    }
     t1 = mpqc::fenced_now(world);
     auto t_fock = mpqc::duration_in_s(t0, t1);
 

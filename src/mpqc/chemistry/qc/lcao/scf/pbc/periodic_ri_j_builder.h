@@ -33,6 +33,7 @@ class PeriodicRIJBuilder {
  private:
   Factory &ao_factory_;
   bool print_detail_;
+  bool force_hermiticity_;
   std::unique_ptr<PTC_Builder> three_center_builder_;
 
   array_type M_;         // charge matrix of product density <μ|ν>
@@ -55,6 +56,7 @@ class PeriodicRIJBuilder {
  private:
   void init() {
     print_detail_ = ao_factory_.print_detail();
+    force_hermiticity_ = ao_factory_.force_hermiticity();
     auto &world = ao_factory_.world();
 
     mpqc::time_point t0, t1;
@@ -160,7 +162,7 @@ class PeriodicRIJBuilder {
     }
 
     // Build DF Coulomb term J_μν
-    array_type J, J_part1, J_part2;
+    array_type J_unsymm, J, J_part1, J_part2;
     array_type VCD;  // just an intermediate
     VCD("X") = V_("X, Y") * CD_("Y");
 
@@ -191,7 +193,14 @@ class PeriodicRIJBuilder {
     }
 
     // Build J_μν
-    J("mu, nu") = J_part1("mu, nu") + J_part2("mu, nu");
+    J_unsymm("mu, nu") = J_part1("mu, nu") + J_part2("mu, nu");
+    if (force_hermiticity_) {
+      // force hermiticity of Coulomb matrix
+      J = pbc::detail::symmetrize_matrix(J_unsymm);
+    } else {
+      // leave Coulomb matrix as non-hermitian (due to finite lattice range)
+      J = J_unsymm;
+    }
 
     auto t1_j_builder = mpqc::fenced_now(world);
     auto t_tot = mpqc::duration_in_s(t0_j_builder, t1_j_builder);

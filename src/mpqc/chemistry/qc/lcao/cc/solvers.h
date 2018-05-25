@@ -1242,7 +1242,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   bool is_converged(double target_precision, double error, double dE) const override {
     // dE = std::abs(E_22_ - E_21_): the difference in energy between the two most recent micro iterations
     // DE = std::abs(E_22_ - E_12_): the difference in energy between the current micro iteration and the last micro
-    // iteration of the previuos macro iteration
+    // iteration of the previous macro iteration
 
     const auto DE = std::abs(E_22_ - E_12_);
     return (pnos_relaxed_ && dE < target_precision / 10.0 && DE < target_precision / 10.0);

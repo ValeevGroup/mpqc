@@ -1,0 +1,404 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 7efc976a823bb4fd01f4b5c39525ec9f9813f670
+
+  Machine:          Darwin-16.7.0-x86_64
+  User:             ChongPen@Chong-MacBook-Pro.local
+  Start Time:       Fri Nov  3 21:02:41 2017 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "attach_hydrogen": "false",
+        "charge": "0",
+        "n_cluster": "2"
+    },
+    "obs": {
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs"
+    },
+    "scf": {
+        "type": "Direct-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "EOM-EA-CCSD",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "occ_block_size": "4",
+        "unocc_block_size": "4"
+    },
+    "property": {
+        "type": "ExcitationEnergy",
+        "precision": "1e-9",
+        "n_roots": "2",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = cc-pVDZ
+( tiles = [ 0, 2 ), elements = [ 0, 24 ) )
+Min and Max block size: 5 19
+Average: 12
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization. 
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 107.909712786953
+
+Starting SCF:
+	Threshold: 1e-11
+	Maximum number of iterations: 30
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 0
+	Energy: -76.0092740896936
+	abs(Energy Change): 0.0345167139344511
+	(Gradient Norm)/n^2: 0.000518379497674496
+	Scf Time: 0.090420714
+		Density Time: 0.00710416
+		Fock Build Time: 0.079985566
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 1
+	Energy: -76.0252571502171
+	abs(Energy Change): 0.0159830605235243
+	(Gradient Norm)/n^2: 0.000127809067915766
+	Scf Time: 0.093743639
+		Density Time: 0.008767601
+		Fock Build Time: 0.078125722
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 2
+	Energy: -76.0263685637375
+	abs(Energy Change): 0.00111141352039112
+	(Gradient Norm)/n^2: 4.39677570435879e-05
+	Scf Time: 0.087820562
+		Density Time: 0.007077223
+		Fock Build Time: 0.076542932
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 3
+	Energy: -76.026531108618
+	abs(Energy Change): 0.000162544880552673
+	(Gradient Norm)/n^2: 1.03574034632619e-05
+	Scf Time: 0.103284501
+		Density Time: 0.007504233
+		Fock Build Time: 0.085121287
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 4
+	Energy: -76.0265454674463
+	abs(Energy Change): 1.43588282384144e-05
+	(Gradient Norm)/n^2: 1.42730929255303e-06
+	Scf Time: 0.090517422
+		Density Time: 0.007601229
+		Fock Build Time: 0.077567043
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 5
+	Energy: -76.0265458607141
+	abs(Energy Change): 3.93267853837642e-07
+	(Gradient Norm)/n^2: 2.12456360203436e-07
+	Scf Time: 0.117875867
+		Density Time: 0.007041847
+		Fock Build Time: 0.101470171
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 6
+	Energy: -76.0265458697009
+	abs(Energy Change): 8.98675978078245e-09
+	(Gradient Norm)/n^2: 4.00899775363315e-08
+	Scf Time: 0.101327454
+		Density Time: 0.010406801
+		Fock Build Time: 0.084266915
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 7
+	Energy: -76.0265458699537
+	abs(Energy Change): 2.52811105383444e-10
+	(Gradient Norm)/n^2: 4.26808220942899e-09
+	Scf Time: 0.095281153
+		Density Time: 0.006900644
+		Fock Build Time: 0.082973045
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 8
+	Energy: -76.0265458699565
+	abs(Energy Change): 2.81374923361e-12
+	(Gradient Norm)/n^2: 1.09785506601914e-09
+	Scf Time: 0.095927712
+		Density Time: 0.006916852
+		Fock Build Time: 0.084042507
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 9
+	Energy: -76.0265458699569
+	abs(Energy Change): 4.12114786740858e-13
+	(Gradient Norm)/n^2: 2.96145015900536e-10
+	Scf Time: 0.09488544
+		Density Time: 0.007990483
+		Fock Build Time: 0.081711817
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 10
+	Energy: -76.0265458699569
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 7.81172624341058e-11
+	Scf Time: 0.101831202
+		Density Time: 0.006622635
+		Fock Build Time: 0.090204611
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 11
+	Energy: -76.0265458699568
+	abs(Energy Change): 1.56319401867222e-13
+	(Gradient Norm)/n^2: 1.50241816227091e-11
+	Scf Time: 0.097765829
+		Density Time: 0.006695378
+		Fock Build Time: 0.086126188
+
+Integrals per node:
+  Integrals on node(0): 53237
+
+iteration: 12
+	Energy: -76.0265458699567
+	abs(Energy Change): 2.8421709430404e-14
+	(Gradient Norm)/n^2: 5.55748051012687e-12
+	Scf Time: 0.099036212
+		Density Time: 0.007211864
+		Fock Build Time: 0.087282371
+  Frozen Core: 2 electrons
+Occ Range
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+ActiveOcc Range
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Unocc Range
+( tiles = [ 0, 5 ), elements = [ 0, 19 ) )
+Min and Max block size: 3 4
+Average: 3
+
+Obs Range
+( tiles = [ 0, 6 ), elements = [ 0, 24 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Use Conventional CCSD Compute 
+    Waring! Transformation creates large intermediate:  ( a κ1 |G| κ2 κ3 ) Size: 0.00195693969726562 GB
+Integral Prepare Time: 0.738877713
+Start Iteration
+Max Iteration: 30
+Target precision: 1e-09
+AccurateTime: 0
+Verbose: 0
+Reduced ABCD Memory Approach: No
+iter 	     deltaE 	   residual 	          energy 	 total time/s 
+  1 	 2.07152e-01 	 1.76572e-05 	 -0.207152178690 	        0.2 
+  2 	 4.08336e-03 	 4.85613e-06 	 -0.211235533730 	        0.1 
+  3 	 3.13686e-04 	 1.23552e-06 	 -0.211549219822 	        0.1 
+  4 	 1.85626e-05 	 2.74080e-07 	 -0.211567782391 	        0.1 
+  5 	 8.12181e-07 	 6.56416e-08 	 -0.211568594572 	        0.1 
+  6 	 3.23821e-07 	 2.14404e-08 	 -0.211568270751 	        0.1 
+  7 	 4.45426e-09 	 6.73113e-09 	 -0.211568275205 	        0.1 
+  8 	 4.62148e-08 	 1.85955e-09 	 -0.211568228990 	        0.1 
+  9 	 1.15168e-08 	 3.80160e-10 	 -0.211568217474 	        0.1 
+ 10 	 2.04070e-09 	 9.14874e-11 	 -0.211568215433 	        0.1 
+ 11 	 7.04782e-11 	 2.09000e-11 	 -0.211568215362 	        0.1 
+CCSD Energy  -0.211568215362394
+CCSD Time in CCSD: 2.105856255 S
+  
+EOM-EA-CCSD Electron Affinity
+  Number of roots: 2
+  Max number of vector per root: 8
+  Threshold for norm of new vector: 1e-08
+  
+Initialize Guess Vector 
+  
+Initialize Intermediates 
+iter=   0 	 total time/s=        0.1 	 davidson time/s=        0.0
+root 	     deltaE 	      error 	          energy 
+   1 	 1.95804e-01 	 1.43635e-04 	  0.195804406257 
+   2 	 2.68674e-01 	 1.47596e-04 	  0.268674445312 
+
+iter=   1 	 total time/s=        0.1 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 2.69110e-02 	 2.96618e-05 	  0.168893424231 
+   2 	 2.60764e-02 	 3.23078e-05 	  0.242598028854 
+
+iter=   2 	 total time/s=        0.1 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 2.40125e-03 	 7.38108e-06 	  0.166492176539 
+   2 	 2.96942e-03 	 9.78235e-06 	  0.239628611316 
+
+iter=   3 	 total time/s=        0.2 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 4.77116e-05 	 1.50138e-06 	  0.166539888148 
+   2 	 8.14720e-05 	 2.11687e-06 	  0.239710083287 
+
+iter=   4 	 total time/s=        0.2 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 7.14204e-06 	 3.06355e-07 	  0.166532746111 
+   2 	 2.97905e-05 	 5.88955e-07 	  0.239739873747 
+
+iter=   5 	 total time/s=        0.3 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 6.51629e-07 	 8.76075e-08 	  0.166532094481 
+   2 	 4.99582e-06 	 1.49947e-07 	  0.239744869562 
+
+iter=   6 	 total time/s=        0.3 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 4.67442e-07 	 2.06891e-08 	  0.166531627039 
+   2 	 1.23442e-06 	 3.59764e-08 	  0.239746103980 
+
+iter=   7 	 total time/s=        0.3 	 davidson time/s=        0.3
+root 	     deltaE 	      error 	          energy 
+   1 	 9.70560e-08 	 5.57140e-09 	  0.166531724095 
+   2 	 4.35442e-08 	 8.08884e-09 	  0.239746147524 
+
+iter=   8 	 total time/s=        0.2 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 7.95080e-08 	 1.44847e-09 	  0.166531803603 
+   2 	 1.00819e-07 	 2.07999e-09 	  0.239746248344 
+
+iter=   9 	 total time/s=        0.2 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 1.67497e-08 	 2.99835e-10 	  0.166531820353 
+   2 	 6.89568e-08 	 5.07487e-10 	  0.239746317300 
+
+iter=  10 	 total time/s=        0.2 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 1.26477e-08 	 7.48715e-11 	  0.166531833001 
+   2 	 1.82730e-09 	 1.45009e-10 	  0.239746315473 
+
+iter=  11 	 total time/s=        0.2 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 4.24770e-09 	 2.32749e-11 	  0.166531828753 
+   2 	 3.02920e-09 	 3.39127e-11 	  0.239746318502 
+
+Gram Schmidt neglect 0th vector with norm: 3.7494553536104e-09
+iter=  12 	 total time/s=        0.3 	 davidson time/s=        0.2
+root 	     deltaE 	      error 	          energy 
+   1 	 1.62264e-09 	 5.99866e-12 	  0.166531830376 
+   2 	 1.05384e-09 	 1.16790e-11 	  0.239746317448 
+
+Gram Schmidt neglect 0th vector with norm: 5.0111899359992e-09
+Gram Schmidt neglect 1th vector with norm: 7.04280475914088e-09
+Gram Schmidt neglect 4th vector with norm: 4.16197610024783e-11
+Gram Schmidt neglect 5th vector with norm: 8.95636498197292e-09
+iter=  13 	 total time/s=        0.2 	 davidson time/s=        0.1
+root 	     deltaE 	      error 	          energy 
+   1 	 3.27793e-14 	 5.99806e-12 	  0.166531830376 
+   2 	 8.00018e-10 	 3.52534e-12 	  0.239746318248 
+
+
+Excitation Energy: ( Singlets )
+state 	         au 	         eV 	      cm^-1 
+    1 	 0.16653183 	    4.53156 	   36549.51 
+    2 	 0.23974632 	    6.52383 	   52618.23 
+
+EOM-EA-CCSD Total Time: 3.058851047 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "type": "Molecule",
+        "file_name": "h2o.xyz",
+        "attach_hydrogen": "false",
+        "charge": "0",
+        "n_cluster": "2"
+    },
+    "obs": {
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs"
+    },
+    "scf": {
+        "type": "Direct-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "EOM-EA-CCSD",
+        "wfn_world": "$:wfn_world",
+        "molecule": "$:molecule",
+        "ref": "$:scf",
+        "method": "standard",
+        "occ_block_size": "4",
+        "unocc_block_size": "4"
+    },
+    "property": {
+        "type": "ExcitationEnergy",
+        "precision": "1e-9",
+        "n_roots": "2",
+        "wfn": "$:wfn",
+        "value": {
+            "value": [
+                "0.1665318303757872",
+                "0.23974631824846598"
+            ]
+        }
+    }
+}
+

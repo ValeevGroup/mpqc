@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/ValeevGroup/mpqc4.svg?token=2pDpbi3swi4zsJxpapq7&branch=master)](https://travis-ci.com/ValeevGroup/mpqc4)
-
+[![codecov](https://codecov.io/gh/ValeevGroup/mpqc4/branch/master/graph/badge.svg?token=ErSgG98B8l)](https://codecov.io/gh/ValeevGroup/mpqc4)
 # Synopsis
 
 ![MPQC Logo](https://github.com/ValeevGroup/mpqc4/wiki/images/mpqc_logo_med.png)

@@ -26,19 +26,22 @@
 // linkage files to force linking in of ALL Wavefunction-based classes
 // see MPQC_FEATURE_DEFINITIONS variable in CMakeLists.txt
 #if MPQC_INCLUDES_lcao_cc
-#  include "mpqc/chemistry/qc/lcao/cc/linkage.h"
+#include "mpqc/chemistry/qc/lcao/cc/linkage.h"
 #endif  // MPQC_INCLUDES_lcao_cc
+#if MPQC_INCLUDES_lcao_ccsdt
+#include "mpqc/chemistry/qc/lcao/cc/ccsdt_linkage.h"
+#endif
 #if MPQC_INCLUDES_lcao_ci
-#  include "mpqc/chemistry/qc/lcao/ci/linkage.h"
+#include "mpqc/chemistry/qc/lcao/ci/linkage.h"
 #endif  // MPQC_INCLUDES_lcao_ci
 #if MPQC_INCLUDES_lcao_f12
-#  include "mpqc/chemistry/qc/lcao/f12/linkage.h"
+#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
 #endif  // MPQC_INCLUDES_lcao_cc
 #if MPQC_INCLUDES_lcao_mbpt
-#  include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
 #endif  // MPQC_INCLUDES_lcao_mbpt
 #if MPQC_INCLUDES_lcao_scf
-#  include "mpqc/chemistry/qc/lcao/scf/linkage.h"
+#include "mpqc/chemistry/qc/lcao/scf/linkage.h"
 #endif  // MPQC_INCLUDES_lcao_scf
 // N.B. main always looks for a Property
 #include "mpqc/chemistry/qc/properties/linkage.h"
@@ -126,7 +129,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto debugger_opt = options->retrieve("D");
     if (debugger_opt) {
       const auto debugger_json_str = *debugger_opt;
-      if (debugger_json_str.empty()) { // no JSON spec for Debugger given, use default ctor
+      if (debugger_json_str
+              .empty()) {  // no JSON spec for Debugger given, use default ctor
         debugger = std::make_shared<Debugger>();
       } else {  // JSON spec for Debugger given
         std::istringstream iss(debugger_json_str);

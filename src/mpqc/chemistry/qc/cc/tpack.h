@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/7/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_CC_TPACK_H_
+#define SRC_MPQC_CHEMISTRY_QC_CC_TPACK_H_
 
 #include <cmath>
 #include <utility>
@@ -54,6 +54,9 @@ inline auto dot_product(const TPack<T> &a, const TPack<T> &b) {
   typename TPack<T>::scalar_type result = 0;
   for(auto i=0; i!=a.size(); ++i) {
     result += dot_product(a[i], b[i]);
+    // it seems to have some random issue (hang queue error) when calling dot_product
+    // adding fence() seems to help prevent it
+    TA::get_default_world().gop.fence();
   }
   return result;
 }
@@ -80,4 +83,4 @@ inline void scale(TPack<T> &y, Scalar a) {
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_CC_TPACK_H_

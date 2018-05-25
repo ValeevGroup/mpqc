@@ -56,6 +56,8 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   int64_t RD_size = 1;
   auto screen = pao_factory.screen();
   auto screen_thresh = pao_factory.screen_threshold();
+  auto shell_pair_thresh = pao_factory.shell_pair_threshold();
+  auto density_thresh = pao_factory.density_threshold();
 
   // get orbital basis
   auto obs = pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
@@ -66,7 +68,8 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   // F += 2J - K
   auto four_center_fock_builder = std::make_unique<Builder>(
       world, obs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
-      RD_size, true, true, screen, screen_thresh);
+      RD_size, true, true, screen, screen_thresh, shell_pair_thresh,
+      density_thresh);
   auto G = four_center_fock_builder->operator()(
       D, std::numeric_limits<double>::epsilon(), true);
   F("mu, nu") += G("mu, nu");

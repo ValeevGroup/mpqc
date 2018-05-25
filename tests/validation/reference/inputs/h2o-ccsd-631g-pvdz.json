@@ -28,10 +28,11 @@
   "wfn":{
     "type": "CCSD",
     "wfn_world": "$:wfn_world",
+    "export_orbital" : true,
     "atoms" : "$:atoms",
     "ref": "$:scf",
     "method" : "df",
-    "reduced_abcd_memory" : "true",
+    "reduced_abcd_memory" : true,
     "occ_block_size" : 2,
     "unocc_block_size" : 2
   },

@@ -22,7 +22,7 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
     int64_t nocc, int64_t ncore, int64_t nclusters, double TcutC,
     std::string const &metric_decomp_type, double s_tolerance, bool localize,
-    std::string localization_method)
+    std::string localization_method, bool clustered_coeffs)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
@@ -30,6 +30,7 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
       localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
       metric_decomp_type_(metric_decomp_type),
+      clustered_coeffs_(clustered_coeffs),
       nocc_(nocc),
       ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());
@@ -40,9 +41,20 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
   } else if (metric_decomp_type_ == "conditioned") {
     M_inv_ = array_ops::conditioned_orthogonalizer(S_, s_tolerance);
   } else {
-    throw "Error did not recognize overlap decomposition in "
-              "EsolveDensityBuilder";
+    throw InputError(
+        "Error did not recognize overlap decomposition in "
+        "EsolveDensityBuilder",
+        __FILE__, __LINE__, "decompo_type", metric_decomp_type.c_str());
   }
+
+  if (clustered_coeffs_ && localization_method_ == "boys-foster(valence)") {
+    throw InputError(
+        "clustered_coeffs conflicts with localization_method: "
+        "boys-foster(valence)",
+        __FILE__, __LINE__, "clustered_coeffs",
+        clustered_coeffs_ ? "true" : "false");
+  }
+
   auto inv1 = mpqc::fenced_now(S_.world());
   inverse_time_ = mpqc::duration_in_s(inv0, inv1);
 }
@@ -91,25 +103,26 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   density_storages_.push_back(detail::array_storage(D));
 
   if (localize_) {
-    if ((localization_method_ == "rrqr") ||
-        (localization_method_ == "rrqr(valence)")) {
-      auto U = mpqc::scf::RRQRLocalization{}(
-          C_occ_ao, S_, (localization_method_ == "rrqr(valence)" ? ncore_ : 0));
-      C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
-    } else {
-      auto l0 = mpqc::fenced_now(world);
-      auto U = mpqc::scf::FosterBoysLocalization{}(
-          C_occ_ao, r_xyz_ints_,
-          (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
-      C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
-      auto l1 = mpqc::fenced_now(world);
+    auto l0 = mpqc::fenced_now(world);
+    auto U = ((localization_method_ == "rrqr") ||
+              (localization_method_ == "rrqr(valence)"))
+                 ? mpqc::scf::RRQRLocalization{}(
+                       C_occ_ao, S_,
+                       (localization_method_ == "rrqr(valence)" ? ncore_ : 0))
+                 : mpqc::scf::FosterBoysLocalization{}(
+                       C_occ_ao, r_xyz_ints_,
+                       (localization_method_ == "boys-foster(valence)" ? ncore_
+                                                                       : 0));
+    C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
+    auto l1 = mpqc::fenced_now(world);
 
-      auto obs_ntiles = C_occ_ao.trange().tiles_range().extent()[0];
+    auto obs_ntiles = C_occ_ao.trange().tiles_range().extent()[0];
+    if (clustered_coeffs_) {
       scf::clustered_coeffs(r_xyz_ints_, C_occ_ao, obs_ntiles);
-      auto c1 = mpqc::fenced_now(world);
-      localization_times_.push_back(mpqc::duration_in_s(l0, l1));
-      clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
     }
+    auto c1 = mpqc::fenced_now(world);
+    localization_times_.push_back(mpqc::duration_in_s(l0, l1));
+    clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
   }
 
 #if TA_DEFAULT_POLICY == 1

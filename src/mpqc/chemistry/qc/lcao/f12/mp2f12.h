@@ -126,11 +126,20 @@ class RIRMP2F12 : public RMP2F12<Tile> {
   ~RIRMP2F12() { }
 
  private:
+
+  /// override initialization, which uses DF
+  void init(double ref_precision) override ;
+  /// overide B intermediate
   TArray compute_B() override;
+  /// override V intermediate
   TArray compute_V() override;
+  /// override X intermediate
   TArray compute_X() override;
+  /// override C intermediate
   TArray compute_C() override;
+  /// override T computation
   std::tuple<TArray, TArray> compute_T() override;
+  /// override cabs singles
   double compute_cabs_singles() override;
 };
 

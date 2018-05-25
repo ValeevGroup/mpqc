@@ -8,23 +8,14 @@ namespace mpqc {
 namespace utility {
 
 TA::TiledRange1 compute_trange1(std::size_t range,
-                                             std::size_t block_size) {
+                                 std::size_t block_size) {
+
   std::vector<std::size_t> blocks;
   blocks.push_back(0);
   for (std::size_t i = block_size; i < range; i += block_size) {
     blocks.push_back(i);
   }
-
-  // if the boundary is less than 2/3 of the block size
-  // include it to previous block
-  if (3 * (range - blocks.back()) <= 2 * block_size && blocks.size() > 1) {
-    blocks.back() = range;
-  }
-  // if not, add a new block
-  else {
-    blocks.push_back(range);
-  }
-
+  blocks.push_back(range);
   return TA::TiledRange1(blocks.begin(), blocks.end());
 }
 

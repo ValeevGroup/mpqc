@@ -1,7 +1,7 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_CC_SOLVERS_H_
 #define SRC_MPQC_CHEMISTRY_QC_CC_SOLVERS_H_
 
-#include "diis.h"
+#include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/core/exception.h"
 
@@ -78,7 +78,7 @@ class DIISSolver : public Solver<T> {
    * |---------|------|--------|-------------|
    * | diis_start | int | 1 | The DIIS extrapolation will begin on the iteration given by this integer. |
    * | n_diis | int | 8 | This specifies maximum number of data sets to retain. |
-   * | diis_damp | double | 0.0 | This nonnegative floating point number is used to dampen the DIIS extrapolation. |
+   * | diis_damp | real | 0.0 | This nonnegative floating point number is used to dampen the DIIS extrapolation. |
    * | diis_ngroup | int | 1 | The number of iterations in a DIIS group. DIIS extrapolation is only used for the first \c diis_group_nstart of these iterations. If \c diis_ngroup is 1 and \c diis_group_nstart is greater than 0, then DIIS will be used on all iterations after and including the start iteration. |
    * | diis_group_nstart | int | 1 | The number of DIIS extrapolations to do at the beginning of an iteration group.  See the documentation for \c diis_ngroup . |
    */

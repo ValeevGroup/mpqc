@@ -5,8 +5,8 @@
 #ifndef MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 #define MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_DENSITYFITTING_CADF_COEFFS_H
 
-#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/molecule/lattice/util.h"
+#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/direct_task_integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h"
@@ -569,17 +569,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_array(
 
   using ::mpqc::detail::direct_3D_idx;
   using ::mpqc::detail::direct_ord_idx;
-  auto is_in_lattice_range = [](Vector3i const &in_idx, Vector3i const &range,
-                                Vector3i const &center) {
-    if (in_idx(0) <= center(0) + range(0) &&
-        in_idx(0) >= center(0) - range(0) &&
-        in_idx(1) <= center(1) + range(1) &&
-        in_idx(1) >= center(1) - range(1) &&
-        in_idx(2) <= center(2) + range(2) && in_idx(2) >= center(2) - range(2))
-      return true;
-    else
-      return false;
-  };
+  using ::mpqc::detail::is_in_lattice_range;
 
   for (auto i = 0ul; i < natoms0; ++i) {
     const auto uc0_ord = i / natoms_per_uc;

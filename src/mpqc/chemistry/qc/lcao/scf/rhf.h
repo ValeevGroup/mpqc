@@ -37,13 +37,14 @@ class RHF
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | max_iter | int | 30 | maximum number of iteration |
-   * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |
-   * | localize | bool | false | if localize in DensityBuilder |
-   * | localization_method | string | boys-foster | localization method; valid choices are "boys-foster" (localize all occupied orbitals; this is the default), "boys-foster(valence)" (do not localize the core), "rrqr" (use Rank Revealing QR), "rrqr(valence)"|
-   * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
-   * | decompo_type | string | conditioned | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
-   * | s_tolerance | double | 1.0e8 | S condition number threshold in DensityBuilder, valid when decompo_type is set to conditioned |
+   * | @c max_iter | int | 30 | maximum number of iterations |
+   * | @c density_builder | string | "eigen_solve" | type of DensityBuilder, valid values are "eigen_solve" (use ESolveDensityBuilder) and "purification" (use PurificationDensityBuilder) |
+   * | @c localize | bool | false | if true, will localize occupied orbitals in DensityBuilder |
+   * | @c localization_method | string | "boys-foster" | localization method; valid choices are "boys-foster" (localize all occupied orbitals), "boys-foster(valence)" (same as "boys-foster" but do not localize the core), "rrqr" (localize all occupied orbitals by Rank Revealing QR), "rrqr(valence)" (same as "rrqr" but do not localize the core). |
+   * | @c clustered_coeffs | bool | false | if true, will recluster coeffs in DensityBuilder; will error if true and @c localization_method is "boys-foster(valence)" or "rrqr(valence)" |
+   * | @c t_cut_c | real | 0.0 | threshold in DensityBuilder, SparsePolicy only |
+   * | @c decompo_type | string | "conditioned" | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
+   * | @c s_tolerance | real | 1e8 | S condition number threshold in DensityBuilder, valid when @c decompo_type is set to conditioned |
    *
    */
   // clang-format on
@@ -103,6 +104,7 @@ class RHF
   std::string density_builder_str_;
   bool localize_;
   std::string localization_method_;
+  bool clustered_coeffs_;
   double t_cut_c_;
 
  private:

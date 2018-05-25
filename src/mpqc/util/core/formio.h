@@ -28,55 +28,66 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_CORE_FORMIO_H_
 #define MPQC4_SRC_MPQC_UTIL_CORE_FORMIO_H_
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 namespace mpqc {
 
 /** This utility class is used to print only on node 0 and to
     provide attractive indentation of output. */
 class FormIO {
-  private:
-    static char *default_basename_;
-    static int  ready_;
-    static int  xalloc_inited_;
-    static long nindent_;
-    static long indent_size_;
-    static long skip_indent_;
-    static long verbose_;
-    static long initialized_;
-    static int node_to_print_;
-    static int debug_;
-    static int parallel_;
-    static int me_;
-    static void init();
-  public:
-    static std::ios& indent(std::ios&o);
-    static std::ios& decindent(std::ios&o);
-    static std::ios& incindent(std::ios&o);
-    static std::ios& skipnextindent(std::ios&o);
+ private:
+  static char* default_basename_;
+  static char* default_work_dir_;
+  static int ready_;
+  static int xalloc_inited_;
+  static long nindent_;
+  static long indent_size_;
+  static long skip_indent_;
+  static long verbose_;
+  static long initialized_;
+  static int node_to_print_;
+  static int debug_;
+  static int parallel_;
+  static int me_;
+  static void init();
 
-    static void setverbose(std::ios&o, long v);
-    static long getverbose(std::ios&o);
-    static void setindent(std::ios&o, long column);
-    static long getindent(std::ios&o);
-    static int  set_printnode(int);
-    static int  get_printnode() { return node_to_print_; }
-    static void set_debug(int);
-    static int  get_debug() { return debug_; }
-    static void init_mp(int me);
-    static int  get_node() { return me_; }
+ public:
+  static std::ios& indent(std::ios& o);
+  static std::ios& decindent(std::ios& o);
+  static std::ios& incindent(std::ios& o);
+  static std::ios& skipnextindent(std::ios& o);
 
-    static void set_default_basename(const char *);
-    static const char *default_basename();
-    static char *fileext_to_filename(const char *extension);
-    static std::string fileext_to_filename_string(const char *extension);
+  static void setverbose(std::ios& o, long v);
+  static long getverbose(std::ios& o);
+  static void setindent(std::ios& o, long column);
+  static long getindent(std::ios& o);
+  static int set_printnode(int);
+  static int get_printnode() { return node_to_print_; }
+  static void set_debug(int);
+  static int get_debug() { return debug_; }
+  static void init_mp(int me);
+  static int get_node() { return me_; }
+  /// set the default base name for temporary files
+  static void set_default_basename(const char*);
+  /// @return the default base name for temporary files
+  static const char* default_basename();
+  /// set the default work directory for POSIX I/O of large files.
+  static void set_default_work_dir(const char*);
+  /// @return the default work directory for POSIX I/O of large files
+  static const char* default_work_dir();
+  /// @return the new file name with extension
+  static char* fileext_to_filename(const char* extension);
+  /// @return the new file name with extension in std::string
+  static std::string fileext_to_filename_string(const char* extension);
+  /// @return the new whole path file name with extension in std::string
+  static std::string fileext_to_fullpathname_string(const char* extension);
 
-    static void init_ostream(std::ostream &);
+  static void init_ostream(std::ostream&);
 
-    static std::ostream& license(std::ostream&);
-    static std::ostream& warranty(std::ostream&);
-    static std::ostream& copyright(std::ostream&);
+  static std::ostream& license(std::ostream&);
+  static std::ostream& warranty(std::ostream&);
+  static std::ostream& copyright(std::ostream&);
 };
 
 std::ios& indent(std::ios&);
@@ -100,16 +111,16 @@ std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>&, const mpqcprintf
   */
 template <typename Char = char>
 class mpqcprintf {
-  private:
-    Char str_[1024];
+ private:
+  Char str_[1024];
 
-  public:
-   mpqcprintf(const Char* fmt, ...);
-   const Char* str() const { return str_; }
+ public:
+  mpqcprintf(const Char* fmt, ...);
+  const Char* str() const { return str_; }
 };
 
-template <typename Char, typename ... Args>
-mpqcprintf<Char> printf(const Char* fmt, Args&& ... args) {
+template <typename Char, typename... Args>
+mpqcprintf<Char> printf(const Char* fmt, Args&&... args) {
   return mpqcprintf<Char>(fmt, args...);
 }
 

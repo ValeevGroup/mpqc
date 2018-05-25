@@ -10,6 +10,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
@@ -115,7 +116,8 @@ class ExactKDiagonalBuilder
     num_ints_computed_ = 0;
 
     // make shell block norm of D
-    auto shblk_norm_D = compute_shellblock_norm(basis, D);
+    using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
+    auto shblk_norm_D = compute_shellblock_norm(basis, basis, D);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
     // Define this so I don't have to keep removing them.
@@ -436,6 +438,7 @@ class ExactKDiagonalBuilder
       const auto nshells3 = cluster3.size();
 
       // compute offset list of cluster1 and cluster3
+      using ::mpqc::lcao::gaussian::detail::compute_func_offset_list;
       auto offset_list_c1 = compute_func_offset_list(cluster1, rng1.first);
       auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
 
@@ -481,10 +484,8 @@ class ExactKDiagonalBuilder
                 sh0 * nshells2 + sh2;  // index of {sh0, sh2} in norm_D02
             const auto sh12 =
                 sh1 * nshells2 + sh2;  // index of {sh1, sh2} in norm_D12
-            const auto Dnorm12 =
-                (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
-            const auto Dnorm02 =
-                (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
+            const auto Dnorm12 = (tile0 == tile3) ? norm_D12_ptr[sh12] : 0.0;
+            const auto Dnorm02 = (tile1 == tile3) ? norm_D02_ptr[sh02] : 0.0;
             const auto Dnorm012 = std::max({Dnorm02, Dnorm12});
 
             for (const auto& sh3 : ket_shellpair_list[sh2]) {
@@ -501,10 +502,8 @@ class ExactKDiagonalBuilder
                   sh0 * nshells3 + sh3;  // index of {sh0, sh3} in norm_D03
               const auto sh13 =
                   sh1 * nshells3 + sh3;  // index of {sh1, sh3} in norm_D13
-              const auto Dnorm03 =
-                  (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
-              const auto Dnorm13 =
-                  (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
+              const auto Dnorm03 = (tile1 == tile2) ? norm_D03_ptr[sh03] : 0.0;
+              const auto Dnorm13 = (tile0 == tile2) ? norm_D13_ptr[sh13] : 0.0;
               const auto Dnorm0123 = std::max({Dnorm03, Dnorm13, Dnorm012});
 
               if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
@@ -598,86 +597,6 @@ class ExactKDiagonalBuilder
     ExactKDiagonalBuilder_::accumulate_task(F13, tile_idx[1], tile_idx[3]);
   }
 
-  // TODO compute norms in a parallel fashion
-  /*!
-   * \brief This computes shell-block norm of density matrix \c D
-   * \param bs Basis
-   * \param D density matrix
-   * \return
-   */
-  array_type compute_shellblock_norm(const Basis& bs, const array_type& D) {
-    auto& world = this->get_world();
-    // make trange1
-    const auto& shells_Vec = bs.cluster_shells();
-    auto blocking = std::vector<int64_t>{0};
-    for (const auto& shells : shells_Vec) {
-      const auto nshell = shells.size();
-      auto next = blocking.back() + nshell;
-      blocking.emplace_back(next);
-    }
-    auto trange1 = TA::TiledRange1(blocking.begin(), blocking.end());
-
-    auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
-    // compute shell block norms
-    const auto shells = bs.flattened_shells();
-    const auto nshell = shells.size();
-    RowMatrixXd norm_D(nshell, nshell);
-    for (auto sh1 = 0, sh1_first = 0; sh1 != nshell; ++sh1) {
-      const auto sh1_size = shells[sh1].size();
-      for (auto sh2 = 0, sh2_first = 0; sh2 != nshell; ++sh2) {
-        const auto sh2_size = shells[sh2].size();
-
-        norm_D(sh1, sh2) = eig_D.block(sh1_first, sh2_first, sh1_size, sh2_size)
-                               .template lpNorm<Eigen::Infinity>();
-
-        sh2_first += sh2_size;
-      }
-
-      sh1_first += sh1_size;
-    }
-
-    return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, trange1,
-                                                   trange1);
-  }
-
-  /*!
-   * \brief This computes shell block norm of a density tile
-   * \param arg_tile_ptr a const pointer to data of the tile
-   * \param cluster0 a shell cluster (a.k.a. std::vector<Shell>)
-   * \param cluster1 a shell cluster (a.k.a. std::vector<Shell>)
-   * \param nf0 number of functions in \c cluster0
-   * \param nf1 number of functions in \c cluster1
-   * \return a tile filled with shell block norms
-   */
-  Tile compute_shellblock_norm_of_tile(const_data_ptr arg_tile_ptr,
-                                       const ShellVec& cluster0,
-                                       const ShellVec& cluster1,
-                                       const size_t nf0, const size_t nf1) {
-    // # of shells in this shell cluster
-    const auto nsh0 = cluster0.size();
-    const auto nsh1 = cluster1.size();
-
-    auto range01 = TA::Range({nsh0, nsh1});
-    auto shblk_norm = Tile(std::move(range01), 0.0);
-    auto* shblk_norm_ptr = shblk_norm.data();
-
-    const auto arg_tile_eig =
-        Eigen::Map<const RowMatrixXd>(arg_tile_ptr, nf0, nf1);
-
-    for (auto s0 = 0, s0_first = 0, s01 = 0; s0 != nsh0; ++s0) {
-      const auto s0_size = cluster0[s0].size();
-      for (auto s1 = 0, s1_first = 0; s1 != nsh1; ++s1, ++s01) {
-        const auto s1_size = cluster1[s1].size();
-        shblk_norm_ptr[s01] =
-            arg_tile_eig.block(s0_first, s1_first, s0_size, s1_size)
-                .template lpNorm<Eigen::Infinity>();
-        s1_first += s1_size;
-      }
-      s0_first += s0_size;
-    }
-    return shblk_norm;
-  }
-
   /*!
    * \brief This computes non-negligible shell pair list; ; shells \c i and \c j
    * form a non-negligible pair if they share a center or the Frobenius norm of
@@ -751,35 +670,6 @@ class ExactKDiagonalBuilder
     for (auto s1 = 0l; s1 != nsh1; ++s1) {
       auto& list = result[s1];
       std::sort(list.begin(), list.end());
-    }
-
-    return result;
-  }
-
-  /*!
-   * \brief This computes basis function offsets for every shell in a cluster
-   * \param cluster a cluster (a.k.a. std::vector<Shell>)
-   * \param bf_first basis function index of the first function in this \c
-   * cluster
-   *
-   * \return a list of <key, mapped value> pairs with
-   * key: shell index
-   * mapped value: {cluster function offset, basis function offset} tuple
-   */
-  func_offset_list compute_func_offset_list(const ShellVec& cluster,
-                                            const size_t bf_first) {
-    func_offset_list result;
-
-    auto cf_offset = 0;
-    auto bf_offset = bf_first;
-
-    const auto nshell = cluster.size();
-    for (auto s = 0; s != nshell; ++s) {
-      const auto& shell = cluster[s];
-      const auto nf = shell.size();
-      result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
-      bf_offset += nf;
-      cf_offset += nf;
     }
 
     return result;

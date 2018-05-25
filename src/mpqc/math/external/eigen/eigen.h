@@ -16,6 +16,9 @@ using RowMatrixXd = RowMatrix<double>;
 template <typename T>
 using EigenVector = ::Eigen::Matrix<T, ::Eigen::Dynamic, 1>;
 
+template <typename T>
+using RowEigenVector = ::Eigen::Matrix<T, 1, ::Eigen::Dynamic>;
+
 using MatrixZ = Eigen::Matrix<std::complex<double>, Eigen::Dynamic,
                               Eigen::Dynamic, Eigen::RowMajor>;
 using VectorZ = EigenVector<std::complex<double>>;

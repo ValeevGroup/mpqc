@@ -259,7 +259,7 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
       ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
   auto orbital_energy =
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(), true); // use df by default
 
   auto SE = orbital_energy->operator()(orbital);
 
@@ -377,7 +377,7 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
       ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
   auto orbital_energy =
-      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory(), true); // use df by default
 
   auto SE = orbital_energy->operator()(orbital);
 

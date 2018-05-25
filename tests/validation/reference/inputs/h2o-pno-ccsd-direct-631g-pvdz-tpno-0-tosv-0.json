@@ -38,7 +38,7 @@
     "ref": "$:scf",
     "method" : "direct_df",
     "solver" : "pno",
-    "pno_canonical" : "true",
+    "pno_canonical" : true,
     "tpno" : "0",
     "tosv" : "0",
     "tiling_method" : "flexible",

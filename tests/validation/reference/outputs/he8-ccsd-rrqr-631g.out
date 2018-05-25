@@ -1,0 +1,226 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 80969b4eef286dd9e4e45ff9df914ed9ca48ac27
+
+  Machine:          Darwin-16.7.0-x86_64
+  User:             nakul@nakuls-Mac.local
+  Start Time:       Mon Feb 19 03:18:51 2018 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "file_name": "he8.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs"
+    },
+    "scf": {
+        "type": "RI-RHF",
+        "localize": "true",
+        "localization_method": "rrqr",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSD",
+        "molecule": "$:molecule",
+        "wfn_world": "$:wfn_world",
+        "ref": "$:scf",
+        "occ_block_size": "4",
+        "unocc_block_size": "8"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry:
+OBS Basis = 6-31G
+( tiles = [ 0, 1 ), elements = [ 0, 16 ) )
+Min and Max block size: 16 16
+Average: 16
+
+DF Basis = cc-pVDZ
+( tiles = [ 0, 1 ), elements = [ 0, 40 ) )
+Min and Max block size: 40 40
+Average: 40
+
+
+Constructing AOFactory:
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory:
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization.
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 4.58212798873395
+
+Starting SCF:
+	Threshold: 1e-11
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -22.9419744873563
+	abs(Energy Change): 0.21168566704867
+	(Gradient Norm)/n^2: 0.000268834398838627
+	Scf Time: 0.008493948
+		Density Time: 0.004933892
+		Fock Build Time: 0.00231692
+		DF Fock builder:
+			W time: 0.000704546
+			J time: 0.000539972
+			K time: 0.000587626
+			Total exchange time: 0.001292172
+iteration: 1
+	Energy: -22.9458708288605
+	abs(Energy Change): 0.00389634150418772
+	(Gradient Norm)/n^2: 3.90591917734349e-05
+	Scf Time: 0.008762508
+		Density Time: 0.004781753
+		Fock Build Time: 0.002077157
+		DF Fock builder:
+			W time: 0.00056871
+			J time: 0.000495202
+			K time: 0.000586202
+			Total exchange time: 0.001154912
+iteration: 2
+	Energy: -22.9459549966984
+	abs(Energy Change): 8.41678379046584e-05
+	(Gradient Norm)/n^2: 7.21083438763595e-08
+	Scf Time: 0.008958578
+		Density Time: 0.004828446
+		Fock Build Time: 0.001980394
+		DF Fock builder:
+			W time: 0.000506629
+			J time: 0.000468645
+			K time: 0.000601354
+			Total exchange time: 0.001107983
+iteration: 3
+	Energy: -22.9459549969714
+	abs(Energy Change): 2.7299051907903e-10
+	(Gradient Norm)/n^2: 3.4484864465927e-09
+	Scf Time: 0.008957582
+		Density Time: 0.004544097
+		Fock Build Time: 0.002050883
+		DF Fock builder:
+			W time: 0.000523994
+			J time: 0.000506755
+			K time: 0.000599756
+			Total exchange time: 0.00112375
+iteration: 4
+	Energy: -22.945954996972
+	abs(Energy Change): 6.3948846218409e-13
+	(Gradient Norm)/n^2: 3.55276544087834e-10
+	Scf Time: 0.010094268
+		Density Time: 0.005215334
+		Fock Build Time: 0.002075614
+		DF Fock builder:
+			W time: 0.000577374
+			J time: 0.000463791
+			K time: 0.000627044
+			Total exchange time: 0.001204418
+iteration: 5
+	Energy: -22.945954996972
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 1.36381766072537e-12
+	Scf Time: 0.010120559
+		Density Time: 0.004997612
+		Fock Build Time: 0.002266036
+		DF Fock builder:
+			W time: 0.000602158
+			J time: 0.000606014
+			K time: 0.000574095
+			Total exchange time: 0.001176253
+  Frozen Core: 0 electrons
+Use DF CCSD Compute
+Integral Prepare Time: 0.018846059
+Start Iteration
+Max Iteration: 30
+Target Precision: 1e-09
+AccurateTime: 0
+PrintDetail: 0
+Reduced ABCD Memory Approach: Yes
+  iter 	     deltaE 	   residual 	          energy 	 total time/s
+    1 	 6.26424e-02 	 3.11031e-05 	 -0.062642410160 	        0.0
+    2 	 5.05841e-03 	 8.02903e-07 	 -0.067700824755 	        0.0
+    3 	 8.74898e-06 	 2.94973e-08 	 -0.067709573732 	        0.0
+    4 	 4.68805e-08 	 4.80055e-09 	 -0.067709526852 	        0.0
+    5 	 1.78720e-09 	 5.60889e-10 	 -0.067709528639 	        0.0
+    6 	 7.69682e-11 	 1.37273e-10 	 -0.067709528716 	        0.0
+CCSD Energy  -0.0677095287161327
+CCSD Time in CCSD: 0.219679971 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "file_name": "he8.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "wfn_world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs"
+    },
+    "scf": {
+        "type": "RI-RHF",
+        "localize": "true",
+        "localization_method": "rrqr",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn": {
+        "type": "CCSD",
+        "molecule": "$:molecule",
+        "wfn_world": "$:wfn_world",
+        "ref": "$:scf",
+        "occ_block_size": "4",
+        "unocc_block_size": "8"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "value": {
+            "value": "-23.013664525688139"
+        }
+    }
+}
+

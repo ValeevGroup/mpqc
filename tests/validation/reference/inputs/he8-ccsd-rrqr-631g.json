@@ -1,20 +1,17 @@
 {
   "units": "2010CODATA",
   "molecule": {
-    "type": "Molecule",
-    "file_name": "h2o.xyz",
+    "file_name": "he8.xyz",
     "sort_input": true,
     "charge": 0,
     "n_cluster": 1,
     "reblock" : 4
   },
   "obs": {
-    "type": "Basis",
     "name": "6-31G",
     "molecule": "$:molecule"
   },
   "dfbs": {
-    "type": "Basis",
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
@@ -22,32 +19,24 @@
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
-    "df_basis" :"$:dfbs",
-    "screen": "schwarz"
+    "df_basis" :"$:dfbs"
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:wfn_world",
-    "localize" : true,
-    "localization_method" : "boys-foster(valence)"
+    "localize": true,
+    "localization_method":"rrqr",
+    "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "CCSD",
-    "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world",
     "ref": "$:scf",
-    "method" : "direct_df",
-    "solver" : "pno",
-    "pno_canonical" : true,
-    "tpno" : "1.0e-07",
-    "tosv" : "1.0e-09",
-    "tiling_method" : "flexible",
     "occ_block_size" : 4,
-    "unocc_block_size" : 4
+    "unocc_block_size" : 8
   },
   "property" : {
     "type" : "Energy",
-    "precision" : "1e-11",
     "wfn" : "$:wfn"
   }
 }

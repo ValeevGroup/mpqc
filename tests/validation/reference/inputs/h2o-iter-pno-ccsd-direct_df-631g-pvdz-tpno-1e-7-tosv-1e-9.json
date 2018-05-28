@@ -33,7 +33,6 @@
     "type": "CCSD",
     "min_iter": 1,
     "max_iter": 45,
-    "min_micro": 1,
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
@@ -43,9 +42,6 @@
     "tpno" : 1.0e-07,
     "tosv" : 1.0e-09,
     "update_pno": true,
-    "micro_thresh" : 1.0e-04,
-    "macro_thresh" : 0,
-    "use_delta": false,
     "print_npnos": false,
     "occ_block_size" : 4,
     "unocc_block_size" : 8

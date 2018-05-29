@@ -99,8 +99,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     }
 
     solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
-    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno" &&
-        solver_str_ != "svo")
+    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno")
       throw InputError("invalid value for solver keyword", __FILE__, __LINE__,
                        "solver");
 

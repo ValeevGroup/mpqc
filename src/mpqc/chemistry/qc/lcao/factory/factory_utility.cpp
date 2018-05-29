@@ -28,8 +28,8 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
     case Operator::Type::Nuclear: {
       result = libint2::Operator::nuclear;
     } break;
-    case Operator::Type::SpheMultipole: {
-      result = libint2::Operator ::sphemultipole;
+    case Operator::Type::SphericalMultipole: {
+      result = libint2::Operator::sphemultipole;
     } break;
     case Operator::Type::Coulomb: {
       result = libint2::Operator::coulomb;

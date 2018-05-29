@@ -481,7 +481,7 @@ class PeriodicAOFactory : public PeriodicAOFactoryBase<Tile, Policy> {
   std::vector<DirectTArray> g_3idx_;
   shellpair_list_t sig_shellpair_list_;
 
-  libint2::any libint2_oper_params_ = libint2::any();
+  libint2::any libint2_oper_params_;
 };
 
 template <typename Tile, typename Policy>
@@ -550,7 +550,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 
   std::array<TArray, libint2::operator_traits<libint2_oper>::nopers> result;
   if (formula.rank() == 2) {
-    if (mpqc_oper == Operator::Type::SpheMultipole) {
+    if (mpqc_oper == Operator::Type::SphericalMultipole) {
       auto bra_index = formula.bra_indices()[0];
       auto ket_index = formula.ket_indices()[0];
       auto bra_basis = this->basis_registry()->retrieve(bra_index);

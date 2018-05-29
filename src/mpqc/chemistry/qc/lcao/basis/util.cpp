@@ -17,7 +17,7 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
       shell.move(new_origin);
       shells.push_back(shell);
     }
-    vec_of_shells.push_back(shells);
+    vec_of_shells.push_back(std::move(shells));
   }
   Basis result(vec_of_shells);
   auto result_ptr = std::make_shared<Basis>(result);
@@ -49,7 +49,7 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
         shell.move(new_origin);
         shells.push_back(shell);
       }
-      vec_of_shells.push_back(shells);
+      vec_of_shells.push_back(std::move(shells));
     }
   }
 
@@ -81,7 +81,7 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
         shell.move(new_origin);
         shells.push_back(shell);
       }
-      vec_of_shells.push_back(shells);
+      vec_of_shells.push_back(std::move(shells));
     }
   }
 

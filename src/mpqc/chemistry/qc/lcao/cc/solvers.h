@@ -1429,7 +1429,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
       // We only compute the max principal angle between PNO subspaces when nproc = 1
-      if (K_reblock_.world().size() == 1) {
+      if (this->get_world().size() == 1) {
         old_pnos_ = pnos_;
       }
 
@@ -1473,7 +1473,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         print_ave_npnos_per_pair();
 
         // Compute max principal angle between PNO subspaces when nproc = 1
-        if (K_reblock_.world().size() == 1) {
+        if (this->get_world()().size() == 1) {
           compute_max_principal_angle();
         }
 
@@ -1531,7 +1531,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
     }
 
-    K_reblock_.world().gop.fence();
+    this->get_world().gop.fence();
   }
 
   /**
@@ -1555,10 +1555,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   /// Prints the average number of PNOs and OSVs per pair
   void print_ave_npnos_per_pair() {
 
-    K_reblock_.world().gop.sum(npnos_.data(), npnos_.size());
-    K_reblock_.world().gop.sum(nosvs_.data(), nosvs_.size());
+    this->get_world()().gop.sum(npnos_.data(), npnos_.size());
+    this->get_world()().gop.sum(nosvs_.data(), nosvs_.size());
 
-    if (K_reblock_.world().rank() == 0) {
+    if (this->get_world()().rank() == 0) {
       auto tot_osv = 0;
       for (int i = 0; i != nosvs_.size(); ++i) {
         tot_osv += nosvs_[i];

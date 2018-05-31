@@ -114,8 +114,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     verbose_ = kv.value<bool>("verbose", false);
 
     cp_ccsd_ = ( (df_) ? kv.value<bool>("cp_ccsd", false) : false);
+#ifndef MADNESS_LINALG_USE_LAPACKE
+    if(cp_ccsd_)
+      throw InputError("Cannot utilize BTAS features without LAPCKE", __FILE__, __LINE__, "cp_ccsd");
+#else
     cp_precision_ = kv.value<double>("cp_precision", 0.1);
     rank_ = ( (cp_ccsd_) ? kv.value<double>("rank", 0.6) : 0);
+#endif
   }
 
   virtual ~CCSD() {}
@@ -296,9 +301,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     ints.Gijka = this->get_ijka();
 
     if (method_ == "standard" || (method_ == "df" && !reduced_abcd_memory_)) {
+#ifdef MADNESS_LINALG_USE_LAPACKE
       if(!cp_ccsd_) {
         ints.Gabcd = this->get_abcd();
       }
+#endif
       ints.Giabc = this->get_iabc();
     } else if (method_ == "direct") {
       ints.Giabc = this->get_iabc();
@@ -310,9 +317,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       ints.Xab = this->get_Xab();
     }
 
+#ifdef MADNESS_LINALG_USE_LAPACKE
     if(cp_ccsd_){
       this->get_factors(ints.Xab_factors);
     }
+#endif // MADNESS_LINALG_USE_LAPACKE
 
     if (method_ == "direct" || method_ == "direct_df") {
       ints.Ci = this->lcao_factory()
@@ -496,19 +505,20 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     return this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
   }
 
+#ifdef MADNESS_LINALG_USE_LAPACKE
   const void get_factors(std::vector<TArray> & factors){
     auto Xab = this->get_Xab();
     auto Aux_size = Xab.trange().dim(0).extent();
     auto block_size = this->trange1_engine()->get_vir_blocks();
 #if _HAS_INTEL_MKL
     math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * rank_, true);
-#else
+#else // _HAS_INTEL_MKL
     math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, false, 0, true);
-#endif
+#endif // _HAS_INTEL_MKL
     // TODO Find optimal Regularized parameters to compute this decomposition quickly
     //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
   }
-
+#endif // MADNESS_LINALG_USE_LAPACKE
   // get two electron integrals
   // using physical notation <ab|ij>
 

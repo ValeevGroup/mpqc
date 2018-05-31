@@ -1128,7 +1128,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
-    // part of WorldObject initialization
+    // finish initialization of WorldObject ...
+    // normally this is to be done at the end of the constructor, but OK here due to fenced work in the ctor
     this->process_pending();
 
     // compute and store PNOs truncated with threshold tpno_

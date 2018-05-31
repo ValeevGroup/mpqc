@@ -361,11 +361,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
                    2 * tau("a,b,i,j") - tau("b,a,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= target_precision_ || error >= target_precision_ || iter == 0) {
+      if (iter == 0 || !solver_->is_converged(target_precision_, error, dE)) {
         tmp_time0 = mpqc::now(world, accurate_time);
 
         assert(solver_);
-        solver_->update(t1, t2, r1, r2);
+        solver_->update(t1, t2, r1, r2, E1);
 
         // recompute tau
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");

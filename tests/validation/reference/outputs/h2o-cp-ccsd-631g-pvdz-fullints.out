@@ -2,11 +2,11 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision bdfee3a188809633ea40b1533305fc6fb2c4cb39
+                 Revision 885609a73d9a9d2f8d494e63d7fe16659aa1376c
 
   Machine:          Darwin-17.5.0-x86_64
   User:             karlpier@Karls-MacBook-Pro.local
-  Start Time:       Tue Apr 24 20:49:03 2018 UTC
+  Start Time:       Thu May 17 14:50:30 2018 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
@@ -93,218 +93,218 @@ iteration: 0
 	Energy: -76.172009821117
 	abs(Energy Change): 0.278588911860453
 	(Gradient Norm)/n^2: 0.00233094621893437
-	Scf Time: 0.002641773
-		Density Time: 0.00114297
-		Fock Build Time: 0.001050425
+	Scf Time: 0.002434267
+		Density Time: 0.000974348
+		Fock Build Time: 0.00092207
 		DF Fock builder:
-			W time: 0.000195723
-			J time: 0.000357007
-			K time: 0.000242688
-			Total exchange time: 0.000438411
+			W time: 0.000209093
+			J time: 0.000292689
+			K time: 0.000180447
+			Total exchange time: 0.00038954
 iteration: 1
 	Energy: -76.2140757286776
 	abs(Energy Change): 0.0420659075606835
 	(Gradient Norm)/n^2: 0.0011172900731778
-	Scf Time: 0.002569135
-		Density Time: 0.000927148
-		Fock Build Time: 0.000863916
+	Scf Time: 0.002494348
+		Density Time: 0.000974207
+		Fock Build Time: 0.000748105
 		DF Fock builder:
-			W time: 0.000220009
-			J time: 0.000271843
-			K time: 0.000171423
-			Total exchange time: 0.000391432
+			W time: 0.00015613
+			J time: 0.000258433
+			K time: 0.000170081
+			Total exchange time: 0.000326211
 iteration: 2
 	Energy: -76.2239081527738
-	abs(Energy Change): 0.00983242409616025
-	(Gradient Norm)/n^2: 0.000143551463877299
-	Scf Time: 0.002608087
-		Density Time: 0.00099322
-		Fock Build Time: 0.000833239
+	abs(Energy Change): 0.00983242409617446
+	(Gradient Norm)/n^2: 0.000143551463877305
+	Scf Time: 0.002334786
+		Density Time: 0.000962445
+		Fock Build Time: 0.000683242
 		DF Fock builder:
-			W time: 0.00020979
-			J time: 0.000271042
-			K time: 0.000203083
-			Total exchange time: 0.000412873
+			W time: 0.000166996
+			J time: 0.000183612
+			K time: 0.000184813
+			Total exchange time: 0.000351809
 iteration: 3
-	Energy: -76.224179404067
-	abs(Energy Change): 0.000271251293213481
-	(Gradient Norm)/n^2: 2.08758073190482e-05
-	Scf Time: 0.002611801
-		Density Time: 0.000909832
-		Fock Build Time: 0.000806024
+	Energy: -76.2241794040669
+	abs(Energy Change): 0.000271251293099795
+	(Gradient Norm)/n^2: 2.08758073190608e-05
+	Scf Time: 0.002559322
+		Density Time: 0.000830964
+		Fock Build Time: 0.000872371
 		DF Fock builder:
-			W time: 0.00020214
-			J time: 0.000266724
-			K time: 0.00013774
-			Total exchange time: 0.00033988
+			W time: 0.00021773
+			J time: 0.000269353
+			K time: 0.000175152
+			Total exchange time: 0.000392882
 iteration: 4
-	Energy: -76.2241830588949
-	abs(Energy Change): 3.65482790698479e-06
-	(Gradient Norm)/n^2: 1.5246849583975e-06
-	Scf Time: 0.002672069
-		Density Time: 0.000841027
-		Fock Build Time: 0.000763643
+	Energy: -76.224183058895
+	abs(Energy Change): 3.65482806330419e-06
+	(Gradient Norm)/n^2: 1.52468495837852e-06
+	Scf Time: 0.002801283
+		Density Time: 0.000837244
+		Fock Build Time: 0.000937662
 		DF Fock builder:
-			W time: 0.000131121
-			J time: 0.00025848
-			K time: 0.000179856
-			Total exchange time: 0.000310977
+			W time: 0.000272809
+			J time: 0.000249615
+			K time: 0.000176673
+			Total exchange time: 0.000449482
 iteration: 5
 	Energy: -76.2241830968481
-	abs(Energy Change): 3.79531570615654e-08
-	(Gradient Norm)/n^2: 2.57160622433765e-07
-	Scf Time: 0.00256353
-		Density Time: 0.000817108
-		Fock Build Time: 0.000873452
+	abs(Energy Change): 3.79531002181466e-08
+	(Gradient Norm)/n^2: 2.57160622469735e-07
+	Scf Time: 0.002534966
+		Density Time: 0.000810218
+		Fock Build Time: 0.000751217
 		DF Fock builder:
-			W time: 0.000287091
-			J time: 0.000226413
-			K time: 0.000135201
-			Total exchange time: 0.000422292
+			W time: 0.000194219
+			J time: 0.000208677
+			K time: 0.000177303
+			Total exchange time: 0.000371522
 iteration: 6
 	Energy: -76.2241830985432
-	abs(Energy Change): 1.69511338299344e-09
-	(Gradient Norm)/n^2: 8.13417220742875e-08
-	Scf Time: 0.002448626
-		Density Time: 0.000795823
-		Fock Build Time: 0.00084026
+	abs(Energy Change): 1.69508496128401e-09
+	(Gradient Norm)/n^2: 8.1341722031501e-08
+	Scf Time: 0.002775885
+		Density Time: 0.000930959
+		Fock Build Time: 0.000826148
 		DF Fock builder:
-			W time: 0.000183486
-			J time: 0.000248548
-			K time: 0.00021741
-			Total exchange time: 0.000400896
+			W time: 0.000209207
+			J time: 0.000222225
+			K time: 0.000204287
+			Total exchange time: 0.000413494
 iteration: 7
 	Energy: -76.2241830987047
-	abs(Energy Change): 1.61463731274125e-10
-	(Gradient Norm)/n^2: 5.89483141681809e-09
-	Scf Time: 0.002406805
-		Density Time: 0.000798058
-		Fock Build Time: 0.000700025
+	abs(Energy Change): 1.61534785547701e-10
+	(Gradient Norm)/n^2: 5.89483144340802e-09
+	Scf Time: 0.002503891
+		Density Time: 0.00073804
+		Fock Build Time: 0.000954792
 		DF Fock builder:
-			W time: 0.000150942
-			J time: 0.000221226
-			K time: 0.000180289
-			Total exchange time: 0.000331231
+			W time: 0.000258286
+			J time: 0.000240175
+			K time: 0.000269688
+			Total exchange time: 0.000527974
 iteration: 8
 	Energy: -76.2241830987056
-	abs(Energy Change): 9.37916411203332e-13
-	(Gradient Norm)/n^2: 1.523331897863e-09
-	Scf Time: 0.002610068
-		Density Time: 0.000783596
-		Fock Build Time: 0.000834071
+	abs(Energy Change): 8.81072992342524e-13
+	(Gradient Norm)/n^2: 1.52333188678404e-09
+	Scf Time: 0.00246333
+		Density Time: 0.000787813
+		Fock Build Time: 0.00071285
 		DF Fock builder:
-			W time: 0.000211436
-			J time: 0.000225804
-			K time: 0.000169276
-			Total exchange time: 0.000380712
+			W time: 0.000194476
+			J time: 0.000166261
+			K time: 0.000163975
+			Total exchange time: 0.000358451
 iteration: 9
-	Energy: -76.2241830987057
-	abs(Energy Change): 8.5265128291212e-14
-	(Gradient Norm)/n^2: 3.29602077124635e-10
-	Scf Time: 0.002229399
-		Density Time: 0.000748361
-		Fock Build Time: 0.000731748
+	Energy: -76.2241830987056
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 3.2960204252338e-10
+	Scf Time: 0.002727816
+		Density Time: 0.000919328
+		Fock Build Time: 0.000723554
 		DF Fock builder:
-			W time: 0.000188549
-			J time: 0.000208153
-			K time: 0.000134028
-			Total exchange time: 0.000322577
+			W time: 0.000136397
+			J time: 0.000218182
+			K time: 0.000189007
+			Total exchange time: 0.000325404
 iteration: 10
 	Energy: -76.2241830987057
-	abs(Energy Change): 5.6843418860808e-14
-	(Gradient Norm)/n^2: 9.18506910946286e-11
-	Scf Time: 0.002269156
-		Density Time: 0.000701139
-		Fock Build Time: 0.000675044
+	abs(Energy Change): 8.5265128291212e-14
+	(Gradient Norm)/n^2: 9.18506881255803e-11
+	Scf Time: 0.00225636
+		Density Time: 0.000714107
+		Fock Build Time: 0.000750952
 		DF Fock builder:
-			W time: 0.000179027
-			J time: 0.000203583
-			K time: 0.000158572
-			Total exchange time: 0.000337599
+			W time: 0.000180417
+			J time: 0.000235657
+			K time: 0.000177317
+			Total exchange time: 0.000357734
 iteration: 11
 	Energy: -76.2241830987057
-	abs(Energy Change): 0
-	(Gradient Norm)/n^2: 1.28132933916089e-11
-	Scf Time: 0.002303946
-		Density Time: 0.000835906
-		Fock Build Time: 0.000754395
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 1.28132902090101e-11
+	Scf Time: 0.002188971
+		Density Time: 0.000873325
+		Fock Build Time: 0.000669789
 		DF Fock builder:
-			W time: 0.00017492
-			J time: 0.000252142
-			K time: 0.000172374
-			Total exchange time: 0.000347294
+			W time: 0.000174402
+			J time: 0.000181718
+			K time: 0.000172709
+			Total exchange time: 0.000347111
 iteration: 12
-	Energy: -76.2241830987056
-	abs(Energy Change): 1.84741111297626e-13
-	(Gradient Norm)/n^2: 4.55484957611212e-12
-	Scf Time: 0.002141295
-		Density Time: 0.000687695
-		Fock Build Time: 0.00069198
-		DF Fock builder:
-			W time: 0.000137616
-			J time: 0.000210712
-			K time: 0.000200158
-			Total exchange time: 0.000337774
-iteration: 13
-	Energy: -76.2241830987056
-	abs(Energy Change): 7.105427357601e-14
-	(Gradient Norm)/n^2: 1.63451480182595e-12
-	Scf Time: 0.002064066
-		Density Time: 0.00074956
-		Fock Build Time: 0.000672115
-		DF Fock builder:
-			W time: 0.000131472
-			J time: 0.000221513
-			K time: 0.000175524
-			Total exchange time: 0.000306996
-iteration: 14
-	Energy: -76.2241830987055
-	abs(Energy Change): 1.27897692436818e-13
-	(Gradient Norm)/n^2: 8.10774026621537e-13
-	Scf Time: 0.002455731
-		Density Time: 0.000847081
-		Fock Build Time: 0.000782916
-		DF Fock builder:
-			W time: 0.000130845
-			J time: 0.000297614
-			K time: 0.000208124
-			Total exchange time: 0.000338969
-iteration: 15
-	Energy: -76.2241830987056
-	abs(Energy Change): 8.5265128291212e-14
-	(Gradient Norm)/n^2: 3.50866327082422e-13
-	Scf Time: 0.002366194
-		Density Time: 0.000874441
-		Fock Build Time: 0.000748556
-		DF Fock builder:
-			W time: 0.000170378
-			J time: 0.000261211
-			K time: 0.00015747
-			Total exchange time: 0.000327848
-iteration: 16
 	Energy: -76.2241830987057
-	abs(Energy Change): 8.5265128291212e-14
-	(Gradient Norm)/n^2: 2.01289638449488e-13
-	Scf Time: 0.002172608
-		Density Time: 0.000800417
-		Fock Build Time: 0.000708777
+	abs(Energy Change): 5.6843418860808e-14
+	(Gradient Norm)/n^2: 4.55485861725816e-12
+	Scf Time: 0.002198721
+		Density Time: 0.000761335
+		Fock Build Time: 0.000757384
 		DF Fock builder:
-			W time: 0.000196588
-			J time: 0.000214648
-			K time: 0.000132407
-			Total exchange time: 0.000328995
+			W time: 0.000174068
+			J time: 0.000240926
+			K time: 0.0001342
+			Total exchange time: 0.000308268
+iteration: 13
+	Energy: -76.2241830987057
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 1.6345419059362e-12
+	Scf Time: 0.002223464
+		Density Time: 0.000820076
+		Fock Build Time: 0.000769347
+		DF Fock builder:
+			W time: 0.00017354
+			J time: 0.000217584
+			K time: 0.000167509
+			Total exchange time: 0.000341049
+iteration: 14
+	Energy: -76.2241830987056
+	abs(Energy Change): 9.9475983006414e-14
+	(Gradient Norm)/n^2: 8.10757934801361e-13
+	Scf Time: 0.002114531
+		Density Time: 0.000753378
+		Fock Build Time: 0.000638297
+		DF Fock builder:
+			W time: 0.000145203
+			J time: 0.00017933
+			K time: 0.000170067
+			Total exchange time: 0.00031527
+iteration: 15
+	Energy: -76.2241830987057
+	abs(Energy Change): 1.27897692436818e-13
+	(Gradient Norm)/n^2: 3.50846580451447e-13
+	Scf Time: 0.002225287
+		Density Time: 0.000794977
+		Fock Build Time: 0.000763165
+		DF Fock builder:
+			W time: 0.000156246
+			J time: 0.00021584
+			K time: 0.000151356
+			Total exchange time: 0.000307602
+iteration: 16
+	Energy: -76.2241830987056
+	abs(Energy Change): 8.5265128291212e-14
+	(Gradient Norm)/n^2: 2.01262654122945e-13
+	Scf Time: 0.002386532
+		Density Time: 0.000971499
+		Fock Build Time: 0.000747803
+		DF Fock builder:
+			W time: 0.000170576
+			J time: 0.000224765
+			K time: 0.000154337
+			Total exchange time: 0.000324913
 iteration: 17
 	Energy: -76.2241830987056
-	abs(Energy Change): 7.105427357601e-14
-	(Gradient Norm)/n^2: 9.78765428001022e-14
-	Scf Time: 0.002507214
-		Density Time: 0.000924221
-		Fock Build Time: 0.000733578
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 9.78463529895053e-14
+	Scf Time: 0.002125025
+		Density Time: 0.000722659
+		Fock Build Time: 0.000743144
 		DF Fock builder:
-			W time: 0.000160976
-			J time: 0.000250313
-			K time: 0.000170082
-			Total exchange time: 0.000331058
+			W time: 0.000143183
+			J time: 0.00022078
+			K time: 0.000161028
+			Total exchange time: 0.000304211
   Frozen Core: 2 electrons
 Occ Range
 ( tiles = [ 0, 3 ), elements = [ 0, 5 ) )
@@ -327,7 +327,78 @@ Min and Max block size: 1 2
 Average: 1
 
 Use DF CCSD Compute 
-Integral Prepare Time: 0.019943346
+count	test
+1	8.2161594898185
+2	3.72460374525047
+3	2.60325643061638
+4	1.45085445484327
+5	1.0195954956563
+6	0.865983407785234
+7	0.786798058665284
+8	0.647859758749543
+9	0.504338651496525
+10	0.347573920223589
+11	0.264043717314952
+12	0.216904949775269
+13	0.187639670112289
+14	0.168466150072425
+15	0.155802295356877
+16	0.147861066759316
+17	0.143411219973167
+18	0.141363111431807
+19	0.141145867955131
+20	0.141912487984115
+21	0.143269536047557
+22	0.144581621353386
+23	0.145587894381055
+24	0.145966147041034
+25	0.145738374639258
+26	0.144961216131842
+27	0.143876306173765
+28	0.142650215215913
+29	0.141431390025902
+30	0.140238887933723
+31	0.139051645591026
+32	0.137792008347489
+33	0.136393644740936
+34	0.134795874526827
+35	0.132979926834401
+36	0.130964372537924
+37	0.128820160021281
+38	0.126656588453001
+39	0.124611900397798
+40	0.122825788965111
+41	0.121417888253989
+42	0.120463309953462
+43	0.119979322818531
+44	0.119916930958785
+45	0.120163714048097
+46	0.120554278812573
+47	0.120892614921409
+48	0.120984590485236
+49	0.120679496153336
+50	0.119910223354356
+51	0.118717269429117
+52	0.117240577167888
+53	0.115676844183285
+54	0.11421870748753
+55	0.113003562861141
+56	0.112090958932105
+57	0.111468660976501
+58	0.111074191682956
+59	0.110818346550061
+60	0.110603382318065
+61	0.110334592584776
+62	0.109926770979997
+63	0.109307624204147
+64	0.108419622627313
+65	0.107221095747985
+66	0.105686811090309
+67	0.103808005608622
+68	0.101591746973089
+69	0.0990595662702874
+Line Search was successfull 0 out of 0 times!
+Integral Prepare Time: 0.017058288
 Start Iteration
 Max Iteration: 30
 Target precision: 1e-11
@@ -335,20 +406,20 @@ AccurateTime: 0
 Verbose: 0
 Reduced ABCD Memory Approach: No
   iter 	     deltaE 	   residual 	          energy 	 total time/s 
-    1 	 1.18570e-01 	 7.04500e-05 	 -0.118569999097 	        0.0 
-    2 	 2.71721e-03 	 2.26669e-05 	 -0.121287207904 	        0.0 
-    3 	 2.76292e-04 	 3.55500e-06 	 -0.121563500285 	        0.0 
-    4 	 6.50377e-06 	 8.76395e-07 	 -0.121570004051 	        0.0 
-    5 	 5.40672e-07 	 2.20276e-07 	 -0.121570544724 	        0.0 
-    6 	 1.46221e-07 	 7.12744e-08 	 -0.121570398503 	        0.0 
-    7 	 7.11966e-08 	 1.49655e-08 	 -0.121570327306 	        0.0 
-    8 	 1.86857e-08 	 3.63383e-09 	 -0.121570308620 	        0.0 
-    9 	 9.83799e-10 	 6.10416e-10 	 -0.121570307637 	        0.0 
-   10 	 1.06966e-11 	 1.64935e-10 	 -0.121570307647 	        0.0 
-   11 	 2.01992e-10 	 2.22121e-11 	 -0.121570307445 	        0.0 
-   12 	 8.11949e-12 	 8.99043e-12 	 -0.121570307437 	        0.0 
-CCSD Energy  -0.121570307437219
-CCSD Time in CCSD: 0.421123121 S
+    1 	 1.18668e-01 	 7.07505e-05 	 -0.118668255664 	        0.0 
+    2 	 2.73388e-03 	 2.27434e-05 	 -0.121402133948 	        0.0 
+    3 	 2.77848e-04 	 3.55759e-06 	 -0.121679981906 	        0.0 
+    4 	 6.65260e-06 	 8.87843e-07 	 -0.121686634503 	        0.0 
+    5 	 5.57763e-07 	 2.20126e-07 	 -0.121687192267 	        0.0 
+    6 	 1.51478e-07 	 7.12015e-08 	 -0.121687040789 	        0.0 
+    7 	 7.20050e-08 	 1.48588e-08 	 -0.121686968784 	        0.0 
+    8 	 1.84609e-08 	 3.67056e-09 	 -0.121686950323 	        0.0 
+    9 	 1.09593e-09 	 6.12198e-10 	 -0.121686949227 	        0.0 
+   10 	 2.31779e-11 	 1.64653e-10 	 -0.121686949250 	        0.0 
+   11 	 2.11822e-10 	 1.76539e-11 	 -0.121686949038 	        0.0 
+   12 	 7.26444e-12 	 4.36273e-12 	 -0.121686949031 	        0.0 
+CCSD Energy  -0.121686949030872
+CCSD Time in CCSD: 0.424526208 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -393,7 +464,7 @@ CCSD Time in CCSD: 0.421123121 S
         "precision": "1e-11",
         "wfn": "$:wfn",
         "value": {
-            "value": "-76.345753406142819"
+            "value": "-76.345870047736511"
         }
     }
 }

@@ -8,6 +8,7 @@
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
+#ifndef MADNESS_LINALG_USE_LAPACKE
 extern "C" void sgesdd_(const char *jobz, integer *m, integer *n, real4 *a,
                         integer *lda, real4 *s, real4 *u, integer *ldu,
                         real4 *vt, integer *ldvt, real4 *work, integer *lwork,
@@ -29,6 +30,7 @@ extern "C" void dorglq_(integer *m, integer *n, integer *k, real8 *a,
 extern "C" void dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda,
                         integer *piv, integer *rank, real8 *tol, real8 *work,
                         integer *info);
+#endif // MADNESS_LINALG_USE_LAPACKE
 
 namespace mpqc {
 namespace tensor {

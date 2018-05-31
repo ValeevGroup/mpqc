@@ -1320,20 +1320,34 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // DE = std::abs(E_22_ - E_12_): the difference in energy between the current micro iteration and the last micro
     // iteration of the previous macro iteration
 
-    const auto DE = std::abs(E_22_ - E_12_);
-    return (pnos_relaxed_ && dE < target_precision / 10.0 && DE < target_precision / 10.0);
+    if (update_pno_ == true) {
+      const auto DE = std::abs(E_22_ - E_12_);
+      return (pnos_relaxed_ && dE < target_precision / 10.0 && DE < target_precision / 10.0);
+    }
+
+    else {
+      return dE < target_precision / 10.0;
+    }
+
   }
 
   bool is_converged_within_subspace(double dE) {
-    const auto DE = std::abs(E_22_ - E_12_);
 
-    // Check that dE satisfies the following requirement
-    bool energy_check = pnos_relaxed_ ? (dE < DE / micro_ratio_) : (dE < std::abs(E_22_) / 1.0e-04);
+    if (update_pno_ == true) {
+      const auto DE = std::abs(E_22_ - E_12_);
 
-    // Check that micro_count_ is greater than or equal to min_micro_
-    bool micro_check = micro_count_ >= min_micro_;
+      // Check that dE satisfies the following requirement
+      bool energy_check = pnos_relaxed_ ? (dE < DE / micro_ratio_) : (dE < std::abs(E_22_) / 1.0e-04);
 
-    return (energy_check && micro_check);
+      // Check that micro_count_ is greater than or equal to min_micro_
+      bool micro_check = micro_count_ >= min_micro_;
+
+      return (energy_check && micro_check);
+    }
+
+    else {
+      return false;
+    }
   }
 
   /// Overrides DIISSolver::update_only() .
@@ -1383,7 +1397,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     double deltaE = std::abs(E_22_ - E_21_);  //!< Equivalent to dE in the definition of is_converged()
 
     // Check to see if energy has converged within current subspace
-    if (is_converged_within_subspace(deltaE)) {
+    if (update_pno_ && is_converged_within_subspace(deltaE)) {
       start_macro_ = true;  //!< Time to recompute PNOs
       E_11_ = E_21_;        //!< Current macro iter becomes previous macro iter
       E_12_ = E_22_;        //!< Current macro iter becomes previuos macro iter
@@ -1454,7 +1468,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     else {
       // Print right before first micro iteration of the macro iteration is logged for
       // all macro iterations after the first one
-      if (pnos_relaxed_ && micro_count_ == 1) {
+      if (update_pno_ && pnos_relaxed_ && micro_count_ == 1) {
         // Print average number of PNOs per pair
         print_ave_npnos_per_pair();
 

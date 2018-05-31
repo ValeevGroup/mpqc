@@ -5,8 +5,7 @@
 #define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include <TiledArray/madness.h>
-#include <madness/tensor/clapack.h>
+#include "mpqc/math/external/lapack/lapack.h"
 
 namespace mpqc {
 namespace algebra {

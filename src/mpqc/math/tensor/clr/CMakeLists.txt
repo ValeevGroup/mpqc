@@ -20,4 +20,4 @@ tile.h
 vector_localization.h
 cp_als.h)
 
-add_mpqc_library(math_clr sources sources "MPQCmath_eigen;tiledarray" "mpqc/math/tensor/clr")
+add_mpqc_library(math_clr sources sources "MPQCmath_eigen;MPQCmath_lapack" "mpqc/math/tensor/clr")

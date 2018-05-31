@@ -308,7 +308,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const auto nuocc = pno_ij.rows();
 
     // Select e_i and e_j
-    const auto e_ij = F_occ_act(i) + F_occ_act(j) + shift;
+    const auto e_ij = F_occ_act(i,i) + F_occ_act(j,j) + shift;
 
     for (auto a = 0; a < npno; ++a) {
       const auto e_a = ens_uocc[a];

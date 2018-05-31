@@ -886,8 +886,7 @@ void construct_pno(
           nosvs[i] = nosv;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
-            throw LimitExceeded<size_t>("all osvs_list truncated", __FILE__, __LINE__, 1,
-                                        0);
+            throw ProgrammingError("# OSVs = 0 should not be possible", __FILE__, __LINE__);
           }
 
           // Store truncated OSV mat in osvs_list

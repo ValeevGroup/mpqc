@@ -219,7 +219,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
 
   using WorldObject_ = madness::WorldObject<PNOEEPred<Array>>;
 
-  PNOEEPred(madness::World& world) : madness::WorldObject<PNOEEPred<Array>>(world) {}
+  PNOEEPred(madness::World& world) : madness::WorldObject<PNOEEPred<Array>>(world) { }
 
   PNOEEPred(const Array &T2, std::size_t n_roots, const Vector &eps_o,
             const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical)
@@ -362,13 +362,16 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
   void transfer_pnos() {
 
     const auto nocc_act = size(nosvs_);
+    const auto me = this->get_world().rank();
     for(auto i = 0; i < nocc_act; ++i) {
       for (auto j = i + 1; j < nocc_act; ++j) {
+        const auto ij = i * nocc_act + j;
+        if (ij_pmap_->owner(ij) == me) {
           auto ji_owner = ij_pmap_->owner(j * nocc_act + i);
-          const auto ij = i * nocc_act + j;
           WorldObject_::task(ji_owner, &PNOEEPred::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij]);
         }
       }
+    }
 
     this->get_world().gop.fence();
   }
@@ -408,6 +411,7 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
                         double tosv, bool pno_canonical)
       // T2 should not be empty buuuut ....
       : PNOEEPred<Array>(T2.empty() ? madness::World::get_default() : T2.at(0).world()) {
+    assert(n_roots > 0);
     this->tpno_ = tpno;
     this->tosv_ = tosv;
     this->pno_canonical_ = pno_canonical;
@@ -423,6 +427,7 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
       for (std::size_t i = 0; i < n_roots; i++) {
         auto T_reblock =
             detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        if (i == 0) this->ij_pmap_ = T_reblock.pmap();
         Ds = detail::construct_density(T_reblock);
 
         if (i == 0) {
@@ -440,6 +445,10 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
                           this->pnos_, this->npnos_, this->F_pno_diag_,
                           this->osvs_, this->nosvs_, this->F_osv_diag_,
                           this->pno_canonical_);
+
+    // now ready to process tasks
+    this->process_pending();
+
     this->transfer_pnos();
   }
 };
@@ -459,6 +468,7 @@ public:
                         double tosv, bool pno_canonical)
         // T2 should not be empty buuuut ....
       : PNOEEPred<Array>(T2.empty() ? madness::World::get_default() : T2.at(0).world()) {
+    assert(n_roots > 0);
     this->tpno_ = tpno;
     this->tosv_ = tosv;
     this->pno_canonical_ = pno_canonical;
@@ -474,6 +484,7 @@ public:
       for (std::size_t i = 0; i < n_roots; i++) {
         auto T_reblock =
             detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        if (i == 0) this->ij_pmap_ = T_reblock.pmap();
         Ds = detail::construct_density(T_reblock);
 
         if (i == 0) {
@@ -489,6 +500,10 @@ public:
                           this->pnos_, this->npnos_, this->F_pno_diag_,
                           this->osvs_, this->nosvs_, this->F_osv_diag_,
                           this->pno_canonical_);
+
+    // now ready to process tasks
+    this->process_pending();
+
     this->transfer_pnos();
   }
 };
@@ -513,11 +528,9 @@ class StateSpecificPNOEEPred
       : madness::WorldObject<StateSpecificPNOEEPred<Array>>(T2.empty() ? madness::World::get_default() : T2.at(0).world()),
         eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical) {
 
-    // part of WorldObject initialization
-    this->process_pending();
-
     auto &world = T2[0].world();
     n_roots_ = T2.size();
+    assert(n_roots_ > 0);
 
     // resize for n roots
     pnos_.resize(n_roots_);
@@ -556,7 +569,7 @@ class StateSpecificPNOEEPred
 
     for (std::size_t i = 0; i < n_roots_; i++) {
       auto T_reblock = detail::reblock_t2(T2[i], reblock_i_, reblock_a_);
-      if (i == 0) ij_pmap_ = T_reblock.pmap();
+      if (i == 0) this->ij_pmap_ = T_reblock.pmap();
       auto D = detail::construct_density(T_reblock);
       detail::construct_pno(D, F_uocc,
                             tpno_, tosv_,
@@ -564,6 +577,11 @@ class StateSpecificPNOEEPred
                             osvs_[i], nosvs_[i], F_osv_diag_[i],
                             pno_canonical_);
     }
+
+    // now ready to process tasks
+    this->process_pending();
+
+    this->transfer_pnos();
   }
 
   ~StateSpecificPNOEEPred() = default;
@@ -645,12 +663,22 @@ class StateSpecificPNOEEPred
 
     const auto nstates = size(nosvs_);
     const auto nocc_act = size(nosvs_.at(0));
+    const auto me = this->get_world().rank();
     for (auto i = 0; i < nocc_act; ++i) {
       for (auto j = i + 1; j < nocc_act; ++j) {
-        auto ji_owner = ij_pmap_->owner(j * nocc_act + i);
         const auto ij = i * nocc_act + j;
-        for(auto state = 0; state != nstates; ++state) {
-          WorldObject_::task(ji_owner, &StateSpecificPNOEEPred::copy_pnoij, state, i, j, pnos_[state][ij], npnos_[state][ij], F_pno_diag_[state][ij]);
+        if (ij_pmap_->owner(ij) == me) {
+          auto ji_owner = ij_pmap_->owner(j * nocc_act + i);
+          for (auto state = 0; state != nstates; ++state) {
+            WorldObject_::task(ji_owner,
+                               &StateSpecificPNOEEPred::copy_pnoij,
+                               state,
+                               i,
+                               j,
+                               pnos_[state][ij],
+                               npnos_[state][ij],
+                               F_pno_diag_[state][ij]);
+          }
         }
       }
     }

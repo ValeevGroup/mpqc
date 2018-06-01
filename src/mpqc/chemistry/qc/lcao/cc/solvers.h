@@ -257,8 +257,8 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
  *
  * @param[in] r2_abij  T2 like Array with dimension "a,b,i,j", it should blocked by
  * V in a,b and 1 in i,j
- * @param[in] F_occ_act  active occupied Fock matrix in canonical basis
- * @param[in] F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * @param[in] eps_occ_act  the diagonal of active occupied Fock matrix in canonical basis
+ * @param[in] eps_pno vector of diagonal Fock matrix in PNO basis, only local i,j
  * will be initialized
  * @param[in] pnos vector of PNOs, only local i,j will be initialized
  * @param[in] shift value of the shift in the denominator (i.e. the demonimator is @c F[i]+F[j]-F[a]-F[b]+shift
@@ -267,11 +267,11 @@ TA::DistArray<Tile, Policy> jacobi_update_t1_ai(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const TA::DistArray<Tile, Policy>& r2_abij,
-    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
-    const std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
+    const EigenVector<typename Tile::numeric_type>& eps_occ_act,
+    const std::vector<EigenVector<typename Tile::numeric_type>>& eps_pno,
     const std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
     typename Tile::numeric_type shift = 0.0) {
-  auto update2 = [F_occ_act, F_pno_diag, pnos, shift](Tile& result_tile,
+  auto update2 = [eps_occ_act, eps_pno, pnos, shift](Tile& result_tile,
                                                       const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
@@ -281,7 +281,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const auto j = arg_tile.range().lobound()[3];
 
     // Select appropriate matrix of PNOs
-    auto ij = i * F_occ_act.cols() + j;
+    auto ij = i * eps_occ_act.size() + j;
     Eigen::MatrixXd pno_ij = pnos[ij];
 
     // Extent data of tile
@@ -299,7 +299,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
 
     // Select correct vector containing diagonal elements of Fock matrix in
     // PNO basis
-    const Eigen::VectorXd& ens_uocc = F_pno_diag[ij];
+    const Eigen::VectorXd& ens_uocc = eps_pno[ij];
 
     // Determine number of PNOs
     const auto npno = ens_uocc.rows();
@@ -308,7 +308,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
     const auto nuocc = pno_ij.rows();
 
     // Select e_i and e_j
-    const auto e_ij = F_occ_act(i,i) + F_occ_act(j,j) + shift;
+    const auto e_ij = eps_occ_act(i) + eps_occ_act(j) + shift;
 
     for (auto a = 0; a < npno; ++a) {
       const auto e_a = ens_uocc[a];
@@ -346,8 +346,8 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
  *
  * @param[in] r1_ai  T1 like Array with dimension "a,i", it should blocked by V in
  * a,b and 1 in i,j
- * @param[in] F_occ_act  active occupied Fock matrix in canonical basis
- * @param[in] F_pno_diag vector of diagonal Fock matrix in PNO basis, only local i,j
+ * @param[in] eps_occ_act  the diagonal of active occupied Fock matrix in canonical basis
+ * @param[in] eps_osv vector of the diagonal of Fock matrix in OSV basis, only local i,j
  * will be initialized
  * @param[in] osvs vector of OSVs, only local i will be initialized
  * @param[in] shift value of the shift in the denominator (i.e. the demonimator is @c F[i]-F[a]+shift
@@ -356,11 +356,11 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t2(
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     const TA::DistArray<Tile, Policy>& r1_ai,
-    const RowMatrix<typename Tile::numeric_type>& F_occ_act,
-    const std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
+    const EigenVector<typename Tile::numeric_type>& eps_occ_act,
+    const std::vector<EigenVector<typename Tile::numeric_type>>& eps_osv,
     const std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
     typename Tile::numeric_type shift = 0.0) {
-  auto update1 = [F_occ_act, F_osv_diag, osvs, shift](Tile& result_tile,
+  auto update1 = [eps_occ_act, eps_osv, osvs, shift](Tile& result_tile,
                                                       const Tile& arg_tile) {
 
     result_tile = Tile(arg_tile.range());
@@ -385,7 +385,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
 
     // Select correct vector containing diagonal elements of Fock matrix in
     // OSV basis
-    const Eigen::VectorXd& ens_uocc = F_osv_diag[i];
+    const Eigen::VectorXd& ens_uocc = eps_osv[i];
 
     // Determine number of OSVs
     //      const auto nosv = ens_uocc.rows();
@@ -394,7 +394,7 @@ TA::DistArray<Tile, Policy> pno_jacobi_update_t1(
     // Determine number of uocc
     const auto nuocc = osv_i.rows();
 
-    const auto e_i = F_occ_act(i, i) + shift;
+    const auto e_i = eps_occ_act(i) + shift;
 
     for (auto a = 0; a < nosv; ++a) {
       const auto e_a = ens_uocc[a];
@@ -1128,9 +1128,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
-    // finish initialization of WorldObject ...
-    // normally this is to be done at the end of the constructor, but OK here due to fenced work in the ctor
-    this->process_pending();
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1284,6 +1281,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                           pnos_, npnos_, F_pno_diag_,
                           osvs_, nosvs_, F_osv_diag_, pno_canonical_);
 
+    // ready to process tasks now
+    this->process_pending();
+
     // Transfer PNOs to the node that owns them
     transfer_pnos();
 
@@ -1371,10 +1371,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Perform Jacobi update in PNO space on specified iterations
     else {
+      Vector ens_occ_act = F_occ_act_.diagonal();
       delta_t1_ai =
-        detail::pno_jacobi_update_t1(r1, F_occ_act_, F_osv_diag_, osvs_);
+        detail::pno_jacobi_update_t1(r1, ens_occ_act, F_osv_diag_, osvs_);
       delta_t2_abij =
-        detail::pno_jacobi_update_t2(r2, F_occ_act_, F_pno_diag_, pnos_);
+        detail::pno_jacobi_update_t2(r2, ens_occ_act, F_pno_diag_, pnos_);
     }
 
 

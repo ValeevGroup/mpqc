@@ -210,21 +210,31 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
 
 /// PNO preconditioner for EOM-EE-CCSD
 template <typename Array>
-class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
+class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
+                  public madness::WorldObject<PNOEEPred<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
+  using WorldObject_ = madness::WorldObject<PNOEEPred<Array>>;
+
   PNOEEPred() = default;
 
   PNOEEPred(const Array &T2, std::size_t n_roots, const Vector &eps_o,
-            const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical)
-      : tpno_(tpno),
+            const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical,
+            Factory<Array>& factory)
+      : madness::WorldObject<PNOEEPred<Array>>(factory.world()),
+        factory_(factory),
+        tpno_(tpno),
         tosv_(tosv),
         pno_canonical_(pno_canonical),
         n_roots_(n_roots),
         eps_o_(eps_o) {
+
+    // part of WorldObject initialization
+    this->process_pending();
+
     init_reblock(T2);
 
     // use first excited state amplitude to initialize PNOs
@@ -332,6 +342,8 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
   Array reblock_i_;
   Array reblock_a_;
 
+  Factory<Array>& factory_;
+
   /// pnos for excited states
   std::vector<Matrix> pnos_;
   /// # of pnos for each pair
@@ -358,8 +370,9 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
 
   StateAveragePNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
                         const Vector &eps_o, const Matrix &F_uocc, double tpno,
-                        double tosv, bool pno_canonical)
+                        double tosv, bool pno_canonical, Factory<Array>& factory)
       : PNOEEPred<Array>() {
+    this->factory_ = factory;
     this->tpno_ = tpno;
     this->tosv_ = tosv;
     this->pno_canonical_ = pno_canonical;
@@ -407,8 +420,9 @@ public:
 
   StateMergedPNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
                         const Vector &eps_o, const Matrix &F_uocc, double tpno,
-                        double tosv, bool pno_canonical)
+                        double tosv, bool pno_canonical, Factory<Array>& factory)
       : PNOEEPred<Array>() {
+    this->factory_ = factory;
     this->tpno_ = tpno;
     this->tosv_ = tosv;
     this->pno_canonical_ = pno_canonical;
@@ -446,16 +460,26 @@ public:
 
 template <typename Array>
 class StateSpecificPNOEEPred
-    : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
+    : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
+      public madness::WorldObject<StateSpecificPNOEEPred<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
+  using WorldObject_ = madness::WorldObject<StateSpecificPNOEEPred<Array>>;
+
+  StateSpecificPNOEEPred() = default;
+
   StateSpecificPNOEEPred(const std::vector<Array> &T2, const Vector &eps_o,
                          const Matrix &F_uocc, double tpno, double tosv,
-                         bool pno_canonical)
-      : eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical) {
+                         bool pno_canonical, Factory<Array>& factory)
+      : madness::WorldObject<StateSpecificPNOEEPred<Array>>(factory.world()),
+        eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical), factory_(factory) {
+
+    // part of WorldObject initialization
+    this->process_pending();
+
     auto &world = T2[0].world();
     n_roots_ = T2.size();
 
@@ -559,6 +583,8 @@ class StateSpecificPNOEEPred
 
   Array reblock_i_;
   Array reblock_a_;
+
+  Factory<Array>& factory_;
 
   // diagonal of F_ij matrix
   Vector eps_o_;

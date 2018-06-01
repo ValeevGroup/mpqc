@@ -886,8 +886,7 @@ void construct_pno(
           nosvs[i] = nosv;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
-            throw LimitExceeded<size_t>("all osvs_list truncated", __FILE__, __LINE__, 1,
-                                        0);
+            throw ProgrammingError("# OSVs = 0 should not be possible", __FILE__, __LINE__);
           }
 
           // Store truncated OSV mat in osvs_list
@@ -1129,7 +1128,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
-    // part of WorldObject initialization
+    // finish initialization of WorldObject ...
+    // normally this is to be done at the end of the constructor, but OK here due to fenced work in the ctor
     this->process_pending();
 
     // compute and store PNOs truncated with threshold tpno_
@@ -1429,7 +1429,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
       // We only compute the max principal angle between PNO subspaces when nproc = 1
-      if (K_reblock_.world().size() == 1) {
+      if (this->get_world().size() == 1) {
         old_pnos_ = pnos_;
       }
 
@@ -1473,7 +1473,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         print_ave_npnos_per_pair();
 
         // Compute max principal angle between PNO subspaces when nproc = 1
-        if (K_reblock_.world().size() == 1) {
+        if (this->get_world().size() == 1) {
           compute_max_principal_angle();
         }
 
@@ -1531,7 +1531,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       }
     }
 
-    K_reblock_.world().gop.fence();
+    this->get_world().gop.fence();
   }
 
   /**
@@ -1555,10 +1555,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   /// Prints the average number of PNOs and OSVs per pair
   void print_ave_npnos_per_pair() {
 
-    K_reblock_.world().gop.sum(npnos_.data(), npnos_.size());
-    K_reblock_.world().gop.sum(nosvs_.data(), nosvs_.size());
+    this->get_world().gop.sum(npnos_.data(), npnos_.size());
+    this->get_world().gop.sum(nosvs_.data(), nosvs_.size());
 
-    if (K_reblock_.world().rank() == 0) {
+    if (this->get_world().rank() == 0) {
       auto tot_osv = 0;
       for (int i = 0; i != nosvs_.size(); ++i) {
         tot_osv += nosvs_[i];

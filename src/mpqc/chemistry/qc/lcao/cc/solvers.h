@@ -533,9 +533,7 @@ TA::DistArray<Tile, Policy> t2_project_pno(
     const TA::DistArray<Tile, Policy>& t2,
     std::vector<RowMatrix<typename Tile::numeric_type>>& pnos) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
-  using Vector = EigenVector<typename Tile::numeric_type>;
 
-  auto& world = t2.world();
   std::size_t nocc_act = t2.trange().dim(2).extent();
   std::size_t nuocc = t2.trange().dim(0).extent();
 
@@ -820,7 +818,6 @@ void construct_pno(
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
     bool pno_canonical = false) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
-  using Vector = EigenVector<typename Tile::numeric_type>;
 
   auto& world = D.world();
   std::size_t nocc_act = D.trange().dim(2).extent();
@@ -1120,11 +1117,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       : ::mpqc::cc::DIISSolver<T>(kv),
         madness::WorldObject<PNOSolver<T, DT>>(factory.world()),
         factory_(factory),
+        solver_str_(kv.value<std::string>("solver", "pno")),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
         update_pno_(kv.value<bool>("update_pno", false)),
         tpno_(kv.value<double>("tpno", 1.e-7)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
-        solver_str_(kv.value<std::string>("solver", "pno")),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
@@ -1424,10 +1421,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Recompute PNOs when start_macro_ == true
     if ((update_pno_ == true) && (start_macro_ == true)) {
-
-      using Matrix = RowMatrix<typename Tile::numeric_type>;
-      using Vector = EigenVector<typename Tile::numeric_type>;
-
 
       // We only compute the max principal angle between PNO subspaces when nproc = 1
       if (this->get_world().size() == 1) {

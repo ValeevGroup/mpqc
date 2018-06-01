@@ -3,18 +3,15 @@
   "molecule": {
     "type": "Molecule",
     "file_name": "h2o.xyz",
-    "sort_input": true,
+    "attach_hydrogen" : false,
     "charge": 0,
-    "n_cluster": 1,
-    "reblock" : 4
+    "n_cluster": 2
   },
   "obs": {
-    "type": "Basis",
     "name": "6-31G",
     "molecule": "$:molecule"
   },
-  "dfbs": {
-    "type": "Basis",
+  "df_bs" : {
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
@@ -22,33 +19,25 @@
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
-    "df_basis" :"$:dfbs",
-    "screen": "schwarz"
+    "df_basis" : "$:df_bs"
   },
   "scf":{
     "type": "RI-RHF",
     "wfn_world": "$:wfn_world"
   },
   "wfn":{
-    "type": "CCSD",
-    "max_iter": 45,
+    "type": "EOM-CCSD",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
-    "method" : "direct_df",
-    "solver" : "pno",
-    "pno_canonical" : "true",
-    "tpno" : "1.0e-07",
-    "tosv" : "1.0e-09",
-    "update_pno": true,
-    "interval": 10,
-    "residual_thresh": 1.0e-10,
+    "method" : "df",
     "occ_block_size" : 4,
-    "unocc_block_size" : 8
+    "unocc_block_size" : 4
   },
   "property" : {
-    "type" : "Energy",
-    "precision" : "1e-11",
+    "type" : "ExcitationEnergy",
+    "precision" : "1e-9",
+    "n_roots" : 4,
     "wfn" : "$:wfn"
   }
 }

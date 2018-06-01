@@ -1,4 +1,4 @@
-#include "mpqc/chemistry/qc/lcao/basis/shift_basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/util.h"
 
 namespace mpqc {
 namespace lcao {
@@ -56,6 +56,40 @@ std::shared_ptr<Basis> shift_basis_origin(const Basis &basis,
   Basis result(vec_of_shells);
   auto result_ptr = std::make_shared<Basis>(result);
   return result_ptr;
+}
+
+std::unordered_map<size_t, size_t> compute_shell_offset(const Basis &basis) {
+  std::unordered_map<size_t, size_t> result;
+
+  auto shell_offset = 0;
+  const auto &cluster_shells = basis.cluster_shells();
+  const auto nclusters = cluster_shells.size();
+  for (auto c = 0; c != nclusters; ++c) {
+    const auto nshells = cluster_shells[c].size();
+    result.insert(std::make_pair(c, shell_offset));
+    shell_offset += nshells;
+  }
+
+  return result;
+}
+
+func_offset_list compute_func_offset_list(const ShellVec &cluster,
+                                          const size_t bf_first) {
+  func_offset_list result;
+
+  auto cf_offset = 0;
+  auto bf_offset = bf_first;
+
+  const auto nshell = cluster.size();
+  for (auto s = 0; s != nshell; ++s) {
+    const auto &shell = cluster[s];
+    const auto nf = shell.size();
+    result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));
+    bf_offset += nf;
+    cf_offset += nf;
+  }
+
+  return result;
 }
 
 }  // namespace detail

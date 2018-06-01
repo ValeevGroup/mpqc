@@ -7,14 +7,21 @@ The following are mandatory top-level prerequisites
 - [CMake](https://cmake.org/), version 3.1 and higher
 - [TiledArray](https://github.com/ValeevGroup/tiledarray), source from the master branch
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
-- [Eigen](http://eigen.tuxfamily.org), version 3.0 or higher
-- [Boost libraries](www.boost.org/)
+- [Boost libraries](www.boost.org/). The following Boost components are used:
+  - [Boost.Algorithm](https://www.boost.org/doc/libs/master/libs/algorithm/doc/html/index.html) -- misc algorithms
+  - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- only used if C++17 support is not enabled; __N.B.__ this is the only Boost library used by MPQC that must be compiled (i.e. it cannot be used as a header-only library)
+  - [Boost.Locale](https://www.boost.org/doc/libs/master/libs/locale/doc/html/index.html) -- to be replaced by the C++ Standard Library facilities
+  - [Boost.Math](https://www.boost.org/doc/libs/master/libs/math/doc/html/index.html) -- misc special functions
+  - [Boost.Optional](https://www.boost.org/doc/libs/master/libs/optional/doc/html/index.html) -- to be replaced by C++17 std::optional
+  - [Boost.PropertyTree](https://www.boost.org/doc/libs/master/doc/html/property_tree.html) -- used to implement KeyVal class
+  - [Boost.Serialization](https://www.boost.org/doc/libs/master/libs/serialization/doc/index.html) -- class GUID registration
 - Intel Thread Building Blocks (TBB), available in a [commercial](software.intel.com/tbb‎) or
   an [open-source](https://www.threadingbuildingblocks.org/) form
 - (for documentation only) Doxygen
 
 The following are transitive dependencies of the above:
 - [MADNESS parallel runtime](https://github.com/m-a-d-n-e-s-s/madness)
+- [Eigen](http://eigen.tuxfamily.org), version 3.3 or higher
 - BLAS and LAPACK libraries
 
 ## Compile TiledArray
@@ -49,7 +56,6 @@ cmake \
     -DTiledArray_INSTALL_DIR= ${TiledArray_INSTALL} \
     -DLIBINT2_INSTALL_DIR=${LIBINT2_INSTALL} \
     -DBOOST_ROOT=/path/to/boost/install/direcotry \
-    -DEIGEN3_INCLUDE_DIR=/path/to/eigen3/include/directory \
     ${MPQC_SOURCE}
 ```
 
@@ -63,7 +69,6 @@ The most useful MPQC-specific `cmake` variables are listed below:
 | `TiledArray_INSTALL_DIR` | path to TiledArray install directory |
 | `LIBINT2_INSTALL_DIR` | path to Libint2 install directory |
 | `BOOST_ROOT` | root path for Boost |
-| `EIGEN3_INCLUDE_DIR` | Comma separated list of include directories required to use Eigen 3 |
 | `TA_POLICY` |  dense or sparse, default sparse. control which policy to use with TiledArray. Some classes may only support sparse |
 | `MPQC_VALIDATION_TEST_PRINT` | default off, control if print output after validation test failed |
 

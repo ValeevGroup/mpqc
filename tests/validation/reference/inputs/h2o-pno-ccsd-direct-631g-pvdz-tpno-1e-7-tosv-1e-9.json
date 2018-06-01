@@ -27,7 +27,9 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:wfn_world"
+    "wfn_world": "$:wfn_world",
+    "localize" : true,
+    "localization_method" : "boys-foster(valence)"
   },
   "wfn":{
     "type": "CCSD",
@@ -36,7 +38,7 @@
     "ref": "$:scf",
     "method" : "direct_df",
     "solver" : "pno",
-    "pno_canonical" : "true",
+    "pno_canonical" : true,
     "tpno" : "1.0e-07",
     "tosv" : "1.0e-09",
     "tiling_method" : "flexible",

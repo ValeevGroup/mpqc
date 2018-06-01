@@ -18,7 +18,7 @@ import json
 default_precision = {
     "Energy" : 1.0e-9,
     "GFRealPole" : 1.0e-4,
-    "ExcitationEnergy" : 1.0e-5
+    "ExcitationEnergy" : 1.0e-6
 }
 
 def validate(label, data, refdata, tolerance):

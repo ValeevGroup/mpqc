@@ -3,4 +3,4 @@ set(sources
  	gaussian.cpp
 )
 
-add_mpqc_library(math_quadrature sources sources "" "mpqc/math/quadrature")
+add_mpqc_library(math_quadrature sources sources "MPQCmath_eigen" "mpqc/math/quadrature")

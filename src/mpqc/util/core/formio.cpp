@@ -36,7 +36,8 @@
 
 using namespace mpqc;
 
-char *FormIO::default_basename_ = 0;
+char *FormIO::default_basename_ = nullptr;
+char *FormIO::default_work_dir_ = nullptr;
 int  FormIO::ready_ = 0;
 int  FormIO::xalloc_inited_ = 0;
 long FormIO::nindent_ = 0;
@@ -70,11 +71,25 @@ FormIO::fileext_to_filename_string(const char *ext)
   std::string basename;
 
   if (default_basename_) basename = default_basename_;
-  else basename = "SC";
+  else basename = "mpqc";
 
   std::string res = basename + ext;
 
   return res;
+}
+
+std::string
+FormIO::fileext_to_fullpathname_string(const char *ext){
+
+  std::string fullpathname;
+
+  fullpathname = default_work_dir_;
+  fullpathname += '/';
+  fullpathname += default_basename_;
+  fullpathname += ext;
+
+  return fullpathname;
+
 }
 
 void
@@ -88,10 +103,27 @@ FormIO::set_default_basename(const char *basename)
       default_basename_ = 0;
 }
 
+void
+FormIO::set_default_work_dir(const char* work_dir)
+{
+  if (default_work_dir_) delete[] default_work_dir_;
+
+  if (work_dir)
+    default_work_dir_ = strcpy(new char[strlen(work_dir)+1], work_dir);
+  else
+    default_work_dir_ = 0;
+}
+
 const char *
 FormIO::default_basename()
 {
   return default_basename_;
+}
+
+const char *
+FormIO::default_work_dir()
+{
+  return default_work_dir_;
 }
 
 int
@@ -230,7 +262,7 @@ std::ostream&
 FormIO::copyright(std::ostream& o)
 {
   o << indent
-    << "Copyright (C) 2014-2017 Virginia Tech."
+    << "Copyright (C) 2014-2018 Virginia Tech."
     << std::endl;
 
   return o;

@@ -21,6 +21,7 @@ addons:
     - libtbb-dev
     - cmake
     - cmake-data
+    - lcov
 
 env:
   global:
@@ -55,16 +56,6 @@ matrix:
            - g++-5
            - gfortran-5
     - compiler: gcc
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-6
-           - gfortran-6
-    - compiler: gcc
       env: GCC_VERSION=6 BUILD_TYPE=Release
       addons:
         apt:
@@ -75,7 +66,7 @@ matrix:
            - g++-6
            - gfortran-6
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      env: GCC_VERSION=7 BUILD_TYPE=Release
       addons:
         apt:
           sources:
@@ -84,40 +75,51 @@ matrix:
            - *base_packages
            - g++-7
            - gfortran-7
+    - compiler: clang
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+           - *clang_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - gfortran-7
+           - clang-5.0
+    - compiler: clang
+      env: GCC_VERSION=7 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+           - *clang_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - gfortran-7
+           - clang-5.0
+  allow_failures:  # internal comppiler failures
     - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Release
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
            - *base_sources
           packages:
            - *base_packages
-           - g++-7
-           - gfortran-7
-    - compiler: clang
+           - g++-6
+           - gfortran-6
+    - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
            - *base_sources
-           - *clang_sources
           packages:
            - *base_packages
            - g++-7
            - gfortran-7
-           - clang-5.0
-    - compiler: clang
-      env: GCC_VERSION=7 BUILD_TYPE=Release
-      addons:
-        apt:
-          sources:
-           - *base_sources
-           - *clang_sources
-          packages:
-           - *base_packages
-           - g++-7
-           - gfortran-7
-           - clang-5.0
 
 before_install:
 - "env"
@@ -131,6 +133,16 @@ script:
 after_failure:
 - cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeOutput.log
 - cat ${BUILD_PREFIX}/mpqc4/CMakeFiles/CMakeError.log
+
+# codecov
+after_success:
+  # create report
+  - cd ${TRAVIS_BUILD_DIR}
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --gcov-tool gcov-${GCC_VERSION} --directory ${BUILD_PREFIX}/mpqc4 --capture --output-file coverage.info; fi; # capture coverage info
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --remove coverage.info '/usr/*' '*/tiledarray/*' '*/madness/*' '*/btas/*' '*/tests/*' --output-file coverage.info; fi; # filter out non-project files
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --list coverage.info; fi; #debug info
+  # upload report to CodeCov
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then bash <(curl -s https://codecov.io/bash) -t 91e770bd-4741-4553-a7d3-c226fb4e41fa; fi;
 
 notifications:
   slack:

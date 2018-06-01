@@ -2,8 +2,8 @@
 include(CheckCXXSourceCompiles)
 include(CMakePushCheckState)
 
-if (NOT ${EIGEN3_FOUND})
-  find(Eigen3 REQUIRED)
+if (NOT TARGET MPQC_Eigen)
+  message(FATAL_ERROR "Eigen3 is necessary to validate Libint. It should have been provided by TiledArray but has not been found!")
 endif()
 
 if (LIBINT2_INCLUDE_DIRS)
@@ -51,8 +51,9 @@ else (LIBINT2_INCLUDE_DIRS)
   
     # validate version, etc. by compiling tests
     cmake_push_check_state()
-  
-    list(APPEND CMAKE_REQUIRED_INCLUDES ${EIGEN3_INCLUDE_DIR} ${LIBINT2_INCLUDE_DIR})
+
+    get_property(EIGEN3_INCLUDE_DIRS TARGET MPQC_Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${EIGEN3_INCLUDE_DIRS} ${LIBINT2_INCLUDE_DIR})
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBINT2_LIBRARY})
     list(APPEND CMAKE_REQUIRED_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION})
     

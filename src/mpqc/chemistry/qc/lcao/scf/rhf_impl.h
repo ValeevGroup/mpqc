@@ -52,6 +52,12 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
   localize_ = kv.value<bool>("localize", false);
   localization_method_ =
       kv.value<std::string>("localization_method", "boys-foster");
+  clustered_coeffs_ = kv.value<bool>("clustered_coeffs", false);
+  if (clustered_coeffs_ && (localization_method_ == "boys-foster(valence)" ||
+                            localization_method_ != "rrqr(valence)")) {
+    throw InputError("RHF: clustered_coeffs is true with incompatible localization_method", __FILE__,
+                     __LINE__, "clustered_coeffs");
+  }
   t_cut_c_ = kv.value<double>("t_cut_c", 0.0);
 }
 
@@ -86,7 +92,7 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   if (density_builder_str_ == "purification") {
     auto density_builder = scf::PurificationDensityBuilder<Tile, Policy>(
         S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, localize_,
-        localization_method_);
+        localization_method_,clustered_coeffs_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder_str_ == "eigen_solve") {
@@ -95,7 +101,7 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
     double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
         S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, s_tolerance,
-        localize_, localization_method_);
+        localize_, localization_method_, clustered_coeffs_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {

@@ -1,48 +1,48 @@
 {
-  "units" : "2010CODATA",
-  "property":{
-    "type" : "GFRealPole",
-    "precision" : 1.0e-6,
-    "target" : 1,
-    "wfn" : "$:wfn"
+  "units": "2010CODATA",
+  "property": {
+    "type": "GFRealPole",
+    "precision": "1.0e-6",
+    "target": "1",
+    "wfn": "$:wfn"
   },
-  "atoms": {
+  "molecule": {
     "file_name": "h2o.xyz",
-    "sort_input": true,
-    "charge": 0
+    "sort_input": "true",
+    "charge": "0"
   },
   "basis": {
     "name": "6-31G",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
   "df_basis": {
     "name": "cc-pVDZ",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
-  "aux_basis":{
+  "aux_basis": {
     "name": "aug-cc-pVDZ",
-    "atoms": "$:atoms"
+    "molecule": "$:molecule"
   },
-  "wfn_world":{
-    "atoms" : "$:atoms",
-    "basis" : "$:basis",
-    "df_basis" :"$:df_basis",
-    "aux_basis" : "$:aux_basis",
-    "f12_factor" : "stg-6g[1.2]"
+  "wfn_world": {
+    "type": "WfnWorld",
+    "molecule": "$:molecule",
+    "basis": "$:basis",
+    "df_basis": "$:df_basis",
+    "aux_basis": "$:aux_basis"
   },
-  "scf":{
+  "scf": {
     "type": "RI-RHF",
-    "atoms": "$:atoms",
+    "molecule": "$:molecule",
     "wfn_world": "$:wfn_world"
   },
-  "wfn":{
+  "wfn": {
     "type": "GF2F12",
-    "atoms": "$:atoms",
+    "molecule": "$:molecule",
     "wfn_world": "$:wfn_world",
     "ref": "$:scf",
-    "occ_block_size": 4,
-    "unocc_block_size":4,
-    "use_cabs" : true,
-    "dyson_method" : "diagonal"
+    "occ_block_size": "8",
+    "unocc_block_size": "32",
+    "use_cabs": "true",
+    "dyson_method": "diagonal"
   }
 }

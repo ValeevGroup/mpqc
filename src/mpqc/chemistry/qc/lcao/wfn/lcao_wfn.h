@@ -5,7 +5,10 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
-#include <mpqc/chemistry/qc/lcao/scf/mo_build.h>
+#include <libint2/lcao/molden.h>
+
+#include "mpqc/chemistry/molecule/common.h"
+#include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
@@ -44,7 +47,7 @@ class LCAOWavefunction : public Wavefunction {
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
    * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
    * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
-   *
+   * | \c "export_orbital" | bool | false | export orbitals to molden files |
    */
   // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
@@ -65,6 +68,7 @@ class LCAOWavefunction : public Wavefunction {
     std::size_t mo_block = kv.value<int>("obs_block_size", 24);
     occ_block_ = kv.value<int>("occ_block_size", mo_block);
     unocc_block_ = kv.value<int>("unocc_block_size", mo_block);
+    export_orbital_ = kv.value<bool>("export_orbital", false);
   }
 
   virtual ~LCAOWavefunction() {}
@@ -142,6 +146,47 @@ class LCAOWavefunction : public Wavefunction {
           ao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
           n_frozen_core, occ_block_, unocc_block_);
     }
+
+    if(export_orbital_){
+
+      auto orbital_registry = this->lcao_factory().orbital_registry();
+      // prepare to Molden
+      const auto libint2_atoms = ::mpqc::to_libint_atom(this->wfn_world()->atoms()->atoms());
+      auto C_p_eig =
+          array_ops::array_to_eigen(orbital_registry.retrieve("p").coefs());
+      const auto libint2_shells =
+          this->lcao_factory().basis_registry()->retrieve(L"μ")->flattened_shells();
+
+
+      // do writing on node 0
+      if(this->wfn_world()->world().rank() == 0){
+        // write out orbitals
+
+        std::size_t n_mo = C_p_eig.cols();
+
+        std::size_t n_occ = orbital_registry.retrieve("m").rank();
+
+        auto occs = Eigen::VectorXd::Constant(n_occ, 2.0);
+        auto unoccs = Eigen::VectorXd::Constant(n_mo - n_occ, 0.0);
+
+        Eigen::VectorXd op(n_mo);
+        op << occs, unoccs;
+
+        // set orbital energy to zeroes
+        auto energies = Eigen::VectorXd::Constant(C_p_eig.cols(), 0.0);
+        // set orbital irrep labels to A
+        std::vector<std::string> labels(n_mo, "A");
+
+        libint2::molden::Export xport(libint2_atoms, libint2_shells, C_p_eig,
+                                      op, energies, labels);
+
+        std::string filename = FormIO::fileext_to_fullpathname_string(".orbital.molden");
+        xport.write(filename);
+
+      }
+
+    }
+
   }
 
   const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()
@@ -171,6 +216,7 @@ class LCAOWavefunction : public Wavefunction {
   int charge_;
   std::size_t occ_block_;
   std::size_t unocc_block_;
+  bool export_orbital_;
 };
 
 #if TA_DEFAULT_POLICY == 0

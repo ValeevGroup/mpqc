@@ -116,7 +116,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     cp_ccsd_ = ( (df_) ? kv.value<bool>("cp_ccsd", false) : false);
 #ifndef MADNESS_LINALG_USE_LAPACKE
     if(cp_ccsd_)
-      throw InputError("Cannot utilize BTAS features without LAPCKE", __FILE__, __LINE__, "cp_ccsd");
+      throw FeatureDisabled("Feature does not exist without LAPACKE", __FILE__, __LINE__, "CP-ALS");
 #else
     cp_precision_ = kv.value<double>("cp_precision", 0.1);
     rank_ = ( (cp_ccsd_) ? kv.value<double>("rank", 0.6) : 0);

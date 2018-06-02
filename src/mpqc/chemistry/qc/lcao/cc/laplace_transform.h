@@ -310,8 +310,8 @@ TA::Array<double, 3, Tile, Policy> Xab_laplace_transform(
     std::size_t n_occ, std::size_t n_frozen, double x) {
   const double alpha = 3.0 * (ens(n_occ) - ens(n_occ - 1));
 
-  auto convert = [&ens, n_occ, n_frozen, alpha, x](Tile &result_tile,
-                                                   const Tile &arg_tile) {
+  auto convert = [&ens, n_occ, alpha, x](Tile &result_tile,
+                                         const Tile &arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 

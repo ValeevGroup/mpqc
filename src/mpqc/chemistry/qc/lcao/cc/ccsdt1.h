@@ -676,9 +676,6 @@ class CCSDT1 : public LCAOWavefunction<Tile, Policy>,
 
       }
        // end of triples part  _VR
-      double norm_t1 = t1("a,i").norm();
-      double norm_t2 = t2("a,b,i,j").norm();
-      double norm_t3 = t3("a,b,c,i,j,k").norm();
 
       // error = residual norm per element _edited VR
       error = std::sqrt((std::pow(norm2(r1), 2) + std::pow(norm2(r2), 2)

@@ -920,8 +920,8 @@ void construct_pno(
   // world.gop.fence();
 
   // Lambda function to form PNOs; implement using a for_each
-  auto form_PNO = [&pnos, &F_pno_diag, &osvs, &F_osv_diag, &F_uocc, &npnos,
-                   &nosvs, tpno, tosv, nuocc, nocc_act,
+  auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos,
+                   tpno, nuocc, nocc_act,
                    pno_canonical](Tile& result_tile, const Tile& arg_tile) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;

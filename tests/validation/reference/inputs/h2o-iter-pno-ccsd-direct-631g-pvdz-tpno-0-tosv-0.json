@@ -27,28 +27,27 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:wfn_world"
+    "wfn_world": "$:wfn_world",
+    "localize" : true,
+    "localization_method" : "boys-foster(valence)"
   },
   "wfn":{
     "type": "CCSD",
-    "min_iter": 1,
-    "max_iter": 45,
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
     "ref": "$:scf",
     "method" : "direct",
     "solver" : "pno",
-    "pno_canonical" : "true",
-    "tpno" : "0",
-    "tosv" : "0",
+    "pno_canonical" : true,
     "update_pno": true,
-    "print_npnos": false,
+    "tpno" : 0,
+    "tosv" : 0,
     "occ_block_size" : 4,
-    "unocc_block_size" : 8
+    "unocc_block_size" : 4
   },
   "property" : {
     "type" : "Energy",
-    "precision" : "1e-08",
+    "precision" : "1e-11",
     "wfn" : "$:wfn"
   }
 }

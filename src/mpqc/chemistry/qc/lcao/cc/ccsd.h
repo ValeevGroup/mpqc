@@ -301,11 +301,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     ints.Gijka = this->get_ijka();
 
     if (method_ == "standard" || (method_ == "df" && !reduced_abcd_memory_)) {
-#ifdef MADNESS_LINALG_USE_LAPACKE
       if(!cp_ccsd_) {
         ints.Gabcd = this->get_abcd();
       }
-#endif
       ints.Giabc = this->get_iabc();
     } else if (method_ == "direct") {
       ints.Giabc = this->get_iabc();

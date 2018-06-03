@@ -256,8 +256,15 @@ void Debugger::debug(const char *reason) {
         sleep(sleep_);
       }
       if (wait_for_debugger_) {
+        std::string make_ready_message;
+        if (cmd_ == "gdb_xterm") {
+          make_ready_message = " type 'set variable debugger_ready_=1' then type 'c' to continue running";
+        } else if (cmd_ == "lldb_xterm") {
+          make_ready_message = " type 'expr debugger_ready_=1' then type 'c' to continue running";
+        }
+
         ExEnv::outn() << prefix_
-                      << ": Spinning until debugger_ready_ is set ..." << endl;
+                      << ": Spinning until debugger_ready_ is set ..." << make_ready_message << endl;
         while (!debugger_ready_)
           ;
       }

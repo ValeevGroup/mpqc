@@ -39,7 +39,7 @@
     "method" : "direct",
     "solver" : "pno",
     "pno_canonical" : true,
-    "update_pno": false,
+    "update_pno": true,
     "tpno" : 0,
     "tosv" : 0,
     "occ_block_size" : 4,

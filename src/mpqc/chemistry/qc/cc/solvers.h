@@ -29,7 +29,7 @@ class Solver {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  virtual void update(T& t1, T& t2, const T& r1, const T& r2) = 0;
+  virtual void update(T& t1, T& t2, const T& r1, const T& r2, double dE = 0) = 0;
 
   /// Updates amplitudes \c t{1,2,3} using the residuals \c r{1,2,3} .
   /// @warning This function assumes that \c t{1,2,3} and \c r{1,2,3}
@@ -61,6 +61,13 @@ class Solver {
     return std::sqrt((std::pow(norm2(r1),2) + std::pow(norm2(r2),2))) /
         (size(r1) + size(r2));
   }
+
+  /// Checks to see if the solver has converged
+  /// @param target_precision The desired precision for the final energy
+  /// @param error The value of the error computed from the one- and two-body residuals
+  /// @param dE The energy change between two consecutive solver iterations
+  /// @return Whether or not the solver has converged
+  virtual bool is_converged(double target_precision, double error, double dE) const = 0;
 };
 
 /// DIISSolver updates the CC T amplitudes using DIIS
@@ -85,8 +92,9 @@ class DIISSolver : public Solver<T> {
   // clang-format on
   DIISSolver(const KeyVal& kv)
       : diis_(kv.value<int>("diis_start", 1), kv.value<int>("n_diis", 8), kv.value<double>("diis_damp", 0.0),
-              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)) {}
+              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)), diis_pristine_(diis_) {}
   virtual ~DIISSolver() = default;
+
 
   /// Update the amplitudes using update_only() and extrapolate using DIIS.
   /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
@@ -101,8 +109,8 @@ class DIISSolver : public Solver<T> {
   /// modified)
   /// @param r2 the 2-body amplitude equation residual set (contents may be
   /// modified)
-  void update(T& t1, T& t2, const T& r1, const T& r2) override {
-    update_only(t1, t2, r1, r2);
+  void update(T& t1, T& t2, const T& r1, const T& r2, double dE = 0) override {
+    update_only(t1, t2, r1, r2, dE);
     T r1_copy = r1;
     T r2_copy = r2;
     TPack<T> r(r1_copy, r2_copy);
@@ -125,13 +133,27 @@ class DIISSolver : public Solver<T> {
     t3 = t[2];
   }
 
+  /// Checks to see if the solver has converged
+  /// @param target_precision The desired precision for the final energy
+  /// @param error The value of the error computed from the one- and two-body residuals
+  /// @param dE The energy change between two consecutive solver iterations
+  /// @return Whether or not the solver has converged
+  bool is_converged(double target_precision, double error, double dE) const override {
+   return (dE <= target_precision && error <= target_precision);
+  }
+
+  /// Resets the DIIS solver; used when switching to a new solver subspace
+  void reset() {
+    diis_ = diis_pristine_;
+  }
+
  protected:
   /// this performs the amplitude update only, to be followed up with DIIS
   /// @warning This function assumes that {\c t1 , \c t2 } and {\c r1 , \c r2 }
   ///          are congruent, but does not assume any particular structure.
   ///          Derived classes \em may impose additional assumptions on the
   ///          structure of the arguments.
-  virtual void update_only(T& t1, T& t2, const T& r1, const T& r2) {
+  virtual void update_only(T& t1, T& t2, const T& r1, const T& r2, double dE=0) {
     throw ProgrammingError("DIISSolver::update_only must be implemented in the derived class",
                            __FILE__, __LINE__);
   }
@@ -145,7 +167,7 @@ class DIISSolver : public Solver<T> {
 
   private:
   TA::DIIS<TPack<T>> diis_;
-
+  TA::DIIS<TPack<T>> diis_pristine_;
 
 
  };

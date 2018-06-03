@@ -29,8 +29,8 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
       localize_(localize),
       localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
-      metric_decomp_type_(metric_decomp_type),
       clustered_coeffs_(clustered_coeffs),
+      metric_decomp_type_(metric_decomp_type),
       nocc_(nocc),
       ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());

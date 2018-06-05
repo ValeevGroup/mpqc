@@ -60,18 +60,22 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   integer LDA = rows;
   integer LDU = (rows < cols) ? rows : 1;
   integer LDVT = (rows >= cols) ? cols : 1;
-  const char O = 'O';
   std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
 
   // Call routine
+#ifndef MADNESS_LINALG_USE_LAPACKE
+  const char O = 'O';
+#else
+  char O = 'O';
+#endif
   dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
           &LWORK, iwork.get(), &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
   std::unique_ptr<double[]> W{new double[LWORK]};
+
   dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
           iwork.get(), &INFO);
-
   return INFO;
 }
 
@@ -106,6 +110,7 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
 
   // Call routine
+#ifndef MADNESS_LINALG_USE_LAPACKE
   dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
           &LWORK, iwork.get(), &INFO);
   assert(INFO == 0);
@@ -113,7 +118,16 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   std::unique_ptr<double[]> W{new double[LWORK]};
   dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
           iwork.get(), &INFO);
-
+#else
+  char jobz = JOBZ;
+  dgesdd_(&jobz, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
+          &LWORK, iwork.get(), &INFO);
+  assert(INFO == 0);
+  LWORK = work_dummy;
+  std::unique_ptr<double[]> W{new double[LWORK]};
+  dgesdd_(&jobz, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
+          iwork.get(), &INFO);
+#endif
   return INFO;
 }
 
@@ -609,13 +623,19 @@ integer piv_cholesky(
   integer rank = 0;
   integer info;
   double tol = -1;  // Use default tolerence if negative
-  const char uplo = 'U';
   std::unique_ptr<double[]> work{new double[2 * dim]};
 
   // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> D =
   // a;
+#ifndef MADNESS_LINALG_USE_LAPACKE
+  const char uplo = 'U';
   dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
           &info);
+#else
+  char uplo = 'U';
+  dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
+          &info);
+#endif
 
   // Fortran using 1 based indexing :(
   for (auto i = 0; i < piv.size(); ++i) {

@@ -142,7 +142,7 @@ after_success:
   - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --remove coverage.info '/usr/*' '*/tiledarray/*' '*/madness/*' '*/btas/*' '*/tests/*' --output-file coverage.info; fi; # filter out non-project files
   - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then lcov --list coverage.info; fi; #debug info
   # upload report to CodeCov
-  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then bash <(curl -s https://codecov.io/bash) -t 91e770bd-4741-4553-a7d3-c226fb4e41fa; fi;
+  - if [ "$BUILD_TYPE" = "Debug" ] && [ "$GCC_VERSION" = 5 ]; then bash <(curl -s https://codecov.io/bash) -t c0d0a777-cce2-48fa-8ec0-863ce1dcf446; fi;
 
 notifications:
   slack:

@@ -35,8 +35,8 @@ class ExactKDiagonalBuilder
   using ExactKDiagonalBuilder_ = ExactKDiagonalBuilder<Tile, Policy>;
 
   using Basis = ::mpqc::lcao::gaussian::Basis;
-  using Shell = typename ::mpqc::lcao::gaussian::Shell;
-  using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
+  using Shell = ::mpqc::lcao::gaussian::Shell;
+  using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using shellpair_list_t = std::unordered_map<size_t, std::vector<size_t>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
@@ -80,6 +80,7 @@ class ExactKDiagonalBuilder
     if (bra_basis_ == density_basis_ && ket_basis_ == density_basis_)
       return compute_K_aaaa(D, target_precision);
     assert(false && "feature not implemented");
+    return array_type{};
   }
 
   array_type compute_K_aaaa(array_type const& D, double target_precision) {

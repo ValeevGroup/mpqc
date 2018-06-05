@@ -39,9 +39,9 @@
     "method" : "direct",
     "solver" : "pno",
     "pno_canonical" : true,
-    "update_pno": false,
-    "tpno" : 0,
-    "tosv" : 0,
+    "update_pno": true,
+    "tpno" : 1.0e-07,
+    "tosv" : 1.0e-09,
     "occ_block_size" : 4,
     "unocc_block_size" : 4
   },

@@ -69,7 +69,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   auto four_center_fock_builder = std::make_unique<Builder>(
       world, obs, min_bs, dcell, R_max, RJ_max, RD_max, R_size, RJ_size,
       RD_size, true, true, screen, screen_thresh, shell_pair_thresh,
-      density_thresh);
+      density_thresh, false);
   auto G = four_center_fock_builder->operator()(
       D, std::numeric_limits<double>::epsilon(), true);
   F("mu, nu") += G("mu, nu");

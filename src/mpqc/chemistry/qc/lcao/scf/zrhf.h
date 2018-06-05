@@ -20,9 +20,9 @@ namespace mpqc {
 namespace lcao {
 
 using MatrixzVec = std::vector<MatrixZ>;
+using MatrixdVec = std::vector<RowMatrixXd>;
 using VectorzVec = std::vector<VectorZ>;
 using VectordVec = std::vector<VectorD>;
-using Matrix = RowMatrixXd;
 
 /**
  * complex-valued Restricted Hartree-Fock class
@@ -48,21 +48,21 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | max_iter | int | 30 | maximum number of iteration |
-   * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
-   * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | real | 1.0e8 | maximum condition number for overlap matrix |
-   * | k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
-   * | print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
-   * | fock_mixing | real | 0.0 | mixing of Fock matrices in reciprocal space |
-   * | level_shift | real | 0.0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
-   * | diis | string | none | the choice of DIIS method: none, gamma_point, all_k, sloshing |
-   * | diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
-   * | diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
-   * | diis_damping | real | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
-   * | diis_mixing | real | 0.0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
-   * | diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
-   * | diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
+   * | @c max_iter | int | 30 | maximum number of iteration |
+   * | @c soad_guess | bool | true | if true, use SOAD guess for initial Fock build |
+   * | @c print_detail | bool | false | if print extra computation&time info |
+   * | @c max_condition_num | real | 1e8 | maximum condition number for overlap matrix |
+   * | @c k_points | array<int, 3> | none | number of k points in each direction of the first Brillouin zone |
+   * | @c print_max_item | int | 100 | maximum number of items/lines that can be printed in the list of condition numbers |
+   * | @c fock_mixing | real | 0 | mixing of Fock matrices in reciprocal space |
+   * | @c level_shift | real | 0 | this adds a nonnegative energy shift to the diagonal Fock elements (in Crystal Orbital basis) of the unoccupied orbitals |
+   * | @c diis | string | none | the choice of DIIS method: none (DIIS will not be used) , @c gamma_point , @c all_k , @c sloshing |
+   * | @c diis_start | unsigned int | 1 | the DIIS extrapolation will begin on the iteration given by this integer |
+   * | @c diis_num_vecs | unsigned int | 5 | maximum number of data sets to store |
+   * | @c diis_damping | real | 0 | this nonnegative floating point number is used to dampen the DIIS extrapolation |
+   * | @c diis_mixing | real | 0 | this nonnegative floating point number is used to dampen the DIIS extrapolation by mixing the input Fock with the output Fock for each iteration |
+   * | @c diis_num_iters_group | unsigned int | 1 | the number of iterations in a DIIS group | DIIS extrapolation is only used for the first \c diis_num_extrap_group of these iterations |
+   * | @c diis_num_extrap_group | unsigned int | 1 | the number of DIIS extrapolations to do at the beginning of an iteration group |
    *
    * example input:
    *
@@ -144,7 +144,7 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
    * \param arg_value original complex value
    * \param factor \phi in e^(i \phi)
    */
-  MatrixZ reverse_phase_factor(MatrixZ& mat0);
+  MatrixZ reverse_phase_factor(const MatrixZ& mat0);
 
   /*!
    * \brief This prints direct and indirect band gaps
@@ -152,16 +152,17 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   void print_band_gaps();
 
  protected:
-  array_type S_;
-  array_type D_;
-  bool print_detail_;
-  int64_t print_max_item_;
   std::unique_ptr<scf::PeriodicFockBuilder<Tile, Policy>> f_builder_;
+  bool need_extra_update_ = false;
+  array_type extra_F_;
+  double extra_energy_ = 0.0;
 
  private:
+  array_type S_;
   array_type T_;
   array_type V_;
   array_type H_;
+  array_type D_;
   array_type J_;
   array_type K_;
   array_type F_;
@@ -177,6 +178,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   int64_t docc_;
 
   const KeyVal kv_;
+  bool print_detail_;
+  int64_t print_max_item_;
   int64_t maxiter_;
   double max_condition_num_;
   double fmix_;
@@ -226,7 +229,8 @@ class zRHF : public PeriodicAOWavefunction<Tile, Policy>,
   virtual void init_fock_builder();
 
   /// builds Fock
-  void build_F();
+  virtual array_type build_F(const array_type& D, const array_type& H,
+                             const Vector3i& H_lattice_range);
 };
 
 /*!
@@ -279,7 +283,6 @@ class DFzRHF : public zRHF<Tile, Policy> {
 template <typename Tile, typename Policy>
 class FourCenterzRHF : public zRHF<Tile, Policy> {
  public:
-
   /**
    * \brief KeyVal constructor for FourCenterzRHF
    *
@@ -354,7 +357,25 @@ class RIJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
-  double force_shape_threshold_;
+};
+
+/*!
+ * \brief MARIJCADFKzRHF uses MA-RI-J for coulomb and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class MARIJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MARIJCADFKzRHF(const KeyVal& kv);
+
+  ~MARIJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
 };
 
 /*!
@@ -401,7 +422,66 @@ class FourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
 
  private:
   void init_fock_builder() override;
-  double force_shape_threshold_;
+};
+
+/*!
+ * \brief MARIJFourCenterKzRHF uses MA-RI-J for coulomb and four-center-K for
+ * exchange
+ */
+template <typename Tile, typename Policy>
+class MARIJFourCenterKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MARIJFourCenterKzRHF(const KeyVal& kv);
+
+  ~MARIJFourCenterKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
+};
+
+/*!
+ * \brief MAFourCenterzRHF uses MA for Coulomb CFF and four-center-JK for
+ * Coulomb and exchange CNF
+ */
+template <typename Tile, typename Policy>
+class MAFourCenterzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MAFourCenterzRHF(const KeyVal& kv);
+
+  ~MAFourCenterzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
+};
+
+/*!
+ * \brief MAFourCenterJCADFK uses four-center-J (CNF) and MA (CFF) for Coulomb
+ * and CADF-K for exchange
+ */
+template <typename Tile, typename Policy>
+class MAFourCenterJCADFKzRHF : public zRHF<Tile, Policy> {
+ public:
+  using factory_type = typename zRHF<Tile, Policy>::factory_type;
+  using array_type = typename zRHF<Tile, Policy>::array_type;
+
+  MAFourCenterJCADFKzRHF(const KeyVal& kv);
+
+  ~MAFourCenterJCADFKzRHF() {}
+
+ private:
+  void init_fock_builder() override;
+  array_type build_F(const array_type& D, const array_type& H,
+                     const Vector3i& H_lattice_range) override;
 };
 
 #if TA_DEFAULT_POLICY == 0
@@ -411,7 +491,11 @@ extern template class zRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DFzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MARIJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class FourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MARIJFourCenterKzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MAFourCenterzRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class MAFourCenterJCADFKzRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace  lcao

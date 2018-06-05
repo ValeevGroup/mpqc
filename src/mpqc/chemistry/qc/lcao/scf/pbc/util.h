@@ -28,8 +28,8 @@ TA::DistArray<Tile, Policy> reduced_size_array(
          arg_range(2) >= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::detail::direct_ord_idx;
   using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
   using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
@@ -84,8 +84,8 @@ TA::DistArray<Tile, Policy> enlarged_size_array(
          arg_range(2) <= result_range(2));
   auto &world = arg_array.world();
 
-  using ::mpqc::detail::direct_ord_idx;
   using ::mpqc::detail::direct_3D_idx;
+  using ::mpqc::detail::direct_ord_idx;
   using ::mpqc::detail::extend_trange1;
 
   // # of lattices corresponding to lattice ranges
@@ -342,6 +342,60 @@ Vector3i truncate_lattice_range(const TA::DistArray<Tile, Policy> &D,
                 << std::endl;
 
   return new_RD_max;
+}
+
+/*!
+ * @brief This symmetrizes a matrix M through
+ *   M(mu, nu_R) = 1/2 * ( M(mu, nu_R) + M(nu, mu_-R) )
+ *
+ * @tparam Tile
+ * @tparam Policy
+ * @param M_unsymm an TA Array object (matrix before symmetrization)
+ * @return an TA Array object (symmetrized matrix)
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> symmetrize_matrix(
+    const TA::DistArray<Tile, Policy> &M_unsymm) {
+  const auto &elements_range = M_unsymm.trange().elements_range();
+  const auto ext0 = elements_range.extent(0);
+  const auto ext1 = elements_range.extent(1);
+
+  // compute total number of unit cells
+  assert(ext1 % ext0 == 0);
+  const auto ncells = ext1 / ext0;
+
+  // determine the index of the reference cell
+  assert(ncells > 0 && ncells % 2 == 1);
+  const auto R_ref = (ncells - 1) / 2;
+
+  // initialize an empty matrix
+  auto M_unsymm_eig = array_ops::array_to_eigen(M_unsymm);
+  RowMatrixXd M_symm_eig(ext0, ext1);
+
+  // fill matrix elements for each R
+  for (auto Rp_ord = R_ref; Rp_ord != ncells; ++Rp_ord) {
+    const auto distance = Rp_ord - R_ref;
+    const auto Rm_ord = R_ref - distance;
+    const auto Mp_unsymm = M_unsymm_eig.block(0, ext0 * Rp_ord, ext0, ext0);
+    const auto Mm_unsymm = M_unsymm_eig.block(0, ext0 * Rm_ord, ext0, ext0);
+    M_symm_eig.block(0, ext0 * Rp_ord, ext0, ext0) =
+        0.5 * (Mp_unsymm + Mm_unsymm.transpose());
+    if (distance != 0) {
+      M_symm_eig.block(0, ext0 * Rm_ord, ext0, ext0) =
+          0.5 * (Mm_unsymm + Mp_unsymm.transpose());
+    }
+  }
+
+  // convert to an TA Array
+  auto &world = M_unsymm.world();
+  const auto &tr0 = M_unsymm.trange().dim(0);
+  const auto &tr1 = M_unsymm.trange().dim(1);
+  auto M_symm =
+      array_ops::eigen_to_array<Tile, Policy>(world, M_symm_eig, tr0, tr1);
+  M_symm.truncate();
+  world.gop.fence();
+
+  return M_symm;
 }
 
 }  // namespace detail

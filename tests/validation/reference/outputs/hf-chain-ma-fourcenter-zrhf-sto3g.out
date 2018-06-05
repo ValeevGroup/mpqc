@@ -1,0 +1,654 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 67206e97f3e197b7d5e4227b00ae3bf62af2f2f6
+
+  Machine:          Darwin-17.4.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Thu Mar 22 18:23:48 2018 UTC
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "hf.xyz",
+        "sort_input": "false",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "2.672359"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "atoms": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz",
+        "atoms": "$:unitcell"
+    },
+    "wfn_world": {
+        "atoms": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "shell_pair_threshold": "1.0e-12",
+        "density_threshold": "1e-10",
+        "rmax": [
+            "0",
+            "0",
+            "10"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "300"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "10"
+        ]
+    },
+    "wfn": {
+        "type": "MA-FourCenter-zRHF",
+        "atoms": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "50",
+        "soad_guess": "true",
+        "print_detail": "true",
+        "max_condition_num": "1e8",
+        "diis": "gamma_point",
+        "ma_energy_threshold": "1e-9",
+        "ma_well_separateness": "3.0",
+        "ma_extent_threshold": "1e-6",
+        "ma_extent_small_value": "0.01",
+        "k_points": [
+            "1",
+            "1",
+            "21"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9"
+    }
+}
+
+  Using fundamental constants system 2006CODATA
+
+Constructing Basis Registry: 
+OBS Basis = sto-3g
+( tiles = [ 0, 1 ), elements = [ 0, 6 ) )
+Min and Max block size: 6 6
+Average: 6
+
+DF Basis = cc-pvdz
+( tiles = [ 0, 1 ), elements = [ 0, 19 ) )
+Min and Max block size: 19 19
+Average: 19
+
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 1e-10
+
+User specified range of lattice sum for |mu nu_R) =  0  0 10
+Updated range of lattice sum for |mu nu_R) = 0 0 3
+
+Crystal dimensionality : 1
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 8.23438167572021e-05 GB
+
+The boundary of Crystal Far Field is  0  0 19
+
+MA init time decomposition:
+	basis pair ctor:          0.000316349 s
+	multipole ints:           0.015919276 s
+	CFF boundary:             0.000175374 s
+	nuclear multipole + misc: 7.7789e-05 s
+
+The boundary of Crystal Near Field is  0  0 18
+
+Init MA time:            0.016619722 s
+
+Init Four-Center-J time: 0.014804769 s
+
+Init Four-Center-K time: 0.026241166 s
+
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 3]
+	Rj_max (range of Coulomb operation): [ 0  0 18]
+	Rd_max (Range of density representation): [ 0  0 10]
+
+Molecule info:
+	C.O.M:                 0                 0 0.773355050269357
+	Mass: 20.00622819493
+
+Elements:
+	AtomBasedCluster: {C. Of Mass:                 0                 0 0.773355050269357, elements: {AtomBasedCluster: {C. Of Mass:                 0                 0 0.773355050269357, elements: {Atom: {Z: 9, charge: 9, mass: 18.9984031627, pos:                 0                 0 0.860001134993326}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.860001134993326}}}}}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 5.05002663875214]
+
+zRHF computational parameters:
+  # of k points in each direction: [ 1  1 21]
+
+Computing Two Center Integral for Periodic System: < κ |T| λ >
+ Size: 1.8775463104248e-06 GB Time: 0.010552574 s
+
+Computing Two Center Integral for Periodic System: < κ |V| λ >
+ Time: 0.014351121 s
+
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 1.8775463104248e-06 GB Time: 0.000545639 s
+
+Building Fock Matrix from SOAD Guess ...
+
+Integrals per node:
+  Ints for J on node(0): 75480
+  Ints for K on node(0): 8650
+
+Total PeriodicFourCenterFock builder time: 0.015795581
+
+SOAD Time: 0.058480922 s
+
+	overlap condition number = 4.07660191552014 at k = 0
+	overlap condition number = 4.08377242520687 at k = 1
+	overlap condition number = 4.09734570364458 at k = 2
+	overlap condition number = 4.11597864236992 at k = 3
+	overlap condition number = 4.1379836817618 at k = 4
+	overlap condition number = 4.16148153668546 at k = 5
+	overlap condition number = 4.18449044778334 at k = 6
+	overlap condition number = 4.2050247946822 at k = 7
+	overlap condition number = 4.22124422047437 at k = 8
+	overlap condition number = 4.23164094220073 at k = 9
+	overlap condition number = 4.23522211071973 at k = 10
+	overlap condition number = 4.23164094220073 at k = 11
+	overlap condition number = 4.22124422047437 at k = 12
+	overlap condition number = 4.2050247946822 at k = 13
+	overlap condition number = 4.18449044778334 at k = 14
+	overlap condition number = 4.16148153668546 at k = 15
+	overlap condition number = 4.1379836817618 at k = 16
+	overlap condition number = 4.11597864236992 at k = 17
+	overlap condition number = 4.09734570364458 at k = 18
+	overlap condition number = 4.08377242520687 at k = 19
+	overlap condition number = 4.07660191552014 at k = 20
+Periodic RHF Init Time: 0.147601848 s
+
+Nuclear Repulsion Energy: 74.994741937284
+
+Iteration: 1
+
+Multipole approximation is converged after spherical shell [216]
+
+Coulomb energy contributed from CFF so far = -1.87899834534231e-05
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.081753459 s
+	build/retrieve UCs:    0.001019736 s
+	build/retrieve M:      0.029175798 s
+	build L:               0.066503749 s
+	build Fock (CFF):      0.011219549 s
+
+Total MA builder time: 0.191258545 s
+	User specified lattice range =  0  0 10
+	Updated lattice range = 0 0 9
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.021592834
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range = 0 0 9
+
+Lattice range of density representation is changed. Update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 75387
+
+Total PeriodicFourCenterFock builder time: 0.012472317
+
+zRHF Energy: -173.551515644015
+Total Energy: -98.5567924967147
+Delta(E): -173.551534433999
+RMS(D): 0.000218684706171794
+Fock Build Time: 0.226963116 s
+Transform Fock (Real->Recip) Time: 0.000371626 s
+Density Time: 0.000770958 s
+Iteration Time: 0.231157646 s
+
+Max LUCO: 22.9091463187126 eV at k = (  0   0 -10)
+Min LUCO: 14.5183970183223 eV at k = (0 0 0)
+Max HOCO: -11.0498332171869 eV at k = (  0   0 -10)
+Min HOCO: -11.1455351627421 eV at k = (0 0 0)
+Indirect band gap: 25.5682302355092 eV
+Max direct band gap: 33.9589795358995 eV at k = (  0   0 -10)
+Min direct band gap: 25.6639321810644 eV at k = (0 0 0)
+
+Iteration: 2
+
+Multipole approximation is converged after spherical shell [172]
+
+Coulomb energy contributed from CFF so far = -9.99103119216558e-06
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.032844946 s
+	build/retrieve UCs:    0.000383542 s
+	build/retrieve M:      0.000387063 s
+	build L:               0.048831934 s
+	build Fock (CFF):      0.010360125 s
+
+Total MA builder time: 0.093987518 s
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.018830682
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Lattice range of density representation is changed. Update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 81766
+
+Total PeriodicFourCenterFock builder time: 0.016527537
+
+zRHF Energy: -173.571575571067
+Total Energy: -98.5768436248143
+Delta(E): -0.020051128099638
+RMS(D): 7.94865939366366e-05
+Fock Build Time: 0.131575329 s
+Transform Fock (Real->Recip) Time: 0.000321262 s
+Density Time: 0.000659621 s
+Iteration Time: 0.136405319 s
+
+Max LUCO: 22.849926921235 eV at k = (  0   0 -10)
+Min LUCO: 14.3643865151108 eV at k = (0 0 0)
+Max HOCO: -12.6375281929483 eV at k = (  0   0 -10)
+Min HOCO: -12.7312125491991 eV at k = (0 0 0)
+Indirect band gap: 27.0019147080591 eV
+Max direct band gap: 35.4874551141833 eV at k = (  0   0 -10)
+Min direct band gap: 27.0955990643099 eV at k = (0 0 0)
+
+Iteration: 3
+
+Multipole approximation is converged after spherical shell [157]
+
+Coulomb energy contributed from CFF so far = -7.86104739434505e-06
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.037811572 s
+	build/retrieve UCs:    0.000386127 s
+	build/retrieve M:      0.000389943 s
+	build L:               0.0527745 s
+	build Fock (CFF):      0.008486542 s
+
+Total MA builder time: 0.100973236 s
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.043307895
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 81675
+
+Total PeriodicFourCenterFock builder time: 0.015534087
+
+zRHF Energy: -173.573174165337
+Total Energy: -98.5784400891005
+Delta(E): -0.0015964642861519
+RMS(D): 1.27412431768861e-05
+Fock Build Time: 0.161271498 s
+Transform Fock (Real->Recip) Time: 0.005553792 s
+Density Time: 0.000793858 s
+Iteration Time: 0.17092637 s
+
+Max LUCO: 22.822303597746 eV at k = (  0   0 -10)
+Min LUCO: 14.3486197179958 eV at k = (0 0 0)
+Max HOCO: -12.7187994749123 eV at k = (  0   0 -10)
+Min HOCO: -12.8123612878803 eV at k = (0 0 0)
+Indirect band gap: 27.0674191929082 eV
+Max direct band gap: 35.5411030726584 eV at k = (  0   0 -10)
+Min direct band gap: 27.1609810058761 eV at k = (0 0 0)
+
+Iteration: 4
+
+Multipole approximation is converged after spherical shell [156]
+
+Coulomb energy contributed from CFF so far = -7.67068540381133e-06
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.043018236 s
+	build/retrieve UCs:    0.000376367 s
+	build/retrieve M:      0.000379093 s
+	build L:               0.050007613 s
+	build Fock (CFF):      0.00945073 s
+
+Total MA builder time: 0.104646168 s
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.0224202
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 81595
+
+Total PeriodicFourCenterFock builder time: 0.015068608
+
+zRHF Energy: -173.573202882025
+Total Energy: -98.5784686154269
+Delta(E): -2.8526326445899e-05
+RMS(D): 4.599459936847e-07
+Fock Build Time: 0.14560215 s
+Transform Fock (Real->Recip) Time: 0.000341128 s
+Density Time: 0.000934867 s
+Iteration Time: 0.151093019 s
+
+Max LUCO: 22.8272469575606 eV at k = (  0   0 -10)
+Min LUCO: 14.3554560295879 eV at k = (0 0 0)
+Max HOCO: -12.7002702178677 eV at k = (  0   0 -10)
+Min HOCO: -12.7938547236033 eV at k = (0 0 0)
+Indirect band gap: 27.0557262474557 eV
+Max direct band gap: 35.5275171754283 eV at k = (  0   0 -10)
+Min direct band gap: 27.1493107531913 eV at k = (0 0 0)
+
+Iteration: 5
+
+Multipole approximation is converged after spherical shell [156]
+
+Coulomb energy contributed from CFF so far = -7.68556390585257e-06
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.042090294 s
+	build/retrieve UCs:    0.000407452 s
+	build/retrieve M:      0.00043082 s
+	build L:               0.074515254 s
+	build Fock (CFF):      0.008149018 s
+
+Total MA builder time: 0.126764338 s
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.025346698
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 81589
+
+Total PeriodicFourCenterFock builder time: 0.039371116
+
+zRHF Energy: -173.573202947163
+Total Energy: -98.5784686954427
+Delta(E): -8.00157948788183e-08
+RMS(D): 9.31855195700967e-09
+Fock Build Time: 0.200074351 s
+Transform Fock (Real->Recip) Time: 0.000378139 s
+Density Time: 0.001020366 s
+Iteration Time: 0.210674201 s
+
+Max LUCO: 22.827266162385 eV at k = (  0   0 -10)
+Min LUCO: 14.355549527352 eV at k = (0 0 0)
+Max HOCO: -12.700061191761 eV at k = (  0   0 -10)
+Min HOCO: -12.7936459688155 eV at k = (0 0 0)
+Indirect band gap: 27.055610719113 eV
+Max direct band gap: 35.527327354146 eV at k = (  0   0 -10)
+Min direct band gap: 27.1491954961675 eV at k = (0 0 0)
+
+Iteration: 6
+
+Multipole approximation is converged after spherical shell [156]
+
+Coulomb energy contributed from CFF so far = -7.68580471810301e-06
+
+MA time decomposition:
+	O_elec = O_lm^μν D_μν: 0.049375605 s
+	build/retrieve UCs:    0.005609091 s
+	build/retrieve M:      0.000398274 s
+	build L:               0.059368377 s
+	build Fock (CFF):      0.009140483 s
+
+Total MA builder time: 0.125094594 s
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Integrals per node:
+  Ints for J on node(0): 149227
+
+Total PeriodicFourCenterFock builder time: 0.028507327
+
+Truncating lattice range of density representation
+	User specified lattice range =  0  0 10
+	Updated lattice range =  0  0 10
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 81589
+
+Total PeriodicFourCenterFock builder time: 0.018494849
+
+zRHF Energy: -173.573202947297
+Total Energy: -98.5784686958181
+Delta(E): -3.75422359866207e-10
+RMS(D): 7.81231632873757e-08
+Fock Build Time: 0.174119859 s
+Transform Fock (Real->Recip) Time: 0.000360983 s
+Density Time: 0.000720726 s
+Iteration Time: 0.17872385 s
+
+Max LUCO: 22.8274256824965 eV at k = (  0   0 -10)
+Min LUCO: 14.356317141283 eV at k = (0 0 0)
+Max HOCO: -12.6983486297178 eV at k = (  0   0 -10)
+Min HOCO: -12.7919356540027 eV at k = (0 0 0)
+Indirect band gap: 27.0546657710008 eV
+Max direct band gap: 35.5257743122143 eV at k = (  0   0 -10)
+Min direct band gap: 27.1482527952858 eV at k = (0 0 0)
+
+Periodic Hartree-Fock iterations have converged!
+
+Max LUCO: 22.8274256824965 eV at k = (  0   0 -10)
+Min LUCO: 14.356317141283 eV at k = (0 0 0)
+Max HOCO: -12.6983486297178 eV at k = (  0   0 -10)
+Min HOCO: -12.7919356540027 eV at k = (0 0 0)
+Indirect band gap: 27.0546657710008 eV
+Max direct band gap: 35.5257743122143 eV at k = (  0   0 -10)
+Min direct band gap: 27.1482527952858 eV at k = (0 0 0)
+
+Total Periodic Hartree-Fock energy = -98.5784686958181
+
+ k | orbital energies
+0 |  -25.888  -1.4648 -0.68421 -0.46666 -0.46666  0.83889
+1 |  -25.888   -1.466 -0.67755 -0.46681 -0.46681   0.8255
+2 |  -25.888  -1.4684 -0.66463  -0.4671  -0.4671  0.79991
+3 |  -25.888  -1.4716 -0.64626  -0.4675  -0.4675  0.76439
+4 |  -25.888  -1.4753  -0.6236 -0.46798 -0.46798  0.72196
+5 |  -25.888  -1.4791 -0.59822  -0.4685  -0.4685  0.67613
+6 |  -25.888  -1.4828 -0.57208   -0.469   -0.469  0.63068
+7 |  -25.889  -1.4859 -0.54753 -0.46944 -0.46944  0.58954
+8 |  -25.889  -1.4883  -0.5272 -0.46979 -0.46979  0.55652
+9 |  -25.889  -1.4899 -0.51367 -0.47002 -0.47002  0.53505
+10 |  -25.889  -1.4904 -0.50891  -0.4701  -0.4701  0.52758
+11 |  -25.889  -1.4899 -0.51367 -0.47002 -0.47002  0.53505
+12 |  -25.889  -1.4883  -0.5272 -0.46979 -0.46979  0.55652
+13 |  -25.889  -1.4859 -0.54753 -0.46944 -0.46944  0.58954
+14 |  -25.888  -1.4828 -0.57208   -0.469   -0.469  0.63068
+15 |  -25.888  -1.4791 -0.59822  -0.4685  -0.4685  0.67613
+16 |  -25.888  -1.4753  -0.6236 -0.46798 -0.46798  0.72196
+17 |  -25.888  -1.4716 -0.64626  -0.4675  -0.4675  0.76439
+18 |  -25.888  -1.4684 -0.66463  -0.4671  -0.4671  0.79991
+19 |  -25.888   -1.466 -0.67755 -0.46681 -0.46681   0.8255
+20 |  -25.888  -1.4648 -0.68421 -0.46666 -0.46666  0.83889
+
+Time(s):
+	Init:                               0.148
+	Coulomb term:                       0.000
+	Exchange term:                      0.000
+	Real->Recip trans:                  0.007
+	Diag + Density:                     0.005
+	Total:                              1.079
+
+
+*** test multipole after converged scf ***
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 1e-10
+
+User specified range of lattice sum for |mu nu_R) =  0  0 10
+Updated range of lattice sum for |mu nu_R) = 0 0 3
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 3]
+	Rj_max (range of Coulomb operation): [  0   0 300]
+	Rd_max (Range of density representation): [ 0  0 10]
+
+
+Crystal dimensionality : 1
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 8.23438167572021e-05 GB
+
+The boundary of Crystal Far Field is  0  0 19
+
+MA init time decomposition:
+	basis pair ctor:          0.000257134 s
+	multipole ints:           0.00480713 s
+	CFF boundary:             0.000159739 s
+	nuclear multipole + misc: 7.0871e-05 s
+electronic spherical multipole moments:
+monopole: -10
+dipole m=-1: -6.69603445738957e-17
+dipole m=0:  0.267948688254806
+dipole m=1:  -8.76447308043243e-17
+quadrupole m=-2: -1.16340113702594e-17
+quadrupole m=-1: 2.85094981639859e-17
+quadrupole m=0:  -0.881058468448618
+quadrupole m=1:  -6.85701551543282e-17
+quadrupole m=2:  -2.77253008051603e-17
+  Output KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "hf.xyz",
+        "sort_input": "false",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "2.672359"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "atoms": "$:unitcell"
+    },
+    "dfbs": {
+        "name": "cc-pvdz",
+        "atoms": "$:unitcell"
+    },
+    "wfn_world": {
+        "atoms": "$:unitcell",
+        "basis": "$:basis",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "shell_pair_threshold": "1.0e-12",
+        "density_threshold": "1e-10",
+        "rmax": [
+            "0",
+            "0",
+            "10"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "300"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "10"
+        ]
+    },
+    "wfn": {
+        "type": "MA-FourCenter-zRHF",
+        "atoms": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "max_iter": "50",
+        "soad_guess": "true",
+        "print_detail": "true",
+        "max_condition_num": "1e8",
+        "diis": "gamma_point",
+        "ma_energy_threshold": "1e-9",
+        "ma_well_separateness": "3.0",
+        "ma_extent_threshold": "1e-6",
+        "ma_extent_small_value": "0.01",
+        "k_points": [
+            "1",
+            "1",
+            "21"
+        ]
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-9",
+        "value": {
+            "value": "-98.578468695818131"
+        }
+    }
+}
+

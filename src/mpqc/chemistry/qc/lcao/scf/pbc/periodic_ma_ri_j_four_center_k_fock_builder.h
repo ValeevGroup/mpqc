@@ -1,27 +1,35 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_DF_FOCK_BUILDER_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_DF_FOCK_BUILDER_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_FOUR_CENTER_K_FOCK_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_FOUR_CENTER_K_FOCK_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_builder.h"
 
 namespace mpqc {
 namespace scf {
 
-template <typename Tile, typename Policy, typename Factory>
-class PeriodicRIJFourCenterKFockBuilder
+/*!
+ * @brief PeriodicMARIJFourCenterKFockBuilder is an implementation of
+ * PeriodicFockBuilder with multipole-accelerated RI-J and 4-center exchange.
+ * For Coulomb, multipole approximation is used in Crystal Far Field and RI-J in
+ * Crystal Near Field. For exchange, 4-center-K is always used.
+ * @tparam Tile
+ * @tparam Policy
+ */
+template <typename Tile, typename Policy>
+class PeriodicMARIJFourCenterKFockBuilder
     : public PeriodicFockBuilder<Tile, Policy> {
  public:
-  using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
-  using J_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
+  using factory_type = ::mpqc::lcao::gaussian::PeriodicAOFactory<Tile, Policy>;
+  using array_type = typename factory_type::TArray;
+  using J_Builder = PeriodicMARIJBuilder<Tile, Policy, factory_type>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicRIJFourCenterKFockBuilder(Factory &ao_factory)
+  PeriodicMARIJFourCenterKFockBuilder(factory_type &ao_factory)
       : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
-    // Construct periodic RI-J builder
+    // Construct periodic MA-RI-J builder
     auto t0_j_init = mpqc::fenced_now(world);
     j_builder_ = std::make_unique<J_Builder>(ao_factory_);
     auto t1_j_init = mpqc::fenced_now(world);
@@ -33,12 +41,13 @@ class PeriodicRIJFourCenterKFockBuilder
     auto t1_k_init = mpqc::fenced_now(world);
     auto t_k_init = mpqc::duration_in_s(t0_k_init, t1_k_init);
 
-    ExEnv::out0() << "\nInit RI-J time:      " << t_j_init << " s" << std::endl;
+    ExEnv::out0() << "\nInit MA-RI-J time:     " << t_j_init << " s"
+                  << std::endl;
     ExEnv::out0() << "\nInit Four-Center-K time:      " << t_k_init << " s\n"
                   << std::endl;
   }
 
-  ~PeriodicRIJFourCenterKFockBuilder() {}
+  ~PeriodicMARIJFourCenterKFockBuilder() {}
 
   array_type operator()(array_type const &D, double target_precision,
                         bool) override {
@@ -80,8 +89,10 @@ class PeriodicRIJFourCenterKFockBuilder
     }
   }
 
+  J_Builder &coulomb_builder() { return *j_builder_; }
+
  private:
-  Factory &ao_factory_;
+  factory_type &ao_factory_;
   std::unique_ptr<J_Builder> j_builder_;
   std::unique_ptr<K_Builder> k_builder_;
 
@@ -98,4 +109,4 @@ class PeriodicRIJFourCenterKFockBuilder
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_DF_FOCK_BUILDER_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_FOUR_CENTER_K_FOCK_BUILDER_H_

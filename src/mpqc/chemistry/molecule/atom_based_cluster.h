@@ -44,9 +44,13 @@ class AtomBasedCluster {
   AtomBasedCluster &operator=(AtomBasedCluster &&c) = default;
 
   explicit AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
-      : elements_(elems) {}
+      : elements_(elems) {
+    update_cluster();
+  }
   explicit AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
-      : elements_(std::move(elems)) {}
+      : elements_(std::move(elems)) {
+    update_cluster();
+  }
 
   // When constructed from list update immediately
   template <typename... Cs>

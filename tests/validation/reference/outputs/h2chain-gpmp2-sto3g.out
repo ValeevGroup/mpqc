@@ -1,18 +1,18 @@
-MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 36171dc83deb6bc0e2f8dd95a965114cd63e4022
+                 Revision 29174b29cc05b7ff7bb3ce699b81a0ad8afc4140
 
-  Machine:          Darwin-16.4.0-x86_64
+  Machine:          Darwin-17.4.0-x86_64
   User:             xiaowang@Xiaos-MacBook-Pro.local
-  Start Time:       Wed Feb 22 21:41:09 2017 UTC
+  Start Time:       Wed Apr  4 18:07:52 2018 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "true",
@@ -25,10 +25,10 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "basis": {
         "name": "sto-3g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "screen": "schwarz",
         "threshold": "1.0e-20",
@@ -50,7 +50,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "scf": {
         "type": "zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -64,7 +64,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "wfn": {
         "type": "GammaPointMP2",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "ref": "$:scf",
         "print_detail": "false",
@@ -89,15 +89,22 @@ Average: 2
 
 Constructing AOFactory: 
   Screen = schwarz
-  Threshold = 1e-20
+  ScreenThreshold = 1e-12
   Precision = 2.22044604925031e-16
   Iterative inverse = false
 
 
 Constructing LCAOFactory: 
-  Keep partial transform = false
+  Keep partial transform = true
   Accurate time = false
+  Verbose = false
 
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 2
+Updated range of lattice sum for |mu nu_R) = 0 0 2
 
 PeriodicAOFactory computational parameters:
 	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
@@ -117,16 +124,24 @@ Unit cell info:
 zRHF computational parameters:
   # of k points in each direction: [1 1 7]
 
-Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 2.98023223876953e-07 GB Time: 0.004186188 s
+Computing Two Center Integral for Periodic System: < κ |T| λ >
+ Size: 1.49011611938477e-07 GB Time: 0.000586926 s
 
-Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 2.98023223876953e-07 GB Time: 0.012347295 s
+Computing Two Center Integral for Periodic System: < κ |V| λ >
+ Time: 0.002398555 s
 
-Computing One Body Integral for Periodic System: < κ | λ >
- Size: 2.98023223876953e-07 GB Time: 0.000459145 s
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 1.49011611938477e-07 GB Time: 0.000218769 s
 
 Building Fock Matrix from SOAD Guess ...
+
+Integrals per node:
+  Ints for J on node(0): 360
+  Ints for K on node(0): 356
+
+Total PeriodicFourCenterFock builder time: 0.001391872
+
+SOAD Time: 0.017366315 s
 
 	overlap condition number = 2.09749568705418 at k = 0
 	overlap condition number = 8.78083564372727 at k = 1
@@ -135,37 +150,110 @@ Building Fock Matrix from SOAD Guess ...
 	overlap condition number = 26.0060091051304 at k = 4
 	overlap condition number = 8.78083564372727 at k = 5
 	overlap condition number = 2.09749568705418 at k = 6
+Periodic RHF Init Time: 0.02310222 s
+
 Nuclear Repulsion Energy: 3.96201858517154
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    0      -4.962937471366      -1.000918886195      -4.962937471366       0.005794939734                0.115
-    1      -4.962970807698      -1.000952222526      -0.000033336332       0.001202261441                0.064
-    2      -4.962971979566      -1.000953394395      -0.000001171868       0.000468551226                0.068
-    3      -4.962972079326      -1.000953494154      -0.000000099760       0.000277188119                0.086
-    4      -4.962972106489      -1.000953521318      -0.000000027164       0.000171396672                0.079
-    5      -4.962972116444      -1.000953531273      -0.000000009955       0.000105761503                0.067
-    6      -4.962972120203      -1.000953535031      -0.000000003759       0.000065135847                0.082
-    7      -4.962972121625      -1.000953536454      -0.000000001423       0.000040088691                0.066
-    8      -4.962972122164      -1.000953536992      -0.000000000539       0.000024668055                0.068
-    9      -4.962972122368      -1.000953537196      -0.000000000204       0.000015178247                0.078
-   10      -4.962972122445      -1.000953537273      -0.000000000077       0.000009339003                0.077
-   11      -4.962972122474      -1.000953537303      -0.000000000029       0.000005746151                0.073
-   12      -4.962972122485      -1.000953537314      -0.000000000011       0.000003535516                0.067
-   13      -4.962972122490      -1.000953537318      -0.000000000004       0.000002175346                0.073
+    1      -4.962937471366      -1.000918886195      -4.962937471366       0.000289746987                0.099
+    2      -4.962970807698      -1.000952222526      -0.000033336332       0.000060113072                0.008
+    3      -4.962971979566      -1.000953394394      -0.000001171868       0.000023427561                0.012
+    4      -4.962972079326      -1.000953494154      -0.000000099760       0.000013859406                0.014
+    5      -4.962972106489      -1.000953521318      -0.000000027164       0.000008569834                0.017
+    6      -4.962972116444      -1.000953531273      -0.000000009955       0.000005288075                0.012
+    7      -4.962972120203      -1.000953535031      -0.000000003759       0.000003256792                0.011
+    8      -4.962972121625      -1.000953536454      -0.000000001423       0.000002004435                0.027
+    9      -4.962972122164      -1.000953536992      -0.000000000539       0.000001233403                0.012
+   10      -4.962972122368      -1.000953537196      -0.000000000204       0.000000758912                0.015
+   11      -4.962972122445      -1.000953537273      -0.000000000077       0.000000466950                0.018
+   12      -4.962972122474      -1.000953537303      -0.000000000029       0.000000287308                0.014
+   13      -4.962972122485      -1.000953537314      -0.000000000011       0.000000176776                0.018
+   14      -4.962972122489      -1.000953537318      -0.000000000004       0.000000108767                0.017
+   15      -4.962972122491      -1.000953537320      -0.000000000002       0.000000066923                0.013
+   16      -4.962972122492      -1.000953537320      -0.000000000001       0.000000041176                0.025
+   17      -4.962972122492      -1.000953537320      -0.000000000000       0.000000025335                0.012
+   18      -4.962972122492      -1.000953537320      -0.000000000000       0.000000015588                0.021
+   19      -4.962972122492      -1.000953537320      -0.000000000000       0.000000009591                0.024
+   20      -4.962972122492      -1.000953537320      -0.000000000000       0.000000005901                0.010
+   21      -4.962972122492      -1.000953537320      -0.000000000000       0.000000003631                0.017
+   22      -4.962972122492      -1.000953537320      -0.000000000000       0.000000002234                0.015
+   23      -4.962972122492      -1.000953537320       0.000000000000       0.000000001375                0.009
+   24      -4.962972122492      -1.000953537320      -0.000000000000       0.000000000846                0.014
+   25      -4.962972122492      -1.000953537320       0.000000000000       0.000000000520                0.015
+   26      -4.962972122492      -1.000953537320       0.000000000000       0.000000000320                0.014
+   27      -4.962972122492      -1.000953537320      -0.000000000000       0.000000000197                0.030
+   28      -4.962972122492      -1.000953537320       0.000000000000       0.000000000121                0.010
+   29      -4.962972122492      -1.000953537320       0.000000000000       0.000000000075                0.017
+   30      -4.962972122492      -1.000953537320       0.000000000000       0.000000000046                0.018
+   31      -4.962972122492      -1.000953537320      -0.000000000000       0.000000000028                0.025
+   32      -4.962972122492      -1.000953537320       0.000000000000       0.000000000017                0.018
+   33      -4.962972122492      -1.000953537320      -0.000000000000       0.000000000011                0.010
+   34      -4.962972122492      -1.000953537320       0.000000000000       0.000000000007                0.017
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -1.00095353731796
+Max LUCO: 66.7602009704232 eV at k = (0 0 0)
+Min LUCO: 12.7486397156478 eV at k = ( 0  0 -3)
+Max HOCO: -6.66327356553898 eV at k = ( 0  0 -3)
+Min HOCO: -23.7649621715552 eV at k = (0 0 0)
+Indirect band gap: 19.4119132811868 eV
+Max direct band gap: 90.5251631419785 eV at k = (0 0 0)
+Min direct band gap: 19.4119132811868 eV at k = ( 0  0 -3)
+
+Total Periodic Hartree-Fock energy = -1.0009535373205
 
 Time(s):
-	Init:                               0.071
-	Coulomb term:                       0.412
-	Exchange term:                      0.624
+	Init:                               0.023
+	Coulomb term:                       0.000
+	Exchange term:                      0.000
 	Real->Recip trans:                  0.005
-	Diag + Density:                     0.011
-	Total:                              1.063
+	Diag + Density:                     0.020
+	Total:                              0.624
 
+
+*** test multipole after converged scf ***
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 2
+Updated range of lattice sum for |mu nu_R) = 0 0 2
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
+	Rj_max (range of Coulomb operation): [0 0 4]
+	Rd_max (Range of density representation): [0 0 2]
+
+
+Crystal dimensionality : 1
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+	dipole correction threshold = 0.001
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 1.63912773132324e-06 GB Time: 0.003436535 s
+
+!!!!!! Warning !!!!!!
+The range limit in dimension 2 is not enough to reach Crystal Far Field. Use larger `rjmax` in the input.
+
+The boundary of Crystal Far Field is 0 0 4
+
+Cannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.
+electronic spherical multipole moments:
+monopole: -2
+dipole m=-1: -0
+dipole m=0:  -2.37310171513627e-15
+dipole m=1:  -0
+quadrupole m=-2: -0
+quadrupole m=-1: -0
+quadrupole m=0:  -0.167830922087575
+quadrupole m=1:  -0
+quadrupole m=2:  -0
 OccBlockSize: 1
 VirBlockSize: 1
 Obs
@@ -196,17 +284,17 @@ Average: 1
 Computing conventional gamma-point MP2 ...
  Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
  Size: 7.45058059692383e-09 GB
- Time: 0.254842308 s
-    PAO build total time:  0.253787813 s
-        part 1: 0.19844746 s
-        part 2: 0.033235827 s
-    PAO->CO transform time: 0.001054495 s
+ Time: 0.119605156 s
+    PAO build total time:  0.119197253 s
+        part 1: 0.093442303 s
+        part 2: 0.01393447 s
+    PAO->CO transform time: 0.000407903 s
 
-Gamma-Point MP2 Energy = -0.0152110243451564
+Gamma-Point MP2 Energy = -0.0152110233309738
   Output KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "true",
@@ -219,10 +307,10 @@ Gamma-Point MP2 Energy = -0.0152110243451564
     },
     "basis": {
         "name": "sto-3g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "screen": "schwarz",
         "threshold": "1.0e-20",
@@ -244,7 +332,7 @@ Gamma-Point MP2 Energy = -0.0152110243451564
     },
     "scf": {
         "type": "zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -258,7 +346,7 @@ Gamma-Point MP2 Energy = -0.0152110243451564
     },
     "wfn": {
         "type": "GammaPointMP2",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "ref": "$:scf",
         "occ_block_size": "1",
@@ -269,7 +357,7 @@ Gamma-Point MP2 Energy = -0.0152110243451564
         "wfn": "$:wfn",
         "precision": "1.0e-11",
         "value": {
-            "value": "-1.0161645616631181"
+            "value": "-1.0161645606514711"
         }
     }
 }

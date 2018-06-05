@@ -1,21 +1,22 @@
-MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 31cdf19b9991557731bc15e08128052bb065096d
+                 Revision 29174b29cc05b7ff7bb3ce699b81a0ad8afc4140
 
-  Machine:          Darwin-16.4.0-x86_64
+  Machine:          Darwin-17.4.0-x86_64
   User:             xiaowang@Xiaos-MacBook-Pro.local
-  Start Time:       Tue Mar 28 14:53:37 2017 UTC
+  Start Time:       Wed Apr  4 18:07:36 2018 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "file_name": "h2.xyz",
         "sort_input": "true",
         "charge": "0",
+        "n_cluster": "1",
         "lattice_param": [
             "0.0",
             "0.0",
@@ -24,14 +25,14 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "basis": {
         "name": "6-31g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "dfbs": {
         "name": "cc-pvdz",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "df_basis": "$:dfbs",
         "screen": "schwarz",
@@ -54,7 +55,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     },
     "wfn": {
         "type": "DF-zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -75,26 +76,40 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
 
   Using fundamental constants system 2006CODATA
 
-
- Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
-
-
 Constructing Basis Registry: 
 OBS Basis = 6-31g
-( tiles = [ 0, 2 ), elements = [ 0, 4 ) )
-Min and Max block size: 2 2
-Average: 2
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
 
 DF Basis = cc-pvdz
-( tiles = [ 0, 2 ), elements = [ 0, 10 ) )
-Min and Max block size: 5 5
-Average: 5
+( tiles = [ 0, 1 ), elements = [ 0, 10 ) )
+Min and Max block size: 10 10
+Average: 10
 
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
 
+User specified range of lattice sum for |mu nu_R) = 0 0 2
+Updated range of lattice sum for |mu nu_R) = 0 0 2
 
- Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 5.96046447753906e-07 GB Time: 0.010821922 s
 
-  Precision = 2.22044604925031e-16
+Computing Two Center Integral for Periodic System: < U | Κ >
+ Size: 7.45058059692383e-08 GB Time: 0.000132887 s
+
+Computing Two Center Integral for Periodic System: < Κ |I| Λ >
+ Size: 7.45058059692383e-07 GB Time: 8.0642e-05 s
+
+Computing Two Center Integral for Periodic System: ( Κ |G| Λ )
+ Size: 7.45058059692383e-07 GB Time: 0.001873184 s
+
+Init RI-J time:      0.025833606 s
+
+Init Four-Center-K time:      0.001140416 s
+
 
 PeriodicAOFactory computational parameters:
 	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
@@ -106,8 +121,7 @@ Molecule info:
 	Mass: 2.01565006446
 
 Elements:
-	Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}
-	Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}
+	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}}}
 
 Unit cell info:
 	Lattice parameters (in Bohr): [               0                0 6.99198669167688]
@@ -116,73 +130,273 @@ zRHF computational parameters:
   # of k points in each direction: [1 1 5]
 
 Computing Two Center Integral for Periodic System: < κ |T| λ >
- Size: 5.96046447753906e-07 GB Time: 0.014999239 s
+ Size: 5.96046447753906e-07 GB Time: 0.00030278 s
 
 Computing Two Center Integral for Periodic System: < κ |V| λ >
- Size: 5.96046447753906e-07 GB Time: 0.014921146 s
-
-Computing Two Center Integral for Periodic System: < κ | λ >
- Size: 5.96046447753906e-07 GB Time: 0.000823759 s
+ Time: 0.002154398 s
+Retrieved Periodic AO Integral: < κ | λ > Size: 5.96046447753906e-07 GB
 
 Building Fock Matrix from SOAD Guess ...
- Time: 0.123977701 s
+
+Integrals per node:
+  Ints for J on node(0): 952
+  Ints for K on node(0): 550
+
+Total PeriodicFourCenterFock builder time: 0.001100422
+
+SOAD Time: 0.006668493 s
 
 	overlap condition number = 22.6597017444532 at k = 0
 	overlap condition number = 35.2818755936492 at k = 1
 	overlap condition number = 48.3750714301439 at k = 2
 	overlap condition number = 35.2818755936492 at k = 3
 	overlap condition number = 22.6597017444532 at k = 4
-Computing Two Center Integral for Periodic System: < U | Κ >
- Size: 7.45058059692383e-08 GB Time: 0.000274386 s
-
-Computing Two Center Integral for Periodic System: < Κ |I| Λ >
- Size: 3.72529029846191e-07 GB Time: 0.000201139 s
-
-Computing Two Center Integral for Periodic System: ( Κ |G| Λ )
- Size: 7.45058059692383e-07 GB Time: 0.003765567 s
-
-Computing Vector of Three Center Direct Integral for Periodic System: ( Κ |G| κ λ )
- Size: 4.17232513427734e-05 GB Time: 0.060630045 s
-
-Init RI-J time:      0.06944198 s
-
+Periodic RHF Init Time: 0.039481817 s
 
 Nuclear Repulsion Energy: 1.77692331192732
 
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4155
+
+Total PeriodicFourCenterFock builder time: 0.0038383
+
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    0      -2.918846905689      -1.141923593762      -2.918846905689       0.000976548474                0.256
-    1      -2.921522006159      -1.144598694232      -0.002675100470       0.000254486284                0.135
-    2      -2.919777821367      -1.142854509440       0.001744184792       0.000066291783                0.103
-    3      -2.919171269475      -1.142247957548       0.000606551892       0.000017243798                0.134
-    4      -2.919003442905      -1.142080130978       0.000167826570       0.000004483395                0.118
-    5      -2.918959134530      -1.142035822603       0.000044308375       0.000001165528                0.111
-    6      -2.918947570785      -1.142024258858       0.000011563745       0.000000302984                0.102
-    7      -2.918944561758      -1.142021249830       0.000003009028       0.000000078761                0.108
-    8      -2.918943779371      -1.142020467444       0.000000782386       0.000000020474                0.119
-    9      -2.918943575981      -1.142020264054       0.000000203390       0.000000005322                0.116
-   10      -2.918943523111      -1.142020211183       0.000000052871       0.000000001383                0.109
-   11      -2.918943509367      -1.142020197439       0.000000013744       0.000000000360                0.107
+    1      -2.918846905688      -1.141923593761      -2.918846905688       0.000976548469                0.017
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4137
+
+Total PeriodicFourCenterFock builder time: 0.004887347
+    2      -2.921522006164      -1.144598694237      -0.002675100476       0.000254486282                0.022
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4138
+
+Total PeriodicFourCenterFock builder time: 0.003151094
+    3      -2.919777821361      -1.142854509433       0.001744184803       0.000066291783                0.007
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4136
+
+Total PeriodicFourCenterFock builder time: 0.007243537
+    4      -2.919171269473      -1.142247957545       0.000606551888       0.000017243798                0.013
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001715873
+    5      -2.919003442905      -1.142080130978       0.000167826567       0.000004483395                0.009
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001527918
+    6      -2.918959134531      -1.142035822604       0.000044308374       0.000001165528                0.008
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.003084754
+    7      -2.918947570787      -1.142024258860       0.000011563744       0.000000302984                0.007
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001640485
+    8      -2.918944561760      -1.142021249832       0.000003009028       0.000000078761                0.019
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001909052
+    9      -2.918943779373      -1.142020467446       0.000000782386       0.000000020474                0.016
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001734313
+   10      -2.918943575983      -1.142020264056       0.000000203390       0.000000005322                0.006
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.002417077
+   11      -2.918943523112      -1.142020211185       0.000000052871       0.000000001383                0.009
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001589369
+   12      -2.918943509369      -1.142020197441       0.000000013744       0.000000000360                0.009
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.001500201
+   13      -2.918943505796      -1.142020193869       0.000000003572       0.000000000093                0.005
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 2
+	Updated lattice range = 0 0 2
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+
+Integrals per node:
+  Integrals on node(0): 4134
+
+Total PeriodicFourCenterFock builder time: 0.00203296
+   14      -2.918943504868      -1.142020192940       0.000000000929       0.000000000024                0.006
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -1.14202019743947
+Max LUCO: 10.8925428125024 eV at k = (0 0 0)
+Min LUCO: 6.45114593423565 eV at k = ( 0  0 -2)
+Max HOCO: -16.0546412309546 eV at k = ( 0  0 -2)
+Min HOCO: -16.3062801069363 eV at k = (0 0 0)
+Indirect band gap: 22.5057871651903 eV
+Max direct band gap: 27.1988229194387 eV at k = (0 0 0)
+Min direct band gap: 22.5057871651903 eV at k = ( 0  0 -2)
+
+Total Periodic Hartree-Fock energy = -1.14202019294032
 
 Time(s):
-	Init:                               0.238
-	Coulomb term:                       0.402
-	Exchange term:                      1.059
-	Real->Recip trans:                  0.007
-	Diag + Density:                     0.021
-	Total:                              1.519
+	Init:                               0.039
+	Coulomb term:                       0.000
+	Exchange term:                      0.000
+	Real->Recip trans:                  0.011
+	Diag + Density:                     0.004
+	Total:                              0.152
 
+
+*** test multipole after converged scf ***
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 2
+Updated range of lattice sum for |mu nu_R) = 0 0 2
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
+	Rj_max (range of Coulomb operation): [0 0 3]
+	Rd_max (Range of density representation): [0 0 2]
+
+
+Crystal dimensionality : 1
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+	dipole correction threshold = 0.001
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 6.55651092529297e-06 GB Time: 0.002893265 s
+
+!!!!!! Warning !!!!!!
+The range limit in dimension 2 is not enough to reach Crystal Far Field. Use larger `rjmax` in the input.
+
+The boundary of Crystal Far Field is 0 0 3
+
+Cannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.
+electronic spherical multipole moments:
+monopole: -2
+dipole m=-1: -0
+dipole m=0:  6.6467814935051e-13
+dipole m=1:  -0
+quadrupole m=-2: -0
+quadrupole m=-1: -0
+quadrupole m=0:  -0.340860156266467
+quadrupole m=1:  -0
+quadrupole m=2:  -0
   Output KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "file_name": "h2.xyz",
         "sort_input": "true",
         "charge": "0",
+        "n_cluster": "1",
         "lattice_param": [
             "0.0",
             "0.0",
@@ -191,14 +405,14 @@ Time(s):
     },
     "basis": {
         "name": "6-31g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "dfbs": {
         "name": "cc-pvdz",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "df_basis": "$:dfbs",
         "screen": "schwarz",
@@ -221,7 +435,7 @@ Time(s):
     },
     "wfn": {
         "type": "DF-zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -237,7 +451,7 @@ Time(s):
         "wfn": "$:wfn",
         "precision": "1.0e-9",
         "value": {
-            "value": "-1.1420201974394661"
+            "value": "-1.1420201929403193"
         }
     }
 }

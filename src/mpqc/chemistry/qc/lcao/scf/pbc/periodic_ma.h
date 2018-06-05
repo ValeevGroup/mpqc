@@ -129,7 +129,6 @@ class PeriodicMA {
  public:
   using TArray = typename Factory::TArray;
   using Shell = ::mpqc::lcao::gaussian::Shell;
-  using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using Ord2lmMap = std::unordered_map<unsigned int, std::pair<int, int>>;
   using UnitCellList = std::vector<std::pair<Vector3i, Vector3d>>;

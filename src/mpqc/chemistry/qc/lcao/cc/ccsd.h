@@ -507,7 +507,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   const void get_factors(std::vector<TArray> & factors){
     auto Xab = this->get_Xab();
     auto Aux_size = Xab.trange().dim(0).extent();
-    auto block_size = this->trange1_engine()->get_vir_blocks();
+    auto block_size = this->trange1_engine()->get_vir_block_size();
 #if _HAS_INTEL_MKL
     math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * rank_, true);
 #else // _HAS_INTEL_MKL

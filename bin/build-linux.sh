@@ -48,7 +48,7 @@ cmake ${TRAVIS_BUILD_DIR} \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument ${EXTRAFLAGS} ${CODECOVCXXFLAGS}" \
     -DLIBINT2_INSTALL_DIR="${INSTALL_PREFIX}/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true \
-    -DCMAKE_TOOLCHAIN_FILE="/home/travis/_build/travis-lapacke.cmake"
+    -DCMAKE_TOOLCHAIN_FILE="/home/travis/build/ValeevGroup/mpqc4/bin/travis-lapacke.cmake"
 
 ### build
 make -j1 mpqc VERBOSE=1

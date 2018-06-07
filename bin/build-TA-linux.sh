@@ -46,7 +46,7 @@ if [ ! -d "${INSTALL_DIR}" ]; then
       -DCMAKE_CXX_FLAGS="${EXTRACXXFLAGS}" \
       -DENABLE_ELEMENTAL=ON \
       -DMADNESS_CMAKE_EXTRA_ARGS="-DELEMENTAL_CMAKE_BUILD_TYPE=Release;-DELEMENTAL_MATH_LIBS='-L/usr/lib/libblas -L/usr/lib/lapack -lblas -llapack';-DELEMENTAL_CMAKE_EXTRA_ARGS=-DCMAKE_Fortran_COMPILER=$F77" \
-      -DCMAKE_TOOLCHAIN_FILE="/home/travis/_build/travis-lapacke.cmake"
+      -DCMAKE_TOOLCHAIN_FILE="/home/travis/build/ValeevGroup/mpqc4/bin/travis-lapacke.cmake"
 
   # Build all libraries, examples, and applications
   make -j2 VERBOSE=1

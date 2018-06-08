@@ -42,19 +42,26 @@ class PeriodicCADFKBuilder
    * \param force_shape_threshold threshold used to construct the shape of
    * F(Υ, μ, ν) using the shape of Q(Y, ρ, ν).
    */
-  PeriodicCADFKBuilder(madness::World &world, Factory &ao_factory,
-                       const double force_shape_threshold = 0.0)
-      : WorldObject_(world), ao_factory_(ao_factory) {
+  PeriodicCADFKBuilder(Factory &ao_factory)
+      : WorldObject_(ao_factory.world()), ao_factory_(ao_factory) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
     print_detail_ = ao_factory_.print_detail();
     screen_threshold_ = ao_factory_.screen_threshold();
     density_threshold_ = ao_factory_.density_threshold();
-    force_shape_threshold_ = force_shape_threshold;
+    force_hermiticity_ = ao_factory_.force_hermiticity();
+
+    force_shape_threshold_ = ao_factory_.keyval()->template value<double>(
+        "force_shape_threshold", std::numeric_limits<double>::epsilon());
+    cadf_sparse_threshold_ = ao_factory_.keyval()->template value<double>(
+        "cadf_sparse_threshold", std::numeric_limits<double>::epsilon());
+    cadf_contr_threshold_ = ao_factory_.keyval()->template value<double>(
+        "cadf_contraction_threshold", std::numeric_limits<double>::epsilon());
     ExEnv::out0() << "\nforce shape threshold = " << force_shape_threshold_
+                  << "\nCADF sparse threshold = " << cadf_sparse_threshold_
+                  << "\nCADF contraction threshold = " << cadf_contr_threshold_
                   << std::endl;
-    target_precision_ = std::numeric_limits<double>::epsilon();
 
     // by-cluster orbital basis and df basis
     obs_ = ao_factory_.basis_registry()->retrieve(OrbitalIndex(L"λ"));
@@ -99,7 +106,7 @@ class PeriodicCADFKBuilder
       const Vector3i &RJ_max, const Vector3i &RD_max,
       const double screen_threshold = 1.0e-20,
       const double density_threshold = Policy::shape_type::threshold(),
-      const double target_precision = std::numeric_limits<double>::epsilon(),
+      const double cadf_contr_threshold = std::numeric_limits<double>::epsilon(),
       const bool print_detail = false, const double force_shape_threshold = 0.0)
       : WorldObject_(world),
         ao_factory_(ao_factory),
@@ -113,7 +120,7 @@ class PeriodicCADFKBuilder
         screen_threshold_(screen_threshold),
         density_threshold_(density_threshold),
         force_shape_threshold_(force_shape_threshold),
-        target_precision_(target_precision) {
+        cadf_contr_threshold_(cadf_contr_threshold) {
     // WorldObject mandates this is called from the ctor
     WorldObject_::process_pending();
 
@@ -155,8 +162,11 @@ class PeriodicCADFKBuilder
   bool print_detail_;
   double screen_threshold_;
   double density_threshold_;
+
+  double cadf_sparse_threshold_;
   double force_shape_threshold_;
-  double target_precision_ = std::numeric_limits<double>::epsilon();
+  double cadf_contr_threshold_ = std::numeric_limits<double>::epsilon();
+  bool force_hermiticity_;
 
   int64_t R_size_;
   std::shared_ptr<Basis> basisR_;
@@ -244,6 +254,7 @@ class PeriodicCADFKBuilder
     double t_F = 0.0;
     double t_permute = 0.0;
     double t_K = 0.0;
+    double t_symm = 0.0;
 
     // Update lattice range of density representation
     ExEnv::out0() << "\nTruncating lattice range of density representation\n";
@@ -312,9 +323,22 @@ class PeriodicCADFKBuilder
 
       // compute K(μ_0, ν_R) = F(Y, ρ_Rj, μ_0) Q(Y, ρ_Rj, ν_R)
       t0 = mpqc::fenced_now(world);
-      K = compute_contr_FQ(F, Q);
+      array_type K_unsymm;
+      K_unsymm = compute_contr_FQ(F, Q);
       t1 = mpqc::fenced_now(world);
       t_K = mpqc::duration_in_s(t0, t1);
+
+      t0 = mpqc::fenced_now(world);
+      // symmetrize K if required
+      if (force_hermiticity_) {
+        // force hermiticity of exchange
+        K = pbc::detail::symmetrize_matrix(K_unsymm);
+      } else {
+        // leave exchange as non-hermitian (due to finite lattice range)
+        K = K_unsymm;
+      }
+      t1 = mpqc::fenced_now(world);
+      t_symm = mpqc::duration_in_s(t0, t1);
     }
 
     auto t1_k = mpqc::fenced_now(world);
@@ -328,6 +352,7 @@ class PeriodicCADFKBuilder
                     << "\t  Contract C M:           " << t_CM << " s\n"
                     << "\tPermute F and Q:          " << t_permute << " s\n"
                     << "\tK = F Q:                  " << t_K << " s\n"
+                    << "\tSymmetrize K:             " << t_symm << " s\n"
                     << "\nTotal K builder time:     " << t_tot << " s"
                     << std::endl;
     }
@@ -471,7 +496,8 @@ class PeriodicCADFKBuilder
     using ::mpqc::detail::is_in_lattice_range;
     using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
 
-    const auto Dnorms = D_repl.shape().data();
+    const auto &Dnorms = D_repl.shape().data();
+    const auto &Cnorms = C_repl.shape().data();
     auto task_id = 0ul;
     for (auto R1m2_ord = int64_t(0); R1m2_ord != R1m2_size_; ++R1m2_ord) {
       const auto R1m2_3D = direct_3D_idx(R1m2_ord, R1m2_max_);
@@ -505,7 +531,9 @@ class PeriodicCADFKBuilder
                   {size_t(Y_jij), size_t(rho), size_t(nu_in_Q)}};
 
               if (rho == sigma && R3_ord == ref_uc_ord_) {
-                if (C_repl.is_zero(idx_C_jij)) {
+                if (C_repl.is_zero(idx_C_jij) ||
+                    (Cnorms(idx_C_jij) * Dnorms(idx_D) <
+                     cadf_contr_threshold_)) {
                   continue;
                 }
 
@@ -521,7 +549,12 @@ class PeriodicCADFKBuilder
               } else {
                 const std::array<size_t, 3> idx_C_iij{
                     {size_t(Y_iij), size_t(rho), size_t(sigma_in_C)}};
-                if (C_repl.is_zero(idx_C_iij) && C_repl.is_zero(idx_C_jij)) {
+                bool compute_iij = (Cnorms(idx_C_iij) * Dnorms(idx_D) >=
+                    cadf_contr_threshold_);
+                bool compute_jij = (Cnorms(idx_C_jij) * Dnorms(idx_D) >=
+                    cadf_contr_threshold_);
+                if ((C_repl.is_zero(idx_C_iij) && C_repl.is_zero(idx_C_jij)) ||
+                    (!compute_iij && !compute_jij)) {
                   continue;
                 }
 
@@ -529,9 +562,10 @@ class PeriodicCADFKBuilder
                   auto C_iij = C_repl.find(idx_C_iij);
                   auto C_jij = C_repl.find(idx_C_jij);
                   auto D_tile = D_repl.find(idx_D);
-                  WorldObject_::task(
-                      me, &PeriodicCADFKBuilder_::compute_Q_task_ij, C_iij,
-                      C_jij, D_tile, idx_Q_iij, idx_Q_jij);
+                  WorldObject_::task(me,
+                                     &PeriodicCADFKBuilder_::compute_Q_task_ij,
+                                     C_iij, C_jij, D_tile, idx_Q_iij, idx_Q_jij,
+                                     compute_iij, compute_jij);
                 }
                 task_id++;
               }
@@ -578,11 +612,15 @@ class PeriodicCADFKBuilder
 
       array_type result(world, Q_trange_, shape, Q_pmap_);
       for (const auto &global_tile : global_contr_tiles_) {
-        if (!result.shape().is_zero(global_tile.first))
+        if (shape[global_tile.first] >= cadf_sparse_threshold_)
           result.set(global_tile.first, global_tile.second);
       }
       result.fill_local(0.0, true);
       global_contr_tiles_.clear();
+      world.gop.fence();
+
+      result.truncate();
+      world.gop.fence();
 
       return result;
 
@@ -609,11 +647,15 @@ class PeriodicCADFKBuilder
 
       array_type result(world, Q_trange_, shape, Q_pmap_);
       for (const auto &local_tile : local_contr_tiles_) {
-        if (!result.shape().is_zero(local_tile.first))
+        if (shape[local_tile.first] >= cadf_sparse_threshold_)
           result.set(local_tile.first, local_tile.second);
       }
       result.fill_local(0.0, true);
       local_contr_tiles_.clear();
+      world.gop.fence();
+
+      result.truncate();
+      world.gop.fence();
 
       return result;
     }
@@ -631,46 +673,44 @@ class PeriodicCADFKBuilder
     const auto ext_D = D_tile.range().extent();
     assert(ext_C[2] == ext_D[1]);
 
-    if (C_tile.norm() * D_tile.norm() >= target_precision_) {
-      const auto tile_Y = tile_idx[0];
-      const auto tile_rho = tile_idx[1];
-      const auto tile_nu = tile_idx[2];
+    const auto tile_Y = tile_idx[0];
+    const auto tile_rho = tile_idx[1];
+    const auto tile_nu = tile_idx[2];
 
-      const auto &rng_Y = Q_trange_.dim(0).tile(tile_Y);
-      const auto &rng_rho = Q_trange_.dim(1).tile(tile_rho);
-      const auto &rng_nu = Q_trange_.dim(2).tile(tile_nu);
+    const auto &rng_Y = Q_trange_.dim(0).tile(tile_Y);
+    const auto &rng_rho = Q_trange_.dim(1).tile(tile_rho);
+    const auto &rng_nu = Q_trange_.dim(2).tile(tile_nu);
 
-      const auto rng_Y_size = rng_Y.second - rng_Y.first;
-      const auto rng_rho_size = rng_rho.second - rng_rho.first;
-      const auto rng_nu_size = rng_nu.second - rng_nu.first;
-      assert(rng_Y_size == ext_C[0]);
-      assert(rng_rho_size == ext_C[1]);
-      assert(rng_nu_size == ext_D[0]);
+    const auto rng_Y_size = rng_Y.second - rng_Y.first;
+    const auto rng_rho_size = rng_rho.second - rng_rho.first;
+    const auto rng_nu_size = rng_nu.second - rng_nu.first;
+    assert(rng_Y_size == ext_C[0]);
+    assert(rng_rho_size == ext_C[1]);
+    assert(rng_nu_size == ext_D[0]);
 
-      const auto result_rng = TA::Range({rng_Y, rng_rho, rng_nu});
-      Tile result_tile(result_rng, 0.0);
+    const auto result_rng = TA::Range({rng_Y, rng_rho, rng_nu});
+    Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(madness::cblas::NoTrans, madness::cblas::Trans,
-                              result_tile.range().rank(), C_tile.range().rank(),
-                              D_tile.range().rank());
+    TA::math::GemmHelper gh(madness::cblas::NoTrans, madness::cblas::Trans,
+                            result_tile.range().rank(), C_tile.range().rank(),
+                            D_tile.range().rank());
 
-      int m, k, n;
-      gh.compute_matrix_sizes(m, n, k, C_tile.range(), D_tile.range());
-      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
-      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
+    int m, k, n;
+    gh.compute_matrix_sizes(m, n, k, C_tile.range(), D_tile.range());
+    const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+    const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-      // Notice that we reversed notrans and trans. This is because Lapack
-      // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, C_tile.data(),
-                     lda, D_tile.data(), ldb, 0.0, result_tile.data(), n);
+    // Notice that we reversed notrans and trans. This is because Lapack
+    // expects col major matrices.
+    TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, C_tile.data(),
+                   lda, D_tile.data(), ldb, 0.0, result_tile.data(), n);
 
-      const auto ntiles_rho = Q_trange_.dim(1).tile_extent();
-      const auto ntiles_nu = Q_trange_.dim(2).tile_extent();
-      const auto ord =
-          tile_Y * ntiles_rho * ntiles_nu + tile_rho * ntiles_nu + tile_nu;
+    const auto ntiles_rho = Q_trange_.dim(1).tile_extent();
+    const auto ntiles_nu = Q_trange_.dim(2).tile_extent();
+    const auto ord =
+        tile_Y * ntiles_rho * ntiles_nu + tile_rho * ntiles_nu + tile_nu;
 
-      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
-    }
+    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
   }
 
   /*!
@@ -684,7 +724,8 @@ class PeriodicCADFKBuilder
    */
   void compute_Q_task_ij(Tile C_iij, Tile C_jij, Tile D_tile,
                          std::array<size_t, 3> idx_Q_iij,
-                         std::array<size_t, 3> idx_Q_jij) {
+                         std::array<size_t, 3> idx_Q_jij, bool compute_iij,
+                         bool compute_jij) {
     const auto ext_C_iij = C_iij.range().extent();
     const auto ext_C_jij = C_jij.range().extent();
     const auto ext_D = D_tile.range().extent();
@@ -734,11 +775,11 @@ class PeriodicCADFKBuilder
       PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
     };
 
-    if (C_iij.norm() * D_tile.norm() >= target_precision_) {
+    if (compute_iij) {
       create_Q_tile(C_iij, D_tile, idx_Q_iij);
     }
 
-    if (C_jij.norm() * D_tile.norm() >= target_precision_) {
+    if (compute_jij) {
       create_Q_tile(C_jij, D_tile, idx_Q_jij);
     }
   }
@@ -760,6 +801,8 @@ class PeriodicCADFKBuilder
     using ::mpqc::detail::direct_ord_idx;
     using ::mpqc::detail::is_in_lattice_range;
 
+    const auto &Fnorms = F.shape().data();
+    const auto &Qnorms = Q.shape().data();
     auto task_id = 0ul;
     for (auto RY_ord = int64_t(0); RY_ord != RY_size_; ++RY_ord) {
       const auto RY_3D = direct_3D_idx(RY_ord, RY_max_);
@@ -795,7 +838,8 @@ class PeriodicCADFKBuilder
                 for (auto mu = 0ul; mu != ntiles_per_uc_; ++mu) {
                   const std::array<size_t, 3> idx_F{
                       {size_t(Y_in_F), size_t(nu_in_F), size_t(mu)}};
-                  if (F.is_zero(idx_F)) {
+                  if (F.is_zero(idx_F) || (Fnorms(idx_F) * Qnorms(idx_Q) <
+                      cadf_contr_threshold_)) {
                     continue;
                   }
                   if (task_id % nproc == me) {
@@ -898,41 +942,39 @@ class PeriodicCADFKBuilder
     assert(ext_F[0] == ext_Q[0]);
     assert(ext_F[1] == ext_Q[1]);
 
-    if (F_tile.norm() * Q_tile.norm() >= target_precision_) {
-      const auto tile_mu = tile_idx[0];
-      const auto tile_rho = tile_idx[1];
+    const auto tile_mu = tile_idx[0];
+    const auto tile_rho = tile_idx[1];
 
-      const auto &rng_mu = result_trange_.dim(0).tile(tile_mu);
-      const auto &rng_rho = result_trange_.dim(1).tile(tile_rho);
+    const auto &rng_mu = result_trange_.dim(0).tile(tile_mu);
+    const auto &rng_rho = result_trange_.dim(1).tile(tile_rho);
 
-      const auto rng_mu_rng = rng_mu.second - rng_mu.first;
-      const auto rng_rho_rng = rng_rho.second - rng_rho.first;
+    const auto rng_mu_rng = rng_mu.second - rng_mu.first;
+    const auto rng_rho_rng = rng_rho.second - rng_rho.first;
 
-      assert(rng_mu_rng == ext_F[2]);
-      assert(rng_rho_rng == ext_Q[2]);
+    assert(rng_mu_rng == ext_F[2]);
+    assert(rng_rho_rng == ext_Q[2]);
 
-      const auto result_rng = TA::Range({rng_mu, rng_rho});
-      Tile result_tile(result_rng, 0.0);
+    const auto result_rng = TA::Range({rng_mu, rng_rho});
+    Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
-                              result_tile.range().rank(), F_tile.range().rank(),
-                              Q_tile.range().rank());
+    TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
+                            result_tile.range().rank(), F_tile.range().rank(),
+                            Q_tile.range().rank());
 
-      int m, k, n;
-      gh.compute_matrix_sizes(m, n, k, F_tile.range(), Q_tile.range());
-      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
-      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
+    int m, k, n;
+    gh.compute_matrix_sizes(m, n, k, F_tile.range(), Q_tile.range());
+    const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+    const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-      // Notice that we reversed notrans and trans. This is because Lapack
-      // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, F_tile.data(),
-                     lda, Q_tile.data(), ldb, 0.0, result_tile.data(), n);
+    // Notice that we reversed notrans and trans. This is because Lapack
+    // expects col major matrices.
+    TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, F_tile.data(),
+                   lda, Q_tile.data(), ldb, 0.0, result_tile.data(), n);
 
-      const auto ntiles_rho = result_trange_.dim(1).tile_extent();
-      const auto ord = tile_mu * ntiles_rho + tile_rho;
+    const auto ntiles_rho = result_trange_.dim(1).tile_extent();
+    const auto ord = tile_mu * ntiles_rho + tile_rho;
 
-      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
-    }
+    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
   }
 
   /*!
@@ -962,6 +1004,8 @@ class PeriodicCADFKBuilder
     using ::mpqc::detail::direct_ord_idx;
     using ::mpqc::detail::is_in_lattice_range;
 
+    const auto &Cnorms = C_repl.shape().data();
+    const auto &Mnorms = M_repl.shape().data();
     auto task_id = 0ul;
     for (auto R1_ord = int64_t(0); R1_ord != R_size_; ++R1_ord) {
       const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
@@ -1000,7 +1044,9 @@ class PeriodicCADFKBuilder
                   {size_t(nu), size_t(Y_in_M_jij)}};
 
               if (mu == nu && R1_ord == ref_uc_ord_) {
-                if (C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij)) {
+                if (C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij) ||
+                    (Cnorms(idx_C_iij) * Mnorms(idx_M_iij) <
+                        cadf_contr_threshold_)) {
                   continue;
                 }
 
@@ -1013,8 +1059,14 @@ class PeriodicCADFKBuilder
                 }
                 task_id++;
               } else {
-                if ((C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij)) &&
-                    (C_repl.is_zero(idx_C_jij) || M_repl.is_zero(idx_M_jij))) {
+                bool compute_iij = (Cnorms(idx_C_iij) * Mnorms(idx_M_iij) >=
+                    cadf_contr_threshold_);
+                bool compute_jij = (Cnorms(idx_C_jij) * Mnorms(idx_M_jij) >=
+                    cadf_contr_threshold_);
+                if (((C_repl.is_zero(idx_C_iij) || M_repl.is_zero(idx_M_iij)) &&
+                     (C_repl.is_zero(idx_C_jij) ||
+                      M_repl.is_zero(idx_M_jij))) ||
+                    (!compute_iij && !compute_jij)) {
                   continue;
                 }
 
@@ -1025,7 +1077,8 @@ class PeriodicCADFKBuilder
                   auto M_jij = M_repl.find(idx_M_jij);
                   WorldObject_::task(
                       me, &PeriodicCADFKBuilder_::compute_contr_CM_task_ij,
-                      C_iij, C_jij, M_iij, M_jij, idx_F);
+                      C_iij, C_jij, M_iij, M_jij, idx_F, compute_iij,
+                      compute_jij);
                 }
                 task_id++;
               }
@@ -1072,11 +1125,15 @@ class PeriodicCADFKBuilder
 
       array_type result(world, F_trange_, shape, F_pmap_);
       for (const auto &global_tile : global_contr_tiles_) {
-        if (!result.shape().is_zero(global_tile.first))
+        if (shape[global_tile.first] >= cadf_sparse_threshold_)
           result.set(global_tile.first, global_tile.second);
       }
       result.fill_local(0.0, true);
       global_contr_tiles_.clear();
+      world.gop.fence();
+
+      result.truncate();
+      world.gop.fence();
 
       return result;
 
@@ -1103,11 +1160,15 @@ class PeriodicCADFKBuilder
 
       array_type result(world, F_trange_, shape, F_pmap_);
       for (const auto &local_tile : local_contr_tiles_) {
-        if (!result.shape().is_zero(local_tile.first))
+        if (shape[local_tile.first] >= cadf_sparse_threshold_)
           result.set(local_tile.first, local_tile.second);
       }
       result.fill_local(0.0, true);
       local_contr_tiles_.clear();
+      world.gop.fence();
+
+      result.truncate();
+      world.gop.fence();
 
       return result;
     }
@@ -1125,47 +1186,45 @@ class PeriodicCADFKBuilder
     const auto ext_M = M_tile.range().extent();
     assert(ext_M[0] == ext_C[0]);
 
-    if (C_tile.norm() * M_tile.norm() >= target_precision_) {
-      const auto tile_Y = tile_idx[0];
-      const auto tile_mu = tile_idx[1];
-      const auto tile_nu = tile_idx[2];
+    const auto tile_Y = tile_idx[0];
+    const auto tile_mu = tile_idx[1];
+    const auto tile_nu = tile_idx[2];
 
-      const auto &rng_Y = F_trange_.dim(0).tile(tile_Y);
-      const auto &rng_mu = F_trange_.dim(1).tile(tile_mu);
-      const auto &rng_nu = F_trange_.dim(2).tile(tile_nu);
+    const auto &rng_Y = F_trange_.dim(0).tile(tile_Y);
+    const auto &rng_mu = F_trange_.dim(1).tile(tile_mu);
+    const auto &rng_nu = F_trange_.dim(2).tile(tile_nu);
 
-      const auto rng_Y_size = rng_Y.second - rng_Y.first;
-      const auto rng_mu_size = rng_mu.second - rng_mu.first;
-      const auto rng_nu_size = rng_nu.second - rng_nu.first;
+    const auto rng_Y_size = rng_Y.second - rng_Y.first;
+    const auto rng_mu_size = rng_mu.second - rng_mu.first;
+    const auto rng_nu_size = rng_nu.second - rng_nu.first;
 
-      assert(rng_Y_size == ext_M[1]);
-      assert(rng_mu_size == ext_C[1]);
-      assert(rng_nu_size == ext_C[2]);
+    assert(rng_Y_size == ext_M[1]);
+    assert(rng_mu_size == ext_C[1]);
+    assert(rng_nu_size == ext_C[2]);
 
-      const auto result_rng = TA::Range({rng_Y, rng_mu, rng_nu});
-      Tile result_tile(result_rng, 0.0);
+    const auto result_rng = TA::Range({rng_Y, rng_mu, rng_nu});
+    Tile result_tile(result_rng, 0.0);
 
-      TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
-                              result_tile.range().rank(), M_tile.range().rank(),
-                              C_tile.range().rank());
+    TA::math::GemmHelper gh(madness::cblas::Trans, madness::cblas::NoTrans,
+                            result_tile.range().rank(), M_tile.range().rank(),
+                            C_tile.range().rank());
 
-      int m, k, n;
-      gh.compute_matrix_sizes(m, n, k, M_tile.range(), C_tile.range());
-      const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
-      const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
+    int m, k, n;
+    gh.compute_matrix_sizes(m, n, k, M_tile.range(), C_tile.range());
+    const auto lda = (gh.left_op() == madness::cblas::NoTrans ? k : m);
+    const auto ldb = (gh.right_op() == madness::cblas::NoTrans ? n : k);
 
-      // Notice that we reversed notrans and trans. This is because Lapack
-      // expects col major matrices.
-      TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M_tile.data(),
-                     lda, C_tile.data(), ldb, 0.0, result_tile.data(), n);
+    // Notice that we reversed notrans and trans. This is because Lapack
+    // expects col major matrices.
+    TA::math::gemm(gh.left_op(), gh.right_op(), m, n, k, 1.0, M_tile.data(),
+                   lda, C_tile.data(), ldb, 0.0, result_tile.data(), n);
 
-      const auto ntiles_mu = F_trange_.dim(1).tile_extent();
-      const auto ntiles_nu = F_trange_.dim(2).tile_extent();
-      const auto ord =
-          tile_Y * ntiles_mu * ntiles_nu + tile_mu * ntiles_nu + tile_nu;
+    const auto ntiles_mu = F_trange_.dim(1).tile_extent();
+    const auto ntiles_nu = F_trange_.dim(2).tile_extent();
+    const auto ord =
+        tile_Y * ntiles_mu * ntiles_nu + tile_mu * ntiles_nu + tile_nu;
 
-      PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
-    }
+    PeriodicCADFKBuilder_::accumulate_local_task(result_tile, ord);
   }
 
   /*!
@@ -1178,7 +1237,8 @@ class PeriodicCADFKBuilder
    * \param idx_F result index of F
    */
   void compute_contr_CM_task_ij(Tile C_iij, Tile C_jij, Tile M_iij, Tile M_jij,
-                                std::array<size_t, 3> idx_F) {
+                                std::array<size_t, 3> idx_F, bool compute_iij,
+                                bool compute_jij) {
     const auto ext_C_iij = C_iij.range().extent();
     const auto ext_C_jij = C_jij.range().extent();
     const auto ext_M_iij = M_iij.range().extent();
@@ -1223,11 +1283,11 @@ class PeriodicCADFKBuilder
                      C.data(), ldb, 1.0, result_tile.data(), n);
     };
 
-    if (C_iij.norm() * M_iij.norm() >= target_precision_) {
+    if (compute_iij) {
       add_to_result_tile(C_iij, M_iij);
     }
 
-    if (C_jij.norm() * M_jij.norm() >= target_precision_) {
+    if (compute_jij) {
       add_to_result_tile(C_jij, M_jij);
     }
 

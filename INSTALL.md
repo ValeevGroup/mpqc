@@ -7,14 +7,22 @@ The following are mandatory top-level prerequisites
 - [CMake](https://cmake.org/), version 3.1 and higher
 - [TiledArray](https://github.com/ValeevGroup/tiledarray), source from the master branch
 - [Libint](http://libint.valeyev.net), version 2.4.0 or higher
-- [Eigen](http://eigen.tuxfamily.org), version 3.0 or higher
-- [Boost libraries](www.boost.org/)
+- [Boost libraries](www.boost.org/), any recent version should do (e.g. Travis CI tests pass with version 1.55). The following Boost components are used:
+  - [Boost.Algorithm](https://www.boost.org/doc/libs/master/libs/algorithm/doc/html/index.html) -- misc algorithms
+  - [Boost.Filesystem](https://www.boost.org/doc/libs/master/libs/filesystem/doc/index.htm) -- only used if C++17 support is not enabled; __N.B.__ this is the only Boost library used by MPQC that must be compiled (i.e. it cannot be used as a header-only library)
+    - [Boost.System](https://www.boost.org/doc/libs/master/libs/system/doc/index.html) -- this non-header-only library is a prerequisite of Boost.Filesystem, only needed if C++17 support is not available.
+  - [Boost.Locale](https://www.boost.org/doc/libs/master/libs/locale/doc/html/index.html) -- to be replaced by the C++ Standard Library facilities
+  - [Boost.Math](https://www.boost.org/doc/libs/master/libs/math/doc/html/index.html) -- misc special functions
+  - [Boost.Optional](https://www.boost.org/doc/libs/master/libs/optional/doc/html/index.html) -- to be replaced by C++17 std::optional
+  - [Boost.PropertyTree](https://www.boost.org/doc/libs/master/doc/html/property_tree.html) -- used to implement KeyVal class
+  - [Boost.Serialization](https://www.boost.org/doc/libs/master/libs/serialization/doc/index.html) -- class GUID registration
 - Intel Thread Building Blocks (TBB), available in a [commercial](software.intel.com/tbb‎) or
   an [open-source](https://www.threadingbuildingblocks.org/) form
 - (for documentation only) Doxygen
 
 The following are transitive dependencies of the above:
 - [MADNESS parallel runtime](https://github.com/m-a-d-n-e-s-s/madness)
+- [Eigen](http://eigen.tuxfamily.org), version 3.3 or higher
 - BLAS and LAPACK libraries
 
 ## Compile TiledArray

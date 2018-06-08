@@ -2,17 +2,17 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 58dcd45feaad98a083fdc3903a359cb6009d1336
+                 Revision 29174b29cc05b7ff7bb3ce699b81a0ad8afc4140
 
-  Machine:          Darwin-16.7.0-x86_64
+  Machine:          Darwin-17.4.0-x86_64
   User:             xiaowang@Xiaos-MacBook-Pro.local
-  Start Time:       Thu Sep 21 20:37:16 2017 UTC
+  Start Time:       Wed Apr  4 18:07:12 2018 UTC
   Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "false",
@@ -25,14 +25,14 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
     },
     "basis": {
         "name": "6-31g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "dfbs": {
         "name": "cc-pvdz",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "df_basis": "$:dfbs",
         "screen": "schwarz",
@@ -56,7 +56,7 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
     },
     "wfn": {
         "type": "RIJ-CADFK-zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -89,12 +89,54 @@ DF Basis = cc-pvdz
 Min and Max block size: 10 10
 Average: 10
 
-  Precision = 2.22044604925031e-16
+  Engine precision = 2.22044604925031e-16
   Non-negligible shell-pair threshold = 1e-12
   Density sparse threshold = 9.99999968265523e-21
 
+User specified range of lattice sum for |mu nu_R) = 0 0 5
+Updated range of lattice sum for |mu nu_R) = 0 0 2
+
+Computing Two Center Integral for Periodic System: < κ | λ >
+ Size: 5.96046447753906e-07 GB Time: 0.011755513 s
+
+Computing Two Center Integral for Periodic System: < U | Κ >
+ Size: 7.45058059692383e-08 GB Time: 0.001685097 s
+
+Computing Two Center Integral for Periodic System: < Κ |I| Λ >
+ Size: 7.45058059692383e-07 GB Time: 0.000163332 s
+
+Computing Two Center Integral for Periodic System: ( Κ |G| Λ )
+ Size: 7.45058059692383e-07 GB Time: 0.005444564 s
+
+RI-J init time decomposition:
+	V perp:              0.000609796 s
+	A = V_perp + P_para: 4.0206e-05 s
+	A inv:               0.002555086 s
+	IM:                  6.5788e-05 s
+	3-c builder ctor:    0.013808476 s
+
+force shape threshold = 1e-08
+  Printing size information for C(X,μ,ν)
+    Full     = 3.2e-05 GB
+    Sparse   = 1.152e-05 GB
+    Low Rank = 0 GB
+
+CADF-K init time decomposition:
+	C(X_Rx, μ_0, ν_Rν):  0.041165605 s
+
+
+Updating RD-dependent variables:
+	M(X_0, Y_(Ry-Rx)):        0.001006569 s
+	direct ERI3:              0.00330022 s
+	misc:                     0.000992885 s
+
+Init RI-J time:      0.042837527 s
+
+Init CADF-K time:      0.04730848 s
+
+
 PeriodicAOFactory computational parameters:
-	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 5]
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
 	Rj_max (range of Coulomb operation): [0 0 5]
 	Rd_max (Range of density representation): [0 0 5]
 
@@ -112,456 +154,724 @@ zRHF computational parameters:
   # of k points in each direction: [ 1  1 11]
 
 Computing Two Center Integral for Periodic System: < κ |T| λ >
- Size: 8.34465026855469e-07 GB Time: 0.022120069 s
+ Size: 5.96046447753906e-07 GB Time: 0.002286585 s
 
 Computing Two Center Integral for Periodic System: < κ |V| λ >
- Time: 0.011203034 s
-
-Computing Two Center Integral for Periodic System: < κ | λ >
- Size: 8.34465026855469e-07 GB Time: 0.000953628 s
+ Time: 0.016017148 s
+Retrieved Periodic AO Integral: < κ | λ > Size: 5.96046447753906e-07 GB
 
 Building Fock Matrix from SOAD Guess ...
 
 Integrals per node:
   Ints for J on node(0): 1496
-  Ints for K on node(0): 698
+  Ints for K on node(0): 550
 
-Total PeriodicFourCenterFock builder time: 0.003425094
+Total PeriodicFourCenterFock builder time: 0.002430476
 
-SOAD Time: 0.053579488 s
+SOAD Time: 0.026422052 s
 
-	overlap condition number = 21.408998240172 at k = 0
-	overlap condition number = 24.0238265678439 at k = 1
-	overlap condition number = 29.3128371845344 at k = 2
-	overlap condition number = 36.9307258152039 at k = 3
-	overlap condition number = 44.7900793554734 at k = 4
-	overlap condition number = 48.3750714301713 at k = 5
-	overlap condition number = 44.7900793554734 at k = 6
-	overlap condition number = 36.9307258152041 at k = 7
-	overlap condition number = 29.3128371845344 at k = 8
-	overlap condition number = 24.0238265678439 at k = 9
-	overlap condition number = 21.408998240172 at k = 10
-Retrieved Periodic AO Integral: < κ | λ > Size: 8.34465026855469e-07 GB
-
-Computing Two Center Integral for Periodic System: < U | Κ >
- Size: 7.45058059692383e-08 GB Time: 0.000231261 s
-
-Computing Two Center Integral for Periodic System: < Κ |I| Λ >
- Size: 7.45058059692383e-07 GB Time: 0.000626516 s
-
-Computing Two Center Integral for Periodic System: ( Κ |G| Λ )
- Size: 7.45058059692383e-07 GB Time: 0.017200356 s
-
-RI-J init time decomposition:
-	V perp:              0.000408885 s
-	A = V_perp + P_para: 0.000106198 s
-	A inv:               0.000552443 s
-	IM:                  0.000146844 s
-	3-c builder ctor:    0.014989953 s
-
-force shape threshold = 1e-08
-
-User specified RJ_max = 0 0 5
-Updated RJ_max = 0 0 2
-
-CADF-K init time decomposition:
-	update RJ_max:       0.010519273 s
-	C(X, μ_0, ρ_Rj):     0.038270187 s
-	M(X, Y):             0.001965189 s
-	direct ERI3:         0.001670744 s
-	misc:                0.003074498 s
-
-Init RI-J time:      0.035514233 s
-
-Init CADF-K time:      0.056443016 s
-
-Periodic RHF Init Time: 0.19161075 s
+	overlap condition number = 21.4089982401755 at k = 0
+	overlap condition number = 24.0238265678376 at k = 1
+	overlap condition number = 29.3128371845317 at k = 2
+	overlap condition number = 36.9307258152202 at k = 3
+	overlap condition number = 44.790079355475 at k = 4
+	overlap condition number = 48.3750714301437 at k = 5
+	overlap condition number = 44.790079355475 at k = 6
+	overlap condition number = 36.9307258152205 at k = 7
+	overlap condition number = 29.3128371845317 at k = 8
+	overlap condition number = 24.0238265678376 at k = 9
+	overlap condition number = 21.4089982401755 at k = 10
+Periodic RHF Init Time: 0.153941656 s
 
 Nuclear Repulsion Energy: 2.03463240259795
-
-Iteration: 0
-
-RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.002699655 s
-	C_para_Xμν D_μν:      0.000182415 s
-	C_Xμν D_μν:           0.000474907 s
-	J_part1:              0.002935624 s
-	J_part2:              0.000433611 s
-
-Total J builder time: 0.007021941 s
-  Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
-    Sparse   = 7.552e-05 GB
-    Low Rank = 0 GB
-  Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
-    Sparse   = 4.48e-05 GB
-    Low Rank = 0 GB
-
-CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.003481404 s
-	F = 2 * E_ket - C M:      0.00702796 s
-	  Eval E_ket(Y, μ_0, ρ):  0.004557643 s
-	  Contract C M:           0.002449676 s
-	Permute F and Q_ket:      0.00070233 s
-	K = F Q_ket:              0.010204925 s
-
-Total K builder time:     0.036798868 s
-
-zRHF Energy: -3.16873765666762
-Total Energy: -1.13410525406967
-Delta(E): -3.16873765666762
-RMS(D): 0.000350853327866795
-Fock Build Time: 0.044614449 s
-Transform Fock (Real->Recip) Time: 0.000888877 s
-Density Time: 0.008083357 s
-Iteration Time: 0.054291684 s
 
 Iteration: 1
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.006765032 s
-	C_para_Xμν D_μν:      0.000195951 s
-	C_Xμν D_μν:           0.000295715 s
-	J_part1:              0.004512864 s
-	J_part2:              0.000399591 s
+	Sum_RJ (X|μν) D_μν:   0.007874738 s
+	C_para_Xμν D_μν:      0.000734198 s
+	C_Xμν D_μν:           0.00733979 s
+	J_part1:              0.000989436 s
+	J_part2:              0.000726617 s
 
-Total J builder time: 0.012435007 s
+Total J builder time: 0.017907773 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
-    Sparse   = 3.2e-05 GB
+    Full     = 0.0001216 GB
+    Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.003160089 s
-	F = 2 * E_ket - C M:      0.007005458 s
-	  Eval E_ket(Y, μ_0, ρ):  0.004538176 s
-	  Contract C M:           0.002447135 s
-	Permute F and Q_ket:      0.005393286 s
-	K = F Q_ket:              0.004252389 s
+	Q(Y, ν_R, ρ_Rj) :         0.000957238 s
+	F = 2 * ERI3 - C M:       0.003838946 s
+	  Eval E(Y, μ_0, ρ):      0.001083494 s
+	  Contract C M:           0.002744583 s
+	Permute F and Q:          0.000519243 s
+	K = F Q:                  0.000573596 s
 
-Total K builder time:     0.027418995 s
+Total K builder time:     0.006634469 s
 
-zRHF Energy: -3.1685545859145
-Total Energy: -1.13392218331655
-Delta(E): 0.000183070753120518
-RMS(D): 7.67791692208092e-05
-Fock Build Time: 0.040401762 s
-Transform Fock (Real->Recip) Time: 0.000772833 s
-Density Time: 0.005001192 s
-Iteration Time: 0.050185784 s
+zRHF Energy: -3.16873765666688
+Total Energy: -1.13410525406893
+Delta(E): -3.16873765666688
+RMS(D): 0.000350853327840958
+Fock Build Time: 0.028530721 s
+Transform Fock (Real->Recip) Time: 0.000208645 s
+Density Time: 0.000490807 s
+Iteration Time: 0.031237459 s
+
+Max LUCO: 10.1452024448335 eV at k = (0 0 0)
+Min LUCO: 5.57740608369345 eV at k = (0 0 5)
+Max HOCO: -16.4859854187285 eV at k = (0 0 5)
+Min HOCO: -16.7963847496021 eV at k = (0 0 0)
+Indirect band gap: 22.063391502422 eV
+Max direct band gap: 26.9415871944355 eV at k = (0 0 0)
+Min direct band gap: 22.063391502422 eV at k = (0 0 5)
 
 Iteration: 2
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.002715357 s
-	C_para_Xμν D_μν:      0.000168821 s
-	C_Xμν D_μν:           0.000281012 s
-	J_part1:              0.003543293 s
-	J_part2:              0.000370356 s
+	Sum_RJ (X|μν) D_μν:   0.001277031 s
+	C_para_Xμν D_μν:      0.000242533 s
+	C_Xμν D_μν:           0.000155274 s
+	J_part1:              0.00071824 s
+	J_part2:              0.00019786 s
 
-Total J builder time: 0.007358552 s
+Total J builder time: 0.002797168 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
-    Sparse   = 4.48e-05 GB
+    Full     = 0.0001216 GB
+    Sparse   = 3.2e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.003156692 s
-	F = 2 * E_ket - C M:      0.014908556 s
-	  Eval E_ket(Y, μ_0, ρ):  0.012343258 s
-	  Contract C M:           0.002540794 s
-	Permute F and Q_ket:      0.007786211 s
-	K = F Q_ket:              0.005028296 s
+	Q(Y, ν_R, ρ_Rj) :         0.000579551 s
+	F = 2 * ERI3 - C M:       0.007039707 s
+	  Eval E(Y, μ_0, ρ):      0.005834264 s
+	  Contract C M:           0.001195458 s
+	Permute F and Q:          0.000410675 s
+	K = F Q:                  0.000324418 s
 
-Total K builder time:     0.034344349 s
+Total K builder time:     0.008960333 s
 
-zRHF Energy: -3.16717567157758
-Total Energy: -1.13254326897964
-Delta(E): 0.0013789143369185
-RMS(D): 1.68333601838878e-05
-Fock Build Time: 0.042332409 s
-Transform Fock (Real->Recip) Time: 0.001071536 s
-Density Time: 0.017094804 s
-Iteration Time: 0.061392944 s
+zRHF Energy: -3.16855458591419
+Total Energy: -1.13392218331624
+Delta(E): 0.00018307075268309
+RMS(D): 7.67791692201842e-05
+Fock Build Time: 0.012660428 s
+Transform Fock (Real->Recip) Time: 0.000165804 s
+Density Time: 0.000424225 s
+Iteration Time: 0.021624695 s
+
+Max LUCO: 10.6670535910766 eV at k = (0 0 0)
+Min LUCO: 6.0010880175174 eV at k = ( 0  0 -5)
+Max HOCO: -16.0029336379597 eV at k = (0 0 5)
+Min HOCO: -16.2944736350287 eV at k = (0 0 0)
+Indirect band gap: 22.0040216554771 eV
+Max direct band gap: 26.9615272261053 eV at k = (0 0 0)
+Min direct band gap: 22.0040216554771 eV at k = ( 0  0 -5)
 
 Iteration: 3
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.021574956 s
-	C_para_Xμν D_μν:      0.000277816 s
-	C_Xμν D_μν:           0.000367697 s
-	J_part1:              0.016878732 s
-	J_part2:              0.000717316 s
+	Sum_RJ (X|μν) D_μν:   0.010838636 s
+	C_para_Xμν D_μν:      0.000267459 s
+	C_Xμν D_μν:           0.00014888 s
+	J_part1:              0.000708479 s
+	J_part2:              0.000194652 s
 
-Total J builder time: 0.04019137 s
+Total J builder time: 0.01238362 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.003671556 s
-	F = 2 * E_ket - C M:      0.023911016 s
-	  Eval E_ket(Y, μ_0, ρ):  0.016952887 s
-	  Contract C M:           0.006930956 s
-	Permute F and Q_ket:      0.004935307 s
-	K = F Q_ket:              0.005188617 s
+	Q(Y, ν_R, ρ_Rj) :         0.00055766 s
+	F = 2 * ERI3 - C M:       0.006731964 s
+	  Eval E(Y, μ_0, ρ):      0.005685546 s
+	  Contract C M:           0.001036115 s
+	Permute F and Q:          0.000585615 s
+	K = F Q:                  0.000474299 s
 
-Total K builder time:     0.040523697 s
+Total K builder time:     0.008949976 s
 
-zRHF Energy: -3.16681313817648
-Total Energy: -1.13218073557853
-Delta(E): 0.000362533401104148
-RMS(D): 3.68974041004883e-06
-Fock Build Time: 0.081252869 s
-Transform Fock (Real->Recip) Time: 0.001135174 s
-Density Time: 0.006813 s
-Iteration Time: 0.089810783 s
+zRHF Energy: -3.16717567157719
+Total Energy: -1.13254326897924
+Delta(E): 0.0013789143370011
+RMS(D): 1.68333601838176e-05
+Fock Build Time: 0.022466412 s
+Transform Fock (Real->Recip) Time: 0.001216072 s
+Density Time: 0.000625712 s
+Iteration Time: 0.025370524 s
+
+Max LUCO: 10.7766081967961 eV at k = (0 0 0)
+Min LUCO: 6.08992180942582 eV at k = ( 0  0 -5)
+Max HOCO: -15.8965996401229 eV at k = (0 0 5)
+Min HOCO: -16.1833261485814 eV at k = (0 0 0)
+Indirect band gap: 21.9865214495488 eV
+Max direct band gap: 26.9599343453776 eV at k = (0 0 0)
+Min direct band gap: 21.9865214495488 eV at k = (0 0 5)
 
 Iteration: 4
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.004039974 s
-	C_para_Xμν D_μν:      0.000157534 s
-	C_Xμν D_μν:           0.000284925 s
-	J_part1:              0.003165144 s
-	J_part2:              0.002539459 s
+	Sum_RJ (X|μν) D_μν:   0.003099185 s
+	C_para_Xμν D_μν:      0.00029441 s
+	C_Xμν D_μν:           0.006422666 s
+	J_part1:              0.005320175 s
+	J_part2:              0.000185393 s
 
-Total J builder time: 0.010478764 s
+Total J builder time: 0.015750962 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.014337922 s
-	F = 2 * E_ket - C M:      0.007525178 s
-	  Eval E_ket(Y, μ_0, ρ):  0.004891079 s
-	  Contract C M:           0.002613472 s
-	Permute F and Q_ket:      0.00080545 s
-	K = F Q_ket:              0.004131332 s
+	Q(Y, ν_R, ρ_Rj) :         0.000447364 s
+	F = 2 * ERI3 - C M:       0.003954149 s
+	  Eval E(Y, μ_0, ρ):      0.000657529 s
+	  Contract C M:           0.003286703 s
+	Permute F and Q:          0.00071012 s
+	K = F Q:                  0.000478078 s
 
-Total K builder time:     0.027845462 s
+Total K builder time:     0.006174188 s
 
-zRHF Energy: -3.16673088103424
-Total Energy: -1.13209847843629
-Delta(E): 8.22571422416374e-05
-RMS(D): 8.08686760928618e-07
-Fock Build Time: 0.038986023 s
-Transform Fock (Real->Recip) Time: 0.00077122 s
-Density Time: 0.009242344 s
-Iteration Time: 0.050214733 s
+zRHF Energy: -3.16681313817628
+Total Energy: -1.13218073557834
+Delta(E): 0.000362533400906528
+RMS(D): 3.68974041007817e-06
+Fock Build Time: 0.022885179 s
+Transform Fock (Real->Recip) Time: 0.000142087 s
+Density Time: 0.000407826 s
+Iteration Time: 0.024295397 s
+
+Max LUCO: 10.800352013657 eV at k = (0 0 0)
+Min LUCO: 6.10920962014592 eV at k = (0 0 5)
+Max HOCO: -15.8733249847232 eV at k = (0 0 5)
+Min HOCO: -16.1589272877207 eV at k = (0 0 0)
+Indirect band gap: 21.9825346048691 eV
+Max direct band gap: 26.9592793013777 eV at k = (0 0 0)
+Min direct band gap: 21.9825346048691 eV at k = (0 0 5)
 
 Iteration: 5
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.01293632 s
-	C_para_Xμν D_μν:      0.000194819 s
-	C_Xμν D_μν:           0.000302608 s
-	J_part1:              0.009008118 s
-	J_part2:              0.000474323 s
+	Sum_RJ (X|μν) D_μν:   0.001161595 s
+	C_para_Xμν D_μν:      0.000255818 s
+	C_Xμν D_μν:           0.00013686 s
+	J_part1:              0.000662562 s
+	J_part2:              0.000189651 s
 
-Total J builder time: 0.023201234 s
+Total J builder time: 0.00257693 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.002940095 s
-	F = 2 * E_ket - C M:      0.009236133 s
-	  Eval E_ket(Y, μ_0, ρ):  0.006129981 s
-	  Contract C M:           0.003086177 s
-	Permute F and Q_ket:      0.0038743 s
-	K = F Q_ket:              0.003904527 s
+	Q(Y, ν_R, ρ_Rj) :         0.000412007 s
+	F = 2 * ERI3 - C M:       0.002008308 s
+	  Eval E(Y, μ_0, ρ):      0.000668268 s
+	  Contract C M:           0.001328913 s
+	Permute F and Q:          0.000432584 s
+	K = F Q:                  0.000430016 s
 
-Total K builder time:     0.020919584 s
+Total K builder time:     0.003848637 s
 
-zRHF Energy: -3.16671273030623
-Total Energy: -1.13208032770828
-Delta(E): 1.81507280094806e-05
-RMS(D): 1.77231288334888e-07
-Fock Build Time: 0.044625315 s
-Transform Fock (Real->Recip) Time: 0.000758691 s
-Density Time: 0.006148443 s
-Iteration Time: 0.05212259 s
+zRHF Energy: -3.1667308810341
+Total Energy: -1.13209847843615
+Delta(E): 8.22571421843499e-05
+RMS(D): 8.08686760987474e-07
+Fock Build Time: 0.007394585 s
+Transform Fock (Real->Recip) Time: 0.00017694 s
+Density Time: 0.00042645 s
+Iteration Time: 0.008959263 s
+
+Max LUCO: 10.8055360159107 eV at k = (0 0 0)
+Min LUCO: 6.11343025324113 eV at k = (0 0 5)
+Max HOCO: -15.8682330127165 eV at k = (0 0 5)
+Min HOCO: -16.1535782819014 eV at k = (0 0 0)
+Indirect band gap: 21.9816632659576 eV
+Max direct band gap: 26.9591142978121 eV at k = (0 0 0)
+Min direct band gap: 21.9816632659576 eV at k = (0 0 5)
 
 Iteration: 6
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.004400648 s
-	C_para_Xμν D_μν:      0.000188615 s
-	C_Xμν D_μν:           0.00030517 s
-	J_part1:              0.007745296 s
-	J_part2:              0.000420617 s
+	Sum_RJ (X|μν) D_μν:   0.005280251 s
+	C_para_Xμν D_μν:      0.000256099 s
+	C_Xμν D_μν:           0.000148572 s
+	J_part1:              0.002676308 s
+	J_part2:              0.000213539 s
 
-Total J builder time: 0.013330255 s
+Total J builder time: 0.008779895 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.003601039 s
-	F = 2 * E_ket - C M:      0.008855338 s
-	  Eval E_ket(Y, μ_0, ρ):  0.00516807 s
-	  Contract C M:           0.003665395 s
-	Permute F and Q_ket:      0.00077562 s
-	K = F Q_ket:              0.007670563 s
+	Q(Y, ν_R, ρ_Rj) :         0.000470666 s
+	F = 2 * ERI3 - C M:       0.0016006 s
+	  Eval E(Y, μ_0, ρ):      0.000685424 s
+	  Contract C M:           0.000905645 s
+	Permute F and Q:          0.000496628 s
+	K = F Q:                  0.000424506 s
 
-Total K builder time:     0.021767626 s
+Total K builder time:     0.003553453 s
 
-zRHF Energy: -3.16670874875595
-Total Energy: -1.132076346158
-Delta(E): 3.98155028236147e-06
-RMS(D): 3.88397521154292e-08
-Fock Build Time: 0.035669753 s
-Transform Fock (Real->Recip) Time: 0.000791764 s
-Density Time: 0.005093161 s
-Iteration Time: 0.042163509 s
+zRHF Energy: -3.16671273030601
+Total Energy: -1.13208032770806
+Delta(E): 1.81507280885285e-05
+RMS(D): 1.77231288300063e-07
+Fock Build Time: 0.013766444 s
+Transform Fock (Real->Recip) Time: 0.000175393 s
+Density Time: 0.000415575 s
+Iteration Time: 0.016193047 s
+
+Max LUCO: 10.8066698668381 eV at k = (0 0 0)
+Min LUCO: 6.11435527262169 eV at k = (0 0 5)
+Max HOCO: -15.8671188835941 eV at k = ( 0  0 -5)
+Min HOCO: -16.152406024231 eV at k = (0 0 0)
+Indirect band gap: 21.9814741562158 eV
+Max direct band gap: 26.9590758910691 eV at k = (0 0 0)
+Min direct band gap: 21.9814741562158 eV at k = ( 0  0 -5)
 
 Iteration: 7
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.008598604 s
-	C_para_Xμν D_μν:      0.000189034 s
-	C_Xμν D_μν:           0.000311016 s
-	J_part1:              0.004465261 s
-	J_part2:              0.002374547 s
+	Sum_RJ (X|μν) D_μν:   0.001221279 s
+	C_para_Xμν D_μν:      0.000248567 s
+	C_Xμν D_μν:           0.000144505 s
+	J_part1:              0.000692361 s
+	J_part2:              0.000183166 s
 
-Total J builder time: 0.016221806 s
+Total J builder time: 0.00266449 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.002803812 s
-	F = 2 * E_ket - C M:      0.006949042 s
-	  Eval E_ket(Y, μ_0, ρ):  0.004449161 s
-	  Contract C M:           0.002479822 s
-	Permute F and Q_ket:      0.000702649 s
-	K = F Q_ket:              0.008738615 s
+	Q(Y, ν_R, ρ_Rj) :         0.000412483 s
+	F = 2 * ERI3 - C M:       0.00157333 s
+	  Eval E(Y, μ_0, ρ):      0.000689268 s
+	  Contract C M:           0.000874927 s
+	Permute F and Q:          0.000594258 s
+	K = F Q:                  0.000406959 s
 
-Total K builder time:     0.020011352 s
+Total K builder time:     0.003448409 s
 
-zRHF Energy: -3.16670787646274
-Total Energy: -1.1320754738648
-Delta(E): 8.72293201226171e-07
-RMS(D): 8.51114209079598e-09
-Fock Build Time: 0.036734332 s
-Transform Fock (Real->Recip) Time: 0.000743925 s
-Density Time: 0.005001686 s
-Iteration Time: 0.043049528 s
+zRHF Energy: -3.16670874875565
+Total Energy: -1.1320763461577
+Delta(E): 3.98155036362979e-06
+RMS(D): 3.88397520602562e-08
+Fock Build Time: 0.007003271 s
+Transform Fock (Real->Recip) Time: 0.00017091 s
+Density Time: 0.000420555 s
+Iteration Time: 0.00856832 s
+
+Max LUCO: 10.8069179920872 eV at k = (0 0 0)
+Min LUCO: 6.11455804809942 eV at k = (0 0 5)
+Max HOCO: -15.8668750714191 eV at k = (0 0 5)
+Min HOCO: -16.1521491534433 eV at k = (0 0 0)
+Indirect band gap: 21.9814331195185 eV
+Max direct band gap: 26.9590671455305 eV at k = (0 0 0)
+Min direct band gap: 21.9814331195185 eV at k = (0 0 5)
 
 Iteration: 8
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.00416059 s
-	C_para_Xμν D_μν:      0.000195279 s
-	C_Xμν D_μν:           0.000290298 s
-	J_part1:              0.002766775 s
-	J_part2:              0.000436479 s
+	Sum_RJ (X|μν) D_μν:   0.001214251 s
+	C_para_Xμν D_μν:      0.000230083 s
+	C_Xμν D_μν:           0.000127867 s
+	J_part1:              0.000651189 s
+	J_part2:              0.000297182 s
 
-Total J builder time: 0.008158469 s
+Total J builder time: 0.002687765 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.002819249 s
-	F = 2 * E_ket - C M:      0.006413827 s
-	  Eval E_ket(Y, μ_0, ρ):  0.004021589 s
-	  Contract C M:           0.002374053 s
-	Permute F and Q_ket:      0.000875811 s
-	K = F Q_ket:              0.003948739 s
+	Q(Y, ν_R, ρ_Rj) :         0.000419014 s
+	F = 2 * ERI3 - C M:       0.006956939 s
+	  Eval E(Y, μ_0, ρ):      0.00596677 s
+	  Contract C M:           0.000979412 s
+	Permute F and Q:          0.000543131 s
+	K = F Q:                  0.000535188 s
 
-Total K builder time:     0.014825006 s
+Total K builder time:     0.009041097 s
 
-zRHF Energy: -3.16670768540691
-Total Energy: -1.13207528280896
-Delta(E): 1.91055832932108e-07
-RMS(D): 1.86498395530512e-09
-Fock Build Time: 0.023535978 s
-Transform Fock (Real->Recip) Time: 0.000763234 s
-Density Time: 0.005507515 s
-Iteration Time: 0.030369026 s
+zRHF Energy: -3.16670787646281
+Total Energy: -1.13207547386486
+Delta(E): 8.72292841513911e-07
+RMS(D): 8.51114219447574e-09
+Fock Build Time: 0.012757848 s
+Transform Fock (Real->Recip) Time: 0.000211768 s
+Density Time: 0.000486612 s
+Iteration Time: 0.014554304 s
+
+Max LUCO: 10.8069723020407 eV at k = (0 0 0)
+Min LUCO: 6.1146024960265 eV at k = (0 0 5)
+Max HOCO: -15.8668217084649 eV at k = (0 0 5)
+Min HOCO: -16.1520928710228 eV at k = (0 0 0)
+Indirect band gap: 21.9814242044914 eV
+Max direct band gap: 26.9590651730635 eV at k = (0 0 0)
+Min direct band gap: 21.9814242044914 eV at k = (0 0 5)
 
 Iteration: 9
 
 RI-J time decomposition:
-	Sum_RJ (X|μν) D_μν:   0.005219432 s
-	C_para_Xμν D_μν:      0.000234052 s
-	C_Xμν D_μν:           0.000340971 s
-	J_part1:              0.003308587 s
-	J_part2:              0.000461514 s
+	Sum_RJ (X|μν) D_μν:   0.001366341 s
+	C_para_Xμν D_μν:      0.000288404 s
+	C_Xμν D_μν:           0.000178112 s
+	J_part1:              0.000701695 s
+	J_part2:              0.000206497 s
 
-Total J builder time: 0.009961264 s
+Total J builder time: 0.002932078 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
   Printing size information for Q(Y,ν,ρ)
-    Full     = 0.00048 GB
+    Full     = 9.6e-05 GB
     Sparse   = 7.552e-05 GB
     Low Rank = 0 GB
   Printing size information for F(Y,μ,ρ)
-    Full     = 9.6e-05 GB
+    Full     = 0.0001216 GB
     Sparse   = 4.48e-05 GB
     Low Rank = 0 GB
 
 CADF-K time decomposition:
-	Q_ket(Y, ν_R, ρ_Rj) :     0.010110528 s
-	F = 2 * E_ket - C M:      0.016338715 s
-	  Eval E_ket(Y, μ_0, ρ):  0.012624 s
-	  Contract C M:           0.003693501 s
-	Permute F and Q_ket:      0.002740742 s
-	K = F Q_ket:              0.005520908 s
+	Q(Y, ν_R, ρ_Rj) :         0.000496217 s
+	F = 2 * ERI3 - C M:       0.001688742 s
+	  Eval E(Y, μ_0, ρ):      0.000740159 s
+	  Contract C M:           0.000939154 s
+	Permute F and Q:          0.000491618 s
+	K = F Q:                  0.000471281 s
 
-Total K builder time:     0.035927188 s
+Total K builder time:     0.003722921 s
 
-zRHF Energy: -3.1667076435622
-Total Energy: -1.13207524096425
-Delta(E): 4.18447108074815e-08
-RMS(D): 4.08638892000639e-10
-Fock Build Time: 0.04644298 s
-Transform Fock (Real->Recip) Time: 0.000756313 s
-Density Time: 0.005070527 s
-Iteration Time: 0.052851805 s
+zRHF Energy: -3.16670768540644
+Total Energy: -1.13207528280849
+Delta(E): 1.91056366283249e-07
+RMS(D): 1.8649838277633e-09
+Fock Build Time: 0.007731058 s
+Transform Fock (Real->Recip) Time: 0.000205204 s
+Density Time: 0.00041637 s
+Iteration Time: 0.00930824 s
+
+Max LUCO: 10.8069841910483 eV at k = (0 0 0)
+Min LUCO: 6.11461223787333 eV at k = ( 0  0 -5)
+Max HOCO: -15.8668100274687 eV at k = (0 0 5)
+Min HOCO: -16.1520805397851 eV at k = (0 0 0)
+Indirect band gap: 21.981422265342 eV
+Max direct band gap: 26.9590647308334 eV at k = (0 0 0)
+Min direct band gap: 21.981422265342 eV at k = ( 0  0 -5)
+
+Iteration: 10
+
+RI-J time decomposition:
+	Sum_RJ (X|μν) D_μν:   0.001179223 s
+	C_para_Xμν D_μν:      0.000243051 s
+	C_Xμν D_μν:           0.000133199 s
+	J_part1:              0.000607329 s
+	J_part2:              0.000184871 s
+
+Total J builder time: 0.002517048 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 9.6e-05 GB
+    Sparse   = 7.552e-05 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0001216 GB
+    Sparse   = 4.48e-05 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q(Y, ν_R, ρ_Rj) :         0.000443462 s
+	F = 2 * ERI3 - C M:       0.002668405 s
+	  Eval E(Y, μ_0, ρ):      0.000664701 s
+	  Contract C M:           0.001994486 s
+	Permute F and Q:          0.00045083 s
+	K = F Q:                  0.000416776 s
+
+Total K builder time:     0.004521872 s
+
+zRHF Energy: -3.16670764356193
+Total Energy: -1.13207524096398
+Delta(E): 4.18445131877831e-08
+RMS(D): 4.08638882088265e-10
+Fock Build Time: 0.008486596 s
+Transform Fock (Real->Recip) Time: 0.000197203 s
+Density Time: 0.000395526 s
+Iteration Time: 0.010022001 s
+
+Max LUCO: 10.8069867939225 eV at k = (0 0 0)
+Min LUCO: 6.11461437280937 eV at k = (0 0 5)
+Max HOCO: -15.866807470272 eV at k = (0 0 5)
+Min HOCO: -16.1520778381974 eV at k = (0 0 0)
+Indirect band gap: 21.9814218430814 eV
+Max direct band gap: 26.9590646321199 eV at k = (0 0 0)
+Min direct band gap: 21.9814218430814 eV at k = (0 0 5)
+
+Iteration: 11
+
+RI-J time decomposition:
+	Sum_RJ (X|μν) D_μν:   0.002947717 s
+	C_para_Xμν D_μν:      0.000236091 s
+	C_Xμν D_μν:           0.000152448 s
+	J_part1:              0.000677535 s
+	J_part2:              0.000175544 s
+
+Total J builder time: 0.004380515 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 9.6e-05 GB
+    Sparse   = 7.552e-05 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0001216 GB
+    Sparse   = 4.48e-05 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q(Y, ν_R, ρ_Rj) :         0.000443026 s
+	F = 2 * ERI3 - C M:       0.001564975 s
+	  Eval E(Y, μ_0, ρ):      0.000634911 s
+	  Contract C M:           0.000920942 s
+	Permute F and Q:          0.00054017 s
+	K = F Q:                  0.000490144 s
+
+Total K builder time:     0.0035799 s
+
+zRHF Energy: -3.16670763439691
+Total Energy: -1.13207523179896
+Delta(E): 9.16501496917022e-09
+RMS(D): 8.95330689364128e-11
+Fock Build Time: 0.009323745 s
+Transform Fock (Real->Recip) Time: 0.000236781 s
+Density Time: 0.000518595 s
+Iteration Time: 0.011094714 s
+
+Max LUCO: 10.8069873638275 eV at k = (0 0 0)
+Min LUCO: 6.11461484065098 eV at k = (0 0 5)
+Max HOCO: -15.8668069103931 eV at k = ( 0  0 -5)
+Min HOCO: -16.1520772463332 eV at k = (0 0 0)
+Indirect band gap: 21.9814217510441 eV
+Max direct band gap: 26.9590646101607 eV at k = (0 0 0)
+Min direct band gap: 21.9814217510441 eV at k = (0 0 5)
+
+Iteration: 12
+
+RI-J time decomposition:
+	Sum_RJ (X|μν) D_μν:   0.001808205 s
+	C_para_Xμν D_μν:      0.0002375 s
+	C_Xμν D_μν:           0.000155194 s
+	J_part1:              0.000688041 s
+	J_part2:              0.000176049 s
+
+Total J builder time: 0.003218477 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 9.6e-05 GB
+    Sparse   = 7.552e-05 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0001216 GB
+    Sparse   = 4.48e-05 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q(Y, ν_R, ρ_Rj) :         0.000432035 s
+	F = 2 * ERI3 - C M:       0.001768161 s
+	  Eval E(Y, μ_0, ρ):      0.000890592 s
+	  Contract C M:           0.000868548 s
+	Permute F and Q:          0.000531054 s
+	K = F Q:                  0.000422413 s
+
+Total K builder time:     0.003653578 s
+
+zRHF Energy: -3.16670763239033
+Total Energy: -1.13207522979238
+Delta(E): 2.00658289983835e-09
+RMS(D): 1.96160473848623e-11
+Fock Build Time: 0.007702726 s
+Transform Fock (Real->Recip) Time: 0.000178578 s
+Density Time: 0.002411618 s
+Iteration Time: 0.01109312 s
+
+Max LUCO: 10.8069874885962 eV at k = (0 0 0)
+Min LUCO: 6.11461494314323 eV at k = ( 0  0 -5)
+Max HOCO: -15.8668067878249 eV at k = ( 0  0 -5)
+Min HOCO: -16.1520771166936 eV at k = (0 0 0)
+Indirect band gap: 21.9814217309681 eV
+Max direct band gap: 26.9590646052898 eV at k = (0 0 0)
+Min direct band gap: 21.9814217309681 eV at k = ( 0  0 -5)
+
+Iteration: 13
+
+RI-J time decomposition:
+	Sum_RJ (X|μν) D_μν:   0.001167363 s
+	C_para_Xμν D_μν:      0.000252139 s
+	C_Xμν D_μν:           0.00015125 s
+	J_part1:              0.000652531 s
+	J_part2:              0.000199084 s
+
+Total J builder time: 0.002614489 s
+
+Truncating lattice range of density representation
+	User specified lattice range = 0 0 5
+	Updated lattice range = 0 0 5
+
+Lattice range of density representation is not changed. No need to update RD-dependent variables!
+  Printing size information for Q(Y,ν,ρ)
+    Full     = 9.6e-05 GB
+    Sparse   = 7.552e-05 GB
+    Low Rank = 0 GB
+  Printing size information for F(Y,μ,ρ)
+    Full     = 0.0001216 GB
+    Sparse   = 4.48e-05 GB
+    Low Rank = 0 GB
+
+CADF-K time decomposition:
+	Q(Y, ν_R, ρ_Rj) :         0.000418393 s
+	F = 2 * ERI3 - C M:       0.006735586 s
+	  Eval E(Y, μ_0, ρ):      0.000805531 s
+	  Contract C M:           0.00591887 s
+	Permute F and Q:          0.001176485 s
+	K = F Q:                  0.00050402 s
+
+Total K builder time:     0.00942418 s
+
+zRHF Energy: -3.16670763195052
+Total Energy: -1.13207522935257
+Delta(E): 4.39806857599478e-10
+RMS(D): 4.2975223784472e-12
+Fock Build Time: 0.01338831 s
+Transform Fock (Real->Recip) Time: 0.00021318 s
+Density Time: 0.00051777 s
+Iteration Time: 0.015257574 s
+
+Max LUCO: 10.806987515926 eV at k = (0 0 0)
+Min LUCO: 6.11461496560794 eV at k = (0 0 5)
+Max HOCO: -15.8668067609775 eV at k = (0 0 5)
+Min HOCO: -16.1520770882854 eV at k = (0 0 0)
+Indirect band gap: 21.9814217265854 eV
+Max direct band gap: 26.9590646042115 eV at k = (0 0 0)
+Min direct band gap: 21.9814217265854 eV at k = (0 0 5)
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -1.13207524096425
+Max LUCO: 10.806987515926 eV at k = (0 0 0)
+Min LUCO: 6.11461496560794 eV at k = (0 0 5)
+Max HOCO: -15.8668067609775 eV at k = (0 0 5)
+Min HOCO: -16.1520770882854 eV at k = (0 0 0)
+Indirect band gap: 21.9814217265854 eV
+Max direct band gap: 26.9590646042115 eV at k = (0 0 0)
+Min direct band gap: 21.9814217265854 eV at k = (0 0 5)
+
+Total Periodic Hartree-Fock energy = -1.13207522935257
 
  k | orbital energies
 0 | -0.58309  0.22471  0.91048    1.318
@@ -577,17 +887,66 @@ Total Periodic Hartree-Fock energy = -1.13207524096425
 10 | -0.58309  0.22471  0.91048    1.318
 
 Time(s):
-	Init:                               0.192
+	Init:                               0.154
 	Coulomb term:                       0.000
 	Exchange term:                      0.000
-	Real->Recip trans:                  0.008
-	Diag + Density:                     0.073
-	Total:                              0.526
+	Real->Recip trans:                  0.003
+	Diag + Density:                     0.008
+	Total:                              0.208
 
+
+*** test multipole after converged scf ***
+  Engine precision = 2.22044604925031e-16
+  Non-negligible shell-pair threshold = 1e-12
+  Density sparse threshold = 9.99999968265523e-21
+
+User specified range of lattice sum for |mu nu_R) = 0 0 5
+Updated range of lattice sum for |mu nu_R) = 0 0 2
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 2]
+	Rj_max (range of Coulomb operation): [0 0 5]
+	Rd_max (Range of density representation): [0 0 5]
+
+
+Crystal dimensionality : 1
+
+Multipole approximation thresholds:
+	energy threshold = 1e-09
+	well-separateness criterion = 3
+	primitive pair extent threshold = 1e-06
+	primitive pair extent small value = 0.01
+	dipole correction threshold = 0.001
+
+Computing Two Center Integral for Periodic System: < κ |O| λ >
+ Size: 6.55651092529297e-06 GB Time: 0.013816391 s
+
+!!!!!! Warning !!!!!!
+The range limit in dimension 2 is not enough to reach Crystal Far Field. Use larger `rjmax` in the input.
+
+The boundary of Crystal Far Field is 0 0 5
+
+Cannot reach CFF within the given `rjmax`. Skip the rest of multipole approximation calculation.
+
+MA init time decomposition:
+	basis pair ctor:          0.000237786 s
+	multipole ints:           0.013968651 s
+	CFF boundary:             5.8285e-05 s
+	nuclear multipole + misc: 4.709e-06 s
+electronic spherical multipole moments:
+monopole: -2
+dipole m=-1: -0
+dipole m=0:  1.06817555919986e-12
+dipole m=1:  -0
+quadrupole m=-2: -0
+quadrupole m=-1: -0
+quadrupole m=0:  -0.337329111489794
+quadrupole m=1:  -0
+quadrupole m=2:  -0
   Output KeyVal (format=JSON):
 {
     "units": "2006CODATA",
-    "unitcell": {
+    "h2": {
         "charge": "0",
         "file_name": "h2.xyz",
         "sort_input": "false",
@@ -600,14 +959,14 @@ Time(s):
     },
     "basis": {
         "name": "6-31g",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "dfbs": {
         "name": "cc-pvdz",
-        "molecule": "$:unitcell"
+        "atoms": "$:h2"
     },
     "wfn_world": {
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "basis": "$:basis",
         "df_basis": "$:dfbs",
         "screen": "schwarz",
@@ -631,7 +990,7 @@ Time(s):
     },
     "wfn": {
         "type": "RIJ-CADFK-zRHF",
-        "molecule": "$:unitcell",
+        "atoms": "$:h2",
         "wfn_world": "$:wfn_world",
         "max_iter": "100",
         "soad_guess": "true",
@@ -649,7 +1008,7 @@ Time(s):
         "wfn": "$:wfn",
         "precision": "1.0e-9",
         "value": {
-            "value": "-1.1320752409642525"
+            "value": "-1.1320752293525747"
         }
     }
 }

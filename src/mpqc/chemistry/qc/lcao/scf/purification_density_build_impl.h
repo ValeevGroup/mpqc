@@ -87,9 +87,15 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
       array_ops::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localize_) {
-    auto U = mpqc::scf::FosterBoysLocalization{}(
-        Cao, r_xyz_ints_,
-        (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+    auto U = ((localization_method_ == "rrqr") ||
+              (localization_method_ == "rrqr(valence)"))
+                 ? mpqc::scf::RRQRLocalization{}(
+                       Cao, S_,
+                       (localization_method_ == "rrqr(valence)" ? ncore_ : 0))
+                 : mpqc::scf::FosterBoysLocalization{}(
+                       Cao, r_xyz_ints_,
+                       (localization_method_ == "boys-foster(valence)" ? ncore_
+                                                                       : 0));
     Cao("mu,i") = Cao("mu,k") * U("k,i");
 
     auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
@@ -97,7 +103,6 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
       scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
     }
   }
-
 #if TA_DEFAULT_POLICY == 1
   if (TcutC_ != 0) {
     minimize_storage(Cao, TcutC_);

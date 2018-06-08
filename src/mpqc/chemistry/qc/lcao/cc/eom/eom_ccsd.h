@@ -12,7 +12,7 @@
 namespace mpqc {
 namespace lcao {
 
-// close-shell eom-ccsd
+/// Implements closed-shell EOM-EA-CCSD
 template <typename Tile, typename Policy>
 class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
@@ -23,18 +23,19 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
  public:
   // clang-format off
   /**
-   * KeyVal constructor
-   * @param kv
+   * The KeyVal constructor.
+   *
+   * @param kv KeyVal object; it will be queried for all keywords of ::mpqc::lcao::CCSD , as well as the following additional keywords:
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | davidson_solver | string | multi-state | choose the davidson solver to use, multi-state or single-state  |
    * | max_vector | int | 8 | max number of guess vector per root |
-   * | vector_threshold | double | 10 * precision of property | threshold for the norm of new guess vector |
-   * | eom_pno | string | none | if to simulate pno, avaialble \c default, which uses first excited state to generate PNOs \c state-average, use average of states to generate PNOs |
+   * | vector_threshold | real | 10 * precision of property | threshold for the norm of new guess vector |
+   * | eom_pno | string | none | if to simulate pno, avaialble \c default, which uses first excited state to generate PNOs \c state-average, use average of states to generate PNOs  \c state-merged, join all the states to generate PNOs |
    * | eom_pno_canonical | bool | true | if canonicalize PNOs and OSVs |
-   * | eom_tpno | double | 0 | PNO truncation threshold for eom |
-   * | eom_tosv | double | 0 | OSV truncation threshold for eom |
+   * | eom_tpno | real | 0 | PNO truncation threshold for eom |
+   * | eom_tosv | real | 0 | OSV truncation threshold for eom |
    *
    */
 
@@ -68,7 +69,8 @@ class EOM_CCSD : public CCSD<Tile, Policy>, public Provides<ExcitationEnergy> {
 
     eom_pno_ = kv.value<std::string>("eom_pno", "");
     if (!eom_pno_.empty() &&
-        (eom_pno_ != "default" && eom_pno_ != "state-average")) {
+        (eom_pno_ != "default" && eom_pno_ != "state-average" &&
+         eom_pno_ != "state-merged")) {
       throw InputError("Invalid PNO Simulation method in EOM-CCSD! \n",
                        __FILE__, __LINE__, "eom_pno");
     }

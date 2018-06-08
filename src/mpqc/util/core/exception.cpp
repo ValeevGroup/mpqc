@@ -374,6 +374,9 @@ FileOperationFailed::FileOperationFailed(const char *description,
         case Unknown:
             elaborate() << "Unknown";
             break;
+        case Exists:
+          elaborate() << "Exists";
+          break;
         case OpenR:
             elaborate() << "OpenR";
             break;

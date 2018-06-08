@@ -10,13 +10,15 @@ namespace mpqc {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Factory>
-class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
+class PeriodicRIJFourCenterKFockBuilder
+    : public PeriodicFockBuilder<Tile, Policy> {
  public:
   using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
   using J_Builder = PeriodicRIJBuilder<Tile, Policy, Factory>;
   using K_Builder = PeriodicFourCenterFockBuilder<Tile, Policy>;
 
-  PeriodicDFFockBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
+  PeriodicRIJFourCenterKFockBuilder(Factory &ao_factory)
+      : ao_factory_(ao_factory) {
     auto &world = ao_factory_.world();
 
     // Construct periodic RI-J builder
@@ -36,7 +38,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
                   << std::endl;
   }
 
-  ~PeriodicDFFockBuilder() {}
+  ~PeriodicRIJFourCenterKFockBuilder() {}
 
   array_type operator()(array_type const &D, double target_precision,
                         bool) override {
@@ -46,7 +48,7 @@ class PeriodicDFFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
     const auto K = compute_K(D, target_precision);
     const auto J_lattice_range = ao_factory_.R_max();
     const auto K_lattice_range = k_builder_->fock_lattice_range();
-    // the '-' sign is embeded in K builder
+    // the '-' sign is embedded in K builder
     G = ::mpqc::pbc::detail::add(J, K, J_lattice_range, K_lattice_range, 2.0,
                                  1.0);
 

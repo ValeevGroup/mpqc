@@ -53,6 +53,11 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
   localization_method_ =
       kv.value<std::string>("localization_method", "boys-foster");
   clustered_coeffs_ = kv.value<bool>("clustered_coeffs", false);
+  if (clustered_coeffs_ && (localization_method_ == "boys-foster(valence)" ||
+                            localization_method_ != "rrqr(valence)")) {
+    throw InputError("RHF: clustered_coeffs is true with incompatible localization_method", __FILE__,
+                     __LINE__, "clustered_coeffs");
+  }
   t_cut_c_ = kv.value<double>("t_cut_c", 0.0);
 }
 

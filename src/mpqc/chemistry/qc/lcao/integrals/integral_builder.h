@@ -16,6 +16,7 @@
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/math/groups/petite_list.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace lcao {
@@ -115,6 +116,40 @@ class IntegralBuilder {
     }
   }
 
+  /*!
+   * @brief This computes an \c std::array of integrals for operators that have
+   * \c nopers components, e.g. multipole moments, geometrical derivatives,
+   * etc. Note that only one tile is computed for each component, and all
+   * \c nopers tiles share the same index and range.
+   * @tparam libint2_oper libint2 operator type
+   * @param idx index of the target tile
+   * @param range range of the target tile
+   * @return
+   */
+  template <libint2::Operator libint2_oper>
+  std::array<TA::TensorD, libint2::operator_traits<libint2_oper>::nopers>
+  integrals(std::vector<std::size_t> const &idx, TA::Range range) {
+    auto size = bases_->size();
+
+    switch (size) {
+      case 2:
+        // get integral shells
+        detail::VecArray<2> shellvec_ptrs2;
+        for (auto i = 0ul; i < size; ++i) {
+          auto const &basis_i = bases_->operator[](i);
+          shellvec_ptrs2[i] = &basis_i.cluster_shells()[idx[i]];
+        }
+        // Compute integrals over the selected shells.
+        return detail::integral_kernel<libint2_oper>(
+            engines_->local(), std::move(range), shellvec_ptrs2, *screen_,
+            *plist_);
+
+      default:
+        throw FeatureNotImplemented("Only support basis set size = 2!",
+                                    __FILE__, __LINE__);
+    }
+  };
+
   Tile op(TA::TensorD &&tensor) { return op_(std::move(tensor)); }
 };
 
@@ -132,8 +167,9 @@ class DirectIntegralBuilder
       : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op, plist),
         id_(world.register_ptr(this)) {}
 
-  DirectIntegralBuilder(const DirectIntegralBuilder& builder) = delete;
-  DirectIntegralBuilder& operator=(const DirectIntegralBuilder& builder) = delete;
+  DirectIntegralBuilder(const DirectIntegralBuilder &builder) = delete;
+  DirectIntegralBuilder &operator=(const DirectIntegralBuilder &builder) =
+      delete;
 
   madness::uniqueidT id() const { return id_; }
 
@@ -152,7 +188,7 @@ class DirectIntegralBuilder
   madness::uniqueidT id_;
 };
 
-template<typename Tile>
+template <typename Tile>
 struct DFTaskGemm {
   typedef Tile result_type;
   typedef Tile first_argument_type;
@@ -211,7 +247,7 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
 
   DirectDFIntegralBuilder(DirectDFIntegralBuilder &&) = delete;
   DirectDFIntegralBuilder(const DirectDFIntegralBuilder &) = delete;
-  DirectDFIntegralBuilder& operator=(const DirectDFIntegralBuilder & ) = delete;
+  DirectDFIntegralBuilder &operator=(const DirectDFIntegralBuilder &) = delete;
 
   ~DirectDFIntegralBuilder() {
     if (madness::initialized()) {
@@ -221,7 +257,6 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
   }
 
   madness::uniqueidT id() const { return id_; }
-
 
   // compute Tile for particular block
   madness::Future<Tile> operator()(const std::vector<std::size_t> &idx,
@@ -237,10 +272,10 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
     std::vector<std::size_t> ket_idx(3);
     bra_idx[1] = idx[0];
     ket_idx[2] = idx[3];
-    if(notation_==Formula::Notation::Physical){
+    if (notation_ == Formula::Notation::Physical) {
       bra_idx[2] = idx[2];
       ket_idx[1] = idx[1];
-    }else{
+    } else {
       bra_idx[2] = idx[1];
       ket_idx[1] = idx[2];
     }
@@ -249,10 +284,9 @@ class DirectDFIntegralBuilder : public std::enable_shared_from_this<
                                      madness::cblas::NoTrans, 4, 3, 3);
 
     TA::Range this_range;
-    if(notation_==Formula::Notation::Physical){
-      this_range = TA::Range(TA::Permutation({0,2,1,3}),range);
-    }
-    else{
+    if (notation_ == Formula::Notation::Physical) {
+      this_range = TA::Range(TA::Permutation({0, 2, 1, 3}), range);
+    } else {
       this_range = range;
     }
 

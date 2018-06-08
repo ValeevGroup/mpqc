@@ -16,8 +16,47 @@ class PeriodicRIJBuilder {
   using array_type = TA::DistArray<Tile, Policy>;
   using PTC_Builder = PeriodicThreeCenterContractionBuilder<Tile, Policy>;
 
-  PeriodicRIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) {
+  PeriodicRIJBuilder(Factory &ao_factory) : ao_factory_(ao_factory) { init(); }
+
+  PeriodicRIJBuilder(Factory &ao_factory, const Vector3i &rj_max)
+      : ao_factory_(ao_factory) {
+    ao_factory_.set_rjmax(rj_max);
+    init();
+  }
+
+  ~PeriodicRIJBuilder() {}
+
+  array_type operator()(array_type const &D, double target_precision) {
+    return compute_J(D, target_precision);
+  }
+
+ private:
+  Factory &ao_factory_;
+  bool print_detail_;
+  bool force_hermiticity_;
+  std::unique_ptr<PTC_Builder> three_center_builder_;
+
+  array_type M_;         // charge matrix of product density <μ|ν>
+  array_type n_;         // normalized charge vector <Κ>
+  double q_;             // total charge of auxiliary basis functions
+  array_type P_para_;    // projection matrix that projects X onto auxiliary
+                         // charge vector
+  array_type P_perp_;    // projection matrix that projects X onto the subspace
+                         // orthogonal to auxiliary charge vector
+  array_type V_;         // 2-center 2-electron integrals
+  array_type V_perp_;    // part of 2-center 2-electron integrals that is
+                         // orthogonal to auxiliary charge vector
+  array_type G_;         // 3-center 2-electron direct integrals contracted with
+                         // density matrix
+  array_type inv_;       // A inverse where A = V_perp + P_para
+  array_type identity_;  // idensity matrix
+  array_type CD_;        // intermediate for C_Xμν D_μν
+  array_type IP_;        // intermediate for inv_XY P_perp_YZ
+
+ private:
+  void init() {
     print_detail_ = ao_factory_.print_detail();
+    force_hermiticity_ = ao_factory_.force_hermiticity();
     auto &world = ao_factory_.world();
 
     mpqc::time_point t0, t1;
@@ -86,35 +125,6 @@ class PeriodicRIJBuilder {
     }
   }
 
-  ~PeriodicRIJBuilder() {}
-
-  array_type operator()(array_type const &D, double target_precision) {
-    return compute_J(D, target_precision);
-  }
-
- private:
-  Factory &ao_factory_;
-  bool print_detail_;
-  std::unique_ptr<PTC_Builder> three_center_builder_;
-
-  array_type M_;         // charge matrix of product density <μ|ν>
-  array_type n_;         // normalized charge vector <Κ>
-  double q_;             // total charge of auxiliary basis functions
-  array_type P_para_;    // projection matrix that projects X onto auxiliary
-                         // charge vector
-  array_type P_perp_;    // projection matrix that projects X onto the subspace
-                         // orthogonal to auxiliary charge vector
-  array_type V_;         // 2-center 2-electron integrals
-  array_type V_perp_;    // part of 2-center 2-electron integrals that is
-                         // orthogonal to auxiliary charge vector
-  array_type G_;         // 3-center 2-electron direct integrals contracted with
-                         // density matrix
-  array_type inv_;       // A inverse where A = V_perp + P_para
-  array_type identity_;  // idensity matrix
-  array_type CD_;        // intermediate for C_Xμν D_μν
-  array_type IP_;        // intermediate for inv_XY P_perp_YZ
-
- private:
   array_type compute_J(const array_type &D, double target_precision) {
     auto &world = ao_factory_.world();
 
@@ -152,7 +162,7 @@ class PeriodicRIJBuilder {
     }
 
     // Build DF Coulomb term J_μν
-    array_type J, J_part1, J_part2;
+    array_type J_unsymm, J, J_part1, J_part2;
     array_type VCD;  // just an intermediate
     VCD("X") = V_("X, Y") * CD_("Y");
 
@@ -183,7 +193,14 @@ class PeriodicRIJBuilder {
     }
 
     // Build J_μν
-    J("mu, nu") = J_part1("mu, nu") + J_part2("mu, nu");
+    J_unsymm("mu, nu") = J_part1("mu, nu") + J_part2("mu, nu");
+    if (force_hermiticity_) {
+      // force hermiticity of Coulomb matrix
+      J = pbc::detail::symmetrize_matrix(J_unsymm);
+    } else {
+      // leave Coulomb matrix as non-hermitian (due to finite lattice range)
+      J = J_unsymm;
+    }
 
     auto t1_j_builder = mpqc::fenced_now(world);
     auto t_tot = mpqc::duration_in_s(t0_j_builder, t1_j_builder);

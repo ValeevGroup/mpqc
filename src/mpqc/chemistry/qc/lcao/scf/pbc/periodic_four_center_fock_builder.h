@@ -75,6 +75,7 @@ class PeriodicFourCenterFockBuilder
   using Qmatrix = ::mpqc::lcao::gaussian::Qmatrix;
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using BasisVector = std::vector<Basis>;
+  using ShellVec = ::mpqc::lcao::gaussian::ShellVec;
   using shellpair_list_t = std::vector<std::vector<size_t>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;
@@ -86,7 +87,8 @@ class PeriodicFourCenterFockBuilder
       int64_t RD_size, bool compute_J, bool compute_K,
       std::string screen = "schwarz", double screen_threshold = 1.0e-20,
       double shell_pair_threshold = 1.0e-12,
-      double density_threshold = Policy::shape_type::threshold())
+      double density_threshold = Policy::shape_type::threshold(),
+      bool force_hermiticity = true)
       : WorldObject_(world),
         compute_J_(compute_J),
         compute_K_(compute_K),
@@ -102,7 +104,8 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(RJ_size),
         RD_size_(RD_size),
         bra_basis_(bra_basis),
-        ket_basis_(ket_basis) {
+        ket_basis_(ket_basis),
+        force_hermiticity_(force_hermiticity) {
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -110,10 +113,21 @@ class PeriodicFourCenterFockBuilder
     WorldObject_::process_pending();
 
     // initialize compound bases, engines, and screeners
-    if (bra_basis_ == ket_basis_ && !compute_J_ && compute_K_)
-      init_K_aaaa();
-    else
+    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
+    } else if (compute_J_) {
+      if (force_hermiticity_) {
+        init_J_aaaa();
+      } else {
+        init();
+      }
+    } else {
+      if (force_hermiticity_) {
+        init_K_aaaa();
+      } else {
+        init();
+      }
+    }
   }
 
   PeriodicFourCenterFockBuilder(Factory &ao_factory, bool compute_J,
@@ -133,7 +147,8 @@ class PeriodicFourCenterFockBuilder
         RJ_size_(ao_factory.RJ_size()),
         RD_size_(ao_factory.RD_size()),
         bra_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
-        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))) {
+        ket_basis_(ao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"))),
+        force_hermiticity_(ao_factory.force_hermiticity()){
     assert(bra_basis_ != nullptr && "No bra basis is provided");
     assert(ket_basis_ != nullptr && "No ket basis is provided");
     assert((compute_J_ || compute_K_) && "No Coulomb && No Exchange");
@@ -141,10 +156,21 @@ class PeriodicFourCenterFockBuilder
     WorldObject_::process_pending();
 
     // initialize compound bases, engines, and screeners
-    if (bra_basis_ == ket_basis_ && !compute_J_ && compute_K_)
-      init_K_aaaa();
-    else
+    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       init();
+    } else if (compute_J_) {
+      if (force_hermiticity_) {
+        init_J_aaaa();
+      } else {
+        init();
+      }
+    } else {
+      if (force_hermiticity_) {
+        init_K_aaaa();
+      } else {
+        init();
+      }
+    }
   }
 
   ~PeriodicFourCenterFockBuilder() {}
@@ -155,33 +181,36 @@ class PeriodicFourCenterFockBuilder
     auto elements_range = trange.elements_range();
     auto tiles_range = trange.tiles_range();
 
-    if (bra_basis_ == ket_basis_ && !compute_J_ && compute_K_) {
+    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_)) {
       // validate preconditions
-      for (auto Rrho = 0; Rrho != Rrho_size_ - ref_Rrho_ord_; ++Rrho) {
-        auto ntilesRrho = basis_Rrho_[Rrho]->nclusters();
-        auto nbf_Rrho = basis_Rrho_[Rrho]->nfunctions();
-        assert(elements_range.extent(0) == nbf_Rrho);
-        assert(tiles_range.extent(0) == ntilesRrho);
-      }
+      auto ntilesRJ = ket_basis_->nclusters();
+      auto ntilesRD = ntilesRJ * RD_size_;
+      auto nbf_RJ = ket_basis_->nfunctions();
+      auto nbf_RD = nbf_RJ * RD_size_;
+      assert(elements_range.extent(0) == nbf_RJ);
+      assert(elements_range.extent(1) == nbf_RD);
+      assert(tiles_range.extent(0) == ntilesRJ);
+      assert(tiles_range.extent(1) == ntilesRD);
 
-      return compute_K_aaaa(D, target_precision, is_density_diagonal);
-    } else {
-      // validate preconditions
-      for (auto RJ = 0; RJ != RJ_size_; ++RJ) {
-        auto ntilesRJ = basisRJ_[RJ]->nclusters();
-        auto ntilesRD = basisRD_[RJ]->nclusters();
-        auto nbf_RJ = basisRJ_[RJ]->nfunctions();
-        auto nbf_RD = basisRD_[RJ]->nfunctions();
-        assert(elements_range.extent(0) == nbf_RJ);
-        assert(elements_range.extent(1) == nbf_RD);
-        assert(tiles_range.extent(0) == ntilesRJ);
-        assert(tiles_range.extent(1) == ntilesRD);
-      }
-
-      if (!compute_J_ && compute_K_)
+      if (!compute_J_) {
         return compute_K_abcd(D, target_precision);
-      else
+      } else {
         return compute_JK_abcd(D, target_precision, is_density_diagonal);
+      }
+    } else {
+      if (compute_J_) {
+        if (force_hermiticity_) {
+          return compute_J_aaaa(D, target_precision);
+        } else {
+          return compute_JK_abcd(D, target_precision, is_density_diagonal);
+        }
+      } else {
+        if (force_hermiticity_) {
+          return compute_K_aaaa(D, target_precision, is_density_diagonal);
+        } else {
+          return compute_K_abcd(D, target_precision);
+        }
+      }
     }
   }
 
@@ -191,10 +220,11 @@ class PeriodicFourCenterFockBuilder
   }
 
   Vector3i fock_lattice_range() override {
-    if (bra_basis_ == ket_basis_ && !compute_J_ && compute_K_) {
-      return RF_max_;
-    } else {
+    if (bra_basis_ != ket_basis_ || (compute_J_ && compute_K_) ||
+        (!force_hermiticity_)) {
       return R_max_;
+    } else {
+      return RF_max_;
     }
   }
 
@@ -226,19 +256,21 @@ class PeriodicFourCenterFockBuilder
     // make shell block norm of D
     using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
     assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
-    auto ref_uc = (RJ_size_ - 1) / 2;
     auto shblk_norm_D =
-        compute_shellblock_norm(*ket_basis_, *(basisRD_[ref_uc]), D_repl);
+        compute_shellblock_norm(*ket_basis_, *basisRD_ket_, D_repl);
     shblk_norm_D.make_replicated();  // make sure it is replicated
 
     // initialize engines
     {
+      using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
       using ::mpqc::lcao::gaussian::make_engine_pool;
+
       auto oper_type = libint2::Operator::coulomb;
       const auto basis0 = *bra_basis_;
       const auto basisR = *basisR_;
-      const auto basisRJ = *(basisRJ_[ref_uc]);
-      const auto basisRD = *(basisRD_[ref_uc]);
+      const auto basisRJ = *ket_basis_;
+      const auto basisRD =
+          *(shift_basis_origin(basisRJ, Vector3d::Zero(), RD_max_, dcell_));
       if (compute_J_) {
         j_engines_ = make_engine_pool(
             oper_type,
@@ -931,18 +963,18 @@ class PeriodicFourCenterFockBuilder
       const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
       for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
         const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
-        const auto R2p1_3D = R2_3D - R1_3D;
+        const auto R2m1_3D = R2_3D - R1_3D;
         const auto uc_ord_D02 = is_in_lattice_range(R2_3D, truncated_RD_max_)
                                     ? direct_ord_idx(R2_3D, RD_max_)
                                     : -1;
-        const auto uc_ord_D12 = is_in_lattice_range(R2p1_3D, truncated_RD_max_)
-                                    ? direct_ord_idx(R2p1_3D, RD_max_)
+        const auto uc_ord_D12 = is_in_lattice_range(R2m1_3D, truncated_RD_max_)
+                                    ? direct_ord_idx(R2m1_3D, RD_max_)
                                     : -1;
         const auto uc_ord_F02 = is_in_lattice_range(R2_3D, RF_max_)
                                     ? direct_ord_idx(R2_3D, RF_max_)
                                     : -1;
-        const auto uc_ord_F12 = is_in_lattice_range(R2p1_3D, RF_max_)
-                                    ? direct_ord_idx(R2p1_3D, RF_max_)
+        const auto uc_ord_F12 = is_in_lattice_range(R2m1_3D, RF_max_)
+                                    ? direct_ord_idx(R2m1_3D, RF_max_)
                                     : -1;
 
         for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
@@ -1065,7 +1097,10 @@ class PeriodicFourCenterFockBuilder
                             {idx_F02, idx_F03, idx_F12, idx_F13}},
                         std::array<int64_t, 4>{
                             {int64_t(uc_ord_F02), int64_t(uc_ord_F03),
-                             int64_t(uc_ord_F12), int64_t(uc_ord_F13)}});
+                             int64_t(uc_ord_F12), int64_t(uc_ord_F13)}},
+                        std::array<int64_t, 4>{
+                            {int64_t(uc_ord_D02), int64_t(uc_ord_D03),
+                             int64_t(uc_ord_D12), int64_t(uc_ord_D13)}});
                   }
                   task_id++;
                 }
@@ -1179,6 +1214,316 @@ class PeriodicFourCenterFockBuilder
     }
   }
 
+  /*!
+   * This computes Coulomb matrix using eight-fold permutational symmetry in
+   * (μ_0 ν_Rν| ρ_Rρ σ_(Rρ+Rσ)):
+   *
+   *   (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+   * = (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+   * = (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+   * = (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+   * = (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+   * = (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+   * = (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+   * = (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+   *
+   * note that to reduce cost we use lattice truncations, i.e.
+   * 1. the unit cell distance between AO #2 and AO #1 (the reference cell) is
+   * shorter than \c R_max
+   * 2. the unit cell distance between AO #4 and AO #2 is shorter than \c R_max
+   * 3. the unit cell distance between AO #3 and AO #1 (the reference cell) is
+   * shorter than \c RJ_max
+   *
+   * Conditions 1 and 2 are satisfied automatically since Rν <= R_max and
+   * Rσ <= R_max. Condition 3 has to be determined in this function.
+   *
+   * @param D
+   * @param target_precision
+   * @return
+   */
+  array_type compute_J_aaaa(array_type const &D, double target_precision) {
+    auto &compute_world = this->get_world();
+    const auto me = compute_world.rank();
+    const auto nproc = compute_world.nproc();
+    target_precision_ = target_precision;
+
+    auto t0 = mpqc::fenced_now(compute_world);
+
+    // Copy D and make it replicated.
+    array_type D_repl;
+    D_repl("i,j") = D("i,j");
+    D_repl.make_replicated();
+    compute_world.gop.fence();
+
+    // # of tiles per unit cell
+    assert(bra_basis_ == ket_basis_);
+    auto ntiles = bra_basis_->nclusters();
+
+    // Update lattice range of density representation
+    using ::mpqc::pbc::detail::truncate_lattice_range;
+    truncated_RD_max_ =
+        truncate_lattice_range(D_repl, RD_max_, density_threshold_);
+
+    // make shell block norm of D
+    using ::mpqc::lcao::gaussian::detail::compute_shellblock_norm;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    auto basisRD =
+        shift_basis_origin(*ket_basis_, Vector3d::Zero(), RD_max_, dcell_);
+    auto shblk_norm_D = compute_shellblock_norm(*ket_basis_, *basisRD, D_repl);
+    shblk_norm_D.make_replicated();  // make sure it is replicated
+
+    // initialize engines
+    {
+      using ::mpqc::lcao::gaussian::make_engine_pool;
+      auto oper_type = libint2::Operator::coulomb;
+      const auto basis0 = *bra_basis_;
+      const auto basisR = *basisR_;
+      engines_ = make_engine_pool(
+          oper_type,
+          utility::make_array_of_refs(basis0, basisR, basis0, basisR),
+          libint2::BraKet::xx_xx);
+      num_ints_computed_ = 0;
+    }
+
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::is_in_lattice_range;
+
+    const auto &Dnorm = D_repl.shape().data();
+    auto empty = TA::Future<Tile>(Tile());
+    auto task_id = 0ul;
+    for (auto R1_ord = ref_R_ord_; R1_ord != R_size_; ++R1_ord) {
+      const auto R1_3D = direct_3D_idx(R1_ord, R_max_);
+      const auto uc_ord_D01 = is_in_lattice_range(R1_3D, truncated_RD_max_)
+                                  ? direct_ord_idx(R1_3D, RD_max_)
+                                  : -1;
+      const auto uc_ord_F01 = is_in_lattice_range(R1_3D, RF_max_)
+                                  ? direct_ord_idx(R1_3D, RF_max_)
+                                  : -1;
+      for (auto R2_ord = ref_Rrho_ord_; R2_ord != Rrho_size_; ++R2_ord) {
+        const auto R2_3D = direct_3D_idx(R2_ord, Rrho_max_);
+        const auto R2m1_3D = R2_3D - R1_3D;
+
+        // skip 2 cases if Rρ is out of the RJ_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        bool skip02 = !is_in_lattice_range(R2_3D, RJ_max_);
+
+        for (auto R3_ord = ref_R_ord_; R3_ord != R_size_; ++R3_ord) {
+          const auto R3_3D = direct_3D_idx(R3_ord, R_max_);
+          const auto R2p3_3D = R2_3D + R3_3D;
+          const auto R2p3m1_3D = R2p3_3D - R1_3D;
+
+          // skip 2 cases if Rρ+Rσ is out of the RJ_max range
+          // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+          // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+          bool skip03 = !is_in_lattice_range(R2p3_3D, RJ_max_);
+          // skip 2 cases if Rρ-Rν is out of the RJ_max range
+          // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+          // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+          bool skip12 = !is_in_lattice_range(R2m1_3D, RJ_max_);
+          // skip 2 cases if Rρ+Rσ-Rν is out of the RJ_max range
+          // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+          // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+          bool skip13 = !is_in_lattice_range(R2p3m1_3D, RJ_max_);
+
+          // skip if condition #3 (see doc) cannot be satisfied in all 8 cases
+          if (skip02 && skip03 && skip12 && skip13) {
+            continue;
+          }
+
+          const auto uc_ord_D23 = is_in_lattice_range(R3_3D, truncated_RD_max_)
+                                      ? direct_ord_idx(R3_3D, RD_max_)
+                                      : -1;
+          const auto uc_ord_F23 = is_in_lattice_range(R3_3D, RF_max_)
+                                      ? direct_ord_idx(R3_3D, RF_max_)
+                                      : -1;
+          if (uc_ord_D01 < 0 && uc_ord_D23 < 0) {
+            continue;
+          }
+
+          for (auto tile0 = 0ul; tile0 != ntiles; ++tile0) {
+            for (auto tile1 = 0ul; tile1 != ntiles; ++tile1) {
+              if (R1_ord == ref_R_ord_ && tile1 < tile0) {
+                continue;
+              }
+
+              // tile index of D01
+              const std::array<long, 2> idx_D01{
+                  {long(tile0), long(tile1 + uc_ord_D01 * ntiles_per_uc_)}};
+              // tile index of F01
+              const std::array<long, 2> idx_F01{
+                  {long(tile0), long(tile1 + uc_ord_F01 * ntiles_per_uc_)}};
+
+              const auto Dnorm01 = uc_ord_D01 < 0 ? 0.0 : Dnorm(idx_D01);
+
+              for (auto tile2 = 0ul; tile2 != ntiles; ++tile2) {
+                if (R2_ord == ref_Rrho_ord_ && tile2 < tile0) {
+                  continue;
+                }
+                for (auto tile3 = 0ul; tile3 != ntiles; ++tile3) {
+                  if (R3_ord == ref_R_ord_ && tile3 < tile2) {
+                    continue;
+                  }
+
+                  // tile index of D23
+                  const std::array<long, 2> idx_D23{
+                      {long(tile2), long(tile3 + uc_ord_D23 * ntiles_per_uc_)}};
+                  // tile index of F23
+                  const std::array<long, 2> idx_F23{
+                      {long(tile2), long(tile3 + uc_ord_F23 * ntiles_per_uc_)}};
+
+                  const auto Dnorm23 = uc_ord_D23 < 0 ? 0.0 : Dnorm(idx_D23);
+                  const auto max_Dnorm = std::max(Dnorm01, Dnorm23);
+
+                  if (max_Dnorm < density_threshold_) {
+                    continue;
+                  }
+
+                  if (task_id % nproc == me) {
+                    // grab future of D tiles
+                    auto D01 = (uc_ord_D01 < 0 || D_repl.is_zero(idx_D01))
+                                   ? empty
+                                   : D_repl.find(idx_D01);
+                    auto D23 = (uc_ord_D23 < 0 || D_repl.is_zero(idx_D23))
+                                   ? empty
+                                   : D_repl.find(idx_D23);
+                    // grap future of shell block norms of D tiles
+                    auto shblk_norm_D01 =
+                        (uc_ord_D01 < 0 || shblk_norm_D.is_zero(idx_D01))
+                            ? empty
+                            : shblk_norm_D.find(idx_D01);
+                    auto shblk_norm_D23 =
+                        (uc_ord_D23 < 0 || shblk_norm_D.is_zero(idx_D23))
+                            ? empty
+                            : shblk_norm_D.find(idx_D23);
+                    WorldObject_::task(
+                        me,
+                        &PeriodicFourCenterFockBuilder_::compute_j_task_aaaa,
+                        std::array<Tile, 2>{{D01, D23}},
+                        std::array<Tile, 2>{{shblk_norm_D01, shblk_norm_D23}},
+                        std::array<size_t, 4>{{tile0, tile1, tile2, tile3}},
+                        std::array<int64_t, 3>{{int64_t(R1_ord),
+                                                int64_t(R2_ord),
+                                                int64_t(R3_ord)}},
+                        std::array<std::array<long, 2>, 2>{{idx_F01, idx_F23}},
+                        std::array<int64_t, 2>{
+                            {int64_t(uc_ord_F01), int64_t(uc_ord_F23)}},
+                        std::array<bool, 4>{{skip02, skip03, skip12, skip13}});
+                  }
+                  task_id++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    compute_world.gop.fence();
+
+    // cleanup
+    engines_.reset();
+
+    // print out # of ints computed per MPI process
+    ExEnv::out0() << "\nIntegrals per node:" << std::endl;
+    for (auto i = 0; i < compute_world.nproc(); ++i) {
+      if (me == i) {
+        ExEnv::outn() << indent << "Ints for J on node(" << i
+                      << "): " << num_ints_computed_ << std::endl;
+      }
+      compute_world.gop.fence();
+    }
+    ExEnv::out0() << std::endl;
+
+    const auto ntiles1_fock = trange_fock_.dim(1).tile_extent();
+    if (D_repl.pmap()->is_replicated() && compute_world.size() > 1) {
+      for (const auto &local_tile : local_fock_tiles_) {
+        const auto ij = local_tile.first;
+        const auto proc01 = dist_pmap_fock_->owner(ij);
+        WorldObject_::task(
+            proc01, &PeriodicFourCenterFockBuilder_::accumulate_global_task,
+            local_tile.second, ij);
+      }
+      local_fock_tiles_.clear();
+      compute_world.gop.fence();
+
+      typename Policy::shape_type shape;
+      // compute the shape, if sparse
+      if (!decltype(shape)::is_dense()) {
+        // extract local contribution to the shape of G, construct global shape
+        std::vector<std::pair<std::array<size_t, 2>, double>> global_tile_norms;
+        for (const auto &global_tile : global_fock_tiles_) {
+          const auto ij = global_tile.first;
+          const auto i = ij / ntiles1_fock;
+          const auto j = ij % ntiles1_fock;
+          const auto ij_norm = global_tile.second.norm();
+          global_tile_norms.push_back(
+              std::make_pair(std::array<size_t, 2>{{i, j}}, ij_norm));
+        }
+        shape = decltype(shape)(compute_world, global_tile_norms, trange_fock_);
+      }
+
+      array_type G_unsymm(compute_world, trange_fock_, shape, dist_pmap_fock_);
+      for (const auto &global_tile : global_fock_tiles_) {
+        if (!G_unsymm.shape().is_zero(global_tile.first))
+          G_unsymm.set(global_tile.first, global_tile.second);
+      }
+      G_unsymm.fill_local(0.0, true);
+      global_fock_tiles_.clear();
+
+      // symmetrize fock matrix
+      auto G_symm = symmetrize_fock(G_unsymm);
+
+      auto t1 = mpqc::fenced_now(compute_world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "Total PeriodicFourCenterFock builder time: " << dur
+                    << std::endl;
+      return G_symm;
+
+    } else {
+      typename Policy::shape_type shape;
+      // compute the shape, if sparse
+      if (!decltype(shape)::is_dense()) {
+        // extract local contribution to the shape of G, construct global shape
+        std::vector<std::pair<std::array<size_t, 2>, double>> local_tile_norms;
+        for (const auto &local_tile_iter : local_fock_tiles_) {
+          const auto ij = local_tile_iter.first;
+          const auto i = ij / ntiles1_fock;
+          const auto j = ij % ntiles1_fock;
+          const auto ij_norm = local_tile_iter.second.norm();
+          local_tile_norms.push_back(
+              std::make_pair(std::array<size_t, 2>{{i, j}}, ij_norm));
+        }
+        shape = decltype(shape)(compute_world, local_tile_norms, trange_fock_);
+      }
+
+      array_type G_unsymm(compute_world, trange_fock_, shape, dist_pmap_fock_);
+
+      // copy results of local reduction tasks into G
+      for (const auto &local_tile : local_fock_tiles_) {
+        // if this tile was not truncated away
+        if (!G_unsymm.shape().is_zero(local_tile.first)) {
+          G_unsymm.set(local_tile.first, local_tile.second);
+        }
+      }
+      // set the remaining local tiles to 0 (this should only be needed for
+      // dense policy)
+      G_unsymm.fill_local(0.0, true);
+      local_fock_tiles_.clear();
+
+      // symmetrize fock matrix
+      auto G_symm = symmetrize_fock(G_unsymm);
+
+      auto t1 = mpqc::fenced_now(compute_world);
+      auto dur = mpqc::duration_in_s(t0, t1);
+      ExEnv::out0() << "Total PeriodicFourCenterFock builder time: " << dur
+                    << std::endl;
+
+      return G_symm;
+    }
+  }
+
  private:
   // set by ctor
   const bool compute_J_;
@@ -1196,11 +1541,13 @@ class PeriodicFourCenterFockBuilder
   const int64_t RD_size_;
   std::shared_ptr<const Basis> bra_basis_;
   std::shared_ptr<const Basis> ket_basis_;
+  const bool force_hermiticity_;
 
   // mutated by compute_ functions
   mutable std::shared_ptr<lcao::Screener> j_p_screener_;
   mutable std::shared_ptr<lcao::Screener> k_p_screener_;
   mutable std::shared_ptr<Basis> basisR_;
+  mutable std::shared_ptr<Basis> basisRD_ket_;
   mutable std::vector<std::shared_ptr<Basis>> basisRJ_;
   mutable std::vector<std::shared_ptr<Basis>> basisRD_;
   mutable madness::ConcurrentHashMap<std::size_t, Tile> local_fock_tiles_;
@@ -1253,8 +1600,6 @@ class PeriodicFourCenterFockBuilder
   mutable Vector3i Rrho_max_;
   mutable int64_t Rrho_size_;
   mutable int64_t ref_Rrho_ord_;
-  mutable std::vector<std::shared_ptr<Basis>> basis_Rrho_;
-  mutable std::vector<std::shared_ptr<Basis>> basis_Rsigma_;
   mutable Vector3i RF_max_;
   mutable Vector3i truncated_RD_max_;
   mutable Vector3i truncated_RD_size_;
@@ -1262,6 +1607,8 @@ class PeriodicFourCenterFockBuilder
   void init() {
     assert(bra_basis_->nclusters() == ket_basis_->nclusters());
     ntiles_per_uc_ = bra_basis_->nclusters();
+
+    auto &world = this->get_world();
 
     using ::mpqc::detail::direct_3D_idx;
     using ::mpqc::detail::direct_ord_idx;
@@ -1272,22 +1619,14 @@ class PeriodicFourCenterFockBuilder
 
     // make compound basis set for bra1
     basisR_ = shift_basis_origin(*bra_basis_, Vector3d::Zero(), R_max_, dcell_);
+    // make compound basis set for ket1
+    basisRD_ket_ =
+        shift_basis_origin(*ket_basis_, Vector3d::Zero(), RD_max_, dcell_);
 
     const auto basis0 = *bra_basis_;
     const auto basisR = *basisR_;
 
     auto oper_type = libint2::Operator::coulomb;
-
-    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      // make compound basis sets for ket0 and ket1
-      basisRJ_.emplace_back(shift_basis_origin(*ket_basis_, vec_RJ));
-      basisRD_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_RJ, RD_max_, dcell_));
-    }
-
-    auto &world = this->get_world();
-
     // compute significant shell pair list
     {
       using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
@@ -1422,6 +1761,7 @@ class PeriodicFourCenterFockBuilder
               lcao::gaussian::SchwarzScreen(Qbra, Qket, screen_threshold_));
         }
       }
+
       if (compute_K_) {
         if (compute_J_) {
           std::shared_ptr<Qmatrix> Qbra, Qket;
@@ -1647,7 +1987,7 @@ class PeriodicFourCenterFockBuilder
     trange_eri4_ = ::mpqc::lcao::gaussian::detail::create_trange(
         BasisVector{{basis0, basisR, basis0, basisR}});
 
-    // make shell offset maps. Such a map returns the indix of the first shell
+    // make shell offset maps. Such a map returns the index of the first shell
     // for a given cluster
     basis0_shell_offset_map_ = compute_shell_offset(basis0);
     basisR_shell_offset_map_ = compute_shell_offset(basisR);
@@ -1670,6 +2010,83 @@ class PeriodicFourCenterFockBuilder
     truncated_RD_max_ = RD_max_;  // make them equal for initialization
     // do not forget to update RD-dependent variables
     update_RD_dependent_variables(truncated_RD_max_);
+  }
+
+  void init_J_aaaa() {
+    assert(bra_basis_ == ket_basis_);
+    ntiles_per_uc_ = bra_basis_->nclusters();
+    auto &world = this->get_world();
+
+    using ::mpqc::detail::direct_3D_idx;
+    using ::mpqc::detail::direct_ord_idx;
+    using ::mpqc::detail::direct_vector;
+    using ::mpqc::lcao::gaussian::detail::compute_shell_offset;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+
+    assert(R_size_ > 0 && R_size_ % 2 == 1);
+    assert(RJ_size_ > 0 && RJ_size_ % 2 == 1);
+    assert(RD_size_ > 0 && RD_size_ % 2 == 1);
+    // locate the ordinal index of the reference lattice in R vectors
+    ref_R_ord_ = (R_size_ - 1) / 2;
+
+    // make compound basis set for ν_R in |μ_0 ν_R)
+    // note that ν_R only contains half basis functions of |μ_R> (R >= 0)
+    basisR_ =
+        shift_basis_origin(*bra_basis_, Vector3d::Zero(), R_max_, dcell_, true);
+
+    const auto basis0 = *bra_basis_;
+    const auto basisR = *basisR_;
+
+    using ::mpqc::lcao::gaussian::detail::parallel_compute_shellpair_list;
+    const auto eng_precision =
+        ::mpqc::lcao::gaussian::detail::integral_engine_precision;
+
+    sig_shpair_list_ = parallel_compute_shellpair_list(
+        world, basis0, basisR, shell_pair_threshold_, eng_precision);
+
+    // create a TiledRange for four-center ERIs
+    trange_eri4_ = ::mpqc::lcao::gaussian::detail::create_trange(
+        BasisVector{{basis0, basisR, basis0, basisR}});
+
+    // make shell offset maps. Such a map returns the index of the first shell
+    // for a given cluster
+    basis0_shell_offset_map_ = compute_shell_offset(basis0);
+    basisR_shell_offset_map_ = compute_shell_offset(basisR);
+
+    // initialize screener
+    if (screen_ == "schwarz") {
+      auto oper_type = libint2::Operator::coulomb;
+      auto screen_engine = make_engine_pool(
+          oper_type, utility::make_array_of_refs(basis0, basisR),
+          libint2::BraKet::xx_xx);
+      auto Qbra = std::make_shared<Qmatrix>(
+          Qmatrix(world, screen_engine, basis0, basisR,
+                  lcao::gaussian::detail::l2Norm));
+      p_screener_ = std::make_shared<lcao::gaussian::SchwarzScreen>(
+          lcao::gaussian::SchwarzScreen(Qbra, Qbra, screen_threshold_));
+    } else {
+      throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+    }
+
+    // lattice range info for R_ρ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
+    Rrho_max_ = RJ_max_ + R_max_;
+    Rrho_size_ = 1 + direct_ord_idx(Rrho_max_, Rrho_max_);
+    ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
+
+    // make TiledRange of Fock
+    {
+      RF_max_ = R_max_;
+      const auto basis0 = *bra_basis_;
+      auto full_basisR =
+          shift_basis_origin(basis0, Vector3d::Zero(), RF_max_, dcell_);
+      trange_fock_ = ::mpqc::lcao::gaussian::detail::create_trange(
+          BasisVector{{basis0, *full_basisR}});
+      const auto tvolume = trange_fock_.tiles_range().volume();
+      dist_pmap_fock_ = Policy::default_pmap(world, tvolume);
+    }
+
+    truncated_RD_max_ = RD_max_;  // make them equal for initialization
   }
 
   void accumulate_global_task(Tile arg_tile, long tile01) {
@@ -1728,14 +2145,31 @@ class PeriodicFourCenterFockBuilder
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basisR = basisR_;
-    const auto &basisRJ = basisRJ_[RJ];
-    const auto &basisRD = basisRD_[RJ];
+    const auto &basis2 = ket_basis_;
+    const auto &basis2RD = basisRD_ket_;
+
+    const auto RJ_vec = ::mpqc::detail::direct_vector(RJ, RJ_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
 
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];
     const auto &clusterR = basisR->cluster_shells()[tileR];
-    const auto &clusterRJ = basisRJ->cluster_shells()[tileRJ];
-    const auto &clusterRD = basisRD->cluster_shells()[tileRD];
+    const auto &clusterRJ_unshifted = basis2->cluster_shells()[tileRJ];
+    const auto &clusterRD_unshifted = basis2RD->cluster_shells()[tileRD];
+    const auto &clusterRJ = shift_origin(clusterRJ_unshifted, RJ_vec);
+    const auto &clusterRD = shift_origin(clusterRD_unshifted, RJ_vec);
 
     // number of shells in each cluster
     const auto nshells0 = cluster0.size();
@@ -1944,7 +2378,7 @@ class PeriodicFourCenterFockBuilder
         const auto sh0_offset = basis0_shell_offset_map_[tile0];
         const auto shRJ_offset =
             k_basisRJ_shell_offset_map_[tileRJ +
-                                        RJ * basisRJ->cluster_shells().size()];
+                                        RJ * basis2->cluster_shells().size()];
         const auto shR_offset =
             k_basisR_shell_offset_map_[tileR % ncluster_bra_per_uc];
         const auto shRD_offset =
@@ -2728,7 +3162,8 @@ class PeriodicFourCenterFockBuilder
                            std::array<size_t, 4> tile_idx,
                            std::array<int64_t, 3> lattice_ord_idx,
                            std::array<std::array<long, 2>, 4> idx_F,
-                           std::array<int64_t, 4> uc_ord_F) const {
+                           std::array<int64_t, 4> uc_ord_F,
+                           std::array<int64_t, 4> uc_ord_D) const {
     const auto tile0 = tile_idx[0];
     const auto tile1 = tile_idx[1];
     const auto tile2 = tile_idx[2];
@@ -2743,11 +3178,29 @@ class PeriodicFourCenterFockBuilder
     const auto uc_ord_F12 = uc_ord_F[2];
     const auto uc_ord_F13 = uc_ord_F[3];
 
+    const bool skip02 = uc_ord_D[0] < 0;
+    const bool skip03 = uc_ord_D[1] < 0;
+    const bool skip12 = uc_ord_D[2] < 0;
+    const bool skip13 = uc_ord_D[3] < 0;
+
     // get reference to basis sets
     const auto &basis0 = bra_basis_;
     const auto &basis1 = basisR_;
-    const auto &basis2 = basis_Rrho_[R2_ord - ref_Rrho_ord_];
-    const auto &basis3 = basis_Rsigma_[R2_ord - ref_Rrho_ord_];
+    const auto Rrho_vec =
+        ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
 
     // translate tile indices by unit cell indices
     const auto tile1_R1 = tile1 + (R1_ord - ref_R_ord_) * ntiles_per_uc_;
@@ -2756,8 +3209,10 @@ class PeriodicFourCenterFockBuilder
     // shell clusters for this tile
     const auto &cluster0 = basis0->cluster_shells()[tile0];
     const auto &cluster1 = basis1->cluster_shells()[tile1_R1];
-    const auto &cluster2 = basis2->cluster_shells()[tile2];
-    const auto &cluster3 = basis3->cluster_shells()[tile3_R3];
+    const auto &cluster2_unshifted = basis0->cluster_shells()[tile2];
+    const auto &cluster3_unshifted = basis1->cluster_shells()[tile3_R3];
+    const auto cluster2 = shift_origin(cluster2_unshifted, Rrho_vec);
+    const auto cluster3 = shift_origin(cluster3_unshifted, Rrho_vec);
 
     // number of shells in each cluster
     const auto nshells0 = cluster0.size();
@@ -2879,6 +3334,11 @@ class PeriodicFourCenterFockBuilder
         auto offset_list_c2 = compute_func_offset_list(cluster2, rng2.first);
         auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
 
+        // skip 2 cases if Rρ+Rσ-Rν is out of the truncated_RD_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        const auto drop13 = skip13 ? 2.0 : 0.0;
+
         // this is the index of the first basis functions for each shell *in
         // this shell cluster*
         auto cf0_offset = 0;
@@ -2908,7 +3368,13 @@ class PeriodicFourCenterFockBuilder
             const auto &shell1 = cluster1[sh1];
             const auto nf1 = shell1.size();
 
-            const auto multiplicity01 = bf0_offset == bf1_offset ? 1.0 : 2.0;
+            const auto permut01 = bf0_offset != bf1_offset;
+            const auto multiplicity01 = permut01 ? 2.0 : 1.0;
+
+            // skip 2 cases if Rρ+Rσ is out of the truncated_RD_max range
+            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+            const auto drop03 = (skip03 && permut01) ? 2.0 : 0.0;
 
             for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
               std::tie(cf2_offset, bf2_offset) = offset_list_c2[sh2];
@@ -2961,16 +3427,30 @@ class PeriodicFourCenterFockBuilder
                   continue;
 
                 num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
-                const auto multiplicity23 =
-                    bf2_offset == bf3_offset ? 1.0 : 2.0;
+                const auto permut23 = bf2_offset != bf3_offset;
+                const auto multiplicity23 = permut23 ? 2.0 : 1.0;
+
                 const auto multiplicity0213 =
                     (R2_ord == ref_Rrho_ord_ && R1_ord == R3_ord &&
                      bf0_offset == bf2_offset && bf1_offset == bf3_offset)
                         ? 1.0
                         : 2.0;
-                const auto multiplicity =
-                    multiplicity01 * multiplicity23 * multiplicity0213;
 
+                // skip 2 cases if Rρ-Rν is out of the truncated_RD_max range
+                // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+                // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+                const auto drop12 = (skip12 && permut23) ? 2.0 : 0.0;
+                // skip 2 cases if Rρ is out of the truncated_RD_max range
+                // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+                // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+                const auto drop02 =
+                    (skip02 && permut01 && permut23) ? 2.0 : 0.0;
+
+                const auto multiplicity =
+                    multiplicity01 * multiplicity23 * multiplicity0213 -
+                    drop13 - drop03 - drop12 - drop02;
+
+                assert(multiplicity > 0.0);
                 // compute shell set
                 engine.compute2<libint2::Operator::coulomb,
                                 libint2::BraKet::xx_xx, 0>(shell0, shell1,
@@ -3006,18 +3486,22 @@ class PeriodicFourCenterFockBuilder
                           const auto value_scaled_by_multiplicity =
                               value * multiplicity;
 
-                          if (F02_ptr != nullptr && D13_ptr != nullptr)
+                          if (F02_ptr != nullptr && D13_ptr != nullptr) {
                             F02_ptr[cf02] -= 0.25 * D13_ptr[cf13] *
                                              value_scaled_by_multiplicity;
-                          if (F13_ptr != nullptr && D02_ptr != nullptr)
+                          }
+                          if (F13_ptr != nullptr && D02_ptr != nullptr) {
                             F13_ptr[cf13] -= 0.25 * D02_ptr[cf02] *
                                              value_scaled_by_multiplicity;
-                          if (F03_ptr != nullptr && D12_ptr != nullptr)
+                          }
+                          if (F03_ptr != nullptr && D12_ptr != nullptr) {
                             F03_ptr[cf03] -= 0.25 * D12_ptr[cf12] *
                                              value_scaled_by_multiplicity;
-                          if (F12_ptr != nullptr && D03_ptr != nullptr)
+                          }
+                          if (F12_ptr != nullptr && D03_ptr != nullptr) {
                             F12_ptr[cf12] -= 0.25 * D03_ptr[cf03] *
                                              value_scaled_by_multiplicity;
+                          }
                         }
                       }
                     }
@@ -3043,6 +3527,348 @@ class PeriodicFourCenterFockBuilder
       PeriodicFourCenterFockBuilder_::accumulate_local_task(F12, idx_F[2]);
     if (uc_ord_F13 >= 0 && D02_ptr != nullptr && norm_D02_ptr != nullptr)
       PeriodicFourCenterFockBuilder_::accumulate_local_task(F13, idx_F[3]);
+  }
+
+  void compute_j_task_aaaa(std::array<Tile, 2> D, std::array<Tile, 2> norm_D,
+                           std::array<size_t, 4> tile_idx,
+                           std::array<int64_t, 3> lattice_ord_idx,
+                           std::array<std::array<long, 2>, 2> idx_F,
+                           std::array<int64_t, 2> uc_ord_F,
+                           std::array<bool, 4> skip_ints) const {
+    const auto tile0 = tile_idx[0];
+    const auto tile1 = tile_idx[1];
+    const auto tile2 = tile_idx[2];
+    const auto tile3 = tile_idx[3];
+
+    const auto R1_ord = lattice_ord_idx[0];
+    const auto R2_ord = lattice_ord_idx[1];
+    const auto R3_ord = lattice_ord_idx[2];
+
+    const auto uc_ord_F01 = uc_ord_F[0];
+    const auto uc_ord_F23 = uc_ord_F[1];
+
+    const auto skip02 = skip_ints[0];
+    const auto skip03 = skip_ints[1];
+    const auto skip12 = skip_ints[2];
+    const auto skip13 = skip_ints[3];
+
+    // get reference to basis sets
+    const auto &basis0 = bra_basis_;
+    const auto &basis1 = basisR_;
+    const auto Rrho_vec =
+        ::mpqc::detail::direct_vector(R2_ord, Rrho_max_, dcell_);
+
+    // shift origin of a cluster of shells
+    auto shift_origin = [](const ShellVec &cluster, const Vector3d &shift) {
+      ShellVec result;
+      for (auto shell : cluster) {
+        std::array<double, 3> new_origin = {{shell.O[0] + shift(0),
+                                             shell.O[1] + shift(1),
+                                             shell.O[2] + shift(2)}};
+        shell.move(new_origin);
+        result.push_back(shell);
+      }
+      return result;
+    };
+
+    // translate tile indices by unit cell indices
+    const auto tile1_R1 = tile1 + (R1_ord - ref_R_ord_) * ntiles_per_uc_;
+    const auto tile3_R3 = tile3 + (R3_ord - ref_R_ord_) * ntiles_per_uc_;
+
+    // shell clusters for this tile
+    const auto &cluster0 = basis0->cluster_shells()[tile0];
+    const auto &cluster1 = basis1->cluster_shells()[tile1_R1];
+    const auto &cluster2_unshifted = basis0->cluster_shells()[tile2];
+    const auto &cluster3_unshifted = basis1->cluster_shells()[tile3_R3];
+    const auto cluster2 = shift_origin(cluster2_unshifted, Rrho_vec);
+    const auto cluster3 = shift_origin(cluster3_unshifted, Rrho_vec);
+
+    // number of shells in each cluster
+    const auto nshells0 = cluster0.size();
+    const auto nshells1 = cluster1.size();
+    const auto nshells2 = cluster2.size();
+    const auto nshells3 = cluster3.size();
+
+    // 1-d tile ranges
+    const auto &rng0 = trange_eri4_.dim(0).tile(tile0);
+    const auto &rng1 = trange_eri4_.dim(1).tile(tile1_R1);
+    const auto &rng2 = trange_eri4_.dim(2).tile(tile2);
+    const auto &rng3 = trange_eri4_.dim(3).tile(tile3_R3);
+    const auto rng1_size = rng1.second - rng1.first;
+    const auto rng3_size = rng3.second - rng3.first;
+
+    // 2-d tile ranges describing the Fock contribution blocks produced by this
+    // some exchange tile ranges have to be translated
+    const auto nfunctions_per_uc = basis0->nfunctions();
+    using range_type = TA::TiledRange1::range_type;
+    auto translate_rng = [&nfunctions_per_uc](const auto &in_rng,
+                                              const auto uc_ord) {
+      assert(uc_ord >= 0);
+      const auto translation = uc_ord * nfunctions_per_uc;
+      range_type out_rng;
+      out_rng.first = in_rng.first % nfunctions_per_uc + translation;
+      out_rng.second =
+          (in_rng.second - 1) % nfunctions_per_uc + 1 + translation;
+      return out_rng;
+    };
+    const auto rng1_in_F01 =
+        uc_ord_F01 < 0 ? range_type() : translate_rng(rng1, uc_ord_F01);
+    const auto rng3_in_F23 =
+        uc_ord_F23 < 0 ? range_type() : translate_rng(rng3, uc_ord_F23);
+
+    // 2-d tile ranges describing the Fock contribution blocks produced by this
+    auto rng01 =
+        (uc_ord_F01 >= 0) ? TA::Range({rng0, rng1_in_F01}) : TA::Range();
+    auto rng23 =
+        (uc_ord_F23 >= 0) ? TA::Range({rng2, rng3_in_F23}) : TA::Range();
+
+    // initialize contribution to the Fock matrices
+    auto F01 = (uc_ord_F01 >= 0) ? Tile(std::move(rng01), 0.0) : Tile();
+    auto F23 = (uc_ord_F23 >= 0) ? Tile(std::move(rng23), 0.0) : Tile();
+
+    // grab ptrs to tile data to make addressing more efficient
+    auto *F01_ptr = F01.data();
+    auto *F23_ptr = F23.data();
+    auto *D01_ptr = D[0].data();
+    auto *D23_ptr = D[1].data();
+    auto *norm_D01_ptr = norm_D[0].data();
+    auto *norm_D23_ptr = norm_D[1].data();
+
+    using ::mpqc::lcao::gaussian::detail::compute_func_offset_list;
+
+    // compute contributions to all Fock matrices
+    {
+      // index of first shell in this cluster
+      const auto sh0_offset = basis0_shell_offset_map_[tile0];
+      const auto sh1_offset = basisR_shell_offset_map_[tile1_R1];
+      const auto sh2_offset = basis0_shell_offset_map_[tile2];
+      const auto sh3_offset = basisR_shell_offset_map_[tile3_R3];
+
+      // index of last shell in this cluster
+      const auto sh0_max = sh0_offset + nshells0;
+      const auto sh1_max = sh1_offset + nshells1;
+      const auto sh2_max = sh2_offset + nshells2;
+      const auto sh3_max = sh3_offset + nshells3;
+
+      // determine if this task contains significant shell pairs
+      auto is_bra_significant = false;
+      auto is_ket_significant = false;
+      for (auto sh0_in_basis = sh0_offset; sh0_in_basis != sh0_max;
+           ++sh0_in_basis) {
+        for (const auto &sh1_in_basis : sig_shpair_list_[sh0_in_basis]) {
+          if (sh1_in_basis >= sh1_offset && sh1_in_basis < sh1_max) {
+            is_bra_significant = true;
+            break;
+          }
+        }
+        if (is_bra_significant) break;
+      }
+      for (auto sh2_in_basis = sh2_offset; sh2_in_basis != sh2_max;
+           ++sh2_in_basis) {
+        for (const auto &sh3_in_basis : sig_shpair_list_[sh2_in_basis]) {
+          if (sh3_in_basis >= sh3_offset && sh3_in_basis < sh3_max) {
+            is_ket_significant = true;
+            break;
+          }
+        }
+        if (is_ket_significant) break;
+      }
+
+      // compute ERI4 if both bra and ket contain significant shell pairs
+      if (is_bra_significant && is_ket_significant) {
+        auto engine = engines_->local();
+        engine.set_precision(target_precision_);
+        const auto &computed_shell_sets = engine.results();
+
+        auto &screen = *p_screener_;
+
+        // compute offset list of cluster1 and cluster3
+        auto offset_list_c1 = compute_func_offset_list(cluster1, rng1.first);
+        auto offset_list_c2 = compute_func_offset_list(cluster2, rng2.first);
+        auto offset_list_c3 = compute_func_offset_list(cluster3, rng3.first);
+
+        // skip 2 cases if Rρ is out of the RJ_max range
+        // (μ_0 ν_Rν    | ρ_Rρ         σ_(Rρ+Rσ)   )
+        // (ρ_0 σ_Rσ    | μ_(-Rρ)      ν_(Rν-Rρ)   )
+        const auto drop02 = skip02 ? 2.0 : 0.0;
+
+        // this is the index of the first basis functions for each shell *in
+        // this shell cluster*
+        auto cf0_offset = 0;
+        // this is the index of the first basis functions for each shell *in the
+        // basis set*
+        auto bf0_offset = rng0.first;
+
+        size_t cf1_offset, bf1_offset, cf2_offset, bf2_offset, cf3_offset,
+            bf3_offset;
+        // loop over unique shell sets
+        // N.B. skip nonunique shell sets that did not get eliminated by unique
+        // cluster set iteration
+        for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+          const auto &shell0 = cluster0[sh0];
+          const auto nf0 = shell0.size();
+          const auto sh0_in_basis = sh0 + sh0_offset;
+          for (const auto &sh1_in_basis : sig_shpair_list_[sh0_in_basis]) {
+            if (sh1_in_basis < sh1_offset || sh1_in_basis >= sh1_max) {
+              continue;
+            }
+
+            const auto sh1 = sh1_in_basis - sh1_offset;
+            std::tie(cf1_offset, bf1_offset) = offset_list_c1[sh1];
+            // skip if shell set is nonunique
+            if (bf1_offset < bf0_offset) {
+              continue;
+            }  // (μ_0 ν_Rν| is unique if (μ <= ν && Rν == 0) or if (Rν > 0)
+
+            const auto &shell1 = cluster1[sh1];
+            const auto nf1 = shell1.size();
+
+            const auto sh01 =
+                sh0 * nshells1 + sh1;  // index of {sh0, sh1} in norm_D01
+            const auto Dnorm01 =
+                (norm_D01_ptr != nullptr) ? norm_D01_ptr[sh01] : 0.0;
+
+            const auto permut01 = (bf0_offset != bf1_offset);
+            const auto multiplicity01 = permut01 ? 2.0 : 1.0;
+
+            // skip 2 cases if Rρ-Rν is out of the RJ_max range
+            // (ν_0 μ_(-Rν) | ρ_(Rρ-Rν)    σ_(Rρ+Rσ-Rν))
+            // (ρ_0 σ_Rσ    | ν_(Rν-Rρ)    μ_(-Rρ)     )
+            const auto drop12 = (skip12 && permut01) ? 2.0 : 0.0;
+
+            for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
+              std::tie(cf2_offset, bf2_offset) = offset_list_c2[sh2];
+              // skip if shell set if nonunique
+              if (R2_ord == ref_Rrho_ord_ && bf2_offset < bf0_offset) {
+                continue;
+              }  // (μ_0 ν_Rν| ρ_Rρ σ_(Rρ+Rσ)) is unique if (μ <= ρ && Rρ == 0)
+                 // or if (Rρ > 0)
+
+              const auto &shell2 = cluster2[sh2];
+              const auto nf2 = shell2.size();
+              const auto sh2_in_basis = sh2 + sh2_offset;
+              for (const auto &sh3_in_basis : sig_shpair_list_[sh2_in_basis]) {
+                if (sh3_in_basis < sh3_offset || sh3_in_basis >= sh3_max) {
+                  continue;
+                }
+
+                const auto sh3 = sh3_in_basis - sh3_offset;
+                std::tie(cf3_offset, bf3_offset) = offset_list_c3[sh3];
+                // skip if shell set is nonunique
+                if (bf3_offset < bf2_offset ||
+                    (R2_ord == ref_Rrho_ord_ && bf2_offset == bf0_offset &&
+                     ((R1_ord == R3_ord && bf3_offset < bf1_offset) ||
+                      R1_ord > R3_ord))) {
+                  continue;
+                }  // (μ_0 ν_Rν| ρ_Rρ σ_(Rρ+Rσ)) is unique if
+                   // ((ρ <= σ && Rσ == 0) || Rσ > 0) or
+                   // ((μ == ν && Rρ == 0) && ((ν <= σ && Rν == Rσ) || Rν < Rσ))
+
+                const auto &shell3 = cluster3[sh3];
+                const auto nf3 = shell3.size();
+
+                const auto sh23 =
+                    sh2 * nshells3 + sh3;  // index of {sh2, sh3} in norm_D23
+                const auto Dnorm23 =
+                    (norm_D23_ptr != nullptr) ? norm_D23_ptr[sh23] : 0.0;
+                const auto Dnorm0123 = std::max(Dnorm01, Dnorm23);
+
+                if (screen.skip(bf0_offset, bf1_offset, bf2_offset, bf3_offset,
+                                Dnorm0123)) {
+                  continue;
+                }
+
+                num_ints_computed_ += nf0 * nf1 * nf2 * nf3;
+                const auto permut23 = (bf2_offset != bf3_offset);
+                const auto multiplicity23 = permut23 ? 2.0 : 1.0;
+
+                const auto multiplicity0213 =
+                    (R2_ord == ref_Rrho_ord_ && R1_ord == R3_ord &&
+                     bf0_offset == bf2_offset && bf1_offset == bf3_offset)
+                        ? 1.0
+                        : 2.0;
+
+                // skip 2 cases if Rρ+Rσ is out of the RJ_max range
+                // (μ_0 ν_Rν    | σ_(Rρ+Rσ)    ρ_Rρ        )
+                // (σ_0 ρ_(-Rσ) | μ_(-Rρ-Rσ)   ν_(Rν-Rρ-Rσ))
+                const auto drop03 = (skip03 && permut23) ? 2.0 : 0.0;
+                // skip 2 cases if Rρ+Rσ-Rν is out of the RJ_max range
+                // (ν_0 μ_(-Rν) | σ_(Rρ+Rσ-Rν) ρ_(Rρ-Rν)   )
+                // (σ_0 ρ_(-Rσ) | ν_(Rν-Rρ-Rσ) μ_(-Rρ-Rσ)  )
+                const auto drop13 =
+                    (skip13 && permut01 && permut23) ? 2.0 : 0.0;
+
+                const auto multiplicity =
+                    multiplicity01 * multiplicity23 * multiplicity0213 -
+                    drop02 - drop03 - drop12 - drop13;
+
+                assert(multiplicity > 0.0);
+                // compute shell set
+                engine.compute2<libint2::Operator::coulomb,
+                                libint2::BraKet::xx_xx, 0>(shell0, shell1,
+                                                           shell2, shell3);
+                const auto *eri_0123 = computed_shell_sets[0];
+
+                if (eri_0123 != nullptr) {
+                  // if the shell set is not screened out
+                  for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+                    const auto cf0 = f0 + cf0_offset;  // basis function index
+                                                       // in tile0 (i.e.
+                                                       // cluster0)
+                    for (auto f1 = 0; f1 != nf1; ++f1) {
+                      const auto cf1 = f1 + cf1_offset;  // basis function index
+                                                         // in tile1 (i.e.
+                                                         // cluster1)
+                      const auto cf01 =
+                          cf0 * rng1_size +
+                          cf1;  // index of {cf0, cf1} in D01 or F01
+                      for (auto f2 = 0; f2 != nf2; ++f2) {
+                        const auto cf2 = f2 + cf2_offset;  // basis function
+                                                           // index in tile2
+                                                           // (i.e. cluster2)
+                        for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+                          const auto cf3 = f3 + cf3_offset;  // basis function
+                                                             // index in tile3
+                                                             // (i.e. cluster3)
+                          const auto cf23 =
+                              cf2 * rng3_size +
+                              cf3;  // index of {cf2, cf3} in D23 or F23
+
+                          const auto value = eri_0123[f0123];
+                          const auto value_scaled_by_multiplicity =
+                              value * multiplicity;
+
+                          if (F01_ptr != nullptr && D23_ptr != nullptr) {
+                            F01_ptr[cf01] +=
+                                D23_ptr[cf23] * value_scaled_by_multiplicity;
+                          }
+                          if (F23_ptr != nullptr && D01_ptr != nullptr) {
+                            F23_ptr[cf23] +=
+                                D01_ptr[cf01] * value_scaled_by_multiplicity;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          cf0_offset += nf0;
+          bf0_offset += nf0;
+        }
+      }
+    }
+
+    // accumulate the contributions by submitting tasks to the owners of their
+    // tiles
+    if (uc_ord_F01 >= 0 && D23_ptr != nullptr && norm_D23_ptr != nullptr) {
+      PeriodicFourCenterFockBuilder_::accumulate_local_task(F01, idx_F[0]);
+    }
+    if (uc_ord_F23 >= 0 && D01_ptr != nullptr && norm_D01_ptr != nullptr) {
+      PeriodicFourCenterFockBuilder_::accumulate_local_task(F23, idx_F[1]);
+    }
   }
 
   /*!
@@ -3132,15 +3958,6 @@ class PeriodicFourCenterFockBuilder
     Rrho_max_ = R_max_ + RD_max;
     Rrho_size_ = direct_ord_idx(Rrho_max_, Rrho_max_) + 1;
     ref_Rrho_ord_ = (Rrho_size_ - 1) / 2;
-
-    // make basis ρ and basis σ in (μ0 νR_ν| ρR_ρ σ(R_ρ+R_σ))
-    for (auto Rrho_ord = ref_Rrho_ord_; Rrho_ord < Rrho_size_; ++Rrho_ord) {
-      auto vec_Rrho = direct_vector(Rrho_ord, Rrho_max_, dcell_);
-      // make compound basis sets for ket0 and ket1
-      basis_Rrho_.emplace_back(shift_basis_origin(*ket_basis_, vec_Rrho));
-      basis_Rsigma_.emplace_back(
-          shift_basis_origin(*ket_basis_, vec_Rrho, R_max_, dcell_, true));
-    }
 
     // make TiledRange of Fock using initial full basisR
     {

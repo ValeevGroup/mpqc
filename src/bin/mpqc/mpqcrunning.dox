@@ -31,6 +31,7 @@ different environments, as well as optimization hints:
 | <tt>-v</tt>     | no           | print the version number and exit                     |
 | <tt>-w</tt>     | no           | print the warranty and exit                           |
 | <tt>-L</tt>     | no           | print the license and exit                            |
+| <tt>-k</tt>     | no           | print all registered (KeyVal-constructible) DescribedClass classes |
 | <tt>-h</tt>     | no           | print the usage info and exit                         |
 | <tt>-d</tt>     | no           | start the program and attach a debugger               |
 
@@ -66,6 +67,9 @@ different environments, as well as optimization hints:
     mpqc -d -D '{"cmd": "lldb_xterm"}' -o output.log input.json
   \endcode
 </ol>
+
+\section mpqcenv MPQC Environment Variables
+- <tt>MPQC_WORK_DIR</tt>: the directory for POSIX I/O of large text/binary files; it needs to be valid in every MPI process; the default on each process is the current working directory of that MPI process
 
 \section mpqcmpi Running on a Distributed Memory Multiprocessor with MPI
 

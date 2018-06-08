@@ -8,6 +8,10 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_four_center_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_four_center_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_cadf_k_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_four_center_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ri_j_cadf_k_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_two_center_builder.h"
@@ -47,14 +51,18 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   iter_ = 0;
 
   auto& ao_factory = this->ao_factory();
+  ExEnv::out0() << ao_factory << std::endl;
+
+  auto unitcell = ao_factory.unitcell();
+  ExEnv::out0() << unitcell << std::endl;
+
   // retrieve world from periodic ao_factory
   auto& world = ao_factory.world();
-  auto unitcell = ao_factory.unitcell();
 
   auto init_start = mpqc::fenced_now(world);
 
-  ExEnv::out0() << ao_factory << std::endl;
-  ExEnv::out0() << unitcell << std::endl;
+  // initialize Fock builder
+  init_fock_builder();
 
   // the unit cell must be electrically neutral
   const auto charge = 0;
@@ -92,6 +100,7 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
   T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
 
   // Nuclear-attraction
+  array_type V_unsymm;
   {
     ExEnv::out0()
         << "\nComputing Two Center Integral for Periodic System: < κ |V| λ >"
@@ -99,7 +108,15 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
     auto t0 = mpqc::fenced_now(world);
     using Builder = scf::PeriodicTwoCenterBuilder<Tile, Policy>;
     auto two_center_builder = std::make_unique<Builder>(ao_factory);
-    V_ = two_center_builder->eval(Operator::Type::Nuclear);
+    V_unsymm = two_center_builder->eval(Operator::Type::Nuclear);
+    if (ao_factory.force_hermiticity()) {
+      // force hermiticity of nuclear attraction matrix contributed from CNF
+      V_ = pbc::detail::symmetrize_matrix(V_unsymm);
+    } else {
+      // leave nuclear attraction matrix as non-hermitian (due to finite lattice
+      // range)
+      V_ = V_unsymm;
+    }
     auto t1 = mpqc::fenced_now(world);
     auto dur = mpqc::duration_in_s(t0, t1);
     ExEnv::out0() << " Time: " << dur << " s" << std::endl;
@@ -116,7 +133,14 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
     ExEnv::out0() << "\nUsing CORE guess for initial Fock ..." << std::endl;
     F_init = H_;
   } else {
-    F_init = gaussian::periodic_fock_soad(world, unitcell, H_, ao_factory);
+    // note that the two-body Fock matrix in SOAD is computed without
+    // symmetrization. Thus, in order to treat one- and two-body contributions
+    // consistently, the unsymmetrized nuclear attraction matrix has to be
+    // provided here
+    array_type H_unsymm;
+    H_unsymm("mu, nu") = T_("mu, nu") + V_unsymm("mu, nu");
+    F_init =
+        gaussian::periodic_fock_soad(world, unitcell, H_unsymm, ao_factory);
   }
 
   // transform Fock from real to reciprocal space
@@ -126,8 +150,6 @@ void zRHF<Tile, Policy>::init(const KeyVal& kv) {
                                            print_max_item_);
   // compute guess density
   std::tie(D_, Dk_) = compute_density();
-
-  init_fock_builder();
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
@@ -150,6 +172,8 @@ void zRHF<Tile, Policy>::solve(double thresh) {
   const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   ExEnv::out0() << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
+  auto etotal = erep;
+
   TiledArray::DIIS<array_type_z> diis_gamma_point(
       diis_start_, diis_num_vecs_, diis_damping_, diis_num_iters_group_,
       diis_num_extrap_group_, diis_mixing_);
@@ -163,7 +187,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     iter_++;
 
     // Save a copy of energy and density
-    auto ezrhf_old = ezrhf;
+    auto etotal_old = etotal;
     auto D_old = D_;
     array_type_z Fk_old = Fk_;
 
@@ -173,18 +197,26 @@ void zRHF<Tile, Policy>::solve(double thresh) {
 
     // F = H + 2J - K
     auto f_start = mpqc::fenced_now(world);
-    build_F();
+    F_ = build_F(D_, H_, R_max_);
     auto f_end = mpqc::fenced_now(world);
-
-    // transform Fock from real to reciprocal space
-    auto trans_start = mpqc::fenced_now(world);
-    const auto fock_lattice_range = f_builder_->fock_lattice_range();
-    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
-    auto trans_end = mpqc::fenced_now(world);
-    trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute zRHF energy
     ezrhf = compute_energy();
+    etotal = erep + ezrhf;
+
+    const auto fock_lattice_range = f_builder_->fock_lattice_range();
+    // extra updates for Fock and energy
+    if (need_extra_update_) {
+      MPQC_ASSERT(extra_F_.is_initialized());
+      F_ = ::mpqc::pbc::detail::add(F_, extra_F_, fock_lattice_range, R_max_);
+      etotal += extra_energy_;
+    }
+
+    // transform Fock from real to reciprocal space
+    auto trans_start = mpqc::fenced_now(world);
+    Fk_ = transform_real2recip(F_, fock_lattice_range, nk_);
+    auto trans_end = mpqc::fenced_now(world);
+    trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // DIIS
     if (diis_ != "none") {
@@ -241,12 +273,12 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
     // compute difference with last iteration
-    ediff = ezrhf - ezrhf_old;
+    ediff = etotal - etotal_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     auto volume = Ddiff.trange().elements_range().volume();
     rms = Ddiff("mu, nu").norm() / volume;
 
-    if ((rms <= thresh) || fabs(ediff) <= thresh) converged = true;
+    if ((rms <= thresh) && fabs(ediff) <= thresh) converged = true;
 
     auto iter_end = mpqc::fenced_now(world);
     auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);
@@ -255,7 +287,7 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     // Print out information
     if (print_detail_) {
       ExEnv::out0() << "\nzRHF Energy: " << ezrhf << "\n"
-                    << "Total Energy: " << ezrhf + erep << "\n"
+                    << "Total Energy: " << etotal << "\n"
                     << "Delta(E): " << ediff << "\n"
                     << "RMS(D): " << rms << "\n"
                     << "Fock Build Time: "
@@ -274,14 +306,14 @@ void zRHF<Tile, Policy>::solve(double thresh) {
                                       niter.c_str(), nEle.c_str(), nTot.c_str(),
                                       nDel.c_str(), nRMS.c_str(), nT.c_str());
       ExEnv::out0() << mpqc::printf(
-          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf,
-          ezrhf + erep, ediff, rms, iter_duration);
+          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter_, ezrhf, etotal,
+          ediff, rms, iter_duration);
     }
 
   } while ((iter_ <= maxiter_) && (!converged));
 
   // save total energy to energy no matter if zRHF converges
-  energy_ = ezrhf + erep;
+  energy_ = etotal;
 
   if (!converged) {
     // TODO read a keyval value to determine
@@ -325,6 +357,28 @@ void zRHF<Tile, Policy>::solve(double thresh) {
     std::cout << mpqc::printf("\tTotal:               %20.3f\n\n",
                               scf_duration_);
   }
+
+  // test
+  {
+    ExEnv::out0() << "\n*** test multipole after converged scf ***\n";
+
+    auto factory_ptr = std::make_shared<factory_type>(kv_);
+    ExEnv::out0() << *factory_ptr << std::endl;
+
+    using MA_Builder = ::mpqc::pbc::ma::PeriodicMA<factory_type>;
+    auto ma_builder = std::make_unique<MA_Builder>(*factory_ptr);
+    auto elec_moments = ma_builder->compute_elec_multipole_moments(D_);
+    ExEnv::out0() << "electronic spherical multipole moments:"
+                  << "\nmonopole: " << elec_moments[0]
+                  << "\ndipole m=-1: " << elec_moments[1]
+                  << "\ndipole m=0:  " << elec_moments[2]
+                  << "\ndipole m=1:  " << elec_moments[3]
+                  << "\nquadrupole m=-2: " << elec_moments[4]
+                  << "\nquadrupole m=-1: " << elec_moments[5]
+                  << "\nquadrupole m=0:  " << elec_moments[6]
+                  << "\nquadrupole m=1:  " << elec_moments[7]
+                  << "\nquadrupole m=2:  " << elec_moments[8] << "\n";
+  }
 }
 
 template <typename Tile, typename Policy>
@@ -340,83 +394,135 @@ zRHF<Tile, Policy>::compute_density() {
   auto tr1_real = extend_trange1(tr0, RD_size_);
   auto tr1_recip = extend_trange1(tr0, k_size_);
 
-  auto fock_eig = array_ops::array_to_eigen(Fk_);
-  for (auto k = 0; k < k_size_; ++k) {
-    // Get orthogonalizer
-    auto X = X_[k];
-    // Symmetrize Fock
-    auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    MatrixZ F_twice = F + F.transpose().conjugate();
-    // When k=0 (gamma point), reverse phase factor of complex values
-    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-      F_twice = reverse_phase_factor(F_twice);
-    F = 0.5 * F_twice;
-
-    if (level_shift_ > 0.0 && iter_ > 0) {
-      // transform Fock from AO to CO basis
-      MatrixZ C = C_[k];
-      MatrixZ Ct = C.transpose().conjugate();
-      MatrixZ FCO = Ct * F * C;
-      // add energy level shift to diagonal elements of unoccupied orbitals
-      auto nobs = FCO.cols();
-      for (auto a = docc_; a != nobs; ++a) {
-        FCO(a, a) += level_shift_;
-      }
-      // diagonalize Fock in CO basis
-      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
-      VectorD eps = comp_eig_solver_fco.eigenvalues();
-      MatrixZ Ctemp = comp_eig_solver_fco.eigenvectors();
-      // when k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-        Ctemp = reverse_phase_factor(Ctemp);
-      // transform eigenvectors back to CO coefficients
-      C_[k] = C * Ctemp;
-      // remove energy level shift from eigenvalues
-      for (auto p = 0; p != nobs; ++p) {
-        eps_[k](p) = (p < docc_) ? eps(p) : eps(p) - level_shift_;
-      }
-    } else {
-      // Orthogonalize Fock matrix: F' = Xt * F * X
-      MatrixZ Xt = X.transpose().conjugate();
-      auto XtF = Xt * F;
-      auto Ft = XtF * X;
-
-      // Diagonalize F'
-      Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
-      eps_[k] = comp_eig_solver.eigenvalues();
-      MatrixZ Ctemp = comp_eig_solver.eigenvectors();
-
-      // When k=0 (gamma point), reverse phase factor of complex eigenvectors
-      if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
-        Ctemp = reverse_phase_factor(Ctemp);
-
-      C_[k] = X * Ctemp;
-    }
-  }
-
-  using ::mpqc::detail::direct_vector;
-  using ::mpqc::detail::k_vector;
-
   const auto ext0 = tr0.extent();
-  Matrix result_real_eig(ext0, tr1_real.extent());
+  RowMatrixXd result_real_eig(ext0, tr1_real.extent());
   MatrixZ result_recip_eig(ext0, tr1_recip.extent());
   result_real_eig.setZero();
   result_recip_eig.setZero();
 
-  for (auto k = 0; k < k_size_; ++k) {
-    auto vec_k = k_vector(k, nk_, dcell_);
-    auto C_occ = C_[k].leftCols(docc_);
-    auto D_k = C_occ.conjugate() * C_occ.transpose();
-    result_recip_eig.block(0, k * ext0, ext0, ext0) = D_k;
-    for (auto R = 0; R < RD_size_; ++R) {
-      auto vec_R = direct_vector(R, RD_max_, dcell_);
-      auto exponent =
-          std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-      auto D_RD_contr = exponent * D_k;
-      result_real_eig.block(0, R * ext0, ext0, ext0) += D_RD_contr.real();
-    }
+  MatrixzVec F_recip_vec, D_recip_vec;
+  MatrixdVec D_real_vec;
+  F_recip_vec.resize(k_size_);
+  D_recip_vec.resize(k_size_);
+  D_real_vec.resize(RD_size_);
+
+  auto fock_eig = array_ops::array_to_eigen(Fk_);
+
+  // parallel impl for F_k diagonalization and D_k build
+  auto compute_recip_density =
+      [this](MatrixZ* F_ptr, MatrixZ* X_ptr, MatrixZ* C_old_ptr, MatrixZ* C_ptr,
+             VectorD* eps_ptr, MatrixZ* D_ptr, bool is_gamma_point,
+             bool do_level_shift) {
+        // get references to matrix pointers
+        const auto& F = *F_ptr;
+        const auto& X = *X_ptr;
+        auto& C = *C_ptr;
+        auto& eps = *eps_ptr;
+        auto& D = *D_ptr;
+
+        // symmetrize Fock
+        MatrixZ F_symm = 0.5 * (F.transpose().conjugate() + F);
+        if (is_gamma_point) {
+          F_symm = this->reverse_phase_factor(F_symm);
+        }
+
+        // diagonalize Fock
+        if (do_level_shift) {
+          // transform Fock from AO to CO basis
+          const auto& C_old = *C_old_ptr;
+          MatrixZ FCO = C_old.transpose().conjugate() * F_symm * C_old;
+          // add energy level shift to diagonal elements of unoccupied orbitals
+          auto nobs = FCO.cols();
+          for (auto a = docc_; a != nobs; ++a) {
+            FCO(a, a) += level_shift_;
+          }
+          // diagonalize Fock in CO basis
+          Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver_fco(FCO);
+          VectorD eps_temp = comp_eig_solver_fco.eigenvalues();
+          MatrixZ C_temp = comp_eig_solver_fco.eigenvectors();
+          // when k=0 (gamma point), reverse phase factor of complex
+          // eigenvectors
+          if (is_gamma_point) {
+            C_temp = this->reverse_phase_factor(C_temp);
+          }
+          // transform eigenvectors back to CO coefficients
+          C = C_old * C_temp;
+          // remove energy level shift from eigenvalues
+          for (auto p = 0; p != nobs; ++p) {
+            eps(p) = (p < docc_) ? eps_temp(p) : eps_temp(p) - level_shift_;
+          }
+        } else {
+          // Orthogonalize Fock matrix: F' = Xt * F * X
+          MatrixZ Ft = X.transpose().conjugate() * F_symm * X;
+          // Diagonalize F'
+          Eigen::SelfAdjointEigenSolver<MatrixZ> comp_eig_solver(Ft);
+          eps = comp_eig_solver.eigenvalues();
+          MatrixZ Ctemp = comp_eig_solver.eigenvectors();
+          // When k=0 (gamma point), reverse phase factor of complex
+          // eigenvectors
+          if (is_gamma_point) {
+            Ctemp = this->reverse_phase_factor(Ctemp);
+          }
+          // transform eigenvectors back to CO coefficients
+          C = X * Ctemp;
+        }
+
+        // compute_density
+        MatrixZ C_occ = C_ptr->leftCols(docc_);
+        D = C_occ.conjugate() * C_occ.transpose();
+      };
+
+  bool do_level_shift = (level_shift_ > 0.0 && iter_ > 0);
+  for (int64_t k = 0; k != k_size_; ++k) {
+    bool is_gamma_point = (k_size_ > 1 && k == ((k_size_ - 1) / 2));
+    MatrixZ* C_old = do_level_shift ? &C_[k] : nullptr;
+    F_recip_vec[k] = fock_eig.block(0, k * ext0, ext0, ext0);
+
+    world.taskq.add(compute_recip_density, &(F_recip_vec[k]), &(X_[k]), C_old,
+                    &(C_[k]), &(eps_[k]), &(D_recip_vec[k]), is_gamma_point,
+                    do_level_shift);
+  }
+  world.gop.fence();
+
+  // collect all D_k's to a big rectangular matrix
+  for (int64_t k = 0; k != k_size_; ++k) {
+    result_recip_eig.block(0, k * ext0, ext0, ext0) = D_recip_vec[k];
   }
 
+  // parallel impl for D_r
+  const auto denom_inv = 1.0 / double(nk_(0) * nk_(1) * nk_(2));
+  auto transform_recip2real = [ext0, denom_inv, this](MatrixZ* D_recip_ptr,
+                                                      RowMatrixXd* D_real_ptr,
+                                                      int64_t R) {
+    using ::mpqc::detail::k_vector;
+    using ::mpqc::detail::direct_vector;
+
+    // get references to all matrix pointers
+    const auto& D_recip = *D_recip_ptr;
+    auto& D_real = *D_real_ptr;
+
+    auto vec_R = direct_vector(R, RD_max_, dcell_);
+    D_real.setZero(ext0, ext0);
+
+    for (int64_t k = 0; k != k_size_; ++k) {
+      auto vec_k = k_vector(k, nk_, dcell_);
+      auto exponent = std::exp(I * vec_k.dot(vec_R)) * denom_inv;
+      D_real += (exponent * D_recip.block(0, k * ext0, ext0, ext0)).real();
+    }
+  };
+
+  for (int64_t Rd = 0; Rd != RD_size_; ++Rd) {
+    world.taskq.add(transform_recip2real, &result_recip_eig, &(D_real_vec[Rd]),
+                    Rd);
+  }
+  world.gop.fence();
+
+  // collect all D_r's to a big rectangular matrix
+  for (int64_t Rd = 0; Rd != RD_size_; ++Rd) {
+    result_real_eig.block(0, Rd * ext0, ext0, ext0) = D_real_vec[Rd];
+  }
+
+  // convert rectangular matrices to TA::DistArray
   auto result_real = array_ops::eigen_to_array<Tile, Policy>(
       world, result_real_eig, tr0, tr1_real);
   auto result_recip = array_ops::eigen_to_array<TA::TensorZ, Policy>(
@@ -434,11 +540,11 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
   MPQC_ASSERT((real_lattice_range.array() >= 0).all() &&
               (recip_lattice_range.array() > 0).all());
 
-  using ::mpqc::detail::direct_vector;
-  using ::mpqc::detail::k_vector;
   using ::mpqc::detail::direct_ord_idx;
-  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::direct_vector;
   using ::mpqc::detail::extend_trange1;
+  using ::mpqc::detail::k_ord_idx;
+  using ::mpqc::detail::k_vector;
 
   const auto real_lattice_size =
       1 + direct_ord_idx(real_lattice_range, real_lattice_range);
@@ -497,7 +603,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix) {
 }
 
 template <typename Tile, typename Policy>
-MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(MatrixZ& mat0) {
+MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(const MatrixZ& mat0) {
   MatrixZ result(mat0);
 
   for (auto row = 0; row < mat0.rows(); ++row) {
@@ -645,10 +751,11 @@ void zRHF<Tile, Policy>::init_fock_builder() {
 }
 
 template <typename Tile, typename Policy>
-void zRHF<Tile, Policy>::build_F() {
-  auto G = f_builder_->operator()(D_);
+typename zRHF<Tile, Policy>::array_type zRHF<Tile, Policy>::build_F(
+    const array_type& D, const array_type& H, const Vector3i& H_lattice_range) {
+  auto G = f_builder_->operator()(D);
   const auto fock_lattice_range = f_builder_->fock_lattice_range();
-  F_ = ::mpqc::pbc::detail::add(H_, G, R_max_, fock_lattice_range);
+  return ::mpqc::pbc::detail::add(H, G, H_lattice_range, fock_lattice_range);
 }
 
 /**
@@ -660,9 +767,8 @@ DFzRHF<Tile, Policy>::DFzRHF(const KeyVal& kv) : zRHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DFzRHF<Tile, Policy>::init_fock_builder() {
-  using Builder =
-      scf::PeriodicDFFockBuilder<Tile, Policy,
-                                 DFzRHF<Tile, Policy>::factory_type>;
+  using Builder = scf::PeriodicRIJFourCenterKFockBuilder<
+      Tile, Policy, DFzRHF<Tile, Policy>::factory_type>;
   this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
@@ -686,16 +792,13 @@ void FourCenterzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 RIJCADFKzRHF<Tile, Policy>::RIJCADFKzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {
-  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
-}
+    : zRHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicRIJCADFKFockBuilder<
       Tile, Policy, RIJCADFKzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ =
-      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
 }
 
 /**
@@ -704,16 +807,174 @@ void RIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 FourCenterJCADFKzRHF<Tile, Policy>::FourCenterJCADFKzRHF(const KeyVal& kv)
-    : zRHF<Tile, Policy>(kv) {
-  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
-}
+    : zRHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void FourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
   using Builder = scf::PeriodicFourCenterJCADFKFockBuilder<
       Tile, Policy, FourCenterJCADFKzRHF<Tile, Policy>::factory_type>;
-  this->f_builder_ =
-      std::make_unique<Builder>(this->ao_factory(), force_shape_threshold_);
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+}
+
+/**
+ *  MARIJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MARIJCADFKzRHF<Tile, Policy>::MARIJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void MARIJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMARIJCADFKFockBuilder<
+      Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
+                                 .coulomb_builder()
+                                 .multipole_builder()
+                                 .CFF_reached();
+}
+
+template <typename Tile, typename Policy>
+typename MARIJCADFKzRHF<Tile, Policy>::array_type
+MARIJCADFKzRHF<Tile, Policy>::build_F(const array_type& D, const array_type& H,
+                                      const Vector3i& H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMARIJCADFKFockBuilder<
+      Tile, Policy, MARIJCADFKzRHF<Tile, Policy>::factory_type>;
+
+  auto& ma_builder = dynamic_cast<Builder&>(*this->f_builder_)
+                         .coulomb_builder()
+                         .multipole_builder();
+  if (this->need_extra_update_) {
+    this->extra_F_ = ma_builder.get_fock();
+    this->extra_energy_ = ma_builder.get_energy();
+  }
+
+  return F_cnf;
+}
+
+/**
+ *  MARIJFourCenterKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MARIJFourCenterKzRHF<Tile, Policy>::MARIJFourCenterKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void MARIJFourCenterKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
+                                 .coulomb_builder()
+                                 .multipole_builder()
+                                 .CFF_reached();
+}
+
+template <typename Tile, typename Policy>
+typename MARIJFourCenterKzRHF<Tile, Policy>::array_type
+MARIJFourCenterKzRHF<Tile, Policy>::build_F(const array_type& D,
+                                            const array_type& H,
+                                            const Vector3i& H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMARIJFourCenterKFockBuilder<Tile, Policy>;
+
+  auto& ma_builder = dynamic_cast<Builder&>(*this->f_builder_)
+                         .coulomb_builder()
+                         .multipole_builder();
+  if (this->need_extra_update_) {
+    this->extra_F_ = ma_builder.get_fock();
+    this->extra_energy_ = ma_builder.get_energy();
+  }
+
+  return F_cnf;
+}
+
+/**
+ *  MAFourCenterzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MAFourCenterzRHF<Tile, Policy>::MAFourCenterzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void MAFourCenterzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
+                                 .multipole_builder()
+                                 .CFF_reached();
+}
+
+template <typename Tile, typename Policy>
+typename MAFourCenterzRHF<Tile, Policy>::array_type
+MAFourCenterzRHF<Tile, Policy>::build_F(const array_type& D,
+                                        const array_type& H,
+                                        const Vector3i& H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMAFourCenterFockBuilder<Tile, Policy>;
+
+  auto& ma_builder =
+      dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
+  if (this->need_extra_update_) {
+    this->extra_F_ = ma_builder.get_fock();
+    this->extra_energy_ = ma_builder.get_energy();
+  }
+
+  return F_cnf;
+}
+
+/**
+ *  MAFourCenterJCADFKzRHF member functions
+ */
+
+template <typename Tile, typename Policy>
+MAFourCenterJCADFKzRHF<Tile, Policy>::MAFourCenterJCADFKzRHF(const KeyVal& kv)
+    : zRHF<Tile, Policy>(kv) {}
+
+template <typename Tile, typename Policy>
+void MAFourCenterJCADFKzRHF<Tile, Policy>::init_fock_builder() {
+  using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
+  this->f_builder_ = std::make_unique<Builder>(this->ao_factory());
+  this->need_extra_update_ = dynamic_cast<Builder&>(*this->f_builder_)
+                                 .multipole_builder()
+                                 .CFF_reached();
+}
+
+template <typename Tile, typename Policy>
+typename MAFourCenterJCADFKzRHF<Tile, Policy>::array_type
+MAFourCenterJCADFKzRHF<Tile, Policy>::build_F(const array_type& D,
+                                              const array_type& H,
+                                              const Vector3i& H_lattice_range) {
+  auto G_cnf = this->f_builder_->operator()(D);
+  const auto fock_lattice_range = this->f_builder_->fock_lattice_range();
+  auto F_cnf =
+      ::mpqc::pbc::detail::add(H, G_cnf, H_lattice_range, fock_lattice_range);
+
+  using Builder = scf::PeriodicMAFourCenterJCADFKFockBuilder<Tile, Policy>;
+
+  auto& ma_builder =
+      dynamic_cast<Builder&>(*this->f_builder_).multipole_builder();
+  if (this->need_extra_update_) {
+    this->extra_F_ = ma_builder.get_fock();
+    this->extra_energy_ = ma_builder.get_energy();
+  }
+
+  return F_cnf;
 }
 
 }  // namespace lcao

@@ -306,7 +306,7 @@ class MemAllocFailed: public SystemException {
  */
 class FileOperationFailed: public SystemException {
   public:
-    enum FileOperation { Unknown, OpenR, OpenW, OpenRW,
+    enum FileOperation { Unknown, Exists, OpenR, OpenW, OpenRW,
                          Close, Read, Write, Corrupt, Chdir, Other };
 
   private:

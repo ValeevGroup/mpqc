@@ -1,0 +1,42 @@
+{
+  "units": "2010CODATA",
+  "molecule": {
+    "file_name": "he8.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 1,
+    "reblock" : 4
+  },
+  "obs": {
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  },
+  "dfbs": {
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs"
+  },
+  "scf":{
+    "type": "RI-RHF",
+    "localize": true,
+    "localization_method":"rrqr",
+    "wfn_world": "$:wfn_world"
+  },
+  "wfn":{
+    "type": "CCSD",
+    "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world",
+    "ref": "$:scf",
+    "occ_block_size" : 4,
+    "unocc_block_size" : 8
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  }
+}

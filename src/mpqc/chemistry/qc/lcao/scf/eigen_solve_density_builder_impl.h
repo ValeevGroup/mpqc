@@ -29,8 +29,8 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
       localize_(localize),
       localization_method_(localization_method),
       n_coeff_clusters_(nclusters),
-      metric_decomp_type_(metric_decomp_type),
       clustered_coeffs_(clustered_coeffs),
+      metric_decomp_type_(metric_decomp_type),
       nocc_(nocc),
       ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());
@@ -51,7 +51,8 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     throw InputError(
         "clustered_coeffs conflicts with localization_method: "
         "boys-foster(valence)",
-        __FILE__, __LINE__, "clustered_coeffs", clustered_coeffs_ ? "true" : "false");
+        __FILE__, __LINE__, "clustered_coeffs",
+        clustered_coeffs_ ? "true" : "false");
   }
 
   auto inv1 = mpqc::fenced_now(S_.world());
@@ -103,9 +104,15 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   if (localize_) {
     auto l0 = mpqc::fenced_now(world);
-    auto U = mpqc::scf::FosterBoysLocalization{}(
-        C_occ_ao, r_xyz_ints_,
-        (localization_method_ == "boys-foster(valence)" ? ncore_ : 0));
+    auto U = ((localization_method_ == "rrqr") ||
+              (localization_method_ == "rrqr(valence)"))
+                 ? mpqc::scf::RRQRLocalization{}(
+                       C_occ_ao, S_,
+                       (localization_method_ == "rrqr(valence)" ? ncore_ : 0))
+                 : mpqc::scf::FosterBoysLocalization{}(
+                       C_occ_ao, r_xyz_ints_,
+                       (localization_method_ == "boys-foster(valence)" ? ncore_
+                                                                       : 0));
     C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 

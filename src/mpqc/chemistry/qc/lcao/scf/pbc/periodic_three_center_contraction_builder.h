@@ -31,8 +31,7 @@ class PeriodicThreeCenterContractionBuilder
   using Engine = ::mpqc::lcao::gaussian::ShrPool<libint2::Engine>;
   using Basis = ::mpqc::lcao::gaussian::Basis;
   using BasisVector = std::vector<Basis>;
-  using Shell = typename ::mpqc::lcao::gaussian::Shell;
-  using ShellVec = typename ::mpqc::lcao::gaussian::ShellVec;
+  using Shell = ::mpqc::lcao::gaussian::Shell;
   using shellpair_list_t = std::vector<std::vector<size_t>>;
   using func_offset_list =
       std::unordered_map<size_t, std::tuple<size_t, size_t>>;

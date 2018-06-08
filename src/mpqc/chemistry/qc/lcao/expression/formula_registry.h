@@ -61,7 +61,7 @@ class Registry {
     insert(std::make_pair(key, val));
   }
 
-  /// update value which already exsist in registry
+  /// update value which already exists in registry
   void update(const Key& key, const Value& val) {
     auto iter = find(key);
     if (iter == registry_.end()) {
@@ -72,7 +72,7 @@ class Registry {
     }
   }
 
-  /// update value which already exsist in registry
+  /// update value which already exists in registry
   void update(const value_type& val) { update(val.first, val.second); }
 
   /// remove Value by Key

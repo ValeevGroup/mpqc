@@ -210,28 +210,41 @@ class IPPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
 
 /// PNO preconditioner for EOM-EE-CCSD
 template <typename Array>
-class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
+class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
+                  public madness::WorldObject<PNOEEPred<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
-  PNOEEPred() = default;
+  using WorldObject_ = madness::WorldObject<PNOEEPred<Array>>;
+
+  PNOEEPred(madness::World& world) : madness::WorldObject<PNOEEPred<Array>>(world) { }
 
   PNOEEPred(const Array &T2, std::size_t n_roots, const Vector &eps_o,
             const Matrix &F_uocc, double tpno, double tosv, bool pno_canonical)
-      : tpno_(tpno),
+      : madness::WorldObject<PNOEEPred<Array>>(T2.world()),
+        tpno_(tpno),
         tosv_(tosv),
         pno_canonical_(pno_canonical),
         n_roots_(n_roots),
         eps_o_(eps_o) {
+
+    // part of WorldObject initialization
+    this->process_pending();
+
     init_reblock(T2);
 
     // use first excited state amplitude to initialize PNOs
     auto T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
+    ij_pmap_ = T_reblock.pmap();
     auto D = detail::construct_density(T_reblock);
-    detail::construct_pno(D, F_uocc, tpno_, tosv_, pnos_, F_pno_diag_, osvs_,
-                          F_osv_diag_, pno_canonical_);
+
+    detail::construct_pno(D, F_uocc,
+                          tpno_, tosv_,
+                          pnos_, npnos_, F_pno_diag_,
+                          osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+    transfer_pnos();
   }
 
   ~PNOEEPred() = default;
@@ -331,12 +344,56 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
 
   /// pnos for excited states
   std::vector<Matrix> pnos_;
+  /// # of pnos for each pair
+  std::vector<int> npnos_;
   /// diagonal of F_ab in pno basis for excited states
   std::vector<Vector> F_pno_diag_;
   /// osvs for excited states
   std::vector<Matrix> osvs_;
+  /// # of osvs for each orbital
+  std::vector<int> nosvs_;
   /// diagonal of F_ab in osv basis for excited states
   std::vector<Vector> F_osv_diag_;
+
+  /// maps ij index of PNO to the rank
+  std::shared_ptr<TiledArray::Pmap> ij_pmap_;
+
+  /// Transfers the PNOs from the node that owns pair i,j to the node that owns pair j,i
+  void transfer_pnos() {
+
+    const auto nocc_act = size(nosvs_);
+    const auto me = this->get_world().rank();
+    for(auto i = 0; i < nocc_act; ++i) {
+      for (auto j = i + 1; j < nocc_act; ++j) {
+        const auto ij = i * nocc_act + j;
+        if (ij_pmap_->owner(ij) == me) {
+          auto ji_owner = ij_pmap_->owner(j * nocc_act + i);
+          WorldObject_::task(ji_owner, &PNOEEPred::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij]);
+        }
+      }
+    }
+
+    this->get_world().gop.fence();
+  }
+
+  /**
+   * Copies the PNOs for pair i,j to pair j,i
+   * @param i The first occupied index
+   * @param j The second occupied index
+   * @param pno_ij The Matrix of PNOs associated with pair i,j
+   * @param npno_ij The number of PNOs axxociated with pair i,j
+   * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
+   *        transformed to the i,j PNO space
+   */
+  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij) {
+    int my_i = j;
+    int my_j = i;
+    const auto nocc_act = size(nosvs_);
+    int my_ij = my_i * nocc_act + my_j;
+    pnos_[my_ij] = pno_ij;
+    npnos_[my_ij] = npno_ij;
+    F_pno_diag_[my_ij] = f_pno_diag_ij;
+  }
 };
 
 /// state average PNO preconditioner for EOM-CCSD, the only difference is the
@@ -352,7 +409,9 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
   StateAveragePNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
                         const Vector &eps_o, const Matrix &F_uocc, double tpno,
                         double tosv, bool pno_canonical)
-      : PNOEEPred<Array>() {
+      // T2 should not be empty buuuut ....
+      : PNOEEPred<Array>(T2.empty() ? madness::World::get_default() : T2.at(0).world()) {
+    assert(n_roots > 0);
     this->tpno_ = tpno;
     this->tosv_ = tosv;
     this->pno_canonical_ = pno_canonical;
@@ -368,6 +427,7 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
       for (std::size_t i = 0; i < n_roots; i++) {
         auto T_reblock =
             detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        if (i == 0) this->ij_pmap_ = T_reblock.pmap();
         Ds = detail::construct_density(T_reblock);
 
         if (i == 0) {
@@ -380,9 +440,71 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
       D("a,b,i,j") = typename Array::element_type(1.0 / n_roots) * D("a,b,i,j");
     }
 
-    detail::construct_pno(D, F_uocc, this->tpno_, this->tosv_, this->pnos_,
-                          this->F_pno_diag_, this->osvs_, this->F_osv_diag_,
+    detail::construct_pno(D, F_uocc,
+                          this->tpno_, this->tosv_,
+                          this->pnos_, this->npnos_, this->F_pno_diag_,
+                          this->osvs_, this->nosvs_, this->F_osv_diag_,
                           this->pno_canonical_);
+
+    // now ready to process tasks
+    this->process_pending();
+
+    this->transfer_pnos();
+  }
+};
+
+/// state merged PNO preconditioner for EOM-CCSD, the only difference is the
+/// constructor
+
+template <typename Array>
+class StateMergedPNOEEPred : public PNOEEPred<Array> {
+public:
+  using typename PNOEEPred<Array>::Matrix;
+  using typename PNOEEPred<Array>::Vector;
+  StateMergedPNOEEPred() = default;
+
+  StateMergedPNOEEPred(const std::vector<Array> &T2, std::size_t n_roots,
+                        const Vector &eps_o, const Matrix &F_uocc, double tpno,
+                        double tosv, bool pno_canonical)
+        // T2 should not be empty buuuut ....
+      : PNOEEPred<Array>(T2.empty() ? madness::World::get_default() : T2.at(0).world()) {
+    assert(n_roots > 0);
+    this->tpno_ = tpno;
+    this->tosv_ = tosv;
+    this->pno_canonical_ = pno_canonical;
+    this->n_roots_ = n_roots;
+    this->eps_o_ = eps_o;
+
+    this->init_reblock(T2[0]);
+
+    // compute average of D
+    Array D;
+    {
+      Array Ds;
+      for (std::size_t i = 0; i < n_roots; i++) {
+        auto T_reblock =
+            detail::reblock_t2(T2[i], this->reblock_i_, this->reblock_a_);
+        if (i == 0) this->ij_pmap_ = T_reblock.pmap();
+        Ds = detail::construct_density(T_reblock);
+
+        if (i == 0) {
+          D("a,b,i,j") = Ds("a,b,i,j");
+        } else {
+          D("a,b,i,j") += Ds("a,b,i,j");
+        }
+      }
+    }
+
+    detail::construct_pno(D, F_uocc,
+                          this->tpno_, this->tosv_,
+                          this->pnos_, this->npnos_, this->F_pno_diag_,
+                          this->osvs_, this->nosvs_, this->F_osv_diag_,
+                          this->pno_canonical_);
+
+    // now ready to process tasks
+    this->process_pending();
+
+    this->transfer_pnos();
   }
 };
 
@@ -390,23 +512,32 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
 
 template <typename Array>
 class StateSpecificPNOEEPred
-    : public DavidsonDiagPred<::mpqc::cc::TPack<Array>> {
+    : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
+      public madness::WorldObject<StateSpecificPNOEEPred<Array>> {
  public:
   using Tile = typename Array::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   using Vector = EigenVector<typename Tile::numeric_type>;
 
+  using WorldObject_ = madness::WorldObject<StateSpecificPNOEEPred<Array>>;
+
   StateSpecificPNOEEPred(const std::vector<Array> &T2, const Vector &eps_o,
                          const Matrix &F_uocc, double tpno, double tosv,
-                         bool pno_canonical)
-      : eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical) {
+                         bool pno_canonical, Factory<Array>& factory)
+        // T2 should not be empty buuuut ...
+      : madness::WorldObject<StateSpecificPNOEEPred<Array>>(T2.empty() ? madness::World::get_default() : T2.at(0).world()),
+        eps_o_(eps_o), tpno_(tpno), tosv_(tosv), pno_canonical_(pno_canonical) {
+
     auto &world = T2[0].world();
     n_roots_ = T2.size();
+    assert(n_roots_ > 0);
 
     // resize for n roots
     pnos_.resize(n_roots_);
+    npnos_.resize(n_roots_);
     F_pno_diag_.resize(n_roots_);
     osvs_.resize(n_roots_);
+    nosvs_.resize(n_roots_);
     F_osv_diag_.resize(n_roots_);
 
     // initialize reblock array
@@ -438,10 +569,19 @@ class StateSpecificPNOEEPred
 
     for (std::size_t i = 0; i < n_roots_; i++) {
       auto T_reblock = detail::reblock_t2(T2[i], reblock_i_, reblock_a_);
+      if (i == 0) this->ij_pmap_ = T_reblock.pmap();
       auto D = detail::construct_density(T_reblock);
-      detail::construct_pno(D, F_uocc, tpno_, tosv_, pnos_[i], F_pno_diag_[i],
-                            osvs_[i], F_osv_diag_[i], pno_canonical_);
+      detail::construct_pno(D, F_uocc,
+                            tpno_, tosv_,
+                            pnos_[i], npnos_[i], F_pno_diag_[i],
+                            osvs_[i], nosvs_[i], F_osv_diag_[i],
+                            pno_canonical_);
     }
+
+    // now ready to process tasks
+    this->process_pending();
+
+    this->transfer_pnos();
   }
 
   ~StateSpecificPNOEEPred() = default;
@@ -504,12 +644,66 @@ class StateSpecificPNOEEPred
 
   /// pnos for all roots
   std::vector<std::vector<Matrix>> pnos_;
+  /// # of pnos for each pair
+  std::vector<std::vector<int>> npnos_;
   /// diagonal of F_ab in pno basis for all roots
   std::vector<std::vector<Vector>> F_pno_diag_;
   /// osvs for all roots
   std::vector<std::vector<Matrix>> osvs_;
+  /// # of osvs for each orbital
+  std::vector<std::vector<int>> nosvs_;
   /// diagonal of F_ab in osv basis for all roots
   std::vector<std::vector<Vector>> F_osv_diag_;
+
+  /// maps ij index of PNO to the rank
+  std::shared_ptr<TiledArray::Pmap> ij_pmap_;
+
+  /// Transfers the PNOs from the node that owns pair i,j to the node that owns pair j,i
+  void transfer_pnos() {
+
+    const auto nstates = size(nosvs_);
+    const auto nocc_act = size(nosvs_.at(0));
+    const auto me = this->get_world().rank();
+    for (auto i = 0; i < nocc_act; ++i) {
+      for (auto j = i + 1; j < nocc_act; ++j) {
+        const auto ij = i * nocc_act + j;
+        if (ij_pmap_->owner(ij) == me) {
+          auto ji_owner = ij_pmap_->owner(j * nocc_act + i);
+          for (auto state = 0; state != nstates; ++state) {
+            WorldObject_::task(ji_owner,
+                               &StateSpecificPNOEEPred::copy_pnoij,
+                               state,
+                               i,
+                               j,
+                               pnos_[state][ij],
+                               npnos_[state][ij],
+                               F_pno_diag_[state][ij]);
+          }
+        }
+      }
+    }
+
+    this->get_world().gop.fence();
+  }
+
+  /**
+   * Copies the PNOs for pair i,j to pair j,i
+   * @param i The first occupied index
+   * @param j The second occupied index
+   * @param pno_ij The Matrix of PNOs associated with pair i,j
+   * @param npno_ij The number of PNOs axxociated with pair i,j
+   * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
+   *        transformed to the i,j PNO space
+   */
+  void copy_pnoij(int state, int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij) {
+    int my_i = j;
+    int my_j = i;
+    const auto nocc_act = size(nosvs_);
+    int my_ij = my_i * nocc_act + my_j;
+    pnos_[state][my_ij] = pno_ij;
+    npnos_[state][my_ij] = npno_ij;
+    F_pno_diag_[state][my_ij] = f_pno_diag_ij;
+  }
 };
 
 }  // namespace cc

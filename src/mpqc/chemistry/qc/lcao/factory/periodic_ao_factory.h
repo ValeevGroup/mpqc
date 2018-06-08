@@ -1567,7 +1567,7 @@ void PeriodicAOFactory<Tile, Policy>::renew_overlap_lattice_range() {
     const auto shell1_max = shell1_min + nshells_per_uc;
 
     auto is_significant = false;
-    for (auto shell0 = 0; shell0 != nshells_per_uc; ++shell0) {
+    for (auto shell0 = 0ul; shell0 != nshells_per_uc; ++shell0) {
       for (const auto &shell1 : sig_shellpair_list_[shell0]) {
         if (shell1 >= shell1_min && shell1 < shell1_max) {
           is_significant = true;

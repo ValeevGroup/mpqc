@@ -265,7 +265,7 @@ TA::DistArray<Tile, Policy> slice_array_at_k(
     const Vector3i &nk) {
   using ::mpqc::detail::k_ord_idx;
 
-  const auto k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
+  const size_t k_size = 1 + k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
   assert(k_ord >= 0 && k_ord < k_size && "ordinal # of k is out of range");
 
   auto tr0 = M.trange().data()[0];

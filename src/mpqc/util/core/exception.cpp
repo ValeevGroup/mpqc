@@ -168,7 +168,7 @@ Exception::what() const MPQC__NOEXCEPT
           delete[] elaboration_c_str_;
           elaboration_c_str_ = 0;
           elaboration_c_str_ = new char[1+elab.size()];
-          for (int i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
+          for (std::string::size_type i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
           elaboration_c_str_[elab.size()] = '\0';
           return elaboration_c_str_;
         }

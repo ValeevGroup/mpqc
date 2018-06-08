@@ -394,7 +394,7 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         time2 = std::chrono::high_resolution_clock::now();
         time_span = time2 - time1;
 
-        double old_time = time_span.count();
+        //double old_time = time_span.count();
         //std::cout << "Time to compute G with contraction is " << old_time << std::endl;
 
         Array tmp;
@@ -476,7 +476,7 @@ Array compute_cs_ccsd_r2_df(const Array& t1, const Array& t2, const Array& tau,
         time2 = std::chrono::high_resolution_clock::now();
         time_span = time2 - time1;
 
-        double old_time = time_span.count();
+        //double old_time = time_span.count();
         //std::cout << "Time to compute G with CP is " << old_time << std::endl;
 
         Array tmp;

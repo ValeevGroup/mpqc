@@ -114,7 +114,7 @@ class Basis : virtual public DescribedClass {
     std::size_t nvecs = 0;
     ar &nvecs;
 
-    for (auto i = 0; i < nvecs; ++i) {
+    for (auto i = 0ul; i < nvecs; ++i) {
       ShellVec tmp;
       ar &tmp;
       shells_.emplace_back(std::move(tmp));

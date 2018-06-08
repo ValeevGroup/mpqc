@@ -107,14 +107,14 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
   const std::size_t nparams = 2 * n;
   std::vector<double> cc(n, 1.0);
   std::vector<double> aa(n);
-  for (auto i = 0; i < n; ++i) {
+  for (auto i = 0ul; i < n; ++i) {
     aa[i] = std::pow(3.0, (i + 2 - (n + 1) / 2.0));
   }
 
   // first rescale cc for ff[x] to match the norm of f[x]
   double ffnormfac = 0.0;
-  for (auto i = 0; i < n; ++i) {
-    for (auto j = 0; j < n; ++j) {
+  for (auto i = 0ul; i < n; ++i) {
+    for (auto j = 0ul; j < n; ++j) {
       ffnormfac += cc[i] * cc[j] / std::sqrt(aa[i] + aa[j]);
     }
   }
@@ -122,7 +122,7 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
   const double Nf = std::sqrt(2.0 * zeta) * zeta;
   const double Nff =
       std::sqrt(2.0) / (std::sqrt(ffnormfac) * std::sqrt(std::sqrt(M_PI)));
-  for (auto i = 0; i < n; ++i) cc[i] *= -Nff / Nf;
+  for (auto i = 0ul; i < n; ++i) cc[i] *= -Nff / Nf;
 
   const unsigned int npts = 1001;
   const double xmin = 0.0;
@@ -136,7 +136,7 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
 
   // grid points on which we will fit
   std::vector<double> xi(npts);
-  for (unsigned int i = 0; i < npts; ++i)
+  for (auto i = 0u; i < npts; ++i)
     xi[i] = xmin + (xmax - xmin) * i / (npts - 1);
 
   Eigen::VectorXd err(npts);
@@ -167,9 +167,9 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
     for (unsigned int i = 0; i < npts; ++i) {
       const double x2 = xi[i] * xi[i];
       const double sqrt_ww_x = std::sqrt(detail::ww(xi[i]));
-      for (auto j = 0; j < n; ++j)
+      for (auto j = 0u; j < n; ++j)
         J(i, j) = (std::exp(-aa[j] * x2)) * sqrt_ww_x;
-      for (auto j = 0; j < n; ++j)
+      for (auto j = 0u; j < n; ++j)
         J(i, n + j) = -sqrt_ww_x * x2 * cc[j] * std::exp(-aa[j] * x2);
     }
 
@@ -190,21 +190,21 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
     for (int l = -1; l < 1000; ++l) {
       detail::LinearSolveDamped(nparams, A, &(b[0]), lambda0, &(delta[0]));
       std::vector<double> cc_0(cc);
-      for (auto i = 0; i < n; ++i) cc_0[i] += delta[i];
+      for (auto i = 0u; i < n; ++i) cc_0[i] += delta[i];
       std::vector<double> aa_0(aa);
-      for (auto i = 0; i < n; ++i) aa_0[i] += delta[i + n];
+      for (auto i = 0u; i < n; ++i) aa_0[i] += delta[i + n];
 
       // if any of the exponents are negative the step is too large and need to
       // increase damping
       bool step_too_large = false;
-      for (auto i = 0; i < n; ++i)
+      for (auto i = 0u; i < n; ++i)
         if (aa_0[i] < 0.0) {
           step_too_large = true;
           break;
         }
       if (!step_too_large) {
         std::vector<double> err_0(npts);
-        for (unsigned int i = 0; i < npts; ++i) {
+        for (auto i = 0u; i < npts; ++i) {
           const double x = xi[i];
           err_0[i] = (detail::fstg(zeta, x) - detail::fngtg(cc_0, aa_0, x)) *
                      std::sqrt(detail::ww(x));
@@ -230,7 +230,7 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
         "to better than 1e-10");
 
   std::vector<std::pair<double, double>> result(n);
-  for (auto i = 0; i < n; ++i) {
+  for (auto i = 0u; i < n; ++i) {
     result[i].second = cc[i];
     result[i].first = aa[i];
   }

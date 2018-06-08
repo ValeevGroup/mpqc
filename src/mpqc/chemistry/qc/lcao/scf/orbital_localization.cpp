@@ -37,8 +37,8 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
   auto &my = mo_xyz[1];
   auto &mz = mo_xyz[2];
 
-  auto D = fb_objective_function(mo_xyz);
-  auto iter = 1;
+  //auto D = fb_objective_function(mo_xyz);
+  decltype(max_iter) iter = 1;
   double max_abs_angle_prev_iter = std::numeric_limits<double>::max();
   double error = max_abs_angle_prev_iter;
   while (error > convergence_threshold && iter <= max_iter) {
@@ -81,7 +81,7 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
       }
     }
 
-    D = fb_objective_function(mo_xyz);
+    //D = fb_objective_function(mo_xyz);
     error = iter > 1 ? std::abs(max_abs_angle - max_abs_angle_prev_iter)
                      : max_abs_angle;
     ++iter;

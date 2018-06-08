@@ -85,7 +85,6 @@ void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices
   std::vector<decltype(btas_array)> btas_factors_matrices;
   int ndim = btas_array.rank();
 
-  auto t1 = std::chrono::high_resolution_clock::now();
   if (world.rank() == 0) {
     // compute the CP decomposition based on user's interest
     btas::CP_ALS<decltype(btas_array)> CP(btas_array);
@@ -121,10 +120,7 @@ void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices
                  std::begin(btas_factors_matrices[0]) + i, brank);
     }
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> time_span = t2 - t1;
-  auto time_cp = time_span.count();
-  //std::cout << "Time cp is " << time_cp << std::endl;
+  
   // If one wants to reconstruct the full tensor from the factor matrices it
   // will be stored in the reference passed in.
   if (recompose) {
@@ -173,12 +169,12 @@ void cp_rals_compute_rank(Array &reference, std::vector<Array> & factor_matrices
   int ndim = btas_array.rank();
 
   if(world.rank() == 0){
-    auto t1 = std::chrono::high_resolution_clock::now();
+    //auto t1 = std::chrono::high_resolution_clock::now();
     btas::CP_RALS<decltype(btas_array)> CP(btas_array);
     auto diff = CP.compute_rank(rank, direct, calculate_epsilon, step, max_als, ALSThresh,
                       SVD_initial_guess, SVD_rank, symm);
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> time_span = t2 - t1;
+    //auto t2 = std::chrono::high_resolution_clock::now();
+    //std::chrono::duration<double> time_span = t2 - t1;
     //std::cout << "Time to compute cp-rals is " << time_span.count() << " diff is " << diff << std::endl;
     // obtain factor matrices prepare to push them back as TA objects
     btas_factors_matrices = CP.get_factor_matrices();

@@ -214,10 +214,10 @@ fock_from_soad(
 
   // Loop over lower diagonal tiles
   const auto F_extent = F.trange().tiles_range().extent();
-  for (auto i = 0; i < F_extent[0]; ++i) {
+  for (auto i = 0ul; i < F_extent[0]; ++i) {
     const auto i_ord = i * F_extent[1];
 
-    for (auto j = 0; j < F_extent[1]; ++j) {
+    for (auto j = 0ul; j < F_extent[1]; ++j) {
       const auto ord = i_ord + j;
 
       if (!F.is_zero(ord) && F.is_local(ord)) {

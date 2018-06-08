@@ -96,7 +96,7 @@ std::unordered_map<size_t, size_t> compute_shell_offset(const Basis &basis) {
   auto shell_offset = 0;
   const auto &cluster_shells = basis.cluster_shells();
   const auto nclusters = cluster_shells.size();
-  for (auto c = 0; c != nclusters; ++c) {
+  for (auto c = 0ul; c != nclusters; ++c) {
     const auto nshells = cluster_shells[c].size();
     result.insert(std::make_pair(c, shell_offset));
     shell_offset += nshells;
@@ -113,7 +113,7 @@ func_offset_list compute_func_offset_list(const ShellVec &cluster,
   auto bf_offset = bf_first;
 
   const auto nshell = cluster.size();
-  for (auto s = 0; s != nshell; ++s) {
+  for (auto s = 0ul; s != nshell; ++s) {
     const auto &shell = cluster[s];
     const auto nf = shell.size();
     result.insert(std::make_pair(s, std::make_tuple(cf_offset, bf_offset)));

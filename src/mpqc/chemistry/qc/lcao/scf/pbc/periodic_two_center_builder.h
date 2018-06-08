@@ -102,8 +102,8 @@ class PeriodicTwoCenterBuilder
     target_precision_ = target_precision;
 
     // # of tiles per basis
-    auto ntiles0 = basis0_->nclusters();
-    auto ntilesR = basisR_->nclusters();
+    const uint64_t ntiles0 = basis0_->nclusters();
+    const uint64_t ntilesR = basisR_->nclusters();
 
     for (auto tile0 = 0ul, tile01 = 0ul; tile0 != ntiles0; ++tile0) {
       for (auto tileR = 0ul; tileR != ntilesR; ++tileR) {

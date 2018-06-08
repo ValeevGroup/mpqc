@@ -135,10 +135,10 @@ class Qmatrix {
     // into
     // Q_cluster_
     auto first_shell_in_cluster = 0;
-    for (auto c = 0; c < nclusters; ++c) {
+    for (auto c = 0ul; c < nclusters; ++c) {
       const auto nshells = cshells[c].size();
       const auto last = first_shell_in_cluster + nshells;
-      for (auto s = first_shell_in_cluster; s < last; ++s) {
+      for (std::size_t s = first_shell_in_cluster; s < last; ++s) {
         Q_cluster_(c) += Q_(s);
       }
       first_shell_in_cluster += nshells;
@@ -224,7 +224,7 @@ class Qmatrix {
 
     // Compute the max elem in Q
     max_elem_in_row_.resize(Q_.rows());
-    for (auto i = 0ul; i < Q_.rows(); ++i) {
+    for (auto i = 0l; i < Q_.rows(); ++i) {
       const auto max_elem = Q_.row(i).cwiseAbs().maxCoeff();
       max_elem_in_Q_ = std::max(max_elem_in_Q_, max_elem);
       max_elem_in_row_[i] = max_elem;
@@ -241,18 +241,18 @@ class Qmatrix {
     Q_cluster_.setZero();
 
     auto first_shell_in_cluster0 = 0;
-    for (auto c0 = 0; c0 < nclusters0; ++c0) {
+    for (auto c0 = 0ul; c0 < nclusters0; ++c0) {
       const auto nshells0 = cshells0[c0].size();
       const auto last0 = first_shell_in_cluster0 + nshells0;
 
       auto first_shell_in_cluster1 = 0;
-      for (auto c1 = 0; c1 < nclusters1; ++c1) {
+      for (auto c1 = 0ul; c1 < nclusters1; ++c1) {
         const auto nshells1 = cshells1[c1].size();
         const auto last1 = first_shell_in_cluster1 + nshells1;
 
         auto val = 0.0;
-        for (auto s0 = first_shell_in_cluster0; s0 < last0; ++s0) {
-          for (auto s1 = first_shell_in_cluster1; s1 < last1; ++s1) {
+        for (std::size_t s0 = first_shell_in_cluster0; s0 < last0; ++s0) {
+          for (std::size_t s1 = first_shell_in_cluster1; s1 < last1; ++s1) {
             val += Q_(s0, s1);
           }
         }

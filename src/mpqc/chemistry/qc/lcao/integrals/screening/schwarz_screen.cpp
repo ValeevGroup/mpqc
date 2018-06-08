@@ -98,10 +98,10 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     auto const &Ta = Qbra_->Qtile();
     auto const &Tbc = Qket_->Qtile();
     auto ord = 0ul;
-    for (auto a = 0ul; a < Ta.size(); ++a) {
+    for (auto a = 0l; a < Ta.size(); ++a) {
       const float a_val = Ta(a);
-      for (auto b = 0ul; b < Tbc.rows(); ++b) {
-        for (auto c = 0ul; c < Tbc.cols(); ++c, ++ord) {
+      for (auto b = 0l; b < Tbc.rows(); ++b) {
+        for (auto c = 0l; c < Tbc.cols(); ++c, ++ord) {
           if (pmap.is_local(ord)){
             norms[ord] = std::sqrt(a_val * Tbc(b, c));
           }
@@ -112,11 +112,11 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
     auto const &Tab = Qbra_->Qtile();
     auto const &Tcd = Qket_->Qtile();
     auto ord = 0ul;
-    for (auto a = 0ul; a < Tab.rows(); ++a) {
-      for (auto b = 0ul; b < Tab.cols(); ++b) {
+    for (auto a = 0l; a < Tab.rows(); ++a) {
+      for (auto b = 0l; b < Tab.cols(); ++b) {
         const float ab = Tab(a, b);
-        for (auto c = 0ul; c < Tcd.rows(); ++c) {
-          for (auto d = 0ul; d < Tcd.cols(); ++d, ++ord) {
+        for (auto c = 0l; c < Tcd.rows(); ++c) {
+          for (auto d = 0l; d < Tcd.cols(); ++d, ++ord) {
             if (pmap.is_local(ord)) {
               norms[ord] = std::sqrt(ab * Tcd(c, d));
             }

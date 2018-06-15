@@ -76,7 +76,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |
-   * | @c rank | double | @c 0.6 | CP rank set to number of auxillary basis functions * @c rank |
+   * | @c cp_rank | double | @c 0.6 | CP rank set to number of auxillary basis functions * @c cp_rank |
    * | @c cp_precision | double | @c 0.1 | ALS threshold for CP decomposition
    */
 
@@ -118,7 +118,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       throw FeatureDisabled("Feature does not exist without LAPACKE", __FILE__, __LINE__, "CP-ALS");
 #else
     cp_precision_ = kv.value<double>("cp_precision", 0.1);
-    rank_ = ( (cp_ccsd_) ? kv.value<double>("rank", 0.6) : 0);
+    cp_rank_ = ( (cp_ccsd_) ? kv.value<double>("cp_rank", 0.6) : 0);
 #endif
   }
 
@@ -145,7 +145,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   double ccsd_corr_energy_;
   bool cp_ccsd_;
   double cp_precision_;
-  double rank_;
+  double cp_rank_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
   std::shared_ptr<const EigenVector<typename Tile::numeric_type>>
       f_pq_diagonal_;
@@ -504,12 +504,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     auto Aux_size = Xab.trange().dim(0).extent();
     auto block_size = this->trange1_engine()->get_vir_block_size();
 #if _HAS_INTEL_MKL
-    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * rank_, true);
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * cp_rank_, true);
 #else // _HAS_INTEL_MKL
-    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * rank_, true, false, 1, 1, 10000, 500, cp_precision_, false, 0, true);
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, false, 0, true);
 #endif // _HAS_INTEL_MKL
     // TODO Find optimal Regularized parameters to compute this decomposition quickly
-    //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
+    //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * cp_rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
   }
 #endif // MADNESS_LINALG_USE_LAPACKE
   // get two electron integrals

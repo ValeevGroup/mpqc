@@ -51,14 +51,13 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
         "method": "df",
         "reduced_abcd_memory": "true",
         "cp_ccsd": "true",
-        "cp_precision": "1e-7",
-        "occ_block_size": "2",
-        "unocc_block_size": "2"
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
     },
     "property":
     {
         "type": "Energy",
-        "precision": "1e-8",
+        "precision": "1e-11",
         "wfn": "$:wfn"
     }
 }
@@ -268,8 +267,8 @@ Reduced ABCD Memory Approach: Yes
     7 	 7.34348e-08 	 1.51206e-08 	 -0.121579524813 	        0.1 
     8 	 1.90501e-08 	 3.57859e-09 	 -0.121579505763 	        0.2 
     9 	 8.68870e-10 	 5.82376e-10 	 -0.121579504894 	        0.1 
-CCSD Energy  -0.121579504894483
-CCSD Time in CCSD: 17.6473771 S
+CCSD Energy  -0.121751336637938
+CCSD Time in CCSD: 3.626489752 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -312,19 +311,19 @@ CCSD Time in CCSD: 17.6473771 S
         "method": "df",
         "reduced_abcd_memory": "true",
         "cp_ccsd": "true",
-        "cp_precision": "1e-7",
-        "occ_block_size": "2",
-        "unocc_block_size": "2"
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
     },
     "property":
     {
         "type": "Energy",
-        "precision": "1e-8",
+        "precision": "1e-11",
         "wfn": "$:wfn",
         "value":
         {
-            "value": "-76.34576260360026"
+            "value": "-76.34593443534354"
         }
     }
 }
+
 

@@ -51,8 +51,8 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
         "method": "df",
         "reduced_abcd_memory": "false",
         "cp_ccsd": "true",
-        "occ_block_size": "2",
-        "unocc_block_size": "2"
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
     },
     "property":
     {
@@ -354,8 +354,8 @@ Reduced ABCD Memory Approach: No
    10 	 3.00032e-11 	 1.73173e-10 	 -0.121751336972 	        0.2 
    11 	 2.32688e-10 	 1.88137e-11 	 -0.121751336739 	        0.2 
    12 	 8.17846e-12 	 5.28791e-12 	 -0.121751336731 	        0.2 
-CCSD Energy  -0.121751336730826
-CCSD Time in CCSD: 2.7618296 S
+CCSD Energy  -0.121751336637938
+CCSD Time in CCSD: 3.064087826 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -398,8 +398,8 @@ CCSD Time in CCSD: 2.7618296 S
         "method": "df",
         "reduced_abcd_memory": "false",
         "cp_ccsd": "true",
-        "occ_block_size": "2",
-        "unocc_block_size": "2"
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
     },
     "property":
     {
@@ -408,8 +408,9 @@ CCSD Time in CCSD: 2.7618296 S
         "wfn": "$:wfn",
         "value":
         {
-            "value": "-76.34593443543642"
+            "value": "-76.34593443534354"
         }
     }
 }
+
 

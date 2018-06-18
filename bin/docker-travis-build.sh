@@ -23,10 +23,12 @@ apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
 apt-add-repository -y "ppa:boost-latest/ppa"
 apt-add-repository -y "ppa:kubuntu-ppa/backports"
 apt-get -yq update >> ~/apt-get-update.log
-apt-get -yq --no-install-suggests --no-install-recommends --force-yes install g++-5 gfortran-5 g++-6 gfortran-6 g++-7 gfortran-7 libeigen3-dev libboost1.55-all-dev libblas-dev liblapack-dev libtbb-dev clang-5.0 cmake cmake-data
+apt-get -yq --no-install-suggests --no-install-recommends --force-yes install g++-5 gfortran-5 g++-6 gfortran-6 g++-7 gfortran-7 libeigen3-dev libboost1.55-all-dev libblas-dev liblapack-dev libtbb-dev clang-5.0 cmake cmake-data liblapacke-dev libopenblas-dev
 mkdir -p ${TRAVIS_BUILD_TOPDIR}
 cd ${TRAVIS_BUILD_TOPDIR}
 git clone https://evaleev:f0aee3276b87c17a47d8b18e7c82af7a1cad8842@github.com/ValeevGroup/mpqc4.git ${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
+cd ${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
+git checkout cp_ccsd
 END
 chmod +x $setup
 

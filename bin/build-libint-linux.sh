@@ -11,8 +11,8 @@ case "$CXX" in
         export CXX=/usr/bin/g++-$GCC_VERSION
         ;;
     clang++)
-        export CC=/usr/bin/clang-5.0
-        export CXX=/usr/bin/clang++-5.0
+        export CC=/usr/bin/clang-6.0
+        export CXX=/usr/bin/clang++-6.0
         ;;
     *)
         echo "Unknown C++ compiler:"

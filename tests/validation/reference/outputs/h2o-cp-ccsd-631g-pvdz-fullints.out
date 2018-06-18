@@ -57,7 +57,7 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
     "property":
     {
         "type": "Energy",
-        "precision": "1e-11",
+        "precision": "1e-10",
         "wfn": "$:wfn"
     }
 }
@@ -354,7 +354,7 @@ Reduced ABCD Memory Approach: No
    10 	 3.00032e-11 	 1.73173e-10 	 -0.121751336972 	        0.2 
    11 	 2.32688e-10 	 1.88137e-11 	 -0.121751336739 	        0.2 
    12 	 8.17846e-12 	 5.28791e-12 	 -0.121751336731 	        0.2 
-CCSD Energy  -0.121751336637938
+CCSD Energy  -0.121751336984883
 CCSD Time in CCSD: 3.064087826 S
   Output KeyVal (format=JSON):
 {
@@ -404,11 +404,11 @@ CCSD Time in CCSD: 3.064087826 S
     "property":
     {
         "type": "Energy",
-        "precision": "1e-11",
+        "precision": "1e-10",
         "wfn": "$:wfn",
         "value":
         {
-            "value": "-76.34593443534354"
+            "value": "-76.34593443569049"
         }
     }
 }

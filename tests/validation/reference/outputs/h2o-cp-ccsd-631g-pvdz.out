@@ -267,7 +267,7 @@ Reduced ABCD Memory Approach: Yes
     7 	 7.34348e-08 	 1.51206e-08 	 -0.121579524813 	        0.1 
     8 	 1.90501e-08 	 3.57859e-09 	 -0.121579505763 	        0.2 
     9 	 8.68870e-10 	 5.82376e-10 	 -0.121579504894 	        0.1 
-CCSD Energy  -0.121751336637938
+CCSD Energy  -0.121751336984883
 CCSD Time in CCSD: 3.626489752 S
   Output KeyVal (format=JSON):
 {
@@ -317,11 +317,11 @@ CCSD Time in CCSD: 3.626489752 S
     "property":
     {
         "type": "Energy",
-        "precision": "1e-11",
+        "precision": "1e-10",
         "wfn": "$:wfn",
         "value":
         {
-            "value": "-76.34593443534354"
+            "value": "-76.34593443569049"
         }
     }
 }

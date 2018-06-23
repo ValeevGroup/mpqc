@@ -13,6 +13,8 @@ addons:
       - kubuntu-backports
     sources: &clang_sources
       - llvm-toolchain-trusty-5.0
+      - llvm-toolchain-trusty-6.0
+      - llvm-toolchain-trusty
     packages: &base_packages
     - libeigen3-dev
     - libboost1.55-all-dev
@@ -75,8 +77,28 @@ matrix:
            - *base_packages
            - g++-7
            - gfortran-7
+    - compiler: gcc
+      env: GCC_VERSION=8 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-8
+           - gfortran-8
+    - compiler: gcc
+      env: GCC_VERSION=8 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-8
+           - gfortran-8
     - compiler: clang
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
+      env: CLANG_VERSION=7 GCC_VERSION=8 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
@@ -84,11 +106,11 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
-           - g++-7
-           - gfortran-7
-           - clang-5.0
+           - g++-8
+           - gfortran-8
+           - clang-7
     - compiler: clang
-      env: GCC_VERSION=7 BUILD_TYPE=Release
+      env: CLANG_VERSION=7 GCC_VERSION=8 BUILD_TYPE=Release
       addons:
         apt:
           sources:
@@ -96,10 +118,10 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
-           - g++-7
-           - gfortran-7
-           - clang-5.0
-  allow_failures:  # internal comppiler failures
+           - g++-8
+           - gfortran-8
+           - clang-7
+  allow_failures:  # internal compiler failures
     - compiler: gcc
       env: GCC_VERSION=6 BUILD_TYPE=Debug
       addons:

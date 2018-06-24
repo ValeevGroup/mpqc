@@ -15,8 +15,8 @@ if [ "$CXX" = "g++" ]; then
     export CXX=/usr/bin/g++-$GCC_VERSION
     export EXTRAFLAGS="-DHAVE_LAPACK_CONFIG_H=1 -DLAPACK_COMPLEX_CPP=1 -DBTAS_HAS_CBLAS=1"
 else
-    export CC=/usr/bin/clang-6.0
-    export CXX=/usr/bin/clang++-6.0
+    export CC=/usr/bin/clang-$CLANG_VERSION
+    export CXX=/usr/bin/clang++-$CLANG_VERSION
     # Boost 1.55 is too old, override Boost.PP detection of variadic macro support
     export EXTRAFLAGS="-DBOOST_PP_VARIADICS=1"
 fi

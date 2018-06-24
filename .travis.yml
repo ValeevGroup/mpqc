@@ -77,26 +77,6 @@ matrix:
            - *base_packages
            - g++-7
            - gfortran-7
-    - compiler: gcc
-      env: GCC_VERSION=8 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-8
-           - gfortran-8
-    - compiler: gcc
-      env: GCC_VERSION=8 BUILD_TYPE=Release
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-8
-           - gfortran-8
     - compiler: clang
       env: CLANG_VERSION=7 GCC_VERSION=8 BUILD_TYPE=Debug
       addons:
@@ -106,7 +86,6 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
-           - g++-8
            - gfortran-8
            - clang-7
     - compiler: clang
@@ -118,10 +97,10 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
-           - g++-8
            - gfortran-8
            - clang-7
-  allow_failures:  # internal compiler failures
+  allow_failures:
+    # internal compiler failures
     - compiler: gcc
       env: GCC_VERSION=6 BUILD_TYPE=Debug
       addons:
@@ -132,6 +111,7 @@ matrix:
            - *base_packages
            - g++-6
            - gfortran-6
+    # internal compiler failures
     - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Debug
       addons:
@@ -142,6 +122,28 @@ matrix:
            - *base_packages
            - g++-7
            - gfortran-7
+    # Elemental is broken
+    - compiler: gcc
+      env: GCC_VERSION=8 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-8
+           - gfortran-8
+    # Elemental is broken
+    - compiler: gcc
+      env: GCC_VERSION=8 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-8
+           - gfortran-8
 
 before_install:
 - "env"

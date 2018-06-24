@@ -18,7 +18,7 @@ else
     export CC=/usr/bin/clang-$CLANG_VERSION
     export CXX=/usr/bin/clang++-$CLANG_VERSION
     # Boost 1.55 is too old, override Boost.PP detection of variadic macro support
-    export EXTRAFLAGS="-DBOOST_PP_VARIADICS=1"
+    export EXTRAFLAGS="-DBOOST_PP_VARIADICS=1 -DHAVE_LAPACK_CONFIG_H=1 -DLAPACK_COMPLEX_CPP=1 -DBTAS_HAS_CBLAS=1"
 fi
 
 echo $($CC --version)

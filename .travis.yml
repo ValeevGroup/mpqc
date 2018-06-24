@@ -86,6 +86,7 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
+           - g++-8
            - gfortran-8
            - clang-7
     - compiler: clang
@@ -97,6 +98,7 @@ matrix:
            - *clang_sources
           packages:
            - *base_packages
+           - g++-8
            - gfortran-8
            - clang-7
   allow_failures:

@@ -9,6 +9,7 @@
 #include <boost/math/special_functions/legendre.hpp>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /*!
@@ -88,6 +89,7 @@ class PeriodicMARIJBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_BUILDER_H_

@@ -14,25 +14,31 @@
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
     typename ESolveDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<typename ESolveDensityBuilder<Tile, Policy>::array_type> r_xyz,
     int64_t nocc, int64_t ncore, int64_t nclusters, double TcutC,
-    std::string const &metric_decomp_type, double s_tolerance, bool localize,
-    std::string localization_method, bool clustered_coeffs)
-    : S_(S),
-      r_xyz_ints_(r_xyz),
-      TcutC_(TcutC),
-      localize_(localize),
-      localization_method_(localization_method),
-      n_coeff_clusters_(nclusters),
-      clustered_coeffs_(clustered_coeffs),
-      metric_decomp_type_(metric_decomp_type),
-      nocc_(nocc),
-      ncore_(ncore) {
+    std::string const &metric_decomp_type, double s_tolerance,
+    std::shared_ptr<OrbitalLocalizer < Tile, Policy>>
+localizer,
+bool localize_core,
+bool clustered_coeffs
+)
+:
+S_ (S),
+r_xyz_ints_(r_xyz),
+TcutC_(TcutC),
+localizer_(localizer),
+localize_core_(localize_core),
+n_coeff_clusters_(nclusters),
+clustered_coeffs_(clustered_coeffs),
+metric_decomp_type_(metric_decomp_type),
+nocc_(nocc),
+ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());
   if (metric_decomp_type_ == "cholesky_inverse") {
     M_inv_ = array_ops::cholesky_inverse(S_);
@@ -41,25 +47,17 @@ ESolveDensityBuilder<Tile, Policy>::ESolveDensityBuilder(
   } else if (metric_decomp_type_ == "conditioned") {
     M_inv_ = array_ops::conditioned_orthogonalizer(S_, s_tolerance);
   } else {
-    throw InputError(
-        "Error did not recognize overlap decomposition in "
-        "EsolveDensityBuilder",
-        __FILE__, __LINE__, "decompo_type", metric_decomp_type.c_str());
+    throw ProgrammingError("invalid metric_decomp_type in EsolveDensityBuilder",
+                           __FILE__, __LINE__);
   }
 
-  if (clustered_coeffs_ && localization_method_ == "boys-foster(valence)") {
-    throw InputError(
-        "clustered_coeffs conflicts with localization_method: "
-        "boys-foster(valence)",
-        __FILE__, __LINE__, "clustered_coeffs",
-        clustered_coeffs_ ? "true" : "false");
-  }
+  MPQC_ASSERT(!(clustered_coeffs_ && localize_core_ == false));
 
   auto inv1 = mpqc::fenced_now(S_.world());
   inverse_time_ = mpqc::duration_in_s(inv0, inv1);
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::pair<typename ESolveDensityBuilder<Tile, Policy>::array_type,
           typename ESolveDensityBuilder<Tile, Policy>::array_type>
 ESolveDensityBuilder<Tile, Policy>::operator()(
@@ -87,7 +85,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   // Get back to AO land
   C_occ_ao("i,j") = M_inv_("k,i") * C_occ("k,j");
   C_occ_ao.truncate();
-  if (!localize_) {
+  if (!localizer_) {
     eps_ = eps;
     auto nobs = eps.rows();
     auto tr_obs = scf::tr_occupied(n_coeff_clusters_, nobs);
@@ -100,19 +98,11 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   // Compute D to full accuracy
   D("i,j") = C_occ_ao("i,k") * C_occ_ao("j,k");
   D.truncate();
-  density_storages_.push_back(detail::array_storage(D));
+  density_storages_.push_back(mpqc::detail::array_storage(D));
 
-  if (localize_) {
+  if (localizer_) {
     auto l0 = mpqc::fenced_now(world);
-    auto U = ((localization_method_ == "rrqr") ||
-              (localization_method_ == "rrqr(valence)"))
-                 ? mpqc::scf::RRQRLocalization{}(
-                       C_occ_ao, S_,
-                       (localization_method_ == "rrqr(valence)" ? ncore_ : 0))
-                 : mpqc::scf::FosterBoysLocalization{}(
-                       C_occ_ao, r_xyz_ints_,
-                       (localization_method_ == "boys-foster(valence)" ? ncore_
-                                                                       : 0));
+    auto U = localizer_->compute(C_occ_ao, (localize_core_ ? ncore_ : 0));
     C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 
@@ -132,10 +122,11 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 #endif
 
   esolve_times_.push_back(mpqc::duration_in_s(e0, e1));
-  coeff_storages_.push_back(detail::array_storage(C_occ_ao));
+  coeff_storages_.push_back(mpqc::detail::array_storage(C_occ_ao));
 
   return std::make_pair(D, C_occ_ao);
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc

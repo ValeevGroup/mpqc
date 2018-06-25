@@ -355,7 +355,24 @@ class KeyVal {
   using value_type = ptree::data_type;  // = std::string
   constexpr static char separator = ':';
 
+  /// reads the flag controlling whether reading a deprecated path results in an exception
+  /// @return a boolean
+  static bool throw_if_deprecated_path() {
+    return throw_if_deprecated_path_accessor();
+  }
+  /// sets the flag controlling whether reading a deprecated path results in an exception
+  /// @param f the new value of the flag
+  static void set_throw_if_deprecated_path(bool f) {
+    throw_if_deprecated_path_accessor() = f;
+  }
+
  private:
+
+  static bool& throw_if_deprecated_path_accessor() {
+    static bool value = false;
+    return value;
+  }
+
   template <typename Class>
   struct is_sequence : std::false_type {};
 
@@ -484,10 +501,10 @@ class KeyVal {
     return bad_path ? false : exists_(resolved_path);
   }
 
-  /// check whether the given class exists
+  /// check whether the given DescribedClass object exists in the registry already.
   /// @param path the path
-  /// @return true if \c path class exists
-  /// TODO rename to exists_class_ptr
+  /// @return true if object \c path class exists
+  /// TODO rename to exists_object_ptr
   bool exists_class(const key_type& path) const {
     bool exists_class_ptr = false;
     auto iter = dc_registry_->find(resolve_path(path));
@@ -727,8 +744,11 @@ class KeyVal {
       auto result_optional = subtree.get().template get_value_optional<T>();
       if (result_optional) {
         result = result_optional.get();
-        std::cerr << "KeyVal read value from deprecated path "
-                  << deprecated_path << std::endl;
+        if (KeyVal::throw_if_deprecated_path())
+          throw ;
+        else
+          std::cerr << "KeyVal read value from deprecated path "
+                    << deprecated_path << std::endl;
       }
     }
 
@@ -794,6 +814,7 @@ class KeyVal {
   /// is not registered.
   /// @note `class_ptr<T>("path")`  is equivalent to
   /// `keyval("path").class_ptr<T>()`
+  /// TODO rename to object_ptr()
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type(),

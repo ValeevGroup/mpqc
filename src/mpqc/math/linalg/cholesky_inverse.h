@@ -19,7 +19,7 @@ TA::DistArray<Tile, Policy> cholesky_inverse(
                   << world.size() << "\n";
   }
 
-  auto A_eig = array_to_eigen(A);
+  auto A_eig = ::mpqc::array_ops::array_to_eigen(A);
   Eigen::LLT<decltype(A_eig)> llt(A_eig);
 
   Eigen::ComputationInfo info = llt.info();

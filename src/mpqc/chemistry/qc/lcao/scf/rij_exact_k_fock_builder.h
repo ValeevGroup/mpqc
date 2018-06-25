@@ -14,9 +14,10 @@
 #include <tiledarray.h>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy, typename Integral>
+template<typename Tile, typename Policy, typename Integral>
 class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
  public:
   using array_type = typename FockBuilder<Tile, Policy>::array_type;
@@ -42,13 +43,13 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
 
   array_type operator()(array_type const &D, array_type const &C,
                         double target_precision =
-                            std::numeric_limits<double>::epsilon()) override {
+                        std::numeric_limits<double>::epsilon()) override {
     auto &world = D.world();
     auto j0 = mpqc::fenced_now(world);
     array_type J;
     J("m, n") =
         eri3_("Z, m, n") *
-        (L_inv_("X, Z") * (L_inv_("X, Y") * (eri3_("Y, r, s") * D("r, s"))));
+            (L_inv_("X, Z") * (L_inv_("X, Y") * (eri3_("Y, r, s") * D("r, s"))));
     // symmetrize to account for permutational symmetry
     J("m, n") = 0.5 * (J("m, n") + J("n, m"));
     auto j1 = mpqc::fenced_now(world);
@@ -95,5 +96,7 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_

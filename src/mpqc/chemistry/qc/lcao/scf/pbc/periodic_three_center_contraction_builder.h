@@ -8,6 +8,7 @@
 #include <mutex>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// PeriodicThreeCenterContractionBuilder is an integral-direct implementation
@@ -885,5 +886,7 @@ class PeriodicThreeCenterContractionBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_THREE_CENTER_CONTRACTION_BUILDER_H_

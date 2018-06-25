@@ -3,7 +3,10 @@
 #include <algorithm>
 #include <limits>
 
+#include "mpqc/util/keyval/forcelink.h"
+
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// Foster-Boys maximizes this function
@@ -90,4 +93,23 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
+#if TA_DEFAULT_POLICY == 0
+
+template class mpqc::lcao::scf::FosterBoysLocalizer<TA::TensorD, TA::DensePolicy>;
+MPQC_CLASS_EXPORT2("FosterBoysLocalizer", mpqc::lcao::scf::FosterBoysLocalizer<TA::TensorD, TA::DensePolicy>);
+
+template class mpqc::lcao::scf::RRQRLocalizer<TA::TensorD, TA::DensePolicy>;
+MPQC_CLASS_EXPORT2("RRQRLocalizer", mpqc::lcao::scf::RRQRLocalizer<TA::TensorD, TA::DensePolicy>);
+
+#elif TA_DEFAULT_POLICY == 1
+
+template class mpqc::lcao::scf::FosterBoysLocalizer<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("FosterBoysLocalizer", mpqc::lcao::scf::FosterBoysLocalizer<TA::TensorD, TA::SparsePolicy>);
+
+template class mpqc::lcao::scf::RRQRLocalizer<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("RRQRLocalizer", mpqc::lcao::scf::RRQRLocalizer<TA::TensorD, TA::SparsePolicy>);
+
+#endif

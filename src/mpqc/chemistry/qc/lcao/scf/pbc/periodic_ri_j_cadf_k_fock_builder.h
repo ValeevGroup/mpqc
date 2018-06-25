@@ -7,9 +7,10 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/util.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy, typename Factory>
+template<typename Tile, typename Policy, typename Factory>
 class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
  public:
   using array_type = typename PeriodicFockBuilder<Tile, Policy>::array_type;
@@ -64,7 +65,7 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
         J_range(2) <= K_range(2)) {
       return K_range;
     } else if (J_range(0) >= K_range(0) && J_range(1) >= K_range(1) &&
-               J_range(2) >= K_range(2)) {
+        J_range(2) >= K_range(2)) {
       return J_range;
     } else {
       throw "invalid lattice ranges";
@@ -87,6 +88,7 @@ class PeriodicRIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_RI_J_CADF_K_FOCK_BUILDER_H_

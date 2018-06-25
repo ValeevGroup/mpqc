@@ -15,6 +15,7 @@
 
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 using Array2 = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>;
@@ -61,6 +62,7 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
 }
 
 }  // namespace  scf
+}  // namespace  lcao
 }  // namespace  mpqc
 
 

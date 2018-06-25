@@ -162,6 +162,7 @@ to_string(MPQCInit::InputFormat f) {
     | <tt>-k</tt>     | no           | print all registered (KeyVal-constructible) DescribedClass classes |
     | <tt>-h</tt>     | no           | print the usage info and exit                         |
     | <tt>-d</tt>     | no           | start the program and attach a debugger               |
+    | <tt>-t</tt>     | no           | throw if a deprecated keyword is read                 |
 
     \return a smart pointer to the newly created options parser object (see mpqc::GetLongOpt )
     */

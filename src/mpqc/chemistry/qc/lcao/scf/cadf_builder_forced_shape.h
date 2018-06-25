@@ -19,6 +19,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 class CADFForcedShapeFockBuilder : public FockBuilder {
@@ -47,7 +48,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
   std::vector<std::array<double, 3>> f_df_storages_;
 
  public:
-  template <typename Integral>
+  template<typename Integral>
   CADFForcedShapeFockBuilder(array_type const &M, Integral const &eri3,
                              darray_type const &C_df, darray_type const &G_df,
                              double clr_thresh, double j_clr_thresh)
@@ -97,7 +98,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
   }
 
-  ~CADFForcedShapeFockBuilder() { }
+  ~CADFForcedShapeFockBuilder() {}
 
   array_type operator()(array_type const &D, array_type const &C) override {
     array_type G;
@@ -125,7 +126,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                 << leader << "\tdL to K time: " << dl_to_k_times_.back()
                 << "\n";
       auto total_k_time = c_mo_times_.back() + f_df_times_.back() +
-                          dl_times_.back() + dl_to_k_times_.back();
+          dl_times_.back() + dl_to_k_times_.back();
       std::cout << leader << "\ttotal K time: " << total_k_time << "\n";
     }
   }
@@ -192,6 +193,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_FORCED_SHAPE_H_

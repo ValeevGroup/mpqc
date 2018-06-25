@@ -10,6 +10,7 @@
 #include "mpqc/math/tensor/clr/vector_localization.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 template <typename Tile, typename Policy>
@@ -41,5 +42,7 @@ void clustered_coeffs(
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLUSTERD_COEFFS_H_

@@ -8,6 +8,7 @@
 #include "mpqc/math/linalg/cholesky_inverse.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Factory>
@@ -219,6 +220,7 @@ class PeriodicRIJBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_RI_J_BUILDER_H_

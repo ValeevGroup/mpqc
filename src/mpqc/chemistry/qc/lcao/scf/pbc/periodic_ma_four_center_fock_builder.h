@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /*!
@@ -133,6 +134,7 @@ class PeriodicMAFourCenterFockBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_FOUR_CENTER_FOCK_BUILDER_H_

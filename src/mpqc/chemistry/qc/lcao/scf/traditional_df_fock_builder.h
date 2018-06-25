@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Integral>
@@ -116,6 +117,7 @@ class DFFockBuilder : public FockBuilder<Tile,Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_DF_FOCK_BUILDER_H_

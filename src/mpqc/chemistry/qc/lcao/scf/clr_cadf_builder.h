@@ -25,6 +25,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 class ClrCADFFockBuilder : public FockBuilder {
@@ -32,8 +33,8 @@ class ClrCADFFockBuilder : public FockBuilder {
   using TileType = TA::TensorD;
   using ArrayType = FockBuilder::array_type;
   using DArrayType =
-      TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
-                    TA::SparsePolicy>;
+  TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
+                TA::SparsePolicy>;
 
  private:
   ArrayType E_;  // <Κ |G| κ λ > three center two electron coulomb integrals
@@ -84,7 +85,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     auto func = std::function<clr_type(TA::TensorD &&)>(my_class);
 
     return lcao::sparse_integrals(world, eng_pool, basis_array, p_screen,
-                                       func);
+                                  func);
   }
 
  public:
@@ -110,9 +111,9 @@ class ClrCADFFockBuilder : public FockBuilder {
     E_clr_sizes_ = detail::array_storage(dE_);
     if (dE_.world().rank() == 0) {
       ExEnv::out0() << indent << "E with clr storage:\n"
-                << "\tDense  " << E_clr_sizes_[0] << "\n"
-                << "\tSparse " << E_clr_sizes_[1] << "\n"
-                << "\tCLR    " << E_clr_sizes_[2] << std::endl;
+                    << "\tDense  " << E_clr_sizes_[0] << "\n"
+                    << "\tSparse " << E_clr_sizes_[1] << "\n"
+                    << "\tCLR    " << E_clr_sizes_[2] << std::endl;
     }
   }
 
@@ -186,7 +187,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     }
   }
 
-  ~ClrCADFFockBuilder() { }
+  ~ClrCADFFockBuilder() {}
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {
@@ -260,8 +261,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     ArrayType J;
     J("mu, nu") =
         E_("X, mu, nu") *
-        (Mchol_inv_("Z, X") *
-         (Mchol_inv_("Z, Y") * (E_("Y, rho, sigma") * D("rho, sigma"))));
+            (Mchol_inv_("Z, X") *
+                (Mchol_inv_("Z, Y") * (E_("Y, rho, sigma") * D("rho, sigma"))));
     auto j1 = mpqc::fenced_now(world);
     j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
@@ -414,6 +415,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLR_CADF_BUILDER_H_

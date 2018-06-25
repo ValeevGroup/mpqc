@@ -2,18 +2,48 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_
 
-#include <tiledarray.h>
-#include "mpqc/math/external/eigen/eigen.h"
-
 #include <cmath>
-
 #include <array>
 #include <iomanip>
 
+#include <tiledarray.h>
+
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/assert.h"
 
 namespace mpqc {
+namespace lcao {
+
+/// Localizes orbitals using LCAO-specific info (e.g. AO-basis operators)
+template <typename Tile, typename Policy>
+class OrbitalLocalizer : public DescribedClass {
+ public:
+  /// @param[in] C input LCAOs
+  /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
+  /// non-localized
+  /// @return transformation matrix U that converts C to localized LCAOs
+  virtual TA::DistArray<Tile, Policy> compute(
+      TA::DistArray<Tile, Policy> const &C,
+      size_t ncols_of_C_to_skip = 0) const = 0;
+
+  /// this must be called before compute()
+  OrbitalLocalizer &initialize(TA::DistArray<Tile, Policy> S_ao,
+                               std::vector<TA::DistArray<Tile, Policy>> mu_ao) {
+    ao_s_ = array_ops::array_to_eigen(S_ao);
+    ao_x_ = array_ops::array_to_eigen(mu_ao[0]);
+    ao_y_ = array_ops::array_to_eigen(mu_ao[1]);
+    ao_z_ = array_ops::array_to_eigen(mu_ao[2]);
+    initialized_ = true;
+    return *this;
+  }
+
+ protected:
+  array_ops::Matrix<typename Tile::value_type> ao_s_, ao_x_, ao_y_, ao_z_;
+  bool initialized_ = false;
+};
+
 namespace scf {
 
 using Mat =
@@ -32,29 +62,42 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
 
 /// Performs Foster-Boys localization
 /// (see J. Foster and S. Boys, Rev Mod Phys 32, 300 (1960)).
-class FosterBoysLocalization {
+template <typename Tile, typename Policy>
+class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
  public:
+  // clang-format off
+  /**
+   * KeyVal constructor for FosterBoysLocalizer
+   *
+   * @param kv the KeyVal object; it will be queried for all keywords of AOWavefunction as well as the following additional keywords:
+   * | Keyword | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | @c convergence | double | 1e-8 | the Jacobi solver is converged when the maximum rotation angle (in rad) does not exceed this value  |
+   * | @c max_iter | int | 50 | the maximum number of Jacobi iterations |
+   */
+  // clang-format on
+  FosterBoysLocalizer(const KeyVal &kv)
+      : jacobi_convergence_threshold_(kv.value<double>("convergence", 1e-8, KeyVal::is_nonnegative)),
+        jacobi_max_iter_(kv.value<std::size_t>("max_iter", 50)) {}
+
   /// @param C input LCAOs
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
   /// @return transformation matrix U that converts C to localized LCAOs
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> operator()(
+  TA::DistArray<Tile, Policy> compute(
       TA::DistArray<Tile, Policy> const &C,
-      std::vector<TA::DistArray<Tile, Policy>> const &r_ao,
-      size_t ncols_of_C_to_skip = 0) const {
-    auto ao_x = array_ops::array_to_eigen(r_ao[0]);
-    auto ao_y = array_ops::array_to_eigen(r_ao[1]);
-    auto ao_z = array_ops::array_to_eigen(r_ao[2]);
+      size_t ncols_of_C_to_skip = 0) const override {
+    MPQC_ASSERT(this->initialized_);
     auto c_eig = array_ops::array_to_eigen(C);
 
     auto trange = C.trange();
     return array_ops::eigen_to_array<Tile, Policy>(
-        C.world(), (*this)(c_eig, ao_x, ao_y, ao_z, ncols_of_C_to_skip),
-        trange.data()[1], trange.data()[1]);
+        C.world(), (*this)(c_eig, this->ao_x_, this->ao_y_, this->ao_z_, ncols_of_C_to_skip),
+        trange.data()[0], trange.data()[1]);
   }
 
+ private:
   /// @param[in,out] C on input: LCAO coefficients, on output: localized LCAO
   /// coefficients
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
@@ -70,33 +113,33 @@ class FosterBoysLocalization {
         C.block(0, ncols_of_C_to_skip, C.rows(), C.cols() - ncols_of_C_to_skip);
 
     EigMat U_loc = EigMat::Identity(C_loc.cols(), C_loc.cols());
-    jacobi_sweeps(C_loc, U_loc, {ao_x, ao_y, ao_z});
+    jacobi_sweeps(C_loc, U_loc, {ao_x, ao_y, ao_z},
+                  jacobi_convergence_threshold_, jacobi_max_iter_);
 
     EigMat U = EigMat::Identity(C.cols(), C.cols());
     U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, U_loc.rows(),
             U_loc.cols()) = U_loc;
     return U;
   }
+
+  double jacobi_convergence_threshold_;
+  size_t jacobi_max_iter_;
 };
 
 /// Performs Rank Revealing QR localization
 /// (see Damle, A. et al., J. Chem. Theory Comput. 2015, 11 (4), 1463.)
-class RRQRLocalization {
+template <typename Tile, typename Policy>
+class RRQRLocalizer : public OrbitalLocalizer<Tile,Policy> {
  public:
-  /// @param[in] C Input LCAOs
-  /// @param[in] S Overlap matrix
-  /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
-  /// non-localized
-  /// @return transformation matrix U that converts C to localized LCAOs
-  template <typename Tile, typename Policy>
-  TA::DistArray<Tile, Policy> operator()(TA::DistArray<Tile, Policy> &C,
-                                         TA::DistArray<Tile, Policy> const &S,
-                                         size_t ncols_of_C_to_skip = 0) const {
+  RRQRLocalizer(const KeyVal &) {}
+
+  TA::DistArray<Tile, Policy> compute(TA::DistArray<Tile, Policy> const &C,
+                                      size_t ncols_of_C_to_skip = 0) const override {
+    MPQC_ASSERT(this->initialized_);
     auto c_eig = array_ops::array_to_eigen(C);
-    auto s_eig = array_ops::array_to_eigen(S);
     auto trange = C.trange();
     return array_ops::eigen_to_array<Tile, Policy>(
-        C.world(), (*this)(c_eig, s_eig, ncols_of_C_to_skip), trange.data()[1],
+        C.world(), (*this)(c_eig, this->ao_s_, ncols_of_C_to_skip), trange.data()[0],
         trange.data()[1]);
   }
 
@@ -128,6 +171,7 @@ class RRQRLocalization {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_

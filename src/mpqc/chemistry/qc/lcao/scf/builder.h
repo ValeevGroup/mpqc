@@ -10,12 +10,13 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// FockBuilder computes the (2-e part) of the Fock matrix using either the
 /// (1-particle) density matrix
 /// or the occupied orbital AO coefficients.
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 class FockBuilder {
  public:
   using array_type = TA::DistArray<Tile, Policy>;
@@ -40,7 +41,7 @@ class FockBuilder {
  * PeriodicFockBuilder computes the (2-e part of) the Fock matrix in periodic HF
  * using the (1-particle) density matrix
  */
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 class PeriodicFockBuilder {
  public:
   using array_type = TA::DistArray<Tile, Policy>;
@@ -71,6 +72,7 @@ class PeriodicFockBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_BUILDER_H_

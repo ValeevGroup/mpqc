@@ -819,19 +819,23 @@ class KeyVal {
   /// @param bypass_registry if \c true will not query the registry for the
   /// existence of the object
   ///        and will not place the newly-constructed object in the registry
+  /// @param disable_bad_input if \c true will now return a null pointer instead
+  ///        of throwing KeyVal::bad_input
   /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c
   /// path does not exist.
   /// @throws KeyVal::bad_input if the value of keyword "type" is not a
   /// registered class key,
   /// or if the user did not specify keyword "type" and class T is abstract or
-  /// is not registered.
+  /// is not registered; if disable_bad_input is true, will not throw an exception but simply
+  /// return a null pointer
   /// @note `class_ptr<T>("path")`  is equivalent to
   /// `keyval("path").class_ptr<T>()`
   /// TODO rename to object_ptr()
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type(),
-                               bool bypass_registry = false) const {
+                               bool bypass_registry = false,
+                               bool disable_bad_input = false) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
     if (!bypass_registry) {
@@ -870,6 +874,7 @@ class KeyVal {
     if (not exists_(type_path)) {
       // no user override for type = try to construct T
       if (std::is_abstract<T>::value) {
+        if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
                 "KeyVal::class_ptr<T>(): T is an abstract class, "
@@ -878,6 +883,7 @@ class KeyVal {
             abs_path);
       }
       if (!DescribedClass::is_registered<T>()) {
+        if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
                 "KeyVal::class_ptr<T>(): T is an unregistered concrete class, "

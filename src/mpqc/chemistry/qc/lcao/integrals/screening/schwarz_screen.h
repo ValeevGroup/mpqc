@@ -342,8 +342,7 @@ class SchwarzScreen : public Screener {
         estimate(std::forward<IDX>(idx)...);  // optional estimation for set idx
     if (est && D != 0.0) {  // Check that we were able to estimate the integral
                             // set AND density norm is large than zero
-      return (D * D * est.get()) <
-             thresh2_;  // If D^2 * est below threshold then skip this set
+      return (D * D * (*est)) < thresh2_;  // If D^2 * est below threshold then skip this set
     } else {            // We were unable to estimate this set for some reason
       return false;     // thus we should compute the integral
     }

@@ -659,7 +659,7 @@ class KeyVal {
     T result;
     try {
       if (auto subtree = this->get_subtree(path)) {
-        result = subtree.get().get_value<T>();
+        result = (*subtree).get_value<T>();
       } else
         throw KeyVal::bad_input(std::string("path not found"),
                                 to_absolute_path(path));
@@ -747,13 +747,13 @@ class KeyVal {
 
     auto subtree = this->get_subtree(path);
     if (!path.empty() && subtree) {
-      result = subtree.get().template get_value<T>(default_value);
+      result = (*subtree).template get_value<T>(default_value);
     } else if (!deprecated_path.empty() &&
                (subtree = this->get_subtree(deprecated_path))) {
       read_path = &deprecated_path;
       auto result_optional = subtree.get().template get_value_optional<T>();
       if (result_optional) {
-        result = result_optional.get();
+        result = *result_optional;
         if (KeyVal::throw_if_deprecated_path()) {
           std::ostringstream oss;
           oss << "KeyVal read value from deprecated path";
@@ -794,7 +794,7 @@ class KeyVal {
     T result = default_value;
 
     if (auto subtree = this->get_subtree(path)) {
-      result = subtree.get().template get_value<T>(default_value);
+      result = (*subtree).template get_value<T>(default_value);
     }
 
     if (validator(result) == false) {
@@ -1193,7 +1193,7 @@ class SubTreeKeyVal : public KeyVal {
 
   KeyVal keyval(const key_type& path) const override {
     if (auto subtree = this->get_subtree(path))
-      return SubTreeKeyVal(subtree.get(), *this);
+      return SubTreeKeyVal(*subtree, *this);
     else
       throw KeyVal::bad_input(
           std::string("detail::KeyVal::keyval: path not found"), path);
@@ -1234,7 +1234,7 @@ SequenceContainer KeyVal::value(
   std::remove_reference_t<Validator> validator(std::forward<Validator>(validator_));
   if (auto vec_ptree_opt = this->get_subtree(path)) {
     try {
-      auto vec_ptree = vec_ptree_opt.get();
+      auto vec_ptree = *vec_ptree_opt;
       KeyVal::resize(result, vec_ptree.size());
       auto iter = result.begin();
       size_t count = 0;
@@ -1273,7 +1273,7 @@ std::enable_if_t<not KeyVal::is_sequence<T>::value &&
         std::declval<const T&>()))>::value,
                  T>
 KeyVal::value(const key_type& path, Validator&& validator) const {
-  const detail::SubTreeKeyVal stree_kv(this->get_subtree(path).get(), *this);
+  const detail::SubTreeKeyVal stree_kv(*(this->get_subtree(path)), *this);
   auto result = T(stree_kv);
   if (validator(result) == false) {
     std::ostringstream oss;

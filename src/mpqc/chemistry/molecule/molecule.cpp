@@ -143,7 +143,7 @@ std::vector<AtomBasedClusterable> Molecule::read_xyz(std::istream &file) {
         AtomicData::get_default()->isotope_mass(l_atom.atomic_number);
     if (!most_abundant_mass)
       throw Uncomputable("cannot assign default mass", __FILE__, __LINE__);
-    Atom atom({l_atom.x, l_atom.y, l_atom.z}, most_abundant_mass.get(),
+    Atom atom({l_atom.x, l_atom.y, l_atom.z}, *most_abundant_mass,
               l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }

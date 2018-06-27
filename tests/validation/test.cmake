@@ -34,7 +34,7 @@ if (1)
       endif()
   endif()
 
-  set(MPQC_ARGS "-D" "-p" "${srcDir}/reference/inputs"
+  set(MPQC_ARGS "-D" "-t" "-p" "${srcDir}/reference/inputs"
   "-i" "${srcDir}/reference/inputs/${testName}.json")
   execute_process(COMMAND
                   ${mpiExec}

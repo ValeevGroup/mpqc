@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// PeriodicCADFKBuilder computes the exchange term in periodic HF using
@@ -227,7 +228,7 @@ class PeriodicCADFKBuilder
     t1 = mpqc::fenced_now(world);
     auto t_C = mpqc::duration_in_s(t0, t1);
 
-    detail::print_size_info(C_, "C(X,μ,ν)");
+    mpqc::detail::print_size_info(C_, "C(X,μ,ν)");
 
     if (print_detail_) {
       ExEnv::out0() << "\nCADF-K init time decomposition:\n"
@@ -283,7 +284,7 @@ class PeriodicCADFKBuilder
       t1 = mpqc::fenced_now(world);
       t_Q += mpqc::duration_in_s(t0, t1);
 
-      detail::print_size_info(Q, "Q(Y,ν,ρ)");
+      mpqc::detail::print_size_info(Q, "Q(Y,ν,ρ)");
 
       // compute F(Y, μ_0, ρ_Rj) = 2 * E(Y, μ_0, ρ_Rj) - C(X, μ_0, ρ_Rj) M(X, Y)
       t0 = mpqc::fenced_now(world);
@@ -312,7 +313,7 @@ class PeriodicCADFKBuilder
       t1 = mpqc::fenced_now(world);
       t_F = mpqc::duration_in_s(t0, t1);
 
-      detail::print_size_info(F, "F(Y,μ,ρ)");
+      mpqc::detail::print_size_info(F, "F(Y,μ,ρ)");
 
       // permute basis indices
       t0 = mpqc::fenced_now(world);
@@ -1470,7 +1471,7 @@ class PeriodicCADFKBuilder
   void dump_matrix(array_type const &M, std::string const &name, int rj = 0) {
     std::cout << "Dumping matrix to file " << name << "_" << rj << ".csv ...\n";
 
-    RowMatrixXd M_eig = array_ops::array_to_eigen(M);
+    RowMatrixXd M_eig = math::array_to_eigen(M);
 
     std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M_eig.cols();
@@ -1588,6 +1589,7 @@ class PeriodicCADFKBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CADF_K_BUILDER_H_H_

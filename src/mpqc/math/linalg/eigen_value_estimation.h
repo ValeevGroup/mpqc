@@ -10,6 +10,9 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
 
+namespace mpqc {
+namespace math {
+
 // Compute the min eval guess for a row of tiles.
 template <typename It>
 double min_eval_guess(It first, It second) {
@@ -150,5 +153,8 @@ double min_eval_est(Array const &H, Array const &S) {
 
 /*     return invert(HbetaS); */
 /* } */
+
+}  // namespace math
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_EIGEN_VALUE_ESTIMATION_H_

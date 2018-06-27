@@ -415,7 +415,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       result("i,j") = -result("i,j");
     }
 
-    auto tmp = array_ops::eigen_inverse(result);
+    auto tmp = math::eigen_inverse(result);
     result("i,j") = tmp("i,j");
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -439,16 +439,16 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
 
     if (iterative_inv_sqrt_) {
-      TArray tmp = array_ops::inverse_sqrt(result);
+      TArray tmp = math::inverse_sqrt(result);
       result("i,j") = tmp("i,j");
     } else {
-      auto result_eig = array_ops::array_to_eigen(result);
+      auto result_eig = math::array_to_eigen(result);
 
       Eigen::SelfAdjointEigenSolver<decltype(result_eig)> es(result_eig);
       decltype(result_eig) inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<Tile, Policy>(result.world(), inv_eig,
+      result = math::eigen_to_array<Tile, Policy>(result.world(), inv_eig,
                                                        tr_result, tr_result);
     }
 

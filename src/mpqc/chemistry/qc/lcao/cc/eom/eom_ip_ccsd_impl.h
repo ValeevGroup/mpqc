@@ -140,9 +140,9 @@ EOM_IP_CCSD<Tile, Policy>::ip_eom_ccsd_davidson_solver(
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
   {
     EigenVector<numeric_type> eps_o =
-        array_ops::array_to_eigen(imds.FIJ).diagonal();
+        math::array_to_eigen(imds.FIJ).diagonal();
     EigenVector<numeric_type> eps_v =
-        array_ops::array_to_eigen(imds.FAB).diagonal();
+        math::array_to_eigen(imds.FAB).diagonal();
 
     pred = std::make_shared<cc::IPPred<TArray>>(eps_o, eps_v);
   }

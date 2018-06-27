@@ -10,6 +10,7 @@
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/density_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 #include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/mpqc_config.h"
@@ -33,19 +34,17 @@ class RHF
   /**
    * KeyVal constructor for RHF
    *
-   * keywords: takes all keywords from AOWavefunction
-   *
+   * @param kv the KeyVal object; it will be queried for all keywords of AOWavefunction as well as the following additional keywords:
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | @c max_iter | int | 30 | maximum number of iterations |
    * | @c density_builder | string | "eigen_solve" | type of DensityBuilder, valid values are "eigen_solve" (use ESolveDensityBuilder) and "purification" (use PurificationDensityBuilder) |
-   * | @c localize | bool | false | if true, will localize occupied orbitals in DensityBuilder |
-   * | @c localization_method | string | "boys-foster" | localization method; valid choices are "boys-foster" (localize all occupied orbitals), "boys-foster(valence)" (same as "boys-foster" but do not localize the core), "rrqr" (localize all occupied orbitals by Rank Revealing QR), "rrqr(valence)" (same as "rrqr" but do not localize the core). |
+   * | @c localizer | class | none | will use this object to localize the occupied orbitals; if given an empty object (or, alternatively, keyword @c localize is set to @c true), will use FosterBoysLocalizer with default parameters |
+   * | @c localize_core | bool | true | if false, core orbitals will not be localized. |
    * | @c clustered_coeffs | bool | false | if true, will recluster coeffs in DensityBuilder; will error if true and @c localization_method is "boys-foster(valence)" or "rrqr(valence)" |
    * | @c t_cut_c | real | 0.0 | threshold in DensityBuilder, SparsePolicy only |
    * | @c decompo_type | string | "conditioned" | (cholesky_inverse, inverse_sqrt, conditioned) only valid if use ESolveDensityBuilder |
    * | @c s_tolerance | real | 1e8 | S condition number threshold in DensityBuilder, valid when @c decompo_type is set to conditioned |
-   *
    */
   // clang-format on
   RHF(const KeyVal& kv);
@@ -102,8 +101,8 @@ class RHF
   std::vector<double> build_times_;
 
   std::string density_builder_str_;
-  bool localize_;
-  std::string localization_method_;
+  std::shared_ptr<OrbitalLocalizer<Tile,Policy>> localizer_;
+  bool localize_core_ = true;
   bool clustered_coeffs_;
   double t_cut_c_;
 

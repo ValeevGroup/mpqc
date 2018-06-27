@@ -10,7 +10,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 template <typename T>
 using Matrix =
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -207,7 +207,7 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
   return TA::TiledRange1(blocks.begin(), blocks.end());
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_

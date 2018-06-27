@@ -50,9 +50,9 @@ TA::DistArray<Tile, Policy> compute_cis_d_double_amplitude(
   auto f_ij = lcao_factory.compute(L"<i|F|j>" + postfix);
 
   EigenVector<typename Tile::numeric_type> eps_o =
-      array_ops::array_to_eigen(f_ij).diagonal();
+      math::array_to_eigen(f_ij).diagonal();
   EigenVector<typename Tile::numeric_type> eps_v =
-      array_ops::array_to_eigen(f_ab).diagonal();
+      math::array_to_eigen(f_ab).diagonal();
 
   EigenVector<typename Tile::numeric_type> ens(eps_o.rows() + eps_v.rows());
   ens << eps_o, eps_v;

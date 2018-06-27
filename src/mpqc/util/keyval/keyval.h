@@ -355,7 +355,24 @@ class KeyVal {
   using value_type = ptree::data_type;  // = std::string
   constexpr static char separator = ':';
 
+  /// reads the flag controlling whether reading a deprecated path results in an exception
+  /// @return a boolean
+  static bool throw_if_deprecated_path() {
+    return throw_if_deprecated_path_accessor();
+  }
+  /// sets the flag controlling whether reading a deprecated path results in an exception
+  /// @param f the new value of the flag
+  static void set_throw_if_deprecated_path(bool f) {
+    throw_if_deprecated_path_accessor() = f;
+  }
+
  private:
+
+  static bool& throw_if_deprecated_path_accessor() {
+    static bool value = false;
+    return value;
+  }
+
   template <typename Class>
   struct is_sequence : std::false_type {};
 
@@ -429,6 +446,20 @@ class KeyVal {
     return result;
   }
 
+  /// counts the number of children of the node at this absolute path
+  /// @param abs_path an absolute path
+  /// @return an optional that does not contain a value if \c path does not exist or it points to a simple keyword,
+  ///         otherwise containing the number of elements (>=0) if \c path points to an array or
+  ///         a keyword group
+  boost::optional<size_t> count_impl(const key_type& abs_path) const {
+    auto child_opt =
+        top_tree_->get_child_optional(ptree::path_type{abs_path, separator});
+    if (child_opt == boost::optional<ptree&>())
+      return boost::optional<size_t>{};
+    else
+      return child_opt->size();
+  }
+
  public:
   /// creates empty KeyVal
   KeyVal();
@@ -484,10 +515,10 @@ class KeyVal {
     return bad_path ? false : exists_(resolved_path);
   }
 
-  /// check whether the given class exists
+  /// check whether the given DescribedClass object exists in the registry already.
   /// @param path the path
-  /// @return true if \c path class exists
-  /// TODO rename to exists_class_ptr
+  /// @return true if object \c path class exists
+  /// TODO rename to exists_object_ptr
   bool exists_class(const key_type& path) const {
     bool exists_class_ptr = false;
     auto iter = dc_registry_->find(resolve_path(path));
@@ -505,17 +536,12 @@ class KeyVal {
 
   /// counts the number of children of the node at this path
   /// @param path the path
-  /// @return 0 if \c path does not exist or it points to a simple keyword,
-  ///         the number of elements (>=0) if \c path points to an array or
+  /// @return an optional that does not contain a value if \c path does not exist or it points to a simple keyword,
+  ///         otherwise containing the number of elements (>=0) if \c path points to an array or
   ///         a keyword group
-  size_t count(const key_type& path) const {
-    auto resolved_path = resolve_path(path);
-    auto child_opt =
-        top_tree_->get_child_optional(ptree::path_type{path, separator});
-    if (child_opt == boost::optional<ptree&>())
-      return 0;
-    else
-      return child_opt->size();
+  boost::optional<size_t> count(const key_type& path) const {
+    auto abs_path = resolve_path(path);
+    return count_impl(abs_path);
   }
 
   /// @brief assign simple \c value at the given path (overwrite, if necessary)
@@ -633,7 +659,7 @@ class KeyVal {
     T result;
     try {
       if (auto subtree = this->get_subtree(path)) {
-        result = subtree.get().get_value<T>();
+        result = (*subtree).get_value<T>();
       } else
         throw KeyVal::bad_input(std::string("path not found"),
                                 to_absolute_path(path));
@@ -696,18 +722,18 @@ class KeyVal {
   /// return value corresponding to a path and convert to the desired type.
   /// @tparam T the desired value type
   /// @tparam Validator the type of @c validator
-  /// @param path the path to the value
+  /// @param path the path to the value; ignored if empty
   /// @param default_value the default value will be returned if @c path is not
   /// found.
   /// @param deprecated_path a deprecated path will only be queried if its not
-  ///        empty and @c path not found;
+  ///        empty and @c path is empty or not found;
   ///        if its value is used a message will be added
   ///        to @std::cerr. The default is an empty string.
   /// @param validator a callable for which @c validator(T) returns a boolean.
   ///        Before returning a value, it will be validated by @c validator .
   ///        The default is a dummy validator that always returns @c true.
   /// @return value of type \c T
-  /// @throws KeyVal::bad_input if validation failed.
+  /// @throws KeyVal::bad_input if validation failed, or if KeyVal::throw_if_deprecated_path returns true and @c deprecated_path was read.
   template <typename T, typename Validator = dummy_validator_t,
             typename = std::enable_if_t<
                 not KeyVal::is_sequence<T>::value &&
@@ -719,16 +745,23 @@ class KeyVal {
     T result = default_value;
     const key_type* read_path = &path;
 
-    if (auto subtree = this->get_subtree(path)) {
-      result = subtree.get().template get_value<T>(default_value);
+    auto subtree = this->get_subtree(path);
+    if (!path.empty() && subtree) {
+      result = (*subtree).template get_value<T>(default_value);
     } else if (!deprecated_path.empty() &&
                (subtree = this->get_subtree(deprecated_path))) {
       read_path = &deprecated_path;
       auto result_optional = subtree.get().template get_value_optional<T>();
       if (result_optional) {
-        result = result_optional.get();
-        std::cerr << "KeyVal read value from deprecated path "
-                  << deprecated_path << std::endl;
+        result = *result_optional;
+        if (KeyVal::throw_if_deprecated_path()) {
+          std::ostringstream oss;
+          oss << "KeyVal read value from deprecated path";
+          throw KeyVal::bad_input(oss.str(), to_absolute_path(*read_path));
+        }
+        else
+          std::cerr << "KeyVal read value from deprecated path "
+                    << to_absolute_path(*read_path) << std::endl;
       }
     }
 
@@ -761,7 +794,7 @@ class KeyVal {
     T result = default_value;
 
     if (auto subtree = this->get_subtree(path)) {
-      result = subtree.get().template get_value<T>(default_value);
+      result = (*subtree).template get_value<T>(default_value);
     }
 
     if (validator(result) == false) {
@@ -786,18 +819,23 @@ class KeyVal {
   /// @param bypass_registry if \c true will not query the registry for the
   /// existence of the object
   ///        and will not place the newly-constructed object in the registry
+  /// @param disable_bad_input if \c true will now return a null pointer instead
+  ///        of throwing KeyVal::bad_input
   /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c
   /// path does not exist.
   /// @throws KeyVal::bad_input if the value of keyword "type" is not a
   /// registered class key,
   /// or if the user did not specify keyword "type" and class T is abstract or
-  /// is not registered.
+  /// is not registered; if disable_bad_input is true, will not throw an exception but simply
+  /// return a null pointer
   /// @note `class_ptr<T>("path")`  is equivalent to
   /// `keyval("path").class_ptr<T>()`
+  /// TODO rename to object_ptr()
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type(),
-                               bool bypass_registry = false) const {
+                               bool bypass_registry = false,
+                               bool disable_bad_input = false) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
     if (!bypass_registry) {
@@ -825,8 +863,8 @@ class KeyVal {
       }
     }
 
-    // return nullptr if the path does not exist
-    if (!this->exists_(abs_path)) {
+    // return nullptr if the path does not exist, or does not point to an aggregate
+    if (!this->exists_(abs_path) || !static_cast<bool>(this->count_impl(abs_path))) {
       return std::shared_ptr<T>();
     }
 
@@ -836,6 +874,7 @@ class KeyVal {
     if (not exists_(type_path)) {
       // no user override for type = try to construct T
       if (std::is_abstract<T>::value) {
+        if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
                 "KeyVal::class_ptr<T>(): T is an abstract class, "
@@ -844,6 +883,7 @@ class KeyVal {
             abs_path);
       }
       if (!DescribedClass::is_registered<T>()) {
+        if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
                 "KeyVal::class_ptr<T>(): T is an unregistered concrete class, "
@@ -1130,7 +1170,7 @@ class KeyVal {
   /// \brief KeyVal exception
   struct bad_input : public std::runtime_error {
     bad_input(const std::string& _what, const key_type& path)
-        : std::runtime_error(_what + "(path=" + path + ")") {}
+        : std::runtime_error(_what + " (path=" + path + ")") {}
     virtual ~bad_input() noexcept {}
   };
 };  // KeyVal
@@ -1153,7 +1193,7 @@ class SubTreeKeyVal : public KeyVal {
 
   KeyVal keyval(const key_type& path) const override {
     if (auto subtree = this->get_subtree(path))
-      return SubTreeKeyVal(subtree.get(), *this);
+      return SubTreeKeyVal(*subtree, *this);
     else
       throw KeyVal::bad_input(
           std::string("detail::KeyVal::keyval: path not found"), path);
@@ -1194,7 +1234,7 @@ SequenceContainer KeyVal::value(
   std::remove_reference_t<Validator> validator(std::forward<Validator>(validator_));
   if (auto vec_ptree_opt = this->get_subtree(path)) {
     try {
-      auto vec_ptree = vec_ptree_opt.get();
+      auto vec_ptree = *vec_ptree_opt;
       KeyVal::resize(result, vec_ptree.size());
       auto iter = result.begin();
       size_t count = 0;
@@ -1233,7 +1273,7 @@ std::enable_if_t<not KeyVal::is_sequence<T>::value &&
         std::declval<const T&>()))>::value,
                  T>
 KeyVal::value(const key_type& path, Validator&& validator) const {
-  const detail::SubTreeKeyVal stree_kv(this->get_subtree(path).get(), *this);
+  const detail::SubTreeKeyVal stree_kv(*(this->get_subtree(path)), *this);
   auto result = T(stree_kv);
   if (validator(result) == false) {
     std::ostringstream oss;

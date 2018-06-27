@@ -111,7 +111,7 @@ typename CABSSingles<Tile>::real_t CABSSingles<Tile>::compute(
     } else {
       F_Ma = lcao_factory_.compute(L"<m|F|a'>");
     }
-    RowMatrixXd F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
+    RowMatrixXd F_Ma_eigen = math::array_to_eigen(F_Ma);
     auto n_occ = F_Ma_eigen.rows();
     auto n_cabs = F_Ma_eigen.cols();
     auto n_allvir = F_AB.trange().elements_range().extent()[0];
@@ -124,7 +124,7 @@ typename CABSSingles<Tile>::real_t CABSSingles<Tile>::compute(
     auto tr_A = F_AB.trange().data()[0];
 
     F_MA =
-        array_ops::eigen_to_array<Tile,TA::SparsePolicy>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
+        math::eigen_to_array<Tile,TA::SparsePolicy>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
   }
   //  std::cout << F_MA << std::endl;
 
@@ -160,8 +160,8 @@ TA::DistArray<Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner(
     const TA::DistArray<Tile, TA::SparsePolicy>& F_MN) {
   auto& world = F_AB.world();
 
-  Eigen::MatrixXd F_AB_eigen = array_ops::array_to_eigen(F_AB);
-  Eigen::MatrixXd F_MN_eigen = array_ops::array_to_eigen(F_MN);
+  Eigen::MatrixXd F_AB_eigen = math::array_to_eigen(F_AB);
+  Eigen::MatrixXd F_MN_eigen = math::array_to_eigen(F_MN);
 
   using range_type = typename TArray::range_type;
 

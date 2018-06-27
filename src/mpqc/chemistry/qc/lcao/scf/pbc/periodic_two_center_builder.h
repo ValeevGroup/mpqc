@@ -6,6 +6,7 @@
 #include <mutex>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// PeriodicTwoCenterBuilder computes 2-center integral in zRHF that takes
@@ -390,5 +391,7 @@ class PeriodicTwoCenterBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_TWO_CENTER_BUILDER_H_

@@ -17,9 +17,10 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy, typename DirectArray>
+template<typename Tile, typename Policy, typename DirectArray>
 class CADFFockBuilder : public FockBuilder<Tile, Policy> {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
@@ -31,7 +32,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
   ArrayType C_;          // CADF fitting coeffs
 
   // seCADF builder
-  std::unique_ptr<ExactKDiagonalBuilder<Tile, Policy>> exactK_;
+  std::unique_ptr<ExactKDiagonalBuilder < Tile, Policy>> exactK_;
 
   float force_threshold_ = 0.0;
   double LMO_chop_threshold_ = 0.0;
@@ -90,7 +91,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
  public:
   using BasisFactory = lcao::gaussian::Basis::Factory;
 
-  template <typename Factory>
+  template<typename Factory>
   CADFFockBuilder(Factory &ao_factory, double force_threshold,
                   double lmo_chop_threshold, bool do_secadf)
       : force_threshold_(force_threshold),
@@ -110,17 +111,18 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
       auto screen_threshold = ao_factory_ref.screen_threshold();
       auto obs = ao_factory.basis_registry()->retrieve(L"κ");
 
-      exactK_ = std::make_unique<ExactKDiagonalBuilder<Tile, Policy>>(
+      exactK_ = std::make_unique<ExactKDiagonalBuilder < Tile, Policy>>
+      (
           world, obs, obs, obs, screen, screen_threshold);
     }
 
     // Form L^{-1} for M
-    auto M_eig = array_ops::array_to_eigen(M_);
+    auto M_eig = math::array_to_eigen(M_);
     using MatType = decltype(M_eig);
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<Tile, Policy>(M_.world(), L_inv_eig,
+    Mchol_inv_ = math::eigen_to_array<Tile, Policy>(M_.world(), L_inv_eig,
                                                          trange1_M, trange1_M);
   }
 
@@ -133,7 +135,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
   ArrayType operator()(ArrayType const &D, ArrayType const &LMO,
                        double target_precision =
-                           std::numeric_limits<double>::epsilon()) override {
+                       std::numeric_limits<double>::epsilon()) override {
     ArrayType G;
     G("m, n") =
         2 * compute_J(D)("m, n") - compute_K(LMO, D, target_precision)("m, n");
@@ -158,8 +160,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     auto j0 = mpqc::fenced_now(world);
     ArrayType J;
     J("mu, nu") = E_("X, mu, nu") *
-                  (Mchol_inv_("Z, X") *
-                   (Mchol_inv_("Z, Y") * (E_("Y, sig, rho") * D("sig, rho"))));
+        (Mchol_inv_("Z, X") *
+            (Mchol_inv_("Z, Y") * (E_("Y, sig, rho") * D("sig, rho"))));
     auto j1 = mpqc::fenced_now(world);
     j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
@@ -170,6 +172,8 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 
   ArrayType compute_K(ArrayType const &LMO_in, ArrayType const &D,
                       double target_precision) {
+    using ::mpqc::detail::array_storage;
+
     auto &world = M_.world();
     auto Exch0 = mpqc::fenced_now(world);
     ArrayType L, K;  // Matrices
@@ -192,7 +196,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
       auto chop1 = mpqc::fenced_now(world);
       LMO_chop_times_.push_back(mpqc::duration_in_s(chop0, chop1));
 
-      auto chop_sizes = detail::array_storage(LMO);
+      auto chop_sizes = array_storage(LMO);
       LMO_chopped_sizes_.push_back(
           std::array<double, 2>{{chop_sizes[0], chop_sizes[1]}});
     }
@@ -204,7 +208,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     auto z1 = mpqc::fenced_now(world);
     Z_times_.push_back(mpqc::duration_in_s(z0, z1));
 
-    auto Z_sizes = detail::array_storage(Z);
+    auto Z_sizes = array_storage(Z);
     Z_sizes_.push_back(std::array<double, 2>{{Z_sizes[0], Z_sizes[1]}});
 
     // Get forced output shape
@@ -268,7 +272,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     auto f1 = mpqc::fenced_now(world);
     F_times_.push_back(mpqc::duration_in_s(f0, f1));
 
-    auto F_sizes = detail::array_storage(F);
+    auto F_sizes = array_storage(F);
     F_sizes_.push_back(std::array<double, 2>{{F_sizes[0], F_sizes[1]}});
 
     // Construct L
@@ -323,6 +327,7 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_H_

@@ -1161,7 +1161,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto F = fac.compute(L"<p|F|q>[df]");
 
     // Transform entire Fock array to Eigen Matrix
-    Matrix F_all = array_ops::array_to_eigen(F);
+    Matrix F_all = math::array_to_eigen(F);
 
     // Select just diagonal elements of Fock aray and transform
     // to Eigen vector; use for computing PNOs
@@ -1198,10 +1198,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     const TA::TiledRange1 occ_row = ktrange.dim(3);
 
     // Create transition arrays for reblocking
-    reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+    reblock_a_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
 
-    reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+    reblock_i_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
 

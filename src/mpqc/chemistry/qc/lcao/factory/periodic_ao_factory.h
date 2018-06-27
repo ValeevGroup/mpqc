@@ -607,7 +607,7 @@ PeriodicAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     auto bra_tr = bra_basis->create_trange1();
     auto ket_tr = ket_basis->create_trange1();
     // create diagonal array
-    result = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+    result = math::create_diagonal_array_from_eigen<Tile, Policy>(
         world, bra_tr, ket_tr, 1.0);
     result.truncate();
 

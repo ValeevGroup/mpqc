@@ -8,6 +8,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 namespace TA = TiledArray;
@@ -29,5 +30,7 @@ class DensityBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DENSITY_BUILDER_H_

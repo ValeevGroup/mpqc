@@ -9,7 +9,7 @@
 #include "mpqc/util/meta/get_type.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 namespace detail {
 
@@ -423,7 +423,7 @@ unsigned long tile_clr_storage(Tile<DecomposedTensor<T>> const &tile) {
   return size;
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_H_

@@ -18,13 +18,13 @@
 
 namespace mpqc {
 
-template <typename D>
+template<typename D>
 class DavidsonDiagPred {
  public:
-  virtual void operator()(const EigenVector<typename D::element_type>& e,
-                          std::vector<D>& guess) const = 0;
+  virtual void operator()(const EigenVector<typename D::element_type> &e,
+                          std::vector<D> &guess) const = 0;
 
-  virtual typename D::element_type norm(const D& d) const { return norm2(d); }
+  virtual typename D::element_type norm(const D &d) const { return norm2(d); }
 
   virtual ~DavidsonDiagPred() = default;
 };
@@ -383,15 +383,15 @@ class DavidsonDiag {
         B.insert(B.end(), vector.begin(), vector.end());
       }
       // orthognolize all vectors
-      gram_schmidt(B, vector_threshold_);
+      math::gram_schmidt(B, vector_threshold_);
       // call it second times
-      gram_schmidt(B, vector_threshold_);
+      math::gram_schmidt(B, vector_threshold_);
     } else {
       // TODO better way to orthonormalize than double gram_schmidt
       // orthognolize new residual with original B
-      gram_schmidt(B_, residual, vector_threshold_);
+      math::gram_schmidt(B_, residual, vector_threshold_);
       // call it twice
-      gram_schmidt(B_, residual, vector_threshold_);
+      math::gram_schmidt(B_, residual, vector_threshold_);
       B = residual;
 
       //      for (std::size_t i = 0; i < n_roots_; i++) {

@@ -318,7 +318,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
     const TA::TiledRange1 occ_col =
         TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
 
-    reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+    reblock_i_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<Array>>(world, occ_row, occ_col, 1.0);
 
     const TA::TiledRange1 uocc_row = T2.trange().dim(0);
@@ -327,7 +327,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
     const TA::TiledRange1 uocc_col =
         TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
 
-    reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+    reblock_a_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<Array>>(world, uocc_row, uocc_col, 1.0);
   }
 
@@ -554,7 +554,7 @@ class StateSpecificPNOEEPred
       const TA::TiledRange1 occ_col =
           TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
 
-      reblock_i_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_i_ = mpqc::math::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<Array>>(world, occ_row, occ_col, 1.0);
 
       const TA::TiledRange1 uocc_row = T2[0].trange().dim(0);
@@ -563,7 +563,7 @@ class StateSpecificPNOEEPred
       const TA::TiledRange1 uocc_col =
           TA::TiledRange1(uocc_blocks.begin(), uocc_blocks.end());
 
-      reblock_a_ = mpqc::array_ops::create_diagonal_array_from_eigen<
+      reblock_a_ = mpqc::math::create_diagonal_array_from_eigen<
           Tile, TA::detail::policy_t<Array>>(world, uocc_row, uocc_col, 1.0);
     }
 

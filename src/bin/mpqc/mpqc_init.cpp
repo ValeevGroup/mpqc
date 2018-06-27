@@ -292,6 +292,8 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
   options->enroll("d", GetLongOpt::NoValue,
                   "start the program and attach a debugger");
+  options->enroll("t", GetLongOpt::NoValue,
+                  "throw if a deprecated keyword is read");
   options->enroll("D", GetLongOpt::OptionalValue,
                   " if \"debugger\" keyword is not given, create a default "
                   "debugger; an optional JSON string can be given to provide "
@@ -363,6 +365,10 @@ std::tuple<std::string, std::string> process_options(
       ExEnv::out0() << indent << entry.first << std::endl;
     }
     std::exit(0);
+  }
+
+  if (options->retrieve("t")) {
+    KeyVal::set_throw_if_deprecated_path(true);
   }
 
   // get input file name ... can be given as the last option

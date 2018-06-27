@@ -255,7 +255,7 @@ TA::DistArray<Tile, TA::SparsePolicy> RMP2F12<Tile>::compute_X() {
   TA::DistArray<Tile, TA::SparsePolicy> X = f12::compute_X_ijij_ijji(
       to_lcao_factory(this->lcao_factory()), ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  auto Fij_eigen = math::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);
   return X;
 }
@@ -343,7 +343,7 @@ TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_X() {
   TA::DistArray<Tile, TA::SparsePolicy> X = f12::compute_X_ijij_ijji_df(
       this->lcao_factory(), this->ao_factory(), this->ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  auto Fij_eigen = math::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);
   return X;
 }

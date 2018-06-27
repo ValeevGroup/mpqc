@@ -87,10 +87,10 @@ namespace mpqc {
       mpqc::detail::parallel_print_range_info(world, new_occ, "PNO new Occ");
       mpqc::detail::parallel_print_range_info(world, new_vir, "PNO new Vir");
 
-      occ_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+      occ_convert = math::create_diagonal_array_from_eigen<Tile, Policy>(
                        world, old_occ, new_occ, 1.0);
 
-      vir_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+      vir_convert = math::create_diagonal_array_from_eigen<Tile, Policy>(
                        world, old_vir, new_vir, 1.0);
     }
 
@@ -162,7 +162,7 @@ namespace mpqc {
           std::unique_ptr<double[]> s(new double[x]);
 
           // SVD of tile: (t_ab)^T
-          tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+          math::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
 
           for(; rank < x; ++rank) {
             // check singular value for truncation threshold

@@ -199,7 +199,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     auto tr2 = right1.trange();
 
     // create diagonal array
-    result = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+    result = math::create_diagonal_array_from_eigen<Tile, Policy>(
         world, tr1, tr2, 1.0);
     result.truncate();
 

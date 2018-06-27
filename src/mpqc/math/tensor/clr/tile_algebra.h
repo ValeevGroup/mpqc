@@ -9,7 +9,7 @@
 #include <madness/tensor/clapack.h>
 
 namespace mpqc {
-namespace algebra {
+namespace math {
 
 inline namespace eigen_version {
 template <typename T>
@@ -382,7 +382,7 @@ void inline CompressRight(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
 }
 }  // namespace lapack
 
-}  // namespace algebra
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_

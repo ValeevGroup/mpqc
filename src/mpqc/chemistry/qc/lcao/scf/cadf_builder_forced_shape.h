@@ -19,11 +19,12 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 class CADFForcedShapeFockBuilder : public FockBuilder {
  public:
-  using dtile_type = tensor::Tile<tensor::DecomposedTensor<double>>;
+  using dtile_type = Tile<DecomposedTensor<double>>;
   using darray_type = TA::DistArray<dtile_type, TA::SparsePolicy>;
 
  private:
@@ -47,7 +48,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
   std::vector<std::array<double, 3>> f_df_storages_;
 
  public:
-  template <typename Integral>
+  template<typename Integral>
   CADFForcedShapeFockBuilder(array_type const &M, Integral const &eri3,
                              darray_type const &C_df, darray_type const &G_df,
                              double clr_thresh, double j_clr_thresh)
@@ -55,19 +56,19 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     auto &world = C_df_.world();
 
     auto l0 = mpqc::fenced_now(world);
-    auto M_eig = array_ops::array_to_eigen(M);
+    auto M_eig = math::array_to_eigen(M);
 
     RowMatrixXd L_inv_eig =
         RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 
-    auto L_inv = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
+    auto L_inv = math::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
                                                         tr_M, tr_M);
 
     constexpr auto compress_L = false;
     auto dL_inv = TA::to_new_tile_type(
-        L_inv, tensor::TaToDecompTensor(j_clr_thresh, compress_L));
+        L_inv, TaToDecompTensor(j_clr_thresh, compress_L));
 
     auto l1 = mpqc::fenced_now(world);
     l_inv_time_ = mpqc::duration_in_s(l0, l1);
@@ -77,14 +78,14 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
 
     auto B0 = mpqc::fenced_now(world);
-    const auto old_compress = tensor::detail::recompress;
-    tensor::detail::recompress = true;
+    const auto old_compress = detail::recompress;
+    detail::recompress = true;
 
     B_("X, mu, nu") = dL_inv("X, Y") * eri3("Y, mu, nu");
     minimize_storage(B_, j_clr_thresh);
 
     auto B1 = mpqc::fenced_now(world);
-    tensor::detail::recompress = old_compress;
+    detail::recompress = old_compress;
     B_time_ = mpqc::duration_in_s(B0, B1);
 
     B_storages_ = detail::array_storage(B_);
@@ -97,7 +98,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
   }
 
-  ~CADFForcedShapeFockBuilder() { }
+  ~CADFForcedShapeFockBuilder() {}
 
   array_type operator()(array_type const &D, array_type const &C) override {
     array_type G;
@@ -125,7 +126,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                 << leader << "\tdL to K time: " << dl_to_k_times_.back()
                 << "\n";
       auto total_k_time = c_mo_times_.back() + f_df_times_.back() +
-                          dl_times_.back() + dl_to_k_times_.back();
+          dl_times_.back() + dl_to_k_times_.back();
       std::cout << leader << "\ttotal K time: " << total_k_time << "\n";
     }
   }
@@ -136,7 +137,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
     constexpr bool compress_D = false;
     auto dD = TA::to_new_tile_type(
-        D, tensor::TaToDecompTensor(clr_thresh_, compress_D));
+        D, TaToDecompTensor(clr_thresh_, compress_D));
 
     darray_type dJ;
     auto j0 = mpqc::fenced_now(world);
@@ -146,7 +147,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     auto j1 = mpqc::fenced_now(world);
     j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
-    auto J = TA::to_new_tile_type(dJ, tensor::DecompToTaTensor{});
+    auto J = TA::to_new_tile_type(dJ, DecompToTaTensor{});
 
     return J;
   }
@@ -156,7 +157,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
     constexpr bool compress_C = false;
     auto dC = TA::to_new_tile_type(
-        C, tensor::TaToDecompTensor(clr_thresh_, compress_C));
+        C, TaToDecompTensor(clr_thresh_, compress_C));
 
     darray_type C_mo, dL, F_df;
     auto cmo0 = mpqc::fenced_now(world);
@@ -178,7 +179,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
     array_type K;
     auto k0 = mpqc::fenced_now(world);
-    auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
+    auto L = TA::to_new_tile_type(dL, DecompToTaTensor{});
     K("mu, nu") = L("mu, nu") + L("nu, mu");
     auto k1 = mpqc::fenced_now(world);
 
@@ -192,6 +193,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_FORCED_SHAPE_H_

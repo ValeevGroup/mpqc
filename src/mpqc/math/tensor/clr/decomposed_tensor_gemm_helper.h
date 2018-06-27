@@ -8,7 +8,7 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 namespace detail {
 
 extern bool recompress;
@@ -47,7 +47,7 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
       if (recompress) {
         return tensor;
       } else {
-        return Dtensor<T>{a.cut(), algebra::combine(tensor)};
+        return Dtensor<T>{a.cut(), combine(tensor)};
       }
     }
     assert(false);
@@ -89,12 +89,12 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
       const auto full_rank = std::min(c_left_extent[0], long_dim);
 
       if (recompress) {
-        algebra::recompress(c);
+        recompress(c);
         out_dim = c.rank();
       }
 
       if (out_dim > full_rank / 2) {
-        c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
+        c = DecomposedTensor<T>(c.cut(), combine(c));
       }
 
       return c;
@@ -143,12 +143,12 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
 
     if (recompress && out.cut() != 0.0) {
       if (out.ndecomp() == 1) {
-        auto test = tensor::algebra::two_way_decomposition(out);
+        auto test = two_way_decomposition(out);
         if (!test.empty()) {
           out = test;
         }
       } else {
-        tensor::algebra::recompress(out);
+        recompress(out);
       }
     }
 
@@ -214,19 +214,19 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
 
     if (recompress && c.cut() != 0.0) {
       if (c.ndecomp() == 1) {
-        auto test = tensor::algebra::two_way_decomposition(c);
+        auto test = two_way_decomposition(c);
         if (!test.empty()) {
           c = test;
         }
       } else {
-        tensor::algebra::recompress(c);
+        recompress(c);
 
         auto out_dim = c.rank();
         auto left_dim = c.tensor(0).range().extent()[0];
         auto const &right_extent = c.tensor(1).range().extent();
         auto right_dim = right_extent[1] * right_extent[2];
         if (out_dim >= std::min(left_dim, right_dim) / 2) {
-          c = Dtensor<T>(c.cut(), algebra::combine(c));
+          c = Dtensor<T>(c.cut(), combine(c));
         }
       }
     }
@@ -454,7 +454,7 @@ struct low_rank_gemm<2ul, 2ul, 2ul> {
 };
 
 }  // namespace detail
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_HELPER_H_

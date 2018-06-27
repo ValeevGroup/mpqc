@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace math {
 namespace clustering {
 
 /*! \ingroup MathClustering @{ */
@@ -31,6 +32,7 @@ Iter closest_cluster(Iter begin, Iter end, Vector3d const &target_center) {
 /*! @} */
 
 }  // namespace clustering
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_CLUSTERING_COMMON_H_

@@ -8,6 +8,7 @@
 #include "mpqc/math/linalg/cholesky_inverse.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Factory>
@@ -100,7 +101,7 @@ class PeriodicRIJBuilder {
     auto t_a = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
-    inv_ = array_ops::eigen_inverse(A);
+    inv_ = math::eigen_inverse(A);
     t1 = mpqc::fenced_now(world);
     auto t_a_inv = mpqc::duration_in_s(t0, t1);
 
@@ -219,6 +220,7 @@ class PeriodicRIJBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_RI_J_BUILDER_H_

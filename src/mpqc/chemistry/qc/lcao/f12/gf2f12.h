@@ -230,11 +230,11 @@ void GF2F12<Tile>::init_target_orbital_diagonal(int target_orbital) {
   auto& world = this->wfn_world()->world();
   auto& orbital_registry = this->lcao_factory().orbital_registry();
   auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
-  auto C_p = array_ops::array_to_eigen(p_space.coefs());
+  auto C_p = math::array_to_eigen(p_space.coefs());
   auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
   auto tr_obs = p_space.coefs().trange().data().front();
   TA::TiledRange1 tr_x{0, 1};
-  auto C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
+  auto C_x_ta = math::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
                                                                   tr_obs, tr_x);
 
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -302,7 +302,7 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
     {
       TArray Sigma_ta;
       Sigma_ta("x,y") = Sigma_pph("x,y") + Sigma_hhp("x,y");
-      Sigma = array_ops::array_to_eigen(Sigma_ta);
+      Sigma = math::array_to_eigen(Sigma_ta);
     }
 
     // std::cout << "Sigma = " << Sigma << std::endl;
@@ -333,7 +333,7 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
         this->lcao_factory()(L"<i|I|j>");
   }
   // std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
-  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
+  Matrix Sigma_f12 = math::array_to_eigen(Sigma_pph_f12);
 
   // done with F12 ... remove all geminal ints and CABS indices
   this->lcao_factory().purge_operator(L"R");
@@ -422,7 +422,7 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
     {
       TArray Sigma_ta;
       Sigma_ta("x,y") = Sigma_pph("x,y") + Sigma_hhp("x,y");
-      Sigma = array_ops::array_to_eigen(Sigma_ta);
+      Sigma = math::array_to_eigen(Sigma_ta);
     }
 
     // std::cout << "Sigma = " << Sigma << std::endl;
@@ -458,12 +458,12 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
     auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_registry();
     auto qp_space = orbital_registry.retrieve(OrbitalIndex(qp_str));
-    auto C_qp = array_ops::array_to_eigen(qp_space.coefs());
+    auto C_qp = math::array_to_eigen(qp_space.coefs());
     auto C_qp_dyson = C_qp * C_dyson;
     auto C_x = C_qp_dyson.block(0, orbital, C_qp_dyson.rows(), 1);
     auto tr_obs = qp_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
-    auto C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(
+    auto C_x_ta = math::eigen_to_array<Tile, TA::SparsePolicy>(
         world, C_x, tr_obs, tr_x);
 
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -484,7 +484,7 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
         this->lcao_factory()(L"<i|I|j>");
   }
   // std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
-  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
+  Matrix Sigma_f12 = math::array_to_eigen(Sigma_pph_f12);
 
   // done with F12 ... remove all geminal ints and CABS indices
   this->lcao_factory().purge_operator(L"R");

@@ -16,6 +16,7 @@
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// ExactKDiagonalBuilder is an integral-direct implementation of FockBuilder
@@ -678,6 +679,7 @@ class ExactKDiagonalBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_FOUR_CENTER_EXACT_K_DIAGONAL_BUILDER_H_

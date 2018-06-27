@@ -48,6 +48,7 @@ For brevity, only the programmatic and JSON-based methods will be illustrated he
   -  \ref keyvalsub
   -  \ref keyvaldescribedclass
   -  \ref keyvalforcelink
+  -  \ref keyvaldeprecatedkw
 
 \section keyvalass Assignment
 
@@ -153,6 +154,15 @@ auto bald_eagle_species = kv.value<std::string>("bird:bald eagle:species");
 @endcode
 Of course, any basic_istream can be used (e.g. std::istringstream) and not just std::ifstream.
 
+To test whether a keyword refers to a group of keywords or to a value use KeyVal::count that returns
+a \c boost::optional<size_t> ; it contains a value if its argument refers to a keyword group:
+@code
+assert(!kv.count("reptile:trex:extinct"));   // count returns an empty optional since "reptile:trex:extinct" refers to a value
+assert(!kv.count("reptile:trex") == false);  // count returns a non-empty optional since reptile:trex" is a keyword group
+assert(*kv.count("reptile:trex") > 0);       // count > 0 since reptile:trex" is a nonempty keyword group
+@endcode
+KeyVal::count can also be used to examine other aggregates like arrays (see \ref keyvalarray ).
+
 It is often convenient to construct KeyVal objects programmatically. This is particularly useful
 to construct programmatically classes that have constructors that take KeyVal (see \ref keyvaldescribedclass ).
 A KeyVal object corresponding to the JSON input in \ref KeyValPage_Example1 "Example 1" can be created as
@@ -185,6 +195,7 @@ struct Bird {
 };
 @endcode
 To construct \c Bird from KeyVal objects we need to add a constructor:
+\anchor KeyValPage_Example4
 @code
 Bird::Bird(const KeyVal& kv) {
   species = kv.value<std::string>("species");
@@ -207,7 +218,7 @@ to keyword sections in an existing KeyVal is crucial for constructing hierarchie
 refers to the same tree as `kv` and share `kv`'s mutable internal data, such as
 the internal object registry used by KeyVal::class_ptr (see below).
 The same can be said about the new KeyVal object returned by `kv.keyval()`.
-To create a deep copy of a KeyVal object use the KeyVal::clone() method (note that
+To create a deep copy of a KeyVal object use the KeyVal::clone method (note that
 the DescribedClass object registry is not copied, only the PropertyTree object).
 
 \section keyvalpobj Polymorphic Object Construction
@@ -334,6 +345,9 @@ A few comments:
     with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
     This behavior can be bypassed by providing calling KeyVal::class_ptr with the second
     parameter set to \c true ; the lifetime of the object then must be managed by the user.
+  - If keyword \c type is not given, calling KeyVal::class_ptr<T> where class \c T is abstract or not registered
+    will throw an exception of type KeyVal::bad_input . Setting the third parameter of KeyVal::class_ptr to \c true
+    will in such case cause KeyVal::class_ptr<T> to return a null pointer.
   - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
     global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
     This is done using the MPQC_CLASS_EXPORT_KEY() macro. MPQC_CLASS_EXPORT_KEY(Reptile) registers
@@ -357,7 +371,7 @@ assert(kv.class_ptr("trex") == trex);
 @endcode
 
 Note that if the type of the object to be constructed is known at compile time, it is not necessary
-to provide the \c type keyword as long as \c KeyVal::class_ptr<T> is called with the exact type
+to provide the \c type keyword as long as KeyVal::class_ptr<T> is called with the exact type
 rather than the base class type:
 @code
 // must specify trex1::type keyword 
@@ -393,6 +407,10 @@ auto names = kv.value<std::vector<std::string>>("names");
 auto legs = kv.value<std::vector<int>>("legs");
 auto extinct = kv.value<std::vector<bool>>("extinct");
 @endcode
+KeyVal::count can be used to count the number of elements before reading the data:
+@code
+assert(*kv.count("names") == 3);
+@endcode
 
 It is also possible to specify an array of objects:
 @code
@@ -417,7 +435,7 @@ class Value {
 kv.value<std::vector<Value>>("values");
 @endcode
 It is not yet possible to read in polymorphic objects this way.
-        
+
 @note Elements of an array specified in standard syntax all have same (empty) key,
 i.e. elements of an array corresponding to path \c path are located at path \c path: . This
 scheme for assigning keys is used by Boost.PropertyTree when reading JSON arrays.
@@ -609,6 +627,34 @@ MPQC_FORCELINK_KEYVAL_CTOR(T<int>);
 N.B. For convenience, we provide macros MPQC_CLASS_EXPORT() and MPQC_CLASS_EXPORT2()
 that combine the DescribedClass registration macros MPQC_CLASS_EXPORT_KEY() and
 MPQC_CLASS_EXPORT_KEY2(), respectively, with the MPQC_FORCELINK_KEYVAL_CTOR() macro.
+
+\section keyvaldeprecatedkw Deprecated keywords
+
+It is useful to be able to deprecate some keywords to be able to evolve input format smoothly.
+For example, we may want to rename an input keyword, but do not want to obsolete the keyword until some future
+software release. By obsoleting the keyword we can nudge the users to start using new keywords.
+For example, if we want to rename keywords \c "extinct" in JSON \ref KeyValPage_Example1 "Example 1" to \c "is_extinct",
+we need to modify the KeyVal constructor of class \c Bird (C++ \ref KeyValPage_Example4 "Example 4") to initialize
+field \c extinct as
+\code
+extinct = kv.value<bool>("is_extinct", false, "extinct");
+\endcode
+This code will:
+- query keyword \c is_extinct , if not found
+- query deprecated keyword \c extinct , if not found
+- initialize field \c extinct to \c false
+
+If the deprecated keyword is _read_ (not just queried), a message will be added by default to \c std::cerr . It is
+possible to change the default to throwing an exception (specifically, @c KeyVal::bad_input )
+by calling \c KeyVal::throw_if_deprecated_path(true) .
+
+To deprecate a keyword without specifying a replacement the primary keyword can be empty:
+\code
+extinct = kv.value<bool>("is_extinct", false, "extinct");
+\endcode
+This code will:
+- query deprecated keyword \c extinct , if not found
+- initialize field \c extinct to \c false
 
 */
 

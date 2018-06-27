@@ -43,4 +43,5 @@ MPQC_CLASS_EXPORT2("CADF-RHF",
 template class mpqc::lcao::RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("RIJ-ExactK-RHF",
                    mpqc::lcao::RIJEXACTKRHF<TA::TensorD, TA::SparsePolicy>);
+
 #endif

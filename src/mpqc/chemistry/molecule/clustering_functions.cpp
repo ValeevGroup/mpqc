@@ -47,7 +47,7 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
   // Attach the hydrogens to the closest cluster
   if (!hydrogens.empty()) {
     for (auto &&hydrogen : hydrogens) {
-      auto closest = clustering::closest_cluster(
+      auto closest = math::clustering::closest_cluster(
           clusters.begin(), clusters.end(), center(hydrogen));
       attach_clusterable(*closest, std::move(hydrogen));
     }
@@ -77,9 +77,9 @@ Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
   int64_t init_seed = 1000;
   int64_t best_seed = 1000;
   for (auto i = 0; i < 50; ++i) {
-    clustering::Kmeans kmeans(init_seed);
+    math::clustering::Kmeans kmeans(init_seed);
     auto clusters = kmeans.cluster<AtomBasedCluster>(clusterables, nclusters);
-    auto value = clustering::kmeans_objective(clusters);
+    auto value = math::clustering::kmeans_objective(clusters);
     if (value < objective_min) {
       best_seed = init_seed;
       objective_min = value;
@@ -88,8 +88,8 @@ Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
   }
 
   return Molecule(convert_to_clusterable(
-      clustering::Kmeans(best_seed).cluster<AtomBasedCluster>(clusterables,
-                                                              nclusters)));
+      math::clustering::Kmeans(best_seed).cluster<AtomBasedCluster>(clusterables,
+                                                                    nclusters)));
 }
 
 }  // namespace mpqc

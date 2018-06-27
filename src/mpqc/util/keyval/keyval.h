@@ -1151,7 +1151,7 @@ class KeyVal {
   /// \brief KeyVal exception
   struct bad_input : public std::runtime_error {
     bad_input(const std::string& _what, const key_type& path)
-        : std::runtime_error(_what + "(path=" + path + ")") {}
+        : std::runtime_error(_what + " (path=" + path + ")") {}
     virtual ~bad_input() noexcept {}
   };
 };  // KeyVal

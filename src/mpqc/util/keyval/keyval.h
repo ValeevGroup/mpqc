@@ -446,6 +446,20 @@ class KeyVal {
     return result;
   }
 
+  /// counts the number of children of the node at this absolute path
+  /// @param abs_path an absolute path
+  /// @return an optional that does not contain a value if \c path does not exist or it points to a simple keyword,
+  ///         otherwise containing the number of elements (>=0) if \c path points to an array or
+  ///         a keyword group
+  boost::optional<size_t> count_impl(const key_type& abs_path) const {
+    auto child_opt =
+        top_tree_->get_child_optional(ptree::path_type{abs_path, separator});
+    if (child_opt == boost::optional<ptree&>())
+      return boost::optional<size_t>{};
+    else
+      return child_opt->size();
+  }
+
  public:
   /// creates empty KeyVal
   KeyVal();
@@ -522,17 +536,12 @@ class KeyVal {
 
   /// counts the number of children of the node at this path
   /// @param path the path
-  /// @return 0 if \c path does not exist or it points to a simple keyword,
-  ///         the number of elements (>=0) if \c path points to an array or
+  /// @return an optional that does not contain a value if \c path does not exist or it points to a simple keyword,
+  ///         otherwise containing the number of elements (>=0) if \c path points to an array or
   ///         a keyword group
-  size_t count(const key_type& path) const {
-    auto resolved_path = resolve_path(path);
-    auto child_opt =
-        top_tree_->get_child_optional(ptree::path_type{path, separator});
-    if (child_opt == boost::optional<ptree&>())
-      return 0;
-    else
-      return child_opt->size();
+  boost::optional<size_t> count(const key_type& path) const {
+    auto abs_path = resolve_path(path);
+    return count_impl(abs_path);
   }
 
   /// @brief assign simple \c value at the given path (overwrite, if necessary)
@@ -846,8 +855,8 @@ class KeyVal {
       }
     }
 
-    // return nullptr if the path does not exist
-    if (!this->exists_(abs_path)) {
+    // return nullptr if the path does not exist, or does not point to an aggregate
+    if (!this->exists_(abs_path) || !static_cast<bool>(this->count_impl(abs_path))) {
       return std::shared_ptr<T>();
     }
 

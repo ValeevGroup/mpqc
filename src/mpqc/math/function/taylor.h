@@ -164,8 +164,8 @@ class TaylorExpansionFunction
 
   std::vector<double> init_precision(const KeyVal& kv,
                                      double default_precision) {
-    if (kv.exists("precision") &&
-        kv.count("precision") > 0) {  // given an array of precisions
+    const auto nitems = kv.count("precision");
+    if (nitems && nitems.value() > 0) {  // given an array of precisions
       return kv.value<std::vector<double>>("precision");
     } else {
       auto deriv_order = kv.value<size_t>("deriv_order", 0);

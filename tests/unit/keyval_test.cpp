@@ -119,13 +119,13 @@ TEST_CASE("KeyVal", "[keyval]") {
 
 
   // can count children
-  REQUIRE(kv.count(":z") == 3);
-  REQUIRE(kv.count(":z:0") == 0);
-  REQUIRE(kv.count(":z:1") == 0);
-  REQUIRE(kv.count(":z:a") == 4);
-  REQUIRE(kv.count(":z:a:0") == 3);
-  REQUIRE(kv.count(":z:a:1") == 3);
-  REQUIRE(kv.count(":z:a:2") == 4);
+  REQUIRE(*kv.count(":z") == 3);
+  REQUIRE(*kv.count(":z:0") == 0);
+  REQUIRE(*kv.count(":z:1") == 0);
+  REQUIRE(*kv.count(":z:a") == 4);
+  REQUIRE(*kv.count(":z:a:0") == 3);
+  REQUIRE(*kv.count(":z:a:1") == 3);
+  REQUIRE(*kv.count(":z:a:2") == 4);
 
   // can write pointers
   {

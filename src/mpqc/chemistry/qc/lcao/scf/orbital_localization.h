@@ -96,7 +96,7 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
     auto trange = C.trange();
     return array_ops::eigen_to_array<Tile, Policy>(
         C.world(), (*this)(c_eig, this->ao_x_, this->ao_y_, this->ao_z_, ncols_of_C_to_skip),
-        trange.data()[0], trange.data()[1]);
+        trange.data()[1], trange.data()[1]);
   }
 
  private:
@@ -147,7 +147,7 @@ class RRQRLocalizer : public OrbitalLocalizer<Tile,Policy> {
     auto c_eig = array_ops::array_to_eigen(C);
     auto trange = C.trange();
     return array_ops::eigen_to_array<Tile, Policy>(
-        C.world(), (*this)(c_eig, this->ao_s_, ncols_of_C_to_skip), trange.data()[0],
+        C.world(), (*this)(c_eig, this->ao_s_, ncols_of_C_to_skip), trange.data()[1],
         trange.data()[1]);
   }
 

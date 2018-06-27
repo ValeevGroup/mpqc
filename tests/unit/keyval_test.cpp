@@ -166,18 +166,31 @@ TEST_CASE("KeyVal", "[keyval]") {
   SECTION("make classes") {
     {  // construct Base
       KeyVal kv;
-      kv.assign("value", 1).assign("type", "Base");
+      kv.assign("value", 1);
       auto x1 = kv.class_ptr<Base>();
       REQUIRE(x1->value() == 1);
       auto x2 = kv.class_ptr<Base>();  // this returns the cached ptr
       REQUIRE(x1 == x2);
+      auto x3 = kv.class_ptr();   // this also returns the cached ptr, but as shared_ptr<DescribedClass>
+      REQUIRE(x3->class_key() == "Base");
+      REQUIRE(x1 == x3);
+
+      // can construct polymorphically but then kv needs "type" info
+      const auto bypass_registry = true;
+      const auto disable_throw = true;
+      REQUIRE_THROWS_AS(kv.class_ptr("", bypass_registry), KeyVal::bad_input);
+      REQUIRE(!kv.class_ptr("", bypass_registry, disable_throw));
+      kv.assign("type", "Base");
+      auto x4 = kv.class_ptr("", bypass_registry);
+      REQUIRE(x4->class_key() == "Base");
     }
     {  // construct Derived<0>
       KeyVal kv;
-      kv.assign("value", 2).assign("dvalue", 2.0).assign("type", "Derived<0>");
+      kv.assign("value", 2).assign("dvalue", 2.0);
       auto x1 = kv.class_ptr<Derived<0>>();
       REQUIRE(x1->value() == 2.0);
-      auto x2 = kv.class_ptr<Derived<0>>();  // this returns the cached ptr
+      auto x2 = kv.class_ptr();  // this returns the cached ptr
+      REQUIRE(x2->class_key() == "Derived<0>");
       REQUIRE(x1 == x2);
       auto x3 =
           kv.class_ptr<Base>();  // this returns the cached ptr, cast to Base

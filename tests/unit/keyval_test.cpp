@@ -114,6 +114,10 @@ TEST_CASE("KeyVal", "[keyval]") {
   kv.assign(":z:a:2", vector<int>{{7, 6, 5, 4}}, false);
   REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7, 6, 5, 4}));
 
+  // can count items
+  REQUIRE(!kv.count(":z:a:1") == false);
+  REQUIRE(*kv.count(":z:a:1") == 3);
+
   // nested sequences (e.g. vector of array) can also
   // be written
   kv.assign(":z:a:3", vector<iarray3>{{{{0,1,2}}, {{3,4,5}}, {{6,7,8}}}});

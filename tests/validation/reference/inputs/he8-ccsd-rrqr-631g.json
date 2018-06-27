@@ -23,8 +23,7 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "localize": true,
-    "localization_method":"rrqr",
+    "localizer": { "type": "RRQRLocalizer" },
     "wfn_world": "$:wfn_world"
   },
   "wfn":{

@@ -78,7 +78,7 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
    * | @c max_iter | int | 50 | the maximum number of Jacobi iterations |
    */
   // clang-format on
-  FosterBoysLocalizer(const KeyVal &kv)
+  FosterBoysLocalizer(const KeyVal &kv = KeyVal{})
       : jacobi_convergence_threshold_(kv.value<double>("convergence", 1e-8, KeyVal::is_nonnegative)),
         jacobi_max_iter_(kv.value<std::size_t>("max_iter", 50)) {}
 

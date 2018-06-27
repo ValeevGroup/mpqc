@@ -50,11 +50,19 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
 
   density_builder_str_ =
       kv.value<std::string>("density_builder", "eigen_solve");
-  if (kv.exists("localizer")) {
-    localizer_ = kv.class_ptr<OrbitalLocalizer<Tile,Policy>>("localizer");
-    localize_core_ = kv.value<bool>("localize_core", true);
+
+  if (kv.exists("localizer") || (kv.exists("localize") && kv.value<bool>("localize"))) {
+    const bool localizer_given = static_cast<bool>(kv.count("localizer"));
+    if (localizer_given) {
+      localizer_ = kv.class_ptr<OrbitalLocalizer<Tile, Policy>>("localizer", false, true);
+    }
+    if (!localizer_) {
+      localizer_ = std::make_shared<scf::FosterBoysLocalizer<Tile, Policy>>();
+    }
+    if (localizer_)
+      localize_core_ = kv.value<bool>("localize_core", true);
   } else {
-    const auto localize = kv.value<bool>("", false, "localize");
+    const auto localize = kv.value<bool>("localize", false);
     const auto localization_method =
         kv.value<std::string>("", "boys-foster", "localization_method");
     if (localize) {
@@ -66,6 +74,7 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
         localize_core_ = false;
     }
   }
+
   clustered_coeffs_ = kv.value<bool>("clustered_coeffs", false);
   if (clustered_coeffs_ && localize_core_) {
     throw InputError("RHF: clustered_coeffs=true is incompatible with localize_core=true", __FILE__,

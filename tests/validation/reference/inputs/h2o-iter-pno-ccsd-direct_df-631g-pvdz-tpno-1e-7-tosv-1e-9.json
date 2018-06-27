@@ -28,8 +28,8 @@
   "scf":{
     "type": "RI-RHF",
     "wfn_world": "$:wfn_world",
-    "localize" : true,
-    "localization_method" : "boys-foster(valence)"
+    "localizer": { "type": "FosterBoysLocalizer" },
+    "localize_core" : false
   },
   "wfn":{
     "type": "CCSD",

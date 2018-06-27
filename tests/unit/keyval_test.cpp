@@ -92,6 +92,10 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.value<double>(":z:2", 1.0, "") == 1.0);
   REQUIRE(kv.value<double>(":z:2", 1.0, ":z:3") == 1.0);
   REQUIRE(kv.value<double>(":z:2", 1.0, ":z:1") == +2.35);
+  KeyVal::set_throw_if_deprecated_path(true);  // can cause throws if deprecated kw is read
+  REQUIRE_NOTHROW(kv.value<double>(":z:2", 1.0, ""));
+  REQUIRE_THROWS_AS(kv.value<double>(":z:2", 1.0, ":z:1"), KeyVal::bad_input);
+  KeyVal::set_throw_if_deprecated_path(false);  // revert to the default
 
   // can validate values
   REQUIRE(kv.value<double>(":z:1", [](auto v) { return v > 0.0; }) == +2.35);

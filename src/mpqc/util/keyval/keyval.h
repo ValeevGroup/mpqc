@@ -733,7 +733,7 @@ class KeyVal {
   ///        Before returning a value, it will be validated by @c validator .
   ///        The default is a dummy validator that always returns @c true.
   /// @return value of type \c T
-  /// @throws KeyVal::bad_input if validation failed.
+  /// @throws KeyVal::bad_input if validation failed, or if KeyVal::throw_if_deprecated_path returns true and @c deprecated_path was read.
   template <typename T, typename Validator = dummy_validator_t,
             typename = std::enable_if_t<
                 not KeyVal::is_sequence<T>::value &&
@@ -754,11 +754,14 @@ class KeyVal {
       auto result_optional = subtree.get().template get_value_optional<T>();
       if (result_optional) {
         result = result_optional.get();
-        if (KeyVal::throw_if_deprecated_path())
-          throw ;
+        if (KeyVal::throw_if_deprecated_path()) {
+          std::ostringstream oss;
+          oss << "KeyVal read value from deprecated path";
+          throw KeyVal::bad_input(oss.str(), to_absolute_path(*read_path));
+        }
         else
           std::cerr << "KeyVal read value from deprecated path "
-                    << deprecated_path << std::endl;
+                    << to_absolute_path(*read_path) << std::endl;
       }
     }
 

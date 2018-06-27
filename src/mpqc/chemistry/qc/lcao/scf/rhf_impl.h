@@ -67,7 +67,7 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
     }
   }
   clustered_coeffs_ = kv.value<bool>("clustered_coeffs", false);
-  if (clustered_coeffs_ && (localize_core_ = true)) {
+  if (clustered_coeffs_ && localize_core_) {
     throw InputError("RHF: clustered_coeffs=true is incompatible with localize_core=true", __FILE__,
                      __LINE__, "clustered_coeffs");
   }

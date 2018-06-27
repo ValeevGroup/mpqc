@@ -1,13 +1,13 @@
-MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision c23260eacd0954a9958ebde971cd83a55a45e4cc
+                 Revision 5b54105bdb9074538bd2c7878566d627c3a120a0
 
-  Machine:          Darwin-17.4.0-x86_64
-  User:             ChongPen@Chong-MacBook-Pro.local
-  Start Time:       Tue Feb 13 17:07:40 2018 UTC
-  Default World:    1 MPI process
+  Machine:          Darwin-17.6.0-x86_64
+  User:             evaleev@eduards-mbp.lan
+  Start Time:       Wed Jun 27 13:16:41 2018 UTC
+  Default World:    2 MPI processes
 
   Input KeyVal (format=JSON):
 {
@@ -36,8 +36,10 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
     "scf": {
         "type": "RI-RHF",
         "wfn_world": "$:wfn_world",
-        "localize": "true",
-        "localization_method": "boys-foster(valence)"
+        "localizer": {
+            "type": "FosterBoysLocalizer"
+        },
+        "localize_core": "false"
     },
     "wfn": {
         "type": "EOM-CCSD",
@@ -62,7 +64,8 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "precision": "1e-7",
         "n_roots": "4",
         "wfn": "$:wfn"
-    }
+    },
+    "file_prefix": "\/Users\/evaleev\/code\/mpqc4\/tests\/validation\/reference\/inputs"
 }
 
   Using fundamental constants system 2010CODATA
@@ -94,148 +97,148 @@ Constructing LCAOFactory:
 
 	 Using Symmetric Orthogonalization. 
 	 S Condition Number Threshold: 100000000
-	 Overlap condition number = 50.5531878082311
+	 Overlap condition number = 50.5531878082312
 
 Starting SCF:
 	Threshold: 1e-10
 	Maximum number of iterations: 30
 iteration: 0
 	Energy: -76.172009821117
-	abs(Energy Change): 0.278588911860439
-	(Gradient Norm)/n^2: 0.00233094621893437
-	Scf Time: 0.015630484
-		Density Time: 0.007594721
-		Fock Build Time: 0.005222987
+	abs(Energy Change): 0.278588911860496
+	(Gradient Norm)/n^2: 0.00233094621893438
+	Scf Time: 0.01766527
+		Density Time: 0.009569206
+		Fock Build Time: 0.005836039
 		DF Fock builder:
-			W time: 0.001523218
-			J time: 0.001607939
-			K time: 0.001202495
-			Total exchange time: 0.002725713
+			W time: 0.001306596
+			J time: 0.001473906
+			K time: 0.001711073
+			Total exchange time: 0.003017669
 iteration: 1
 	Energy: -76.2140757286777
-	abs(Energy Change): 0.0420659075607688
-	(Gradient Norm)/n^2: 0.00111729007317775
-	Scf Time: 0.022466088
-		Density Time: 0.008069316
-		Fock Build Time: 0.004385416
+	abs(Energy Change): 0.0420659075607119
+	(Gradient Norm)/n^2: 0.00111729007317781
+	Scf Time: 0.018317715
+		Density Time: 0.00965853
+		Fock Build Time: 0.005509458
 		DF Fock builder:
-			W time: 0.000983266
-			J time: 0.001259856
-			K time: 0.001369771
-			Total exchange time: 0.002353037
+			W time: 0.001103537
+			J time: 0.001363074
+			K time: 0.001595533
+			Total exchange time: 0.00269907
 iteration: 2
-	Energy: -76.2239081527737
-	abs(Energy Change): 0.00983242409600393
-	(Gradient Norm)/n^2: 0.000143551463877293
-	Scf Time: 0.016281659
-		Density Time: 0.006993102
-		Fock Build Time: 0.003932483
+	Energy: -76.2239081527738
+	abs(Energy Change): 0.0098324240960892
+	(Gradient Norm)/n^2: 0.000143551463877277
+	Scf Time: 0.018599176
+		Density Time: 0.009844728
+		Fock Build Time: 0.005718852
 		DF Fock builder:
-			W time: 0.000896757
-			J time: 0.001262872
-			K time: 0.001057774
-			Total exchange time: 0.001954531
+			W time: 0.001013822
+			J time: 0.001202484
+			K time: 0.00185828
+			Total exchange time: 0.002872102
 iteration: 3
 	Energy: -76.2241794040669
-	abs(Energy Change): 0.000271251293213481
-	(Gradient Norm)/n^2: 2.08758073190666e-05
-	Scf Time: 0.018693285
-		Density Time: 0.008603979
-		Fock Build Time: 0.004031048
+	abs(Energy Change): 0.000271251293142427
+	(Gradient Norm)/n^2: 2.08758073190253e-05
+	Scf Time: 0.018112339
+		Density Time: 0.009528418
+		Fock Build Time: 0.005267962
 		DF Fock builder:
-			W time: 0.000967052
-			J time: 0.001255001
-			K time: 0.001121979
-			Total exchange time: 0.002089031
+			W time: 0.001249211
+			J time: 0.001249231
+			K time: 0.001428163
+			Total exchange time: 0.002677374
 iteration: 4
-	Energy: -76.224183058895
-	abs(Energy Change): 3.65482804909334e-06
-	(Gradient Norm)/n^2: 1.52468495838948e-06
-	Scf Time: 0.016104791
-		Density Time: 0.007192527
-		Fock Build Time: 0.003892177
+	Energy: -76.2241830588949
+	abs(Energy Change): 3.65482796382821e-06
+	(Gradient Norm)/n^2: 1.52468495837454e-06
+	Scf Time: 0.0194371
+		Density Time: 0.010127732
+		Fock Build Time: 0.005322955
 		DF Fock builder:
-			W time: 0.000896116
-			J time: 0.001236806
-			K time: 0.001078698
-			Total exchange time: 0.001974814
+			W time: 0.001015814
+			J time: 0.001263148
+			K time: 0.001619111
+			Total exchange time: 0.002634925
 iteration: 5
-	Energy: -76.2241830968482
-	abs(Energy Change): 3.79531570615654e-08
-	(Gradient Norm)/n^2: 2.57160622428428e-07
-	Scf Time: 0.015765611
-		Density Time: 0.006976714
-		Fock Build Time: 0.003955545
+	Energy: -76.2241830968481
+	abs(Energy Change): 3.79531854832749e-08
+	(Gradient Norm)/n^2: 2.57160622436062e-07
+	Scf Time: 0.018810686
+		Density Time: 0.009266924
+		Fock Build Time: 0.005302947
 		DF Fock builder:
-			W time: 0.000964785
-			J time: 0.001234208
-			K time: 0.001064233
-			Total exchange time: 0.002029018
+			W time: 0.000934664
+			J time: 0.00125885
+			K time: 0.00164129
+			Total exchange time: 0.002575954
 iteration: 6
-	Energy: -76.2241830985432
-	abs(Energy Change): 1.69504232871986e-09
-	(Gradient Norm)/n^2: 8.13417220260814e-08
-	Scf Time: 0.021873755
-		Density Time: 0.011122683
-		Fock Build Time: 0.006077879
+	Energy: -76.2241830985433
+	abs(Energy Change): 1.69518443726702e-09
+	(Gradient Norm)/n^2: 8.13417220530631e-08
+	Scf Time: 0.0182646
+		Density Time: 0.009229801
+		Fock Build Time: 0.005579071
 		DF Fock builder:
-			W time: 0.002957478
-			J time: 0.001247191
-			K time: 0.001180929
-			Total exchange time: 0.004138407
+			W time: 0.001055254
+			J time: 0.001277944
+			K time: 0.001685797
+			Total exchange time: 0.002741051
 iteration: 7
 	Energy: -76.2241830987047
-	abs(Energy Change): 1.61534785547701e-10
-	(Gradient Norm)/n^2: 5.89483144202312e-09
-	Scf Time: 0.016762264
-		Density Time: 0.007015759
-		Fock Build Time: 0.005072195
+	abs(Energy Change): 1.61435309564695e-10
+	(Gradient Norm)/n^2: 5.89483142897658e-09
+	Scf Time: 0.019153664
+		Density Time: 0.009488278
+		Fock Build Time: 0.005890717
 		DF Fock builder:
-			W time: 0.000967721
-			J time: 0.00126215
-			K time: 0.002150769
-			Total exchange time: 0.00311849
+			W time: 0.001119179
+			J time: 0.00151741
+			K time: 0.001626997
+			Total exchange time: 0.002746176
 iteration: 8
 	Energy: -76.2241830987056
-	abs(Energy Change): 8.5265128291212e-13
-	(Gradient Norm)/n^2: 1.52333188149411e-09
-	Scf Time: 0.024170355
-		Density Time: 0.008629951
-		Fock Build Time: 0.00398239
+	abs(Energy Change): 9.37916411203332e-13
+	(Gradient Norm)/n^2: 1.5233319105198e-09
+	Scf Time: 0.01729643
+		Density Time: 0.008579403
+		Fock Build Time: 0.005145406
 		DF Fock builder:
-			W time: 0.00096039
-			J time: 0.001213626
-			K time: 0.001035148
-			Total exchange time: 0.001995538
+			W time: 0.001006773
+			J time: 0.001295558
+			K time: 0.001487278
+			Total exchange time: 0.002494051
 iteration: 9
-	Energy: -76.2241830987056
-	abs(Energy Change): 5.6843418860808e-14
-	(Gradient Norm)/n^2: 3.29602021314174e-10
-	Scf Time: 0.021174751
-		Density Time: 0.007165153
-		Fock Build Time: 0.008848019
+	Energy: -76.2241830987057
+	abs(Energy Change): 8.5265128291212e-14
+	(Gradient Norm)/n^2: 3.29602071013661e-10
+	Scf Time: 0.018245188
+		Density Time: 0.009561866
+		Fock Build Time: 0.004990664
 		DF Fock builder:
-			W time: 0.0036169
-			J time: 0.003380883
-			K time: 0.001121343
-			Total exchange time: 0.004738243
+			W time: 0.000935937
+			J time: 0.001223345
+			K time: 0.001584985
+			Total exchange time: 0.002520922
 iteration: 10
 	Energy: -76.2241830987058
-	abs(Energy Change): 1.70530256582424e-13
-	(Gradient Norm)/n^2: 9.18506796094891e-11
-	Scf Time: 0.016832352
-		Density Time: 0.00721629
-		Fock Build Time: 0.004341153
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 9.18506848667693e-11
+	Scf Time: 0.01895533
+		Density Time: 0.010013034
+		Fock Build Time: 0.005300381
 		DF Fock builder:
-			W time: 0.000915064
-			J time: 0.00168536
-			K time: 0.001075531
-			Total exchange time: 0.001990595
+			W time: 0.001040798
+			J time: 0.001219905
+			K time: 0.001566818
+			Total exchange time: 0.002607616
   Frozen Core: 2 electrons
 Occ Range
-( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
-Min and Max block size: 5 5
-Average: 5
+( tiles = [ 0, 2 ), elements = [ 0, 5 ) )
+Min and Max block size: 1 4
+Average: 2
 
 ActiveOcc Range
 ( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
@@ -248,14 +251,15 @@ Min and Max block size: 4 4
 Average: 4
 
 Obs Range
-( tiles = [ 0, 3 ), elements = [ 0, 13 ) )
-Min and Max block size: 4 5
-Average: 4
+( tiles = [ 0, 4 ), elements = [ 0, 13 ) )
+Min and Max block size: 1 4
+Average: 3
 
-The average number of OSVs per pair is 6
-The average number of PNOs per pair is 6
+Exact MP2 correlation energy: -0.112386362903495
+ave. nPNOs/pair: 6, ave nOSVs/pair: 6
+PNO-MP2 correlation energy: -0.112272369573661, PNO-MP2 correction: -0.000113993329833528
 Use DF CCSD Compute 
-Integral Prepare Time: 0.016573598
+Integral Prepare Time: 0.008612955
 Start Iteration
 Max Iteration: 50
 Target precision: 1e-08
@@ -263,17 +267,18 @@ AccurateTime: 0
 Verbose: 0
 Reduced ABCD Memory Approach: Yes
   iter 	     deltaE 	   residual 	          energy 	 total time/s 
-    1 	 1.16929e-01 	 8.30319e-05 	 -0.116929163805 	        0.1 
-    2 	 3.59372e-03 	 2.89033e-05 	 -0.120522885212 	        0.1 
-    3 	 4.75091e-04 	 7.53575e-06 	 -0.120997976461 	        0.1 
-    4 	 3.14392e-05 	 1.84885e-06 	 -0.121029415612 	        0.1 
-    5 	 2.99218e-06 	 4.51016e-07 	 -0.121032407790 	        0.1 
-    6 	 1.76254e-07 	 1.04921e-07 	 -0.121032584044 	        0.1 
-    7 	 1.80091e-08 	 3.11409e-08 	 -0.121032602053 	        0.1 
-    8 	 3.02182e-08 	 7.55726e-09 	 -0.121032571835 	        0.1 
-    9 	 2.92841e-09 	 2.09473e-09 	 -0.121032568907 	        0.0 
-CCSD Energy  -0.121032568906693
-CCSD Time in CCSD: 0.646920077 S
+    1 	 1.16929e-01 	 8.30319e-05 	 -0.116929163653 	        0.0 
+    2 	 3.59372e-03 	 2.89033e-05 	 -0.120522885113 	        0.0 
+    3 	 4.75091e-04 	 7.53574e-06 	 -0.120997976523 	        0.0 
+    4 	 3.14391e-05 	 1.84885e-06 	 -0.121029415642 	        0.0 
+    5 	 2.99217e-06 	 4.51015e-07 	 -0.121032407816 	        0.0 
+    6 	 1.76254e-07 	 1.04920e-07 	 -0.121032584071 	        0.0 
+    7 	 1.80091e-08 	 3.11408e-08 	 -0.121032602080 	        0.0 
+    8 	 3.02180e-08 	 7.55723e-09 	 -0.121032571862 	        0.0 
+    9 	 2.92837e-09 	 2.09473e-09 	 -0.121032568933 	        0.0 
+   10 	 6.88260e-10 	 5.51545e-10 	 -0.121032568245 	        0.0 
+CCSD Energy  -0.121032568245051
+CCSD Time in CCSD: 0.492984342 S
   
 EOM-CCSD Excitation Energy 
   Number of roots: 4
@@ -292,7 +297,7 @@ CIS Excitation Energy
 
   CIS Density-fitting: Singlets
 
-iter=   0 	 total time/s=        0.2 	 davidson time/s=        0.1
+iter=   0 	 total time/s=        0.1 	 davidson time/s=        0.1
 root 	     deltaE 	      error 	          energy 
    1 	 3.63555e-01 	 1.14804e-01 	  0.363554985720 
    2 	 4.37921e-01 	 1.21505e-01 	  0.437921253308 
@@ -300,68 +305,68 @@ root 	     deltaE 	      error 	          energy
    4 	 5.46911e-01 	 1.17084e-01 	  0.546910990233 
    5 	 5.94527e-01 	 9.71582e-02 	  0.594527070002 
    6 	 7.57076e-01 	 2.07170e-01 	  0.757076058560 
-   7 	 1.13543e+00 	 1.36321e-02 	  1.135430238106 
+   7 	 1.13543e+00 	 1.36321e-02 	  1.135430238107 
    8 	 1.31686e+00 	 1.33166e-01 	  1.316857795028 
 
-iter=   1 	 total time/s=        0.2 	 davidson time/s=        0.2
+iter=   1 	 total time/s=        0.1 	 davidson time/s=        0.1
 root 	     deltaE 	      error 	          energy 
-   1 	 1.36884e-02 	 9.99758e-03 	  0.349866546223 
+   1 	 1.36884e-02 	 9.99758e-03 	  0.349866546167 
    2 	 1.51435e-02 	 3.32478e-04 	  0.422777741585 
-   3 	 1.37831e-02 	 2.16988e-02 	  0.455435337573 
-   4 	 1.44123e-02 	 2.54498e-02 	  0.532498640336 
-   5 	 7.87200e-03 	 3.88479e-02 	  0.586655069323 
-   6 	 3.56611e-02 	 5.00205e-02 	  0.721414912593 
-   7 	 6.11901e-04 	 1.09310e-03 	  1.134818336685 
-   8 	 3.10484e-02 	 4.16000e-02 	  1.285809425340 
+   3 	 1.37831e-02 	 2.16987e-02 	  0.455435336835 
+   4 	 1.44124e-02 	 2.54498e-02 	  0.532498639891 
+   5 	 7.87200e-03 	 3.88479e-02 	  0.586655068724 
+   6 	 3.56611e-02 	 5.00205e-02 	  0.721414910649 
+   7 	 6.11901e-04 	 1.09310e-03 	  1.134818336679 
+   8 	 3.10484e-02 	 4.15999e-02 	  1.285809423136 
 
-Gram Schmidt neglect 1th vector with norm: 1.15134690264819e-08
-Gram Schmidt neglect 6th vector with norm: 1.03406985667148e-07
-iter=   2 	 total time/s=        0.3 	 davidson time/s=        0.3
+Gram Schmidt neglect 1th vector with norm: 3.08063700854642e-10
+Gram Schmidt neglect 6th vector with norm: 2.49075937983745e-09
+Gram Schmidt neglect 7th vector with norm: 2.91269341175839e-07
+iter=   2 	 total time/s=        0.2 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 8.93849e-05 	 1.46652e-04 	  0.349777161371 
-   2 	 9.68588e-08 	 2.25873e-08 	  0.422777644726 
-   3 	 4.11397e-04 	 5.22000e-03 	  0.455023940605 
-   4 	 5.19199e-04 	 1.89384e-03 	  0.531979441373 
-   5 	 1.60120e-03 	 4.66048e-03 	  0.585053867028 
-   6 	 2.48029e-03 	 1.02464e-02 	  0.718934622681 
-   7 	 5.89226e-06 	 1.46965e-04 	  1.134812444425 
-   8 	 7.45363e-02 	 1.19420e-02 	  1.211273153449 
+   1 	 8.93848e-05 	 1.46651e-04 	  0.349777161370 
+   2 	 9.68588e-08 	 1.12878e-08 	  0.422777644726 
+   3 	 4.11396e-04 	 5.21999e-03 	  0.455023940566 
+   4 	 5.19199e-04 	 1.89383e-03 	  0.531979441346 
+   5 	 1.60120e-03 	 4.66048e-03 	  0.585053867021 
+   6 	 2.48029e-03 	 1.02464e-02 	  0.718934622640 
+   7 	 5.89225e-06 	 1.46966e-04 	  1.134812444427 
+   8 	 7.45363e-02 	 1.19420e-02 	  1.211273149195 
 
-Gram Schmidt neglect 0th vector with norm: 1.90203885344348e-08
-Gram Schmidt neglect 1th vector with norm: 3.7414021751069e-09
-Gram Schmidt neglect 4th vector with norm: 4.39786579129161e-19
-Gram Schmidt neglect 5th vector with norm: 1.8908817996471e-19
-Gram Schmidt neglect 6th vector with norm: 4.76894822692418e-23
-Gram Schmidt neglect 7th vector with norm: 2.26126022933389e-20
-iter=   3 	 total time/s=        0.3 	 davidson time/s=        0.3
+Gram Schmidt neglect 0th vector with norm: 7.60233182391143e-10
+Gram Schmidt neglect 1th vector with norm: 1.0222597762754e-10
+Gram Schmidt neglect 5th vector with norm: 6.01341673883967e-20
+Gram Schmidt neglect 6th vector with norm: 9.83973435243656e-24
+Gram Schmidt neglect 7th vector with norm: 2.63049644477314e-21
+iter=   3 	 total time/s=        0.2 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 2.26904e-08 	 3.20306e-08 	  0.349777138680 
-   2 	 0.00000e+00 	 6.01102e-09 	  0.422777644726 
-   3 	 1.95816e-05 	 1.41900e-05 	  0.455004359027 
-   4 	 2.86058e-06 	 4.26480e-04 	  0.531976580796 
-   5 	 1.76116e-05 	 6.68778e-04 	  0.585036255389 
-   6 	 1.05151e-04 	 9.13537e-05 	  0.718829471380 
-   7 	 1.37865e-07 	 4.62991e-08 	  1.134812306561 
-   8 	 1.72929e-03 	 4.81893e-06 	  1.209543868224 
+   1 	 2.26901e-08 	 1.34048e-09 	  0.349777138680 
+   2 	 1.11022e-16 	 1.65042e-10 	  0.422777644726 
+   3 	 1.95813e-05 	 2.20104e-05 	  0.455004359229 
+   4 	 2.82173e-06 	 4.96803e-04 	  0.531976619612 
+   5 	 1.74033e-05 	 8.63999e-04 	  0.585036463708 
+   6 	 1.05148e-04 	 1.12534e-04 	  0.718829474468 
+   7 	 1.37866e-07 	 7.48543e-09 	  1.134812306561 
+   8 	 1.72928e-03 	 1.42096e-06 	  1.209543868112 
 
-Gram Schmidt neglect 0th vector with norm: 1.27138465171565e-19
-Gram Schmidt neglect 1th vector with norm: 7.68354330218557e-20
-Gram Schmidt neglect 2th vector with norm: 3.23520329526752e-30
-Gram Schmidt neglect 3th vector with norm: 1.4783528666819e-29
-Gram Schmidt neglect 4th vector with norm: 3.90410365579123e-30
-Gram Schmidt neglect 5th vector with norm: 8.83028269869362e-30
-Gram Schmidt neglect 6th vector with norm: 5.43949905994307e-29
-Gram Schmidt neglect 7th vector with norm: 1.67372904610329e-29
-iter=   4 	 total time/s=        0.2 	 davidson time/s=        0.2
+Gram Schmidt neglect 0th vector with norm: 1.96614512519031e-19
+Gram Schmidt neglect 1th vector with norm: 8.03654129585933e-30
+Gram Schmidt neglect 2th vector with norm: 6.00317484554211e-30
+Gram Schmidt neglect 3th vector with norm: 5.12732231333158e-30
+Gram Schmidt neglect 4th vector with norm: 3.20698433337382e-30
+Gram Schmidt neglect 5th vector with norm: 2.17635066840064e-29
+Gram Schmidt neglect 6th vector with norm: 2.09737252653085e-28
+Gram Schmidt neglect 7th vector with norm: 1.74973097931869e-29
+iter=   4 	 total time/s=        0.1 	 davidson time/s=        0.1
 root 	     deltaE 	      error 	          energy 
-   1 	 1.16573e-15 	 2.57437e-15 	  0.349777138680 
-   2 	 6.66134e-16 	 3.47559e-15 	  0.422777644726 
-   3 	 1.75031e-10 	 1.46193e-15 	  0.455004358852 
-   4 	 1.70116e-07 	 3.24429e-15 	  0.531976410679 
-   5 	 4.41186e-07 	 1.11080e-15 	  0.585035814203 
-   6 	 9.69013e-09 	 2.14136e-15 	  0.718829461690 
-   7 	 8.21565e-15 	 4.92010e-15 	  1.134812306561 
-   8 	 1.16904e-10 	 3.25783e-15 	  1.209543868108 
+   1 	 1.66533e-16 	 1.55202e-15 	  0.349777138680 
+   2 	 5.55112e-17 	 2.85622e-15 	  0.422777644726 
+   3 	 3.76944e-10 	 2.70580e-15 	  0.455004358852 
+   4 	 2.08933e-07 	 3.04127e-15 	  0.531976410679 
+   5 	 6.49505e-07 	 1.72414e-15 	  0.585035814203 
+   6 	 1.27786e-08 	 4.31826e-15 	  0.718829461690 
+   7 	 1.77636e-15 	 5.23122e-15 	  1.134812306561 
+   8 	 4.57279e-12 	 2.42902e-15 	  1.209543868108 
 
 
 Excitation Energy: ( Singlets )
@@ -376,441 +381,445 @@ state 	         au 	         eV 	      cm^-1
     8 	 1.20954387 	   32.91336 	  265464.19 
 
 Dominant determinants of excited wave function 1
-    2 	 >     0 	 : 	 -0.701857702930 
-    3 	 >     0 	 : 	  0.701851156018 
-    2 	 >     3 	 : 	 -0.062368761202 
-    3 	 >     3 	 : 	  0.062368179428 
-    2 	 >     5 	 : 	 -0.045235343487 
+    2 	 >     0 	 : 	  0.701854519092 
+    3 	 >     0 	 : 	  0.701854339918 
+    2 	 >     3 	 : 	  0.062368478279 
+    3 	 >     3 	 : 	  0.062368462357 
+    2 	 >     5 	 : 	 -0.045235138286 
 
 Dominant determinants of excited wave function 2
-    2 	 >     1 	 : 	 -0.698337887628 
-    3 	 >     1 	 : 	  0.698331373549 
-    2 	 >     6 	 : 	  0.087436655747 
-    3 	 >     6 	 : 	 -0.087435840140 
-    2 	 >     2 	 : 	  0.068065955975 
+    2 	 >     1 	 : 	  0.698334719757 
+    3 	 >     1 	 : 	  0.698334541481 
+    2 	 >     6 	 : 	  0.087436259108 
+    3 	 >     6 	 : 	  0.087436236787 
+    2 	 >     2 	 : 	 -0.068065647207 
 
 Dominant determinants of excited wave function 3
-    3 	 >     0 	 : 	  0.574840944591 
-    2 	 >     0 	 : 	  0.574829958996 
-    1 	 >     0 	 : 	  0.395251009057 
-    0 	 >     0 	 : 	  0.394566458089 
-    0 	 >     1 	 : 	 -0.085195576652 
+    3 	 >     0 	 : 	  0.574836045282 
+    2 	 >     0 	 : 	 -0.574835744817 
+    1 	 >     0 	 : 	  0.395248726565 
+    0 	 >     0 	 : 	  0.394567453070 
+    0 	 >     1 	 : 	 -0.085195442175 
 
 Dominant determinants of excited wave function 4
-    3 	 >     1 	 : 	  0.557747408868 
-    2 	 >     1 	 : 	  0.557736335050 
-    1 	 >     1 	 : 	  0.414178927201 
-    0 	 >     1 	 : 	  0.406634145320 
-    1 	 >     0 	 : 	  0.113844556349 
+    3 	 >     1 	 : 	 -0.557742489397 
+    2 	 >     1 	 : 	  0.557742187553 
+    1 	 >     1 	 : 	 -0.414176673290 
+    0 	 >     1 	 : 	 -0.406635161367 
+    1 	 >     0 	 : 	 -0.113844735278 
 
 Dominant determinants of excited wave function 5
-    1 	 >     0 	 : 	 -0.695806557306 
-    0 	 >     0 	 : 	  0.692739964442 
-    0 	 >     1 	 : 	  0.093194125828 
-    1 	 >     1 	 : 	  0.090872680123 
-    3 	 >     1 	 : 	  0.074577352351 
+    1 	 >     0 	 : 	  0.695807706925 
+    0 	 >     0 	 : 	 -0.692738816958 
+    0 	 >     1 	 : 	 -0.093194320280 
+    1 	 >     1 	 : 	 -0.090872314657 
+    3 	 >     1 	 : 	 -0.074576482799 
 
 Dominant determinants of excited wave function 6
-    0 	 >     1 	 : 	  0.688594262337 
-    1 	 >     1 	 : 	 -0.688225128086 
-    2 	 >     4 	 : 	 -0.109064976419 
-    3 	 >     4 	 : 	  0.109063959063 
-    3 	 >     5 	 : 	 -0.065312089919 
+    0 	 >     1 	 : 	 -0.688593128415 
+    1 	 >     1 	 : 	  0.688226275841 
+    2 	 >     4 	 : 	  0.109064481667 
+    3 	 >     4 	 : 	  0.109064453824 
+    3 	 >     5 	 : 	 -0.065311572149 
 
 Dominant determinants of excited wave function 7
-    2 	 >     2 	 : 	  0.702657018017 
-    3 	 >     2 	 : 	 -0.702650463649 
-    2 	 >     1 	 : 	  0.072107579575 
-    3 	 >     1 	 : 	 -0.072106906957 
-    2 	 >     6 	 : 	  0.028778474647 
+    2 	 >     2 	 : 	  0.702653830553 
+    3 	 >     2 	 : 	  0.702653651175 
+    2 	 >     1 	 : 	  0.072107252473 
+    3 	 >     1 	 : 	  0.072107234065 
+    2 	 >     6 	 : 	 -0.028778344099 
 
 Dominant determinants of excited wave function 8
-    2 	 >     5 	 : 	 -0.546811370375 
-    3 	 >     5 	 : 	  0.546806269732 
-    2 	 >     3 	 : 	 -0.424323926815 
-    3 	 >     3 	 : 	  0.424319968732 
-    3 	 >     4 	 : 	 -0.103970926528 
+    2 	 >     5 	 : 	 -0.546808889874 
+    3 	 >     5 	 : 	 -0.546808750281 
+    2 	 >     3 	 : 	  0.424322001954 
+    3 	 >     3 	 : 	  0.424321893630 
+    3 	 >     4 	 : 	  0.103970107075 
 
-CIS Total Time: 1.29901478 S
+CIS Total Time: 0.751709149 S
   
 Initialize Intermediates in EOM-CCSD
   
-Time to Initialize Intermediates in EOM-CCSD: 0.061864774 S
-  
-Initialize Intermediates in EOM-CCSD
-  
-Time to Initialize Intermediates in EOM-CCSD: 0.057443974 S
-The average number of OSVs per pair is 6
-The average number of PNOs per pair is 7
-iter=   0 	 total time/s=        0.5 	 davidson time/s=        0.3
+Time to Initialize Intermediates in EOM-CCSD: 0.027090195 S
+iter=   0 	 total time/s=        0.3 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 3.92765e-01 	 3.98837e-04 	  0.392764884392 
-   2 	 4.68715e-01 	 3.83403e-04 	  0.468714548083 
-   3 	 5.00463e-01 	 4.05569e-04 	  0.500463246865 
-   4 	 5.81846e-01 	 3.86152e-04 	  0.581846092474 
+   1 	 3.92765e-01 	 3.98837e-04 	  0.392764885376 
+   2 	 4.68715e-01 	 3.83403e-04 	  0.468714583121 
+   3 	 5.00463e-01 	 4.05569e-04 	  0.500463257438 
+   4 	 5.81846e-01 	 3.86152e-04 	  0.581846140250 
 
-iter=   1 	 total time/s=        0.4 	 davidson time/s=        0.3
+iter=   1 	 total time/s=        0.3 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 7.55251e-02 	 1.00290e-04 	  0.317239740539 
-   2 	 6.90383e-02 	 1.03693e-04 	  0.399676268236 
-   3 	 7.54470e-02 	 1.15654e-04 	  0.425016252320 
-   4 	 7.03180e-02 	 1.15328e-04 	  0.511528095811 
+   1 	 7.55251e-02 	 1.00290e-04 	  0.317239752576 
+   2 	 6.90383e-02 	 1.03693e-04 	  0.399676291381 
+   3 	 7.54470e-02 	 1.15654e-04 	  0.425016288014 
+   4 	 7.03180e-02 	 1.15328e-04 	  0.511528144465 
 
-iter=   2 	 total time/s=        0.5 	 davidson time/s=        0.4
+iter=   2 	 total time/s=        0.4 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 2.98432e-03 	 3.37482e-05 	  0.314255416046 
-   2 	 3.56656e-03 	 3.74734e-05 	  0.396109708195 
-   3 	 4.85837e-03 	 4.77546e-05 	  0.420157883980 
-   4 	 3.93644e-03 	 5.24445e-05 	  0.507591653377 
+   1 	 2.98432e-03 	 3.37482e-05 	  0.314255430438 
+   2 	 3.56657e-03 	 3.74734e-05 	  0.396109726298 
+   3 	 4.85838e-03 	 4.77547e-05 	  0.420157912255 
+   4 	 3.93645e-03 	 5.24446e-05 	  0.507591690978 
 
-iter=   3 	 total time/s=        0.5 	 davidson time/s=        0.4
+iter=   3 	 total time/s=        0.5 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 7.06066e-04 	 1.04429e-05 	  0.314961481939 
-   2 	 7.40622e-04 	 1.09568e-05 	  0.396850330007 
-   3 	 6.36037e-04 	 1.79285e-05 	  0.420793921064 
-   4 	 6.55786e-04 	 1.92381e-05 	  0.508247439831 
+   1 	 7.06066e-04 	 1.04429e-05 	  0.314961496192 
+   2 	 7.40622e-04 	 1.09568e-05 	  0.396850348646 
+   3 	 6.36039e-04 	 1.79285e-05 	  0.420793951426 
+   4 	 6.55788e-04 	 1.92381e-05 	  0.508247478633 
 
-iter=   4 	 total time/s=        0.6 	 davidson time/s=        0.5
+iter=   4 	 total time/s=        0.6 	 davidson time/s=        0.6
 root 	     deltaE 	      error 	          energy 
-   1 	 8.19650e-05 	 2.74400e-06 	  0.315043446910 
-   2 	 7.36176e-05 	 2.82857e-06 	  0.396923947656 
-   3 	 2.01278e-04 	 5.94953e-06 	  0.420995199411 
-   4 	 1.08361e-04 	 6.31052e-06 	  0.508355800952 
+   1 	 8.19649e-05 	 2.74400e-06 	  0.315043461095 
+   2 	 7.36180e-05 	 2.82857e-06 	  0.396923966624 
+   3 	 2.01280e-04 	 5.94953e-06 	  0.420995231003 
+   4 	 1.08362e-04 	 6.31053e-06 	  0.508355840666 
 
-iter=   5 	 total time/s=        0.7 	 davidson time/s=        0.6
+iter=   5 	 total time/s=        0.7 	 davidson time/s=        0.7
 root 	     deltaE 	      error 	          energy 
-   1 	 6.16845e-05 	 8.56667e-07 	  0.315105131370 
-   2 	 4.45921e-05 	 8.42678e-07 	  0.396968539751 
-   3 	 2.37506e-06 	 2.49609e-06 	  0.420992824353 
-   4 	 2.23531e-05 	 1.93948e-06 	  0.508333447857 
+   1 	 6.16846e-05 	 8.56668e-07 	  0.315105145651 
+   2 	 4.45922e-05 	 8.42677e-07 	  0.396968558790 
+   3 	 2.37496e-06 	 2.49609e-06 	  0.420992856046 
+   4 	 2.23529e-05 	 1.93948e-06 	  0.508333487746 
 
-iter=   6 	 total time/s=        0.7 	 davidson time/s=        0.6
+iter=   6 	 total time/s=        0.7 	 davidson time/s=        0.7
 root 	     deltaE 	      error 	          energy 
-   1 	 1.00577e-05 	 3.53061e-07 	  0.315115189069 
-   2 	 5.37239e-06 	 2.86620e-07 	  0.396973912139 
-   3 	 2.66242e-05 	 2.08703e-06 	  0.421019448528 
-   4 	 5.84412e-06 	 7.26867e-07 	  0.508339291981 
+   1 	 1.00577e-05 	 3.53061e-07 	  0.315115203343 
+   2 	 5.37237e-06 	 2.86620e-07 	  0.396973931164 
+   3 	 2.66239e-05 	 2.08703e-06 	  0.421019479969 
+   4 	 5.84409e-06 	 7.26867e-07 	  0.508339331840 
 
-iter=   7 	 total time/s=        0.5 	 davidson time/s=        0.3
+iter=   7 	 total time/s=        0.5 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 3.47658e-06 	 9.92256e-08 	  0.315111712491 
-   2 	 2.69026e-06 	 9.09904e-08 	  0.396971221882 
-   3 	 2.34638e-05 	 1.76643e-06 	  0.421042912318 
-   4 	 1.22412e-05 	 3.19122e-07 	  0.508351533198 
+   1 	 3.47664e-06 	 9.92258e-08 	  0.315111726706 
+   2 	 2.69026e-06 	 9.09903e-08 	  0.396971240907 
+   3 	 2.34638e-05 	 1.76643e-06 	  0.421042943734 
+   4 	 1.22413e-05 	 3.19124e-07 	  0.508351573121 
 
-iter=   8 	 total time/s=        0.4 	 davidson time/s=        0.3
+iter=   8 	 total time/s=        0.4 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 2.65609e-07 	 2.79646e-08 	  0.315111446882 
-   2 	 1.12303e-06 	 3.12261e-08 	  0.396970098856 
-   3 	 2.37367e-05 	 1.52820e-06 	  0.421019175585 
-   4 	 2.63799e-06 	 1.96094e-07 	  0.508348895205 
+   1 	 2.65626e-07 	 2.79656e-08 	  0.315111461079 
+   2 	 1.12302e-06 	 3.12261e-08 	  0.396970117883 
+   3 	 2.37366e-05 	 1.52820e-06 	  0.421019207178 
+   4 	 2.63804e-06 	 1.96097e-07 	  0.508348935079 
 
-iter=   9 	 total time/s=        0.5 	 davidson time/s=        0.4
+iter=   9 	 total time/s=        0.5 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 2.63414e-08 	 1.98332e-08 	  0.315111420541 
-   2 	 3.02580e-07 	 9.98963e-09 	  0.396969796276 
-   3 	 3.29256e-05 	 1.67249e-06 	  0.420986249949 
-   4 	 1.15669e-07 	 2.20666e-07 	  0.508348779536 
+   1 	 2.63518e-08 	 1.98371e-08 	  0.315111434727 
+   2 	 3.02582e-07 	 9.99016e-09 	  0.396969815301 
+   3 	 3.29258e-05 	 1.67249e-06 	  0.420986281409 
+   4 	 1.15675e-07 	 2.20670e-07 	  0.508348819403 
 
-Gram Schmidt neglect 1th vector with norm: 8.63285941347504e-07
-iter=  10 	 total time/s=        0.6 	 davidson time/s=        0.5
+Gram Schmidt neglect 1th vector with norm: 8.63254120123068e-07
+iter=  10 	 total time/s=        0.6 	 davidson time/s=        0.6
 root 	     deltaE 	      error 	          energy 
-   1 	 3.26200e-07 	 4.58175e-08 	  0.315111094341 
-   2 	 5.47305e-08 	 1.44576e-08 	  0.396969851007 
-   3 	 2.40785e-05 	 2.13357e-06 	  0.421010328415 
-   4 	 2.30455e-07 	 1.59154e-07 	  0.508348549081 
+   1 	 3.26296e-07 	 4.58307e-08 	  0.315111108432 
+   2 	 5.47286e-08 	 1.44610e-08 	  0.396969870030 
+   3 	 2.40786e-05 	 2.13357e-06 	  0.421010360054 
+   4 	 2.30437e-07 	 1.59155e-07 	  0.508348588966 
 
-Gram Schmidt neglect 1th vector with norm: 9.17820384160731e-07
-iter=  11 	 total time/s=        0.6 	 davidson time/s=        0.5
+Gram Schmidt neglect 1th vector with norm: 9.1780437613451e-07
+iter=  11 	 total time/s=        0.8 	 davidson time/s=        0.8
 root 	     deltaE 	      error 	          energy 
-   1 	 3.50449e-06 	 1.49997e-07 	  0.315107589852 
-   2 	 4.57537e-08 	 4.64148e-08 	  0.396969805253 
-   3 	 1.93175e-05 	 2.13224e-06 	  0.421029645876 
-   4 	 1.23973e-07 	 8.42802e-08 	  0.508348425108 
+   1 	 3.50553e-06 	 1.50040e-07 	  0.315107602904 
+   2 	 4.57721e-08 	 4.64262e-08 	  0.396969824258 
+   3 	 1.93176e-05 	 2.13224e-06 	  0.421029677703 
+   4 	 1.23961e-07 	 8.42800e-08 	  0.508348465005 
 
 iter=  12 	 total time/s=        0.7 	 davidson time/s=        0.6
 root 	     deltaE 	      error 	          energy 
-   1 	 1.14604e-05 	 3.99759e-07 	  0.315096129446 
-   2 	 2.53320e-07 	 1.23929e-07 	  0.396969551933 
-   3 	 1.91774e-05 	 1.16764e-06 	  0.421010468450 
-   4 	 3.79679e-07 	 6.39428e-08 	  0.508348045429 
+   1 	 1.14627e-05 	 3.99845e-07 	  0.315096140237 
+   2 	 2.53371e-07 	 1.23951e-07 	  0.396969570887 
+   3 	 1.91775e-05 	 1.16765e-06 	  0.421010500223 
+   4 	 3.79669e-07 	 6.39430e-08 	  0.508348085336 
 
-iter=  13 	 total time/s=        0.5 	 davidson time/s=        0.3
+iter=  13 	 total time/s=        0.5 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 7.35488e-09 	 4.22023e-07 	  0.315096122091 
-   2 	 6.02493e-07 	 1.34666e-07 	  0.396968949440 
-   3 	 1.38046e-05 	 5.07104e-07 	  0.420996663846 
-   4 	 1.03007e-06 	 5.09037e-08 	  0.508349075499 
+   1 	 3.09567e-09 	 4.22007e-07 	  0.315096137142 
+   2 	 6.02341e-07 	 1.34656e-07 	  0.396968968546 
+   3 	 1.38048e-05 	 5.07107e-07 	  0.420996695443 
+   4 	 1.03009e-06 	 5.09043e-08 	  0.508349115423 
 
-Gram Schmidt neglect 1th vector with norm: 9.47303739383834e-07
-iter=  14 	 total time/s=        0.4 	 davidson time/s=        0.3
+Gram Schmidt neglect 1th vector with norm: 9.47244962037374e-07
+iter=  14 	 total time/s=        0.4 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 1.02825e-05 	 1.26653e-07 	  0.315106404562 
-   2 	 4.28376e-07 	 4.21264e-08 	  0.396969377816 
-   3 	 2.07754e-06 	 1.89595e-07 	  0.420994586303 
-   4 	 6.55038e-07 	 5.94832e-08 	  0.508349730538 
+   1 	 1.02820e-05 	 1.26641e-07 	  0.315106419190 
+   2 	 4.28384e-07 	 4.21210e-08 	  0.396969396930 
+   3 	 2.07759e-06 	 1.89595e-07 	  0.420994617856 
+   4 	 6.55042e-07 	 5.94843e-08 	  0.508349770464 
 
-Gram Schmidt neglect 1th vector with norm: 9.36651587094562e-07
-iter=  15 	 total time/s=        0.4 	 davidson time/s=        0.3
+Gram Schmidt neglect 1th vector with norm: 9.36610748231846e-07
+iter=  15 	 total time/s=        0.4 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 3.39513e-06 	 3.57611e-08 	  0.315109799692 
-   2 	 4.17811e-07 	 1.31735e-08 	  0.396969795627 
-   3 	 3.78077e-06 	 7.43654e-08 	  0.420990805537 
-   4 	 4.34123e-07 	 9.00689e-08 	  0.508350164661 
+   1 	 3.39481e-06 	 3.57566e-08 	  0.315109814001 
+   2 	 4.17736e-07 	 1.31714e-08 	  0.396969814666 
+   3 	 3.78077e-06 	 7.43647e-08 	  0.420990837084 
+   4 	 4.34143e-07 	 9.00702e-08 	  0.508350204608 
 
-Gram Schmidt neglect 1th vector with norm: 9.24357502294697e-07
-iter=  16 	 total time/s=        0.5 	 davidson time/s=        0.4
+Gram Schmidt neglect 1th vector with norm: 9.24315853633248e-07
+iter=  16 	 total time/s=        0.5 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 1.20225e-06 	 9.72200e-09 	  0.315111001941 
-   2 	 4.46331e-08 	 4.34634e-09 	  0.396969840260 
-   3 	 5.81099e-07 	 7.12491e-08 	  0.420990224438 
-   4 	 2.85511e-07 	 1.02593e-07 	  0.508350450172 
+   1 	 1.20212e-06 	 9.71938e-09 	  0.315111016125 
+   2 	 4.46097e-08 	 4.34524e-09 	  0.396969859276 
+   3 	 5.81090e-07 	 7.12462e-08 	  0.420990255994 
+   4 	 2.85478e-07 	 1.02593e-07 	  0.508350490085 
 
-Gram Schmidt neglect 1th vector with norm: 9.23005964542343e-07
-iter=  17 	 total time/s=        0.5 	 davidson time/s=        0.5
+Gram Schmidt neglect 1th vector with norm: 9.22976918318294e-07
+iter=  17 	 total time/s=        0.6 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 2.15100e-07 	 3.50112e-09 	  0.315111217041 
-   2 	 7.16785e-09 	 3.35134e-09 	  0.396969833092 
-   3 	 2.48581e-06 	 1.72029e-07 	  0.420992710251 
-   4 	 1.24070e-07 	 1.10024e-07 	  0.508350574242 
+   1 	 2.15053e-07 	 3.49740e-09 	  0.315111231178 
+   2 	 7.16382e-09 	 3.35078e-09 	  0.396969852112 
+   3 	 2.48567e-06 	 1.72020e-07 	  0.420992741666 
+   4 	 1.24119e-07 	 1.10022e-07 	  0.508350614204 
 
-Gram Schmidt neglect 0th vector with norm: 3.68905646373351e-07
-Gram Schmidt neglect 1th vector with norm: 9.23478102658125e-07
-iter=  18 	 total time/s=        0.6 	 davidson time/s=        0.5
+Gram Schmidt neglect 0th vector with norm: 3.66980466876256e-07
+Gram Schmidt neglect 1th vector with norm: 9.2325194485737e-07
+iter=  18 	 total time/s=        0.6 	 davidson time/s=        0.6
 root 	     deltaE 	      error 	          energy 
-   1 	 5.24220e-08 	 1.17065e-09 	  0.315111269463 
-   2 	 1.33040e-08 	 2.97883e-09 	  0.396969819788 
-   3 	 1.81714e-06 	 3.89281e-07 	  0.420994527395 
-   4 	 3.99511e-06 	 1.97227e-07 	  0.508346579128 
+   1 	 5.23748e-08 	 1.15763e-09 	  0.315111283553 
+   2 	 1.33101e-08 	 2.97751e-09 	  0.396969838802 
+   3 	 1.81709e-06 	 3.89259e-07 	  0.420994558761 
+   4 	 3.99397e-06 	 1.97214e-07 	  0.508346620233 
 
-Gram Schmidt neglect 0th vector with norm: 3.88601960944052e-07
-Gram Schmidt neglect 1th vector with norm: 9.52648899682954e-07
-Gram Schmidt neglect 8th vector with norm: 1.02593381528659e-07
-Gram Schmidt neglect 9th vector with norm: 5.22878626783201e-08
-iter=  19 	 total time/s=        0.5 	 davidson time/s=        0.5
+Gram Schmidt neglect 0th vector with norm: 3.71026299672313e-07
+Gram Schmidt neglect 1th vector with norm: 9.51337968405307e-07
+Gram Schmidt neglect 8th vector with norm: 2.37994670810016e-09
+Gram Schmidt neglect 9th vector with norm: 5.42095947489584e-10
+iter=  19 	 total time/s=        0.5 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 2.05997e-11 	 1.20655e-09 	  0.315111269484 
-   2 	 6.57790e-12 	 2.98132e-09 	  0.396969819781 
-   3 	 6.82919e-06 	 7.91442e-07 	  0.421001356587 
-   4 	 1.25065e-05 	 4.49857e-07 	  0.508334072667 
+   1 	 1.15463e-14 	 1.15765e-09 	  0.315111283553 
+   2 	 2.72005e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 6.82907e-06 	 7.91401e-07 	  0.421001387831 
+   4 	 1.25022e-05 	 4.49697e-07 	  0.508334118079 
 
-Gram Schmidt neglect 0th vector with norm: 3.99401409690905e-07
-Gram Schmidt neglect 1th vector with norm: 9.49881295122365e-07
+Gram Schmidt neglect 0th vector with norm: 3.70648335887738e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453856664687e-07
 iter=  20 	 total time/s=        0.3 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 2.00738e-10 	 1.28011e-09 	  0.315111269685 
-   2 	 3.09724e-11 	 2.98794e-09 	  0.396969819750 
-   3 	 1.79149e-05 	 1.43659e-06 	  0.420983441668 
-   4 	 7.38575e-06 	 8.44600e-07 	  0.508326686921 
+   1 	 7.49401e-14 	 1.15769e-09 	  0.315111283553 
+   2 	 3.38618e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 1.79145e-05 	 1.43653e-06 	  0.420983473332 
+   4 	 7.39211e-06 	 8.44355e-07 	  0.508326725971 
 
-Gram Schmidt neglect 0th vector with norm: 3.95022144059207e-07
-Gram Schmidt neglect 1th vector with norm: 9.49603828986228e-07
+Gram Schmidt neglect 0th vector with norm: 3.70645700180547e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453805144132e-07
 iter=  21 	 total time/s=        0.2 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 8.25813e-11 	 1.23448e-09 	  0.315111269767 
-   2 	 2.56289e-11 	 2.98434e-09 	  0.396969819725 
-   3 	 8.50449e-06 	 1.24989e-06 	  0.420974937182 
-   4 	 3.00304e-05 	 8.28605e-07 	  0.508356717307 
+   1 	 1.63203e-14 	 1.15766e-09 	  0.315111283553 
+   2 	 3.83027e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 8.50289e-06 	 1.24989e-06 	  0.420974970447 
+   4 	 3.00401e-05 	 8.28593e-07 	  0.508356766050 
 
-Gram Schmidt neglect 0th vector with norm: 3.80074536514675e-07
-Gram Schmidt neglect 1th vector with norm: 9.48193713097338e-07
+Gram Schmidt neglect 0th vector with norm: 3.70637909791942e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453703539701e-07
 iter=  22 	 total time/s=        0.2 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 1.70602e-10 	 1.18895e-09 	  0.315111269597 
-   2 	 2.30284e-11 	 2.97992e-09 	  0.396969819748 
-   3 	 1.37668e-05 	 6.57052e-07 	  0.420988704029 
-   4 	 1.41499e-07 	 5.04957e-07 	  0.508356575807 
+   1 	 6.38378e-14 	 1.15764e-09 	  0.315111283553 
+   2 	 4.10783e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 1.37655e-05 	 6.57067e-07 	  0.420988735911 
+   4 	 1.42959e-07 	 5.04969e-07 	  0.508356623091 
 
-Gram Schmidt neglect 0th vector with norm: 3.76643702148905e-07
-Gram Schmidt neglect 1th vector with norm: 9.47815413108442e-07
+Gram Schmidt neglect 0th vector with norm: 3.70635821805775e-07
+Gram Schmidt neglect 1th vector with norm: 9.474536768946e-07
 iter=  23 	 total time/s=        0.3 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 2.00657e-11 	 1.17452e-09 	  0.315111269577 
-   2 	 1.41713e-11 	 2.97858e-09 	  0.396969819762 
-   3 	 2.62468e-06 	 2.56458e-07 	  0.420986079347 
-   4 	 2.05363e-06 	 2.18962e-07 	  0.508354522177 
+   1 	 5.55112e-15 	 1.15763e-09 	  0.315111283553 
+   2 	 2.05391e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 2.62430e-06 	 2.56465e-07 	  0.420986111611 
+   4 	 2.06130e-06 	 2.18890e-07 	  0.508354561791 
 
-Gram Schmidt neglect 0th vector with norm: 3.76377825832716e-07
-Gram Schmidt neglect 1th vector with norm: 9.47732761599067e-07
+Gram Schmidt neglect 0th vector with norm: 3.70635770358616e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453672215256e-07
 iter=  24 	 total time/s=        0.3 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 3.98870e-12 	 1.17476e-09 	  0.315111269581 
-   2 	 4.04426e-12 	 2.97839e-09 	  0.396969819766 
-   3 	 1.43122e-07 	 1.60709e-07 	  0.420986222470 
-   4 	 1.79304e-06 	 1.93129e-07 	  0.508352729134 
+   1 	 8.88178e-16 	 1.15763e-09 	  0.315111283553 
+   2 	 2.22045e-16 	 2.97751e-09 	  0.396969838802 
+   3 	 1.43266e-07 	 1.60715e-07 	  0.420986254877 
+   4 	 1.79233e-06 	 1.93071e-07 	  0.508352769461 
 
-Gram Schmidt neglect 0th vector with norm: 3.77590751936845e-07
-Gram Schmidt neglect 1th vector with norm: 9.47763714807352e-07
+Gram Schmidt neglect 0th vector with norm: 3.70636329495965e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453671053335e-07
 iter=  25 	 total time/s=        0.3 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 1.19536e-10 	 1.17920e-09 	  0.315111269700 
-   2 	 7.51610e-12 	 2.97854e-09 	  0.396969819758 
-   3 	 2.04082e-06 	 1.74533e-07 	  0.420988263286 
-   4 	 3.89394e-06 	 2.86889e-07 	  0.508348835190 
+   1 	 3.66374e-14 	 1.15763e-09 	  0.315111283553 
+   2 	 1.22125e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 2.04070e-06 	 1.74550e-07 	  0.420988295578 
+   4 	 3.89838e-06 	 2.87041e-07 	  0.508348871076 
 
-Gram Schmidt neglect 0th vector with norm: 3.77455247078899e-07
-Gram Schmidt neglect 1th vector with norm: 9.47754858264045e-07
-iter=  26 	 total time/s=        0.4 	 davidson time/s=        0.4
+Gram Schmidt neglect 0th vector with norm: 3.70636697146286e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453673255163e-07
+iter=  26 	 total time/s=        0.4 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 1.18834e-10 	 1.17968e-09 	  0.315111269819 
-   2 	 2.25029e-11 	 2.97860e-09 	  0.396969819736 
-   3 	 8.21261e-07 	 3.40675e-07 	  0.420987442025 
-   4 	 5.92568e-06 	 3.80005e-07 	  0.508342909511 
+   1 	 3.51386e-14 	 1.15764e-09 	  0.315111283553 
+   2 	 1.33227e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 8.17152e-07 	 3.40869e-07 	  0.420987478426 
+   4 	 5.94644e-06 	 3.80376e-07 	  0.508342924636 
 
-Gram Schmidt neglect 0th vector with norm: 3.75832305358864e-07
-Gram Schmidt neglect 1th vector with norm: 9.4783327162227e-07
+Gram Schmidt neglect 0th vector with norm: 3.70635882997808e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453693004108e-07
 iter=  27 	 total time/s=        0.4 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 1.54930e-11 	 1.17732e-09 	  0.315111269803 
-   2 	 2.90734e-12 	 2.97881e-09 	  0.396969819733 
-   3 	 1.27507e-07 	 5.62299e-07 	  0.420987569531 
-   4 	 2.72683e-06 	 5.13381e-07 	  0.508345636341 
+   1 	 5.88418e-15 	 1.15763e-09 	  0.315111283553 
+   2 	 2.22045e-16 	 2.97751e-09 	  0.396969838802 
+   3 	 1.36095e-07 	 5.62615e-07 	  0.420987614521 
+   4 	 2.72877e-06 	 5.13296e-07 	  0.508345653409 
 
-Gram Schmidt neglect 0th vector with norm: 3.74855312138259e-07
-Gram Schmidt neglect 1th vector with norm: 9.47711697436507e-07
+Gram Schmidt neglect 0th vector with norm: 3.70635166498898e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453668747189e-07
 iter=  28 	 total time/s=        0.5 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 3.45019e-10 	 1.17651e-09 	  0.315111269458 
-   2 	 8.79488e-11 	 2.97865e-09 	  0.396969819821 
-   3 	 1.95271e-06 	 5.67000e-07 	  0.420985616817 
-   4 	 1.55716e-06 	 4.63400e-07 	  0.508347193503 
+   1 	 1.08191e-13 	 1.15763e-09 	  0.315111283553 
+   2 	 1.40998e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 1.93089e-06 	 5.67291e-07 	  0.420985683631 
+   4 	 1.55379e-06 	 4.62751e-07 	  0.508347207197 
 
-Gram Schmidt neglect 0th vector with norm: 3.75471249609914e-07
-Gram Schmidt neglect 1th vector with norm: 9.47723780337951e-07
+Gram Schmidt neglect 0th vector with norm: 3.70634538411522e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453655532578e-07
 iter=  29 	 total time/s=        0.5 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 7.51427e-11 	 1.17502e-09 	  0.315111269383 
-   2 	 8.11096e-12 	 2.97849e-09 	  0.396969819829 
-   3 	 1.56446e-06 	 3.49361e-07 	  0.420984052361 
-   4 	 1.10368e-05 	 6.61813e-07 	  0.508358230302 
+   1 	 4.36873e-14 	 1.15763e-09 	  0.315111283553 
+   2 	 2.77556e-16 	 2.97751e-09 	  0.396969838802 
+   3 	 1.53832e-06 	 3.48740e-07 	  0.420984145313 
+   4 	 1.11321e-05 	 6.63016e-07 	  0.508358339271 
 
-Gram Schmidt neglect 0th vector with norm: 3.709220743626e-07
-Gram Schmidt neglect 1th vector with norm: 9.47578963041578e-07
-iter=  30 	 total time/s=        0.6 	 davidson time/s=        0.5
+Gram Schmidt neglect 0th vector with norm: 3.70633635915106e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453662439141e-07
+iter=  30 	 total time/s=        0.5 	 davidson time/s=        0.5
 root 	     deltaE 	      error 	          energy 
-   1 	 1.81588e-10 	 1.16282e-09 	  0.315111269565 
-   2 	 3.66062e-11 	 2.97804e-09 	  0.396969819866 
-   3 	 9.11031e-07 	 1.47550e-07 	  0.420984963392 
-   4 	 3.97289e-06 	 1.37010e-06 	  0.508362203191 
+   1 	 2.77556e-15 	 1.15763e-09 	  0.315111283553 
+   2 	 2.18714e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 8.76450e-07 	 1.47041e-07 	  0.420985021763 
+   4 	 4.31098e-06 	 1.37867e-06 	  0.508362650254 
 
-Gram Schmidt neglect 0th vector with norm: 3.73837313407768e-07
-Gram Schmidt neglect 1th vector with norm: 9.51402586788858e-07
-Gram Schmidt neglect 8th vector with norm: 8.52852290897485e-08
-Gram Schmidt neglect 9th vector with norm: 5.0686703413738e-08
-iter=  31 	 total time/s=        0.6 	 davidson time/s=        0.5
+Gram Schmidt neglect 0th vector with norm: 3.71018349488971e-07
+Gram Schmidt neglect 1th vector with norm: 9.51337873755067e-07
+Gram Schmidt neglect 8th vector with norm: 2.40286631412358e-09
+Gram Schmidt neglect 9th vector with norm: 1.48414087444063e-09
+iter=  31 	 total time/s=        0.5 	 davidson time/s=        0.4
 root 	     deltaE 	      error 	          energy 
-   1 	 1.70636e-12 	 1.16669e-09 	  0.315111269567 
-   2 	 6.36953e-11 	 2.97790e-09 	  0.396969819929 
-   3 	 2.01857e-06 	 1.03955e-07 	  0.420982944820 
-   4 	 3.83876e-05 	 2.16834e-06 	  0.508323815595 
+   1 	 1.91513e-14 	 1.15763e-09 	  0.315111283553 
+   2 	 2.02061e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 2.00099e-06 	 1.03714e-07 	  0.420983020771 
+   4 	 3.76519e-05 	 2.17608e-06 	  0.508324998343 
 
-Gram Schmidt neglect 0th vector with norm: 3.71273259214279e-07
-Gram Schmidt neglect 1th vector with norm: 9.47500302248161e-07
+Gram Schmidt neglect 0th vector with norm: 3.70633966244944e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453585305318e-07
 iter=  32 	 total time/s=        0.3 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 4.37264e-10 	 1.16098e-09 	  0.315111270004 
-   2 	 2.53528e-11 	 2.97766e-09 	  0.396969819904 
-   3 	 9.70694e-07 	 5.24414e-08 	  0.420981974125 
-   4 	 1.80249e-05 	 1.17235e-06 	  0.508305790737 
+   1 	 1.07747e-13 	 1.15763e-09 	  0.315111283553 
+   2 	 4.38538e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 9.72766e-07 	 5.15730e-08 	  0.420982048004 
+   4 	 1.81913e-05 	 1.15512e-06 	  0.508306807078 
 
-Gram Schmidt neglect 0th vector with norm: 3.70258668022581e-07
-Gram Schmidt neglect 1th vector with norm: 9.47476497283616e-07
+Gram Schmidt neglect 0th vector with norm: 3.70633004292313e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453558909543e-07
 iter=  33 	 total time/s=        0.2 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 3.85557e-10 	 1.16043e-09 	  0.315111270389 
-   2 	 4.54026e-13 	 2.97759e-09 	  0.396969819905 
-   3 	 2.66524e-07 	 1.97360e-08 	  0.420981707601 
-   4 	 1.27159e-05 	 4.40760e-07 	  0.508318506642 
+   1 	 1.47438e-13 	 1.15762e-09 	  0.315111283553 
+   2 	 3.99680e-15 	 2.97751e-09 	  0.396969838802 
+   3 	 2.84515e-07 	 1.90941e-08 	  0.420981763489 
+   4 	 1.19371e-05 	 4.23591e-07 	  0.508318744182 
 
-Gram Schmidt neglect 0th vector with norm: 3.67704186351484e-07
-Gram Schmidt neglect 1th vector with norm: 9.47501420192886e-07
-iter=  34 	 total time/s=        0.2 	 davidson time/s=        0.2
+Gram Schmidt neglect 0th vector with norm: 3.70632583251924e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453551207038e-07
+iter=  34 	 total time/s=        0.3 	 davidson time/s=        0.2
 root 	     deltaE 	      error 	          energy 
-   1 	 7.70260e-10 	 1.15711e-09 	  0.315111271160 
-   2 	 7.34334e-11 	 2.97757e-09 	  0.396969819978 
-   3 	 2.39052e-09 	 8.81093e-09 	  0.420981705211 
-   4 	 9.31789e-06 	 1.75259e-07 	  0.508327824533 
+   1 	 1.81744e-13 	 1.15762e-09 	  0.315111283553 
+   2 	 1.82632e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 1.44814e-08 	 8.36874e-09 	  0.420981749008 
+   4 	 8.90940e-06 	 1.61228e-07 	  0.508327653585 
 
-Gram Schmidt neglect 0th vector with norm: 3.66716298229943e-07
-Gram Schmidt neglect 1th vector with norm: 9.47398499683531e-07
-iter=  35 	 total time/s=        0.3 	 davidson time/s=        0.2
+Gram Schmidt neglect 0th vector with norm: 3.7063236447206e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453546015703e-07
+iter=  35 	 total time/s=        0.3 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 9.95223e-10 	 1.15579e-09 	  0.315111272155 
-   2 	 1.18280e-10 	 2.97729e-09 	  0.396969820096 
-   3 	 3.80409e-08 	 5.62515e-09 	  0.420981667170 
-   4 	 3.53616e-06 	 7.20983e-08 	  0.508331360693 
+   1 	 3.00648e-13 	 1.15762e-09 	  0.315111283554 
+   2 	 2.40918e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 4.25146e-08 	 5.35709e-09 	  0.420981706493 
+   4 	 3.39521e-06 	 6.22181e-08 	  0.508331048800 
 
-Gram Schmidt neglect 0th vector with norm: 3.64006217360962e-07
-Gram Schmidt neglect 1th vector with norm: 9.47416973936419e-07
-Gram Schmidt neglect 2th vector with norm: 9.20687366535757e-07
+Gram Schmidt neglect 0th vector with norm: 3.70631388029139e-07
+Gram Schmidt neglect 1th vector with norm: 9.4745354254244e-07
+Gram Schmidt neglect 2th vector with norm: 8.57995621155935e-07
 iter=  36 	 total time/s=        0.3 	 davidson time/s=        0.3
 root 	     deltaE 	      error 	          energy 
-   1 	 1.50893e-09 	 1.15273e-09 	  0.315111273664 
-   2 	 8.83894e-11 	 2.97726e-09 	  0.396969820185 
-   3 	 5.51378e-08 	 3.06732e-09 	  0.420981722308 
-   4 	 2.56810e-08 	 3.37529e-08 	  0.508331386374 
+   1 	 5.05207e-13 	 1.15762e-09 	  0.315111283554 
+   2 	 2.72005e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 5.16106e-08 	 2.87278e-09 	  0.420981758104 
+   4 	 1.62218e-07 	 2.65675e-08 	  0.508331211018 
+
+Gram Schmidt neglect 0th vector with norm: 3.70628827490728e-07
+Gram Schmidt neglect 1th vector with norm: 9.47453526265161e-07
+Gram Schmidt neglect 2th vector with norm: 8.61542703732846e-07
+iter=  37 	 total time/s=        0.3 	 davidson time/s=        0.3
+root 	     deltaE 	      error 	          energy 
+   1 	 1.37745e-12 	 1.15762e-09 	  0.315111283556 
+   2 	 8.03801e-14 	 2.97751e-09 	  0.396969838802 
+   3 	 3.56186e-09 	 2.91849e-09 	  0.420981761665 
+   4 	 6.27462e-08 	 1.91935e-08 	  0.508331148272 
 
 
 Excitation Energy: ( Singlets )
 state 	         au 	         eV 	      cm^-1 
-    1 	 0.31511127 	    8.57461 	   69158.93 
-    2 	 0.39696982 	   10.80210 	   87124.81 
-    3 	 0.42098172 	   11.45550 	   92394.81 
-    4 	 0.50833139 	   13.83240 	  111565.84 
+    1 	 0.31511128 	    8.57461 	   69158.93 
+    2 	 0.39696984 	   10.80210 	   87124.81 
+    3 	 0.42098176 	   11.45550 	   92394.82 
+    4 	 0.50833115 	   13.83239 	  111565.79 
 
 Dominant determinants of excited wave function 1
-    2 	 >     0 	 : 	  0.680884731081 
-    3 	 >     0 	 : 	 -0.680878393864 
-    2 	 >     3 	 : 	  0.040389155807 
-    3 	 >     3 	 : 	 -0.040388560542 
-    2 	 >     5 	 : 	  0.028837721721 
+    2 	 >     0 	 : 	  0.680881663425 
+    3 	 >     0 	 : 	  0.680881488665 
+    2 	 >     3 	 : 	  0.040388876261 
+    3 	 >     3 	 : 	  0.040388858635 
+    3 	 >     5 	 : 	 -0.028837723717 
 
-    1 	     2 	 >     1 	     0 	 : 	 -0.045294070975 
-    2 	     1 	 >     0 	     1 	 : 	 -0.045294070975 
-    3 	     1 	 >     0 	     1 	 : 	  0.045293629614 
-    1 	     3 	 >     1 	     0 	 : 	  0.045293629614 
-    2 	     0 	 >     0 	     1 	 : 	  0.044711445443 
+    2 	     1 	 >     0 	     1 	 : 	  0.045293907249 
+    1 	     2 	 >     1 	     0 	 : 	  0.045293907249 
+    1 	     3 	 >     1 	     0 	 : 	  0.045293895782 
+    3 	     1 	 >     0 	     1 	 : 	  0.045293895782 
+    0 	     2 	 >     1 	     0 	 : 	 -0.044711152133 
 
 Dominant determinants of excited wave function 2
-    2 	 >     1 	 : 	 -0.679157232222 
-    3 	 >     1 	 : 	  0.679150869468 
-    2 	 >     6 	 : 	  0.058498833826 
-    3 	 >     6 	 : 	 -0.058498293419 
-    2 	 >     2 	 : 	  0.048790351070 
+    2 	 >     1 	 : 	 -0.679154136545 
+    3 	 >     1 	 : 	 -0.679153963402 
+    2 	 >     6 	 : 	 -0.058498591934 
+    3 	 >     6 	 : 	 -0.058498577094 
+    2 	 >     2 	 : 	  0.048790120877 
 
-    2 	     0 	 >     1 	     1 	 : 	 -0.049304162454 
-    0 	     2 	 >     1 	     1 	 : 	 -0.049304162454 
-    0 	     3 	 >     1 	     1 	 : 	  0.049303724931 
-    3 	     0 	 >     1 	     1 	 : 	  0.049303724931 
-    2 	     1 	 >     1 	     1 	 : 	  0.048457459314 
+    0 	     2 	 >     1 	     1 	 : 	  0.049303843831 
+    2 	     0 	 >     1 	     1 	 : 	  0.049303843831 
+    3 	     0 	 >     1 	     1 	 : 	  0.049303830177 
+    0 	     3 	 >     1 	     1 	 : 	  0.049303830177 
+    2 	     1 	 >     1 	     1 	 : 	 -0.048457298711 
 
 Dominant determinants of excited wave function 3
-    3 	 >     0 	 : 	  0.567354032128 
-    2 	 >     0 	 : 	  0.567343889462 
-    0 	 >     0 	 : 	  0.367986382992 
-    1 	 >     0 	 : 	  0.366959307913 
-    0 	 >     1 	 : 	 -0.064585126436 
+    3 	 >     0 	 : 	  0.567349519344 
+    2 	 >     0 	 : 	 -0.567349229856 
+    0 	 >     0 	 : 	  0.367987103500 
+    1 	 >     0 	 : 	  0.366957266283 
+    0 	 >     1 	 : 	 -0.064584903927 
 
-    0 	     1 	 >     0 	     0 	 : 	  0.050116615053 
-    1 	     0 	 >     0 	     0 	 : 	  0.050116615053 
-    2 	     3 	 >     0 	     0 	 : 	  0.043105030042 
-    3 	     2 	 >     0 	     0 	 : 	  0.043105030042 
-    3 	     1 	 >     0 	     1 	 : 	 -0.040826164551 
+    1 	     0 	 >     0 	     0 	 : 	 -0.050116574476 
+    0 	     1 	 >     0 	     0 	 : 	 -0.050116574476 
+    3 	     2 	 >     0 	     0 	 : 	  0.043105266195 
+    2 	     3 	 >     0 	     0 	 : 	  0.043105266195 
+    3 	     1 	 >     0 	     1 	 : 	  0.040825846549 
 
 Dominant determinants of excited wave function 4
-    3 	 >     1 	 : 	  0.551198110378 
-    2 	 >     1 	 : 	  0.551188957481 
-    1 	 >     1 	 : 	  0.384065550437 
-    0 	 >     1 	 : 	  0.379103816523 
-    1 	 >     0 	 : 	  0.101976746937 
+    3 	 >     1 	 : 	  0.551193131533 
+    2 	 >     1 	 : 	 -0.551192840227 
+    1 	 >     1 	 : 	  0.384051998161 
+    0 	 >     1 	 : 	  0.379118585129 
+    1 	 >     0 	 : 	  0.101982326154 
 
-    1 	     0 	 >     0 	     1 	 : 	  0.042571500561 
-    0 	     1 	 >     1 	     0 	 : 	  0.042571500561 
-    3 	     0 	 >     1 	     1 	 : 	  0.042445804904 
-    0 	     3 	 >     1 	     1 	 : 	  0.042445804904 
-    2 	     0 	 >     1 	     1 	 : 	  0.042444988169 
+    1 	     0 	 >     0 	     1 	 : 	 -0.042571069902 
+    0 	     1 	 >     1 	     0 	 : 	 -0.042571069902 
+    3 	     0 	 >     1 	     1 	 : 	 -0.042443945656 
+    0 	     3 	 >     1 	     1 	 : 	 -0.042443945656 
+    2 	     0 	 >     1 	     1 	 : 	  0.042443936588 
 
-EOM-CCSD Total Time: 17.898145595 S
+EOM-CCSD Total Time: 17.607486113 S
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -838,8 +847,10 @@ EOM-CCSD Total Time: 17.898145595 S
     "scf": {
         "type": "RI-RHF",
         "wfn_world": "$:wfn_world",
-        "localize": "true",
-        "localization_method": "boys-foster(valence)"
+        "localizer": {
+            "type": "FosterBoysLocalizer"
+        },
+        "localize_core": "false"
     },
     "wfn": {
         "type": "EOM-CCSD",
@@ -866,10 +877,10 @@ EOM-CCSD Total Time: 17.898145595 S
         "wfn": "$:wfn",
         "value": {
             "value": [
-                "0.31511127366376496",
-                "0.39696982018461885",
-                "0.42098172230750014",
-                "0.5083313863743113"
+                "0.31511128355553114",
+                "0.39696983880196984",
+                "0.42098176166546908",
+                "0.50833114827195236"
             ]
         }
     }

@@ -86,7 +86,8 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   // can use deprecated paths
-  REQUIRE(kv.value<double>(":z:1", 0.0, "") == +2.35);
+  REQUIRE(kv.value<double>("", 0.0, ":z:1") == +2.35);  // empty primary path is ignored
+  REQUIRE(kv.value<double>(":z:1", 0.0, "") == +2.35);  // empty deprecated path is ignored also
   REQUIRE(kv.value<double>(":z:2", 0.0, ":z:1") == +2.35);
   REQUIRE(kv.value<double>(":z:2", 1.0, "") == 1.0);
   REQUIRE(kv.value<double>(":z:2", 1.0, ":z:3") == 1.0);

@@ -722,11 +722,11 @@ class KeyVal {
   /// return value corresponding to a path and convert to the desired type.
   /// @tparam T the desired value type
   /// @tparam Validator the type of @c validator
-  /// @param path the path to the value
+  /// @param path the path to the value; ignored if empty
   /// @param default_value the default value will be returned if @c path is not
   /// found.
   /// @param deprecated_path a deprecated path will only be queried if its not
-  ///        empty and @c path not found;
+  ///        empty and @c path is empty or not found;
   ///        if its value is used a message will be added
   ///        to @std::cerr. The default is an empty string.
   /// @param validator a callable for which @c validator(T) returns a boolean.
@@ -745,7 +745,8 @@ class KeyVal {
     T result = default_value;
     const key_type* read_path = &path;
 
-    if (auto subtree = this->get_subtree(path)) {
+    auto subtree = this->get_subtree(path);
+    if (!path.empty() && subtree) {
       result = subtree.get().template get_value<T>(default_value);
     } else if (!deprecated_path.empty() &&
                (subtree = this->get_subtree(deprecated_path))) {

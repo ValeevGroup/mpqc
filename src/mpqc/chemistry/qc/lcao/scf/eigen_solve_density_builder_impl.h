@@ -102,7 +102,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   if (localizer_) {
     auto l0 = mpqc::fenced_now(world);
-    auto U = localizer_->compute(C_occ_ao, (localize_core_ ? ncore_ : 0));
+    auto U = localizer_->compute(C_occ_ao, (!localize_core_ ? ncore_ : 0));
     C_occ_ao("mu,i") = C_occ_ao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 

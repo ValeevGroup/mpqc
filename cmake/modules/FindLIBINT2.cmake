@@ -101,7 +101,10 @@ else (LIBINT2_INCLUDE_DIRS)
       "
           #include <libint2.hpp>
           #include <libint2/config.h>
-          #if !(INCLUDE_ONEBODY>=0 && INCLUDE_ERI>=0 && INCLUDE_ERI3>=0 && INCLUDE_ERI2>=0)
+          #ifndef MULTIPOLE_MAX_ORDER
+          # error \"Libint2 library must be configured with support for multipole integrals\"
+          #endif
+          #if !(INCLUDE_ONEBODY>=0 && INCLUDE_ERI>=0 && INCLUDE_ERI3>=0 && INCLUDE_ERI2>=0 && MULTIPOLE_MAX_ORDER>=0)
           # error \"Libint2 library must be configured with support for 1-body and (2, 3, and 4-center) 2-body integrals\"
           #endif
           int main(int argc, char** argv) {

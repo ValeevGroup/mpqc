@@ -2,4 +2,5 @@ This code example, written in C++, demonstrates how to implement a simple MP2 pr
 
 1) To compile this example you must have compiled MPQC and installed it using 'make install' command. This will install the code examples under $prefix/doc/share/mpqc-${version}/examples directory, where $prefix is the installation prefix provided to configure script during configuration of MPQC (the default is /usr/local/mpqc/$mpqcversion).
 2) To compile the mp2 example simply type 'make', this will create an executable file called 'mp2'. To run it simply type './mp2 ./mp2.json’.
-3) To compare the MP2 energy against that obtained with MPQC, simply change object type from MP2 to RMP2 in 'mp2.json’, and run mpqc as 'mpqc ./mp2.json’.
+3) To compare the MP2 energy against that obtained with MPQC, simply change object type from MP2 to RMP2 in 'mp2.json’,
+   change keyword "localize" to false (since RMP2 implements canonical MP2 energy only), and run the example again as './mp2 ./mp2.json’ (or you can run the main MPQC executable: 'mpqc ./mp2.json').

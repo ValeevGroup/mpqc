@@ -29,8 +29,8 @@ double compute_angle(double Aij, double Bij) {
   return (std::abs(gamma) < 1e-7) ? 0.0 : gamma;
 };
 
-void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
-                   double convergence_threshold, size_t max_iter) {
+bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
+                      double convergence_threshold, size_t max_iter) {
   std::array<Mat, 3> mo_xyz;
   mo_xyz[0] = Cm.transpose() * ao_xyz[0] * Cm;
   mo_xyz[1] = Cm.transpose() * ao_xyz[1] * Cm;
@@ -90,6 +90,8 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
     ++iter;
     max_abs_angle_prev_iter = max_abs_angle;
   }
+
+  return error <= convergence_threshold;
 }
 
 }  // namespace scf

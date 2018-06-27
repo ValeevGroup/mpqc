@@ -49,6 +49,7 @@ namespace scf {
 using Mat =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+/// finds a stationary point of the Foster-Boys objective function
 /// @param[in,out] Cm on input: LCAOs to be localized; on output: localized
 /// LCAOs
 /// @param[in,out] U on output: transformation matrix converting original to
@@ -57,8 +58,9 @@ using Mat =
 /// @param convergence_threshold stop once maximum rotation angle (in rad)
 /// changes between iterations by less than this
 /// @param max_iter do not exceed this many iterations
-void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
-                   double convergence_threshold = 1e-4, size_t max_iter = 50);
+/// @return true if converged
+bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
+                      double convergence_threshold, size_t max_iter);
 
 /// Performs Foster-Boys localization
 /// (see J. Foster and S. Boys, Rev Mod Phys 32, 300 (1960)).
@@ -113,8 +115,14 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
         C.block(0, ncols_of_C_to_skip, C.rows(), C.cols() - ncols_of_C_to_skip);
 
     EigMat U_loc = EigMat::Identity(C_loc.cols(), C_loc.cols());
-    jacobi_sweeps(C_loc, U_loc, {ao_x, ao_y, ao_z},
-                  jacobi_convergence_threshold_, jacobi_max_iter_);
+    auto converged = fb_jacobi_sweeps(C_loc, U_loc, {ao_x, ao_y, ao_z},
+                                      jacobi_convergence_threshold_, jacobi_max_iter_);
+    if (!converged) {
+      std::ostringstream oss;
+      oss << "Foster-Boys Jacobi sweeps failed to converge to threshold=" << jacobi_convergence_threshold_
+          << " in " << jacobi_max_iter_ << " iterations";
+      throw AlgorithmException(oss.str().c_str(), __FILE__, __LINE__);
+    }
 
     EigMat U = EigMat::Identity(C.cols(), C.cols());
     U.block(ncols_of_C_to_skip, ncols_of_C_to_skip, U_loc.rows(),

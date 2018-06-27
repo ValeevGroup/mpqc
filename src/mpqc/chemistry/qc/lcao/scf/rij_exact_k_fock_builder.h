@@ -30,14 +30,14 @@ class RIJEXACTKBuilder : public FockBuilder<Tile, Policy> {
       : eri3_(eri3),
         K_builder_(std::make_shared<Direct4CBuilder>(
             M.world(), bra_basis, ket_basis, density_basis, false, true)) {
-    auto M_eig = array_ops::array_to_eigen(M);
+    auto M_eig = math::array_to_eigen(M);
 
     RowMatrixXd L_inv_eig =
         RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 
-    L_inv_ = array_ops::eigen_to_array<Tile, Policy>(M.world(), L_inv_eig, tr_M,
+    L_inv_ = math::eigen_to_array<Tile, Policy>(M.world(), L_inv_eig, tr_M,
                                                      tr_M);
   }
 

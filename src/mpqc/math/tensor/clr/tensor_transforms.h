@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 class TaToDecompTensor {
   double clr_thresh_;
@@ -28,7 +28,7 @@ class TaToDecompTensor {
     DecomposedTensor<double> dc_tile(clr_thresh_, std::move(tensor));
 
     if (compress_ && clr_thresh_ != 0.0) {
-      auto lr_tile = tensor::algebra::two_way_decomposition(dc_tile);
+      auto lr_tile = two_way_decomposition(dc_tile);
 
       if (!lr_tile.empty()) {
         dc_tile = std::move(lr_tile);
@@ -51,7 +51,7 @@ class TaToDecompTensor {
     auto new_tile = DecomposedTensor<double>(clr_thresh_, std::move(tensor));
 
     if (compress_ && clr_thresh_ != 0.0) {
-      auto test = tensor::algebra::two_way_decomposition(new_tile);
+      auto test = two_way_decomposition(new_tile);
       if (!test.empty()) {
         new_tile = std::move(test);
       }
@@ -119,13 +119,13 @@ class TaToDecompTensor {
 class DecompToTaTensor {
  public:
   TA::Tensor<double> operator()(Tile<DecomposedTensor<double>> const &t) const {
-    auto tensor = tensor::algebra::combine(t.tile());
+    auto tensor = combine(t.tile());
     auto range = t.range();
     return TA::Tensor<double>(range, tensor.data());
   }
 };
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TENSOR_TRANSFORMS_H_

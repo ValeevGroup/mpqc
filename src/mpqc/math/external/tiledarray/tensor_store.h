@@ -7,7 +7,8 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace util {
+namespace math {
+namespace utility {
 
 template <typename T>
 void write_tensor3D_to_file(TiledArray::Tensor<T> const &t,
@@ -61,6 +62,8 @@ inline void write_shape_tuple3D(
   outfile.close();
 }
 
-}  //  namespace util
+}  //  namespace utility
+}  // namespace math
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_TENSOR_STORE_H_

@@ -22,9 +22,9 @@ void clustered_coeffs(
   Y("i,j") = C("mu,i") * xyz[1]("mu, nu") * C("nu,j");
   Z("i,j") = C("mu,i") * xyz[2]("mu, nu") * C("nu,j");
 
-  auto X_eig = array_ops::array_to_eigen(X);
-  auto Y_eig = array_ops::array_to_eigen(Y);
-  auto Z_eig = array_ops::array_to_eigen(Z);
+  auto X_eig = math::array_to_eigen(X);
+  auto Y_eig = math::array_to_eigen(Y);
+  auto Z_eig = math::array_to_eigen(Z);
 
   decltype(X_eig) oc_pos(X_eig.rows(), 3);
   for (auto i = 0; i < X_eig.rows(); ++i) {
@@ -33,11 +33,11 @@ void clustered_coeffs(
     oc_pos(i, 2) = Z_eig(i, i);
   }
 
-  auto C_eig = array_ops::array_to_eigen(C);
+  auto C_eig = math::array_to_eigen(C);
   auto tr_occ =
-      tensor::localize_vectors_with_kmeans(oc_pos, C_eig, occ_nclusters);
+      math::localize_vectors_with_kmeans(oc_pos, C_eig, occ_nclusters);
 
-  C = array_ops::eigen_to_array<Tile,Policy>(C.world(), C_eig, C.trange().data()[0],
+  C = math::eigen_to_array<Tile,Policy>(C.world(), C_eig, C.trange().data()[0],
                                       tr_occ);
 }
 

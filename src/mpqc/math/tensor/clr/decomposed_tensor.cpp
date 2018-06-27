@@ -1,9 +1,9 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 template class DecomposedTensor<double>;
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc

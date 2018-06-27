@@ -44,7 +44,7 @@ TA::DistArray<Tile, Policy> periodic_fock_soad(
   // transform soad density from Eigen to TA array
   auto trange1 = min_bs->create_trange1();
   auto D =
-      array_ops::eigen_to_array<Tile, Policy>(world, D_eig, trange1, trange1);
+      math::eigen_to_array<Tile, Policy>(world, D_eig, trange1, trange1);
 
   // get necessary information for PeriodicFourCenterFockBuilder ctor
   auto dcell = unitcell.dcell();

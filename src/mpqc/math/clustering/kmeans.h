@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace math {
 namespace clustering {
 /*!
  * \ingroup MathClustering
@@ -258,6 +259,7 @@ double kmeans_objective(std::vector<Cluster> const &cs) {
 /*! @} */
 
 }  // namespace clustering
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_CLUSTERING_KMEANS_H_

@@ -10,7 +10,7 @@
 #include "tile.h"
 
 namespace mpqc {
-namespace array_ops {
+namespace math {
 
 template <typename T>
 using Matrix =
@@ -24,8 +24,8 @@ Matrix<T> tile_to_eigen(TA::Tensor<T> const &t) {
 }
 
 template <typename T>
-Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
-  return tile_to_eigen(tensor::algebra::combine(t.tile()));
+Matrix<T> tile_to_eigen(Tile<DecomposedTensor<T>> const &t) {
+  return tile_to_eigen(combine(t.tile()));
 }
 
 /*! \brief converts a TiledArray::Array to a row-major Eigen Matrix
@@ -51,18 +51,18 @@ TileType mat_to_tile(TA::Range range,
                      double cut);
 
 template <>
-inline tensor::Tile<tensor::DecomposedTensor<double>>
-mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
+inline Tile<DecomposedTensor<double>>
+mat_to_tile<Tile<DecomposedTensor<double>>>(
     TA::Range range, Matrix<double> const *M, double cut) {
   auto const extent = range.extent();
   auto local_range = TA::Range{extent[0], extent[1]};
   auto tensor =
-      tensor::DecomposedTensor<double>(cut, TA::Tensor<double>(local_range));
+      DecomposedTensor<double>(cut, TA::Tensor<double>(local_range));
   auto t_map = TA::eigen_map(tensor.tensor(0), extent[0], extent[1]);
 
   auto const start = range.lobound();
   t_map = M->block(start[0], start[1], extent[0], extent[1]);
-  return tensor::Tile<tensor::DecomposedTensor<double>>(range,
+  return Tile<DecomposedTensor<double>>(range,
                                                         std::move(tensor));
 }
 
@@ -174,7 +174,7 @@ eigen_to_array(
 }
 
 
-}  // namespace array_ops
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_ARRAY_TO_EIGEN_H_

@@ -10,12 +10,12 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_gemm_helper.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 template <typename T>
 TA::TensorD gemm(DecomposedTensor<T> const &a, TA::TensorD const &b,
                  const T factor, TA::math::GemmHelper const &gh) {
-  TA::TensorD ac = algebra::combine(a);
+  TA::TensorD ac = combine(a);
   return a.gemm(b, factor, gh);
 }
 
@@ -23,7 +23,7 @@ template <typename T>
 TA::TensorD gemm(TA::TensorD &c, DecomposedTensor<T> const &a,
                  TA::TensorD const &b, const T factor,
                  TA::math::GemmHelper const &gh) {
-  TA::TensorD ac = algebra::combine(a);
+  TA::TensorD ac = combine(a);
   return c.gemm(ac, b, factor, gh);
 }
 
@@ -118,7 +118,7 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
   return c;
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_H_

@@ -153,7 +153,7 @@ class LCAOWavefunction : public Wavefunction {
       // prepare to Molden
       const auto libint2_atoms = ::mpqc::to_libint_atom(this->wfn_world()->atoms()->atoms());
       auto C_p_eig =
-          array_ops::array_to_eigen(orbital_registry.retrieve("p").coefs());
+          math::array_to_eigen(orbital_registry.retrieve("p").coefs());
       const auto libint2_shells =
           this->lcao_factory().basis_registry()->retrieve(L"μ")->flattened_shells();
 

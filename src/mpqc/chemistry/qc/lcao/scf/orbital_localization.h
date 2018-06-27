@@ -12,6 +12,7 @@
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
+#include "mpqc/util/core/exception.h"
 
 namespace mpqc {
 namespace lcao {
@@ -31,16 +32,16 @@ class OrbitalLocalizer : public DescribedClass {
   /// this must be called before compute()
   OrbitalLocalizer &initialize(TA::DistArray<Tile, Policy> S_ao,
                                std::vector<TA::DistArray<Tile, Policy>> mu_ao) {
-    ao_s_ = array_ops::array_to_eigen(S_ao);
-    ao_x_ = array_ops::array_to_eigen(mu_ao[0]);
-    ao_y_ = array_ops::array_to_eigen(mu_ao[1]);
-    ao_z_ = array_ops::array_to_eigen(mu_ao[2]);
+    ao_s_ = math::array_to_eigen(S_ao);
+    ao_x_ = math::array_to_eigen(mu_ao[0]);
+    ao_y_ = math::array_to_eigen(mu_ao[1]);
+    ao_z_ = math::array_to_eigen(mu_ao[2]);
     initialized_ = true;
     return *this;
   }
 
  protected:
-  array_ops::Matrix<typename Tile::value_type> ao_s_, ao_x_, ao_y_, ao_z_;
+  math::Matrix<typename Tile::value_type> ao_s_, ao_x_, ao_y_, ao_z_;
   bool initialized_ = false;
 };
 
@@ -91,10 +92,10 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
       TA::DistArray<Tile, Policy> const &C,
       size_t ncols_of_C_to_skip = 0) const override {
     MPQC_ASSERT(this->initialized_);
-    auto c_eig = array_ops::array_to_eigen(C);
+    auto c_eig = math::array_to_eigen(C);
 
     auto trange = C.trange();
-    return array_ops::eigen_to_array<Tile, Policy>(
+    return math::eigen_to_array<Tile, Policy>(
         C.world(), (*this)(c_eig, this->ao_x_, this->ao_y_, this->ao_z_, ncols_of_C_to_skip),
         trange.data()[1], trange.data()[1]);
   }
@@ -144,9 +145,9 @@ class RRQRLocalizer : public OrbitalLocalizer<Tile,Policy> {
   TA::DistArray<Tile, Policy> compute(TA::DistArray<Tile, Policy> const &C,
                                       size_t ncols_of_C_to_skip = 0) const override {
     MPQC_ASSERT(this->initialized_);
-    auto c_eig = array_ops::array_to_eigen(C);
+    auto c_eig = math::array_to_eigen(C);
     auto trange = C.trange();
-    return array_ops::eigen_to_array<Tile, Policy>(
+    return math::eigen_to_array<Tile, Policy>(
         C.world(), (*this)(c_eig, this->ao_s_, ncols_of_C_to_skip), trange.data()[1],
         trange.data()[1]);
   }

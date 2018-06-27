@@ -262,10 +262,10 @@ CIS<Tile, Policy>::compute_cis(std::size_t n_roots, std::size_t n_guess,
 
   // initialize diagonal
   if (eps_o_.size() == 0) {
-    eps_o_ = array_ops::array_to_eigen(F_ij).diagonal();
+    eps_o_ = math::array_to_eigen(F_ij).diagonal();
   }
   if (eps_v_.size() == 0) {
-    eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
+    eps_v_ = math::array_to_eigen(F_ab).diagonal();
   }
 
   // get guess vector
@@ -352,10 +352,10 @@ CIS<Tile, Policy>::compute_cis_df(std::size_t n_roots, std::size_t n_guess,
 
   // initialize diagonal
   if (eps_o_.size() == 0) {
-    eps_o_ = array_ops::array_to_eigen(F_ij).diagonal();
+    eps_o_ = math::array_to_eigen(F_ij).diagonal();
   }
   if (eps_v_.size() == 0) {
-    eps_v_ = array_ops::array_to_eigen(F_ab).diagonal();
+    eps_v_ = math::array_to_eigen(F_ab).diagonal();
   }
 
   // get guess vector
@@ -445,7 +445,7 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     auto f_pq =
         df_ ? factory.compute(L"<p|F|q>[df]") : factory.compute(L"<p|F|q>");
 
-    auto f_eig = array_ops::array_to_eigen(f_pq);
+    auto f_eig = math::array_to_eigen(f_pq);
     Eigen::SelfAdjointEigenSolver<decltype(f_eig)> es(f_eig);
     auto evals = es.eigenvalues();
     auto C = es.eigenvectors();
@@ -461,9 +461,9 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
     auto &world = f_pq.world();
 
     local_to_canonical_occ =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_i, tr_i);
+        math::eigen_to_array<Tile, Policy>(world, C_i, tr_i, tr_i);
     local_to_canonical_unocc =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_a, tr_a);
+        math::eigen_to_array<Tile, Policy>(world, C_a, tr_a, tr_a);
   }
   // use f_ia for shape
   auto f_ia =

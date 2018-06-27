@@ -37,8 +37,8 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
 
   auto S = ao_factory.compute(L"<κ|λ>");
 
-  RowMatrixXd F_eig = array_ops::array_to_eigen(F);
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
+  RowMatrixXd F_eig = math::array_to_eigen(F);
+  RowMatrixXd S_eig = math::array_to_eigen(S);
 
   // solve mo coefficients
   Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
@@ -69,7 +69,7 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
 
   // convert to TA
   auto C_occ_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+      math::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
 
   // project to large basis set
 
@@ -105,8 +105,8 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
   RowMatrixXd C_vir;
   RowMatrixXd C_corr_occ;
   {
-    RowMatrixXd F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
-    RowMatrixXd S_vbs_eigen = array_ops::array_to_eigen(S_vbs_vbs);
+    RowMatrixXd F_vbs_eigen = math::array_to_eigen(F_vbs);
+    RowMatrixXd S_vbs_eigen = math::array_to_eigen(S_vbs_vbs);
     Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen,
                                                              S_vbs_eigen);
 
@@ -125,13 +125,13 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
   mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
 
   C_occ_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_vbs, tr_occ);
+      math::eigen_to_array<Tile, Policy>(world, C_occ, tr_vbs, tr_occ);
 
-  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+  auto C_corr_occ_ta = math::eigen_to_array<Tile, Policy>(
       world, C_corr_occ, tr_vbs, tr_corr_occ);
 
   auto C_vir_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_vir, tr_vbs, tr_vir);
+      math::eigen_to_array<Tile, Policy>(world, C_vir, tr_vbs, tr_vir);
 
   // insert to registry
   occ_space =

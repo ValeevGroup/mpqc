@@ -34,8 +34,8 @@ n_coeff_clusters_(nclusters),
 clustered_coeffs_(clustered_coeffs),
 occ_(occ),
 ncore_(ncore) {
-  M_inv_ = array_ops::inverse_sqrt(S_);
-  I_ = array_ops::create_diagonal_matrix(S_, 1.0);
+  M_inv_ = math::inverse_sqrt(S_);
+  I_ = math::create_diagonal_matrix(S_, 1.0);
 
   MPQC_ASSERT(!(clustered_coeffs_ && localize_core_ == false));
 }
@@ -49,7 +49,7 @@ PurificationDensityBuilder<Tile, Policy>::purify(
   typename PurificationDensityBuilder<Tile, Policy>::array_type Fp, D, D2;
   Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
-  auto eig_pair = array_ops::eval_guess(Fp);
+  auto eig_pair = math::eval_guess(Fp);
   auto emax = eig_pair[1];
   auto emin = eig_pair[0];
   auto scale = 1.0 / (emax - emin);
@@ -85,14 +85,14 @@ template<typename Tile, typename Policy>
 typename PurificationDensityBuilder<Tile, Policy>::array_type
 PurificationDensityBuilder<Tile, Policy>::orbitals(
     typename PurificationDensityBuilder<Tile, Policy>::array_type const &D) {
-  auto D_eig = array_ops::array_to_eigen(D);
-  tensor::algebra::piv_cholesky(D_eig);
+  auto D_eig = math::array_to_eigen(D);
+  math::piv_cholesky(D_eig);
 
   auto tr_ao = D.trange().data()[0];
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
   auto Cao =
-      array_ops::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
+      math::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localizer_) {
     localizer_->initialize(S_, r_xyz_ints_);

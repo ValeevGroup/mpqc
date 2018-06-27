@@ -25,11 +25,11 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
   // initialize vector
   for (auto i = 0; i < v; i++) {
     EigenVector<double> vec = double(i + 1) * EigenVector<double>::Random(n);
-    vecs[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
+    vecs[i] = math::eigen_to_array<TA::TensorD, TA::DensePolicy>(
         TA::get_default_world(), vec, tr_n, tr_v);
   }
 
-  gram_schmidt(vecs,0);
+  math::gram_schmidt(vecs,0);
 
   const double tolerance = std::numeric_limits<double>::epsilon() * 100;
 
@@ -52,11 +52,11 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
   // initialize another vector
   for (auto i = 0; i < v; i++) {
     EigenVector<double> vec = double(i + v) * EigenVector<double>::Random(n);
-    vecs2[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
+    vecs2[i] = math::eigen_to_array<TA::TensorD, TA::DensePolicy>(
         TA::get_default_world(), vec, tr_n, tr_v);
   }
 
-  gram_schmidt(vecs, vecs2, 0);
+  math::gram_schmidt(vecs, vecs2, 0);
 
   for (auto i = 0; i < v; ++i) {
     for (auto j = 0; j < v; ++j) {

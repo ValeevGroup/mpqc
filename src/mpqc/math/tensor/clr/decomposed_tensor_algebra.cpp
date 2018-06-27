@@ -3,8 +3,7 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 namespace mpqc {
-namespace tensor {
-namespace algebra {
+namespace math {
 
 integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols,
                        integer *J) {
@@ -630,6 +629,6 @@ integer piv_cholesky(
 
   return rank;
 }
-}  // namespace algebra
-}  // namespace tensor
+
+}  // namespace math
 }  // namespace mpqc

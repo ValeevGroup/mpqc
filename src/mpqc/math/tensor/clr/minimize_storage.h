@@ -34,25 +34,25 @@ inline void minimize_storage(TA::DistArray<TA::TensorD, TA::SparsePolicy> &A,
 }
 
 inline void minimize_storage(
-    TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
+    TA::DistArray<math::Tile<math::DecomposedTensor<double>>,
                   TA::SparsePolicy> &A,
     double clr_threshold) {
   if (clr_threshold != 0) {
     TA::foreach_inplace(
-        A, [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
+        A, [](math::Tile<math::DecomposedTensor<double>> &t_tile) {
           auto &t = t_tile.tile();
           auto input_norm = norm(t);
 
           auto compressed_norm = input_norm;
           if (t.cut() != 0.0) {
             if (t.ndecomp() == 1) {
-              auto test = tensor::algebra::two_way_decomposition(t);
+              auto test = two_way_decomposition(t);
               if (!test.empty()) {
                 t = test;
                 compressed_norm = norm(t);
               }
             } else {
-              tensor::algebra::recompress(t);
+              recompress(t);
               compressed_norm = norm(t);
             }
           }

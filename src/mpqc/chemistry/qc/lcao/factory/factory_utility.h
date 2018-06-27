@@ -180,7 +180,7 @@ TA::DistArray<Tile, Policy> compute_shellblock_norm(
   const auto tr0 = make_shblk_trange1(bs0);
   const auto tr1 = make_shblk_trange1(bs1);
 
-  auto eig_D = ::mpqc::array_ops::array_to_eigen(D);
+  auto eig_D = ::mpqc::math::array_to_eigen(D);
   // compute shell block norms
   const auto shells0 = bs0.flattened_shells();
   const auto shells1 = bs1.flattened_shells();
@@ -201,7 +201,7 @@ TA::DistArray<Tile, Policy> compute_shellblock_norm(
     sh0_first += sh0_size;
   }
 
-  return array_ops::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
+  return math::eigen_to_array<Tile, Policy>(world, norm_D, tr0, tr1);
 }
 
 /*!

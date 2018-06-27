@@ -225,7 +225,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>[df]");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  auto Fij_eigen = math::array_to_eigen(Fij);
   f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
@@ -303,7 +303,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  auto Fij_eigen = math::array_to_eigen(Fij);
   f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")

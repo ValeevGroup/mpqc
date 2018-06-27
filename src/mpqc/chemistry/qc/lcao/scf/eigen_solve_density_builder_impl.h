@@ -41,11 +41,11 @@ nocc_(nocc),
 ncore_(ncore) {
   auto inv0 = mpqc::fenced_now(S_.world());
   if (metric_decomp_type_ == "cholesky_inverse") {
-    M_inv_ = array_ops::cholesky_inverse(S_);
+    M_inv_ = math::cholesky_inverse(S_);
   } else if (metric_decomp_type_ == "inverse_sqrt") {
-    M_inv_ = array_ops::inverse_sqrt(S_);
+    M_inv_ = math::inverse_sqrt(S_);
   } else if (metric_decomp_type_ == "conditioned") {
-    M_inv_ = array_ops::conditioned_orthogonalizer(S_, s_tolerance);
+    M_inv_ = math::conditioned_orthogonalizer(S_, s_tolerance);
   } else {
     throw ProgrammingError("invalid metric_decomp_type in EsolveDensityBuilder",
                            __FILE__, __LINE__);
@@ -69,7 +69,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   auto e0 = mpqc::fenced_now(world);
   Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
-  auto Fp_eig = array_ops::array_to_eigen(Fp);
+  auto Fp_eig = math::array_to_eigen(Fp);
 
   // TODO must solve on rank-0 only, propagate to the rest
   Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
@@ -79,7 +79,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   auto tr_ao = Fp.trange().data()[0];
 
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, nocc_);
-  C_occ = array_ops::eigen_to_array<Tile, Policy>(Fp.world(), C_occ_eig, tr_ao,
+  C_occ = math::eigen_to_array<Tile, Policy>(Fp.world(), C_occ_eig, tr_ao,
                                                   tr_occ);
 
   // Get back to AO land
@@ -89,7 +89,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
     eps_ = eps;
     auto nobs = eps.rows();
     auto tr_obs = scf::tr_occupied(n_coeff_clusters_, nobs);
-    auto C = array_ops::eigen_to_array<Tile, Policy>(Fp.world(), C_eig, tr_ao,
+    auto C = math::eigen_to_array<Tile, Policy>(Fp.world(), C_eig, tr_ao,
                                                      tr_obs);
     C_("i,j") = M_inv_("k,i") * C("k,j");
   }

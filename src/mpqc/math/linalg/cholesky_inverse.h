@@ -7,7 +7,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace array_ops {
+namespace math {
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> cholesky_inverse(
@@ -19,7 +19,7 @@ TA::DistArray<Tile, Policy> cholesky_inverse(
                   << world.size() << "\n";
   }
 
-  auto A_eig = ::mpqc::array_ops::array_to_eigen(A);
+  auto A_eig = ::mpqc::math::array_to_eigen(A);
   Eigen::LLT<decltype(A_eig)> llt(A_eig);
 
   Eigen::ComputationInfo info = llt.info();
@@ -32,7 +32,7 @@ TA::DistArray<Tile, Policy> cholesky_inverse(
   auto tr_A0 = A.trange().data()[0];
   auto tr_A1 = A.trange().data()[1];
 
-  return array_ops::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr_A0,
+  return math::eigen_to_array<Tile, Policy>(world, L_inv_eig, tr_A0,
                                                  tr_A1);
 }
 
@@ -40,7 +40,7 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile,Policy> eigen_inverse(const TA::DistArray<Tile, Policy> &A){
 
   auto& world = A.world();
-  auto result_eig = array_ops::array_to_eigen(A);
+  auto result_eig = math::array_to_eigen(A);
 
   using Matrix = decltype(result_eig);
   // compute cholesky decomposition
@@ -74,13 +74,13 @@ TA::DistArray<Tile,Policy> eigen_inverse(const TA::DistArray<Tile, Policy> &A){
 
   auto tr_1 = A.trange().data()[0];
   auto tr_2 = A.trange().data()[1];
-  auto result = array_ops::eigen_to_array<Tile, Policy>( A.world(), result_eig,
+  auto result = math::eigen_to_array<Tile, Policy>( A.world(), result_eig,
                                                    tr_1, tr_2);
   return result;
   
 };
 
-}  // namespace array_ops
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_CHOLESKY_INVERSE_H_

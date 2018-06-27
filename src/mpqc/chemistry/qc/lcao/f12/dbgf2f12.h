@@ -82,10 +82,10 @@ class DBGF2F12 : public GF2F12<Tile> {
 
     if (orbital < 0) {
       auto o_space = orbital_registry.retrieve(OrbitalIndex(L"i"));
-      auto C_o = array_ops::array_to_eigen(o_space.coefs());
+      auto C_o = math::array_to_eigen(o_space.coefs());
       auto C_x = C_o.block(0, nocc + orbital, C_o.rows(), 1);
       auto tr_obs = o_space.coefs().trange().data().front();
-      C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
+      C_x_ta = math::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
                                                                  tr_obs, tr_x);
 
       auto x_space =
@@ -93,10 +93,10 @@ class DBGF2F12 : public GF2F12<Tile> {
       orbital_registry.add(x_space);
     } else if (orbital > 0) {
       auto v_space = orbital_registry.retrieve(OrbitalIndex(L"a"));
-      auto C_v = array_ops::array_to_eigen(v_space.coefs());
+      auto C_v = math::array_to_eigen(v_space.coefs());
       auto C_x = C_v.block(0, orbital - 1, C_v.rows(), 1);
       auto tr_obs = v_space.coefs().trange().data().front();
-      C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
+      C_x_ta = math::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
                                                                  tr_obs, tr_x);
 
       auto x_space =

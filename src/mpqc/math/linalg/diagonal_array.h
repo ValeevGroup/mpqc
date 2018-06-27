@@ -10,7 +10,7 @@
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
-namespace array_ops {
+namespace math {
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
@@ -26,7 +26,7 @@ TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
   auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
   diag.diagonal().setConstant(val);
 
-  auto result = array_ops::eigen_to_array<Tile,Policy>(world, diag, trange1, trange2);
+  auto result = math::eigen_to_array<Tile,Policy>(world, diag, trange1, trange2);
 
   return result;
 }
@@ -41,12 +41,12 @@ void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
 }
 
 template <typename T>
-void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
+void make_diagonal_tile(Tile<DecomposedTensor<T>> &tile,
                         T val) {
   assert(tile.tile().ndecomp() == 1);
   auto extent = tile.range().extent();
   auto local_range = TA::Range(extent[0], extent[1]);
-  auto tensor = tensor::DecomposedTensor<T>(tile.tile().cut(),
+  auto tensor = DecomposedTensor<T>(tile.tile().cut(),
                                             TA::Tensor<T>(local_range, 0.0));
   auto map = TiledArray::eigen_map(tensor.tensor(0), extent[0], extent[1]);
   for (auto i = 0ul; i < extent[0]; ++i) {
@@ -223,7 +223,7 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
   return diag;
 }
 
-}  // namespace array_ops
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_DIAGONAL_ARRAY_H_

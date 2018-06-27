@@ -87,7 +87,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     auto nfzc = nocc - nocc_act;
 
     auto F = fac.compute(L"(p|F|q)");
-    Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
+    Eigen::VectorXd eps_p = math::array_to_eigen(F).diagonal();
     // replicated diagonal elements of Fo
     auto eps_o = eps_p.segment(nfzc, nocc_act);
     // replicated diagonal elements of Fv

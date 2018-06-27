@@ -117,12 +117,12 @@ class CADFFockBuilder : public FockBuilder<Tile, Policy> {
     }
 
     // Form L^{-1} for M
-    auto M_eig = array_ops::array_to_eigen(M_);
+    auto M_eig = math::array_to_eigen(M_);
     using MatType = decltype(M_eig);
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<Tile, Policy>(M_.world(), L_inv_eig,
+    Mchol_inv_ = math::eigen_to_array<Tile, Policy>(M_.world(), L_inv_eig,
                                                          trange1_M, trange1_M);
   }
 

@@ -11,14 +11,15 @@
 
 #include "mpqc/util/core/exenv.h"
 
+namespace mpqc {
+namespace math {
+
 /**
  * Gram-Schmidt Process
  *
  * reference:
  * https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process#Algorithm
  */
-
-namespace mpqc {
 
 template <typename D>
 void gram_schmidt(std::vector<D> &V, double threshold, std::size_t start = 0) {
@@ -105,6 +106,7 @@ void gram_schmidt(const std::vector<D> &V1, std::vector<D> &V2,
   }
 }
 
-}  // end of namespace mpqc
+}  // namespace math
+}  // namespace mpqc
 
 #endif  // SRC_MPQC_MATH_LINALG_GRAM_SCHMIDT_H_

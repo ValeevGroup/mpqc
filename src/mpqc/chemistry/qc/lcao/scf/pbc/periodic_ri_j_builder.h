@@ -101,7 +101,7 @@ class PeriodicRIJBuilder {
     auto t_a = mpqc::duration_in_s(t0, t1);
 
     t0 = mpqc::fenced_now(world);
-    inv_ = array_ops::eigen_inverse(A);
+    inv_ = math::eigen_inverse(A);
     t1 = mpqc::fenced_now(world);
     auto t_a_inv = mpqc::duration_in_s(t0, t1);
 

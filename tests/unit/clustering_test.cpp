@@ -63,7 +63,8 @@ TEST_CASE("k-means can cluster clusterables", "[k-means, clustering]") {
     namespace ctest = clustering_test;
     using Cluster = ctest::Cluster;
 
-    auto default_kmeans = clustering::Kmeans();
+    using namespace mpqc::math::clustering;
+    auto default_kmeans = Kmeans{};
     auto vectors = std::vector<Vector3d>(
           {Vector3d{0.0, 0.0, 0.0}, Vector3d{1.0, 0.0, 0.0}, Vector3d{0.0, 1.0, 0.0},
            Vector3d{2.0, 2.0, 2.0}, Vector3d{3.0, 2.0, 2.0}, Vector3d{2.0, 3.0, 2.0}});
@@ -73,22 +74,22 @@ TEST_CASE("k-means can cluster clusterables", "[k-means, clustering]") {
         REQUIRE_THROWS(default_kmeans.cluster<Cluster>(vectors, 0));
         auto one_clusters = default_kmeans.cluster<Cluster>(vectors, 1);
         REQUIRE(one_clusters.size() == 1ul);
-        REQUIRE(clustering::kmeans_objective(one_clusters)
+        REQUIRE(kmeans_objective(one_clusters)
                 == Approx(20.666666667));
 
         auto two_clusters = default_kmeans.cluster<Cluster>(vectors, 2);
         REQUIRE(two_clusters.size() == 2ul);
-        REQUIRE(clustering::kmeans_objective(two_clusters)
+        REQUIRE(kmeans_objective(two_clusters)
                 == Approx(2.666666667));
 
         auto three_clusters = default_kmeans.cluster<Cluster>(vectors, 3);
         REQUIRE(three_clusters.size() == 3ul);
-        REQUIRE(clustering::kmeans_objective(three_clusters)
+        REQUIRE(kmeans_objective(three_clusters)
                 == Approx(1.8333333333));
 
         auto six_clusters = default_kmeans.cluster<Cluster>(vectors, 6);
         REQUIRE(six_clusters.size() == 6ul);
-        REQUIRE(clustering::kmeans_objective(six_clusters) == 0.0);
+        REQUIRE(kmeans_objective(six_clusters) == 0.0);
 
         REQUIRE_THROWS(default_kmeans.cluster<Cluster>(vectors, 7));
     }

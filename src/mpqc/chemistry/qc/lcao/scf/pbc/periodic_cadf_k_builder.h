@@ -1471,7 +1471,7 @@ class PeriodicCADFKBuilder
   void dump_matrix(array_type const &M, std::string const &name, int rj = 0) {
     std::cout << "Dumping matrix to file " << name << "_" << rj << ".csv ...\n";
 
-    RowMatrixXd M_eig = array_ops::array_to_eigen(M);
+    RowMatrixXd M_eig = math::array_to_eigen(M);
 
     std::ofstream outfile(name + "_" + std::to_string(rj) + ".csv");
     auto ncols = M_eig.cols();

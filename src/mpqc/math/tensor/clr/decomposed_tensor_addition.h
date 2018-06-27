@@ -6,7 +6,7 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 template <typename T>
 DecomposedTensor<T> add_order2(DecomposedTensor<T> const &l,
@@ -49,7 +49,7 @@ DecomposedTensor<T> add_order2(DecomposedTensor<T> const &l,
       std::copy(rr_data, rr_data + old_r_vol, data + old_l_vol);
       return DecomposedTensor<T>(l.cut(), std::move(L), std::move(R));
     } else {
-      auto left = algebra::combine(l);
+      auto left = combine(l);
       return DecomposedTensor<T>(l.cut(), left.add_to(r.tensor(0), factor));
     }
   } else if (l.ndecomp() == 1) {
@@ -57,7 +57,7 @@ DecomposedTensor<T> add_order2(DecomposedTensor<T> const &l,
       auto out = l.tensor(0).add(r.tensor(0), factor);
       return DecomposedTensor<T>(l.cut(), std::move(out));
     } else {
-      auto right = algebra::combine(r);
+      auto right = combine(r);
       return DecomposedTensor<T>(l.cut(), l.tensor(0).add(right, factor));
     }
   }
@@ -196,12 +196,12 @@ DecomposedTensor<T> &add_to_order2(DecomposedTensor<T> &l,
       const auto full_rank = std::min(l_left_extent[0], l_right_extent[1]);
 
       if (out_dim >= full_rank / 6) {
-        algebra::recompress(l);
+        recompress(l);
         out_dim = l.rank();
       }
 
       if (out_dim > full_rank / 2) {
-        l = DecomposedTensor<T>(l.cut(), algebra::combine(l));
+        l = DecomposedTensor<T>(l.cut(), combine(l));
       }
     }
   }
@@ -243,12 +243,12 @@ DecomposedTensor<T> &add_to(DecomposedTensor<T> &l,
       const auto full_rank = std::min(l_left_extent[0], long_dim);
 
       if (out_dim >= full_rank / 6) {
-        algebra::recompress(l);
+        recompress(l);
         out_dim = l.rank();
       }
 
       if (out_dim > full_rank / 2) {
-        l = DecomposedTensor<T>(l.cut(), algebra::combine(l));
+        l = DecomposedTensor<T>(l.cut(), combine(l));
       }
     }
   }
@@ -267,7 +267,7 @@ DecomposedTensor<T> &add_to(DecomposedTensor<T> &l, const T factor) {
   assert(false);
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_ADDITION_H_

@@ -43,10 +43,7 @@ cd /home/travis/_build
 export BUILD_PREFIX=/home/travis/_build
 export INSTALL_PREFIX=/home/travis/_install
 export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
-./build-mpich-linux.sh
-./build-libint-linux.sh
-./build-TA-linux.sh
-./build-linux.sh
+${TRAVIS_BUILD_DIR}/bin/build-linux.sh
 END
 chmod +x $build
 
@@ -71,10 +68,6 @@ RUN /home/travis/_build/$setup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # copy travis scripts
-ADD build-mpich-linux.sh /home/travis/_build/build-mpich-linux.sh
-ADD build-libint-linux.sh /home/travis/_build/build-libint-linux.sh
-ADD build-TA-linux.sh /home/travis/_build/build-TA-linux.sh
-ADD build-linux.sh /home/travis/_build/build-linux.sh
 ADD $build /home/travis/_build/$build
 END
 

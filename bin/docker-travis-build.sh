@@ -43,7 +43,7 @@ cd /home/travis/_build
 export BUILD_PREFIX=/home/travis/_build
 export INSTALL_PREFIX=/home/travis/_install
 export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
-${TRAVIS_BUILD_DIR}/bin/build-linux.sh
+${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4/bin/build-linux.sh
 END
 chmod +x $build
 

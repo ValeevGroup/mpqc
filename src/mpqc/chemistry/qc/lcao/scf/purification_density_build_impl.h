@@ -11,28 +11,36 @@
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 PurificationDensityBuilder<Tile, Policy>::PurificationDensityBuilder(
     PurificationDensityBuilder<Tile, Policy>::array_type const &S,
     std::vector<PurificationDensityBuilder<Tile, Policy>::array_type> r_xyz,
-    int64_t occ, int64_t ncore, int64_t nclusters, double TcutC, bool localize,
-    std::string localization_method, bool clustered_coeffs)
-    : S_(S),
-      r_xyz_ints_(r_xyz),
-      TcutC_(TcutC),
-      localize_(localize),
-      localization_method_(localization_method),
-      n_coeff_clusters_(nclusters),
-      clustered_coeffs_(clustered_coeffs),
-      occ_(occ),
-      ncore_(ncore) {
-  M_inv_ = array_ops::inverse_sqrt(S_);
-  I_ = array_ops::create_diagonal_matrix(S_, 1.0);
+    int64_t occ, int64_t ncore, int64_t nclusters, double TcutC,
+    std::shared_ptr<OrbitalLocalizer < Tile, Policy>>
+localizer,
+bool localize_core,
+bool clustered_coeffs
+)
+:
+S_ (S),
+r_xyz_ints_(r_xyz),
+TcutC_(TcutC),
+localizer_(localizer),
+localize_core_(localize_core),
+n_coeff_clusters_(nclusters),
+clustered_coeffs_(clustered_coeffs),
+occ_(occ),
+ncore_(ncore) {
+  M_inv_ = math::inverse_sqrt(S_);
+  I_ = math::create_diagonal_matrix(S_, 1.0);
+
+  MPQC_ASSERT(!(clustered_coeffs_ && localize_core_ == false));
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 typename PurificationDensityBuilder<Tile, Policy>::array_type
 PurificationDensityBuilder<Tile, Policy>::purify(
     typename PurificationDensityBuilder<Tile, Policy>::array_type const &F) {
@@ -41,7 +49,7 @@ PurificationDensityBuilder<Tile, Policy>::purify(
   typename PurificationDensityBuilder<Tile, Policy>::array_type Fp, D, D2;
   Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
-  auto eig_pair = array_ops::eval_guess(Fp);
+  auto eig_pair = math::eval_guess(Fp);
   auto emax = eig_pair[1];
   auto emin = eig_pair[0];
   auto scale = 1.0 / (emax - emin);
@@ -73,29 +81,24 @@ PurificationDensityBuilder<Tile, Policy>::purify(
   return D;
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 typename PurificationDensityBuilder<Tile, Policy>::array_type
 PurificationDensityBuilder<Tile, Policy>::orbitals(
     typename PurificationDensityBuilder<Tile, Policy>::array_type const &D) {
-  auto D_eig = array_ops::array_to_eigen(D);
-  tensor::algebra::piv_cholesky(D_eig);
+  auto D_eig = math::array_to_eigen(D);
+  math::piv_cholesky(D_eig);
 
   auto tr_ao = D.trange().data()[0];
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
   auto Cao =
-      array_ops::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
+      math::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
-  if (localize_) {
-    auto U = ((localization_method_ == "rrqr") ||
-              (localization_method_ == "rrqr(valence)"))
-                 ? mpqc::scf::RRQRLocalization{}(
-                       Cao, S_,
-                       (localization_method_ == "rrqr(valence)" ? ncore_ : 0))
-                 : mpqc::scf::FosterBoysLocalization{}(
-                       Cao, r_xyz_ints_,
-                       (localization_method_ == "boys-foster(valence)" ? ncore_
-                                                                       : 0));
+  if (localizer_) {
+    localizer_->initialize(S_, r_xyz_ints_);
+    auto U = localizer_->compute(
+        Cao,
+        (localize_core_ ? 0 : ncore_));
     Cao("mu,i") = Cao("mu,k") * U("k,i");
 
     auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
@@ -111,7 +114,7 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
   return Cao;
 }
 
-template <typename Tile, typename Policy>
+template<typename Tile, typename Policy>
 std::pair<typename PurificationDensityBuilder<Tile, Policy>::array_type,
           typename PurificationDensityBuilder<Tile, Policy>::array_type>
 PurificationDensityBuilder<Tile, Policy>::operator()(
@@ -122,4 +125,5 @@ PurificationDensityBuilder<Tile, Policy>::operator()(
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc

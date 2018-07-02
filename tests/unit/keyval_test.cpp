@@ -86,11 +86,16 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   // can use deprecated paths
-  REQUIRE(kv.value<double>(":z:1", 0.0, "") == +2.35);
+  REQUIRE(kv.value<double>("", 0.0, ":z:1") == +2.35);  // empty primary path is ignored
+  REQUIRE(kv.value<double>(":z:1", 0.0, "") == +2.35);  // empty deprecated path is ignored also
   REQUIRE(kv.value<double>(":z:2", 0.0, ":z:1") == +2.35);
   REQUIRE(kv.value<double>(":z:2", 1.0, "") == 1.0);
   REQUIRE(kv.value<double>(":z:2", 1.0, ":z:3") == 1.0);
   REQUIRE(kv.value<double>(":z:2", 1.0, ":z:1") == +2.35);
+  KeyVal::set_throw_if_deprecated_path(true);  // can cause throws if deprecated kw is read
+  REQUIRE_NOTHROW(kv.value<double>(":z:2", 1.0, ""));
+  REQUIRE_THROWS_AS(kv.value<double>(":z:2", 1.0, ":z:1"), KeyVal::bad_input);
+  KeyVal::set_throw_if_deprecated_path(false);  // revert to the default
 
   // can validate values
   REQUIRE(kv.value<double>(":z:1", [](auto v) { return v > 0.0; }) == +2.35);
@@ -113,19 +118,23 @@ TEST_CASE("KeyVal", "[keyval]") {
   kv.assign(":z:a:2", vector<int>{{7, 6, 5, 4}}, false);
   REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7, 6, 5, 4}));
 
+  // can count items
+  REQUIRE(!kv.count(":z:a:1") == false);
+  REQUIRE(*kv.count(":z:a:1") == 3);
+
   // nested sequences (e.g. vector of array) can also
   // be written
   kv.assign(":z:a:3", vector<iarray3>{{{{0,1,2}}, {{3,4,5}}, {{6,7,8}}}});
 
 
   // can count children
-  REQUIRE(kv.count(":z") == 3);
-  REQUIRE(kv.count(":z:0") == 0);
-  REQUIRE(kv.count(":z:1") == 0);
-  REQUIRE(kv.count(":z:a") == 4);
-  REQUIRE(kv.count(":z:a:0") == 3);
-  REQUIRE(kv.count(":z:a:1") == 3);
-  REQUIRE(kv.count(":z:a:2") == 4);
+  REQUIRE(*kv.count(":z") == 3);
+  REQUIRE(*kv.count(":z:0") == 0);
+  REQUIRE(*kv.count(":z:1") == 0);
+  REQUIRE(*kv.count(":z:a") == 4);
+  REQUIRE(*kv.count(":z:a:0") == 3);
+  REQUIRE(*kv.count(":z:a:1") == 3);
+  REQUIRE(*kv.count(":z:a:2") == 4);
 
   // can write pointers
   {
@@ -157,18 +166,31 @@ TEST_CASE("KeyVal", "[keyval]") {
   SECTION("make classes") {
     {  // construct Base
       KeyVal kv;
-      kv.assign("value", 1).assign("type", "Base");
+      kv.assign("value", 1);
       auto x1 = kv.class_ptr<Base>();
       REQUIRE(x1->value() == 1);
       auto x2 = kv.class_ptr<Base>();  // this returns the cached ptr
       REQUIRE(x1 == x2);
+      auto x3 = kv.class_ptr();   // this also returns the cached ptr, but as shared_ptr<DescribedClass>
+      REQUIRE(x3->class_key() == "Base");
+      REQUIRE(x1 == x3);
+
+      // can construct polymorphically but then kv needs "type" info
+      const auto bypass_registry = true;
+      const auto disable_throw = true;
+      REQUIRE_THROWS_AS(kv.class_ptr("", bypass_registry), KeyVal::bad_input);
+      REQUIRE(!kv.class_ptr("", bypass_registry, disable_throw));
+      kv.assign("type", "Base");
+      auto x4 = kv.class_ptr("", bypass_registry);
+      REQUIRE(x4->class_key() == "Base");
     }
     {  // construct Derived<0>
       KeyVal kv;
-      kv.assign("value", 2).assign("dvalue", 2.0).assign("type", "Derived<0>");
+      kv.assign("value", 2).assign("dvalue", 2.0);
       auto x1 = kv.class_ptr<Derived<0>>();
       REQUIRE(x1->value() == 2.0);
-      auto x2 = kv.class_ptr<Derived<0>>();  // this returns the cached ptr
+      auto x2 = kv.class_ptr();  // this returns the cached ptr
+      REQUIRE(x2->class_key() == "Derived<0>");
       REQUIRE(x1 == x2);
       auto x3 =
           kv.class_ptr<Base>();  // this returns the cached ptr, cast to Base

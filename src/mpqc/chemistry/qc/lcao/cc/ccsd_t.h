@@ -2097,11 +2097,11 @@ void reblock() {
     this->trange1_engine_ = new_tr1;
 
     TArray occ_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        math::create_diagonal_array_from_eigen<Tile, Policy>(
             world, old_occ, new_occ, 1.0);
 
     TArray vir_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        math::create_diagonal_array_from_eigen<Tile, Policy>(
             world, old_vir, new_vir, 1.0);
 
     auto new_occ_space = occ_space;
@@ -2137,7 +2137,7 @@ void reblock() {
                                             "CCSD(T) OCC Inner");
 
     auto occ_inner_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        math::create_diagonal_array_from_eigen<Tile, Policy>(
             world, old_occ, tr_occ_inner_, 1.0);
 
     TArray inner_occ;
@@ -2153,7 +2153,7 @@ void reblock() {
     mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                             "CCSD(T) Vir Inner");
     auto vir_inner_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        math::create_diagonal_array_from_eigen<Tile, Policy>(
             world, old_vir, tr_vir_inner_, 1.0);
 
     TArray inner_vir;
@@ -2174,11 +2174,11 @@ void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
   auto &world = this->lcao_factory().world();
 
   auto vir_inner_convert =
-      array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+      math::create_diagonal_array_from_eigen<Tile, Policy>(
           world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
 
   auto occ_inner_convert =
-      array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+      math::create_diagonal_array_from_eigen<Tile, Policy>(
           world, t2_right.trange().data()[3], tr_occ_inner_, 1.0);
 
   t2_left("d,a,i,j") = t2_left("c,a,i,j") * vir_inner_convert("c,d");

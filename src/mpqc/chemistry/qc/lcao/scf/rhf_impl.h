@@ -20,6 +20,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 #include "mpqc/util/misc/time.h"
 
 namespace mpqc {
@@ -49,13 +50,34 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
 
   density_builder_str_ =
       kv.value<std::string>("density_builder", "eigen_solve");
-  localize_ = kv.value<bool>("localize", false);
-  localization_method_ =
-      kv.value<std::string>("localization_method", "boys-foster");
+
+  if (kv.exists("localizer") || (kv.exists("localize") && kv.value<bool>("localize"))) {
+    const bool localizer_given = static_cast<bool>(kv.count("localizer"));
+    if (localizer_given) {
+      localizer_ = kv.class_ptr<OrbitalLocalizer<Tile, Policy>>("localizer", false, true);
+    }
+    if (!localizer_) {
+      localizer_ = std::make_shared<scf::FosterBoysLocalizer<Tile, Policy>>();
+    }
+    if (localizer_)
+      localize_core_ = kv.value<bool>("localize_core", true);
+  } else {
+    const auto localize = kv.value<bool>("localize", false);
+    const auto localization_method =
+        kv.value<std::string>("", "boys-foster", "localization_method");
+    if (localize) {
+      if (localization_method == "boys-foster" || localization_method == "boys-foster(valence)")
+        localizer_ = std::make_shared<scf::FosterBoysLocalizer<Tile,Policy>>(KeyVal{});
+      else if (localization_method == "rrqr" || localization_method == "rrqr(valence)")
+        localizer_ = std::make_shared<scf::RRQRLocalizer<Tile,Policy>>(KeyVal{});
+      if (localization_method.find("valence") != std::string::npos)
+        localize_core_ = false;
+    }
+  }
+
   clustered_coeffs_ = kv.value<bool>("clustered_coeffs", false);
-  if (clustered_coeffs_ && (localization_method_ == "boys-foster(valence)" ||
-                            localization_method_ != "rrqr(valence)")) {
-    throw InputError("RHF: clustered_coeffs is true with incompatible localization_method", __FILE__,
+  if (clustered_coeffs_ && localize_core_) {
+    throw InputError("RHF: clustered_coeffs=true is incompatible with localize_core=true", __FILE__,
                      __LINE__, "clustered_coeffs");
   }
   t_cut_c_ = kv.value<double>("t_cut_c", 0.0);
@@ -83,6 +105,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
   auto r_xyz =
       gaussian::xyz_integrals<Tile, Policy>(world, multi_pool, bs_array);
+  if (localizer_)
+    localizer_->initialize(S_, r_xyz);
 
   const auto nocc = nelectrons_ / 2;
   const auto ncore = mol.core_electrons() / 2;
@@ -91,17 +115,17 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   std::size_t n_cluster = mol.nclusters();
   if (density_builder_str_ == "purification") {
     auto density_builder = scf::PurificationDensityBuilder<Tile, Policy>(
-        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, localize_,
-        localization_method_,clustered_coeffs_);
+        S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, localizer_,
+        localize_core_,clustered_coeffs_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder_str_ == "eigen_solve") {
     std::string decompo_type =
         kv.value<std::string>("decompo_type", "conditioned");
-    double s_tolerance = kv.value<double>("s_tolerance", 1.0e8);
+    double s_tolerance = kv.value<double>("s_tolerance", 1e8);
     auto density_builder = scf::ESolveDensityBuilder<Tile, Policy>(
         S_, r_xyz, nocc, ncore, n_cluster, t_cut_c_, decompo_type, s_tolerance,
-        localize_, localization_method_, clustered_coeffs_);
+        localizer_, localize_core_, clustered_coeffs_);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {
@@ -277,7 +301,7 @@ void RHF<Tile, Policy>::evaluate(Energy* result) {
 
 template <typename Tile, typename Policy>
 bool RHF<Tile, Policy>::can_evaluate(CanonicalOrbitalSpace<array_type>*) {
-  return density_builder_str_ == "eigen_solve" && !localize_;
+  return density_builder_str_ == "eigen_solve" && !localizer_;
 }
 
 template <typename Tile, typename Policy>

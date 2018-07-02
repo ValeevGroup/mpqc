@@ -406,7 +406,7 @@ zRHF<Tile, Policy>::compute_density() {
   D_recip_vec.resize(k_size_);
   D_real_vec.resize(RD_size_);
 
-  auto fock_eig = array_ops::array_to_eigen(Fk_);
+  auto fock_eig = math::array_to_eigen(Fk_);
 
   // parallel impl for F_k diagonalization and D_k build
   auto compute_recip_density =
@@ -523,9 +523,9 @@ zRHF<Tile, Policy>::compute_density() {
   }
 
   // convert rectangular matrices to TA::DistArray
-  auto result_real = array_ops::eigen_to_array<Tile, Policy>(
+  auto result_real = math::eigen_to_array<Tile, Policy>(
       world, result_real_eig, tr0, tr1_real);
-  auto result_recip = array_ops::eigen_to_array<TA::TensorZ, Policy>(
+  auto result_recip = math::eigen_to_array<TA::TensorZ, Policy>(
       world, result_recip_eig, tr0, tr1_recip);
 
   return std::make_pair(result_real, result_recip);
@@ -563,7 +563,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
 
   // Perform real->reciprocal transformation with Eigen
   // TODO: perform it with TA
-  auto matrix_eig = array_ops::array_to_eigen(matrix);
+  auto matrix_eig = math::array_to_eigen(matrix);
   MatrixZ result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
 
@@ -584,7 +584,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
     }
   }
 
-  result = array_ops::eigen_to_array<TA::TensorZ, TA::SparsePolicy>(
+  result = math::eigen_to_array<TA::TensorZ, TA::SparsePolicy>(
       world, result_eig, tr0, tr1);
 
   return result;

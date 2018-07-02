@@ -11,7 +11,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace array_ops {
+namespace math {
 
 template <typename T>
 std::tuple<RowMatrix<T>, RowMatrix<T>, size_t, double, double> gensqrtinv(
@@ -60,7 +60,7 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   auto& world = S_array.world();
 
-  Matrix S = array_ops::array_to_eigen(S_array);
+  Matrix S = math::array_to_eigen(S_array);
 
   size_t obs_rank;
   double S_condition_number;
@@ -94,11 +94,11 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
   }
 
   //  return std::make_tuple(X, Xinv, XtX_condition_number);
-  return array_ops::eigen_to_array<Tile, Policy>(
+  return math::eigen_to_array<Tile, Policy>(
       world, X, S_array.trange().data()[0], S_array.trange().data()[1]);
 }
 
-}  // namespace  array_ops
+}  // namespace  math
 }  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_

@@ -21,7 +21,7 @@ std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
     LCAOFactoryBase<Tile, Policy> &lcao_factory,
     gaussian::AOFactoryBase<Tile, Policy> &ao_factory, bool df) {
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
-  auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
+  auto Fpq_eig = math::array_to_eigen(lcao_factory.compute(str));
   return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
 }
 
@@ -54,7 +54,7 @@ void make_closed_shell_canonical_sdref_subspaces(
   auto &world = lcao_factory->world();
 
   // divide the LCAO space into subspaces using Eigen .. boo
-  RowMatrixXd C_p = array_ops::array_to_eigen(p_space->coefs());
+  RowMatrixXd C_p = math::array_to_eigen(p_space->coefs());
   const auto n = C_p.cols();
   const auto nao = C_p.rows();
   RowMatrixXd C_m = C_p.block(0, 0, C_p.rows(), ndocc);
@@ -79,11 +79,11 @@ void make_closed_shell_canonical_sdref_subspaces(
 
   // convert eigen arrays to TA
   auto C_m_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
+      math::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
   auto C_i_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
+      math::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
   auto C_a_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
+      math::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
 
   // create orbital spaces and push into registry
   std::vector<double> eps_m(eps_p.begin(), eps_p.begin() + ndocc);
@@ -103,7 +103,7 @@ void make_closed_shell_canonical_sdref_subspaces(
 
   // reblock the full space and add to the regisry
   auto C_p_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
+      math::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
   auto p_space_reblocked =
       COrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p_ta, eps_p);
   orbital_registry.add(p_space_reblocked);
@@ -167,10 +167,10 @@ void make_closed_shell_sdref_subspaces(
     TA::DistArray<Tile,Policy> C_m;
     TA::TiledRange1 tr_m;
     {
-      C_m_eig = array_ops::array_to_eigen(input_space->coefs());
+      C_m_eig = math::array_to_eigen(input_space->coefs());
       tr_m = utility::compute_trange1(C_m_eig.cols(), occ_blksize);
       C_m =
-          array_ops::eigen_to_array<Tile, Policy>(world, C_m_eig, tr_ao, tr_m);
+          math::eigen_to_array<Tile, Policy>(world, C_m_eig, tr_ao, tr_m);
       auto m_space =
           POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m, occ_m);
       orbital_registry.add(m_space);
@@ -185,7 +185,7 @@ void make_closed_shell_sdref_subspaces(
           C_m_eig.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
       auto tr_i = utility::compute_trange1(C_i_eig.cols(), occ_blksize);
       auto C_i =
-          array_ops::eigen_to_array<Tile, Policy>(world, C_i_eig, tr_ao, tr_i);
+          math::eigen_to_array<Tile, Policy>(world, C_i_eig, tr_ao, tr_i);
       std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
       auto i_space =
           POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i, occ_i);
@@ -209,7 +209,7 @@ void make_closed_shell_sdref_subspaces(
 
       decltype(S_m_obs) S_m_obs_ortho;
       S_m_obs_ortho("i,k") = S_m_obs("i,l") * S_obs_inv("l,k");
-      RowMatrixXd S_m_obs_ortho_eig = array_ops::array_to_eigen(S_m_obs_ortho);
+      RowMatrixXd S_m_obs_ortho_eig = math::array_to_eigen(S_m_obs_ortho);
 
       // SVD to obtain the null-space basis of <m|kappa>, i.e. the unoccupied
       // orbitals
@@ -220,7 +220,7 @@ void make_closed_shell_sdref_subspaces(
       RowMatrixXd Vnull(nbf, n_unocc);
       Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
       tr_a = utility::compute_trange1(n_unocc, unocc_blksize);
-      C_a = array_ops::eigen_to_array<Tile, Policy>(world, Vnull, tr_ao, tr_a);
+      C_a = math::eigen_to_array<Tile, Policy>(world, Vnull, tr_ao, tr_a);
       C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
     }
 
@@ -249,11 +249,11 @@ void make_closed_shell_sdref_subspaces(
       fock("a,b") = fock("k,l") * C_a("k,a") * C_a("l,b");
 
       // diagnolize fock
-      auto fock_eigen = array_ops::array_to_eigen(fock);
+      auto fock_eigen = math::array_to_eigen(fock);
       Eigen::SelfAdjointEigenSolver<decltype(fock_eigen)> es;
       es.compute(fock_eigen);
       auto trans_eigen = es.eigenvectors();
-      auto trans = array_ops::eigen_to_array<Tile, Policy>(world, trans_eigen,
+      auto trans = math::eigen_to_array<Tile, Policy>(world, trans_eigen,
                                                            tr_a, tr_a);
 
       // transform unoccupied to semi-canonical
@@ -271,12 +271,12 @@ void make_closed_shell_sdref_subspaces(
     RowMatrixXd C_p_eig = RowMatrixXd::Zero(nao, ndocc + n_unocc);
     TArray C_p;
     {
-      RowMatrixXd C_a_eig = array_ops::array_to_eigen(C_a);
+      RowMatrixXd C_a_eig = math::array_to_eigen(C_a);
       C_p_eig.block(0, 0, nao, ndocc) << C_m_eig;
       C_p_eig.block(0, ndocc, nao, n_unocc) << C_a_eig;
 
       auto tr_all = utility::join_trange1(tr_m, tr_a);
-      C_p = array_ops::eigen_to_array<Tile, Policy>(
+      C_p = math::eigen_to_array<Tile, Policy>(
           world, C_p_eig, tr_ao, tr_all);
 
       std::vector<double> occ_p(C_p_eig.cols(), 0);
@@ -291,7 +291,7 @@ void make_closed_shell_sdref_subspaces(
     const auto &occ_p = p_space.attributes();
 
     // divide the LCAO space into subspaces using Eigen .. boo
-    RowMatrixXd C_p = array_ops::array_to_eigen(p_space.coefs());
+    RowMatrixXd C_p = math::array_to_eigen(p_space.coefs());
     const auto n = C_p.cols();
     const auto nao = C_p.rows();
     RowMatrixXd C_m = C_p.block(0, 0, C_p.rows(), ndocc);
@@ -310,11 +310,11 @@ void make_closed_shell_sdref_subspaces(
 
     // convert eigen arrays to TA
     auto C_m_ta =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
+        math::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
     auto C_i_ta =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
+        math::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
     auto C_a_ta =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
+        math::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
 
     // create orbital spaces and push into registry
     std::vector<double> occ_m(occ_p.begin(), occ_p.begin() + ndocc);
@@ -334,7 +334,7 @@ void make_closed_shell_sdref_subspaces(
 
     // reblock the full space and add to the regisry
     auto C_p_ta =
-        array_ops::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
+        math::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
     auto p_space_reblocked =
         POrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p_ta, occ_p);
     orbital_registry.add(p_space_reblocked);
@@ -352,9 +352,9 @@ make_closed_shell_canonical_orbitals(
   auto &world = ao_factory->world();
 
   RowMatrixXd F_eig =
-      array_ops::array_to_eigen(ao_factory->compute(L"<κ|F|λ>"));
+      math::array_to_eigen(ao_factory->compute(L"<κ|F|λ>"));
   auto S = ao_factory->compute(L"<κ|λ>");
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
+  RowMatrixXd S_eig = math::array_to_eigen(S);
 
   // solve mo coefficients
   Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
@@ -368,7 +368,7 @@ make_closed_shell_canonical_orbitals(
                                              target_blocksize, 0);
   auto tr_ao = S.trange().data().back();
   auto tr_all = tre->get_all_tr1();
-  auto C_obs = array_ops::eigen_to_array<Tile, Policy>(world, C, tr_ao, tr_all);
+  auto C_obs = math::eigen_to_array<Tile, Policy>(world, C, tr_ao, tr_all);
 
   // convert eigenvalues to std::vec
   std::vector<double> evals_vec(evals.data(), evals.data() + evals.rows());
@@ -416,7 +416,7 @@ void closed_shell_cabs_mo_build_svd(
     S_obs_ribs_ortho("i,j") =
         S_obs_inv("i,k") * S_obs_ribs("k,l") * S_ribs_inv("l,j");
     RowMatrixXd S_obs_ribs_ortho_eigen =
-        array_ops::array_to_eigen(S_obs_ribs_ortho);
+        math::array_to_eigen(S_obs_ribs_ortho);
 
     // SVD solve
     Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
@@ -431,11 +431,11 @@ void closed_shell_cabs_mo_build_svd(
     auto tr_cabs_mo = utility::compute_trange1(nbf_cabs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
 
-    C_cabs = array_ops::eigen_to_array<Tile, Policy>(world, Vnull, tr_ribs,
+    C_cabs = math::eigen_to_array<Tile, Policy>(world, Vnull, tr_ribs,
                                                      tr_cabs_mo);
     C_cabs("i,j") = S_ribs_inv("i,k") * C_cabs("k, j");
 
-    RowMatrixXd C_cabs_eigen = array_ops::array_to_eigen(C_cabs);
+    RowMatrixXd C_cabs_eigen = math::array_to_eigen(C_cabs);
 
     // solve orbitals for all virtual
 
@@ -445,7 +445,7 @@ void closed_shell_cabs_mo_build_svd(
 
     {
       auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
-      RowMatrixXd C_vir_eigen = array_ops::array_to_eigen(C_vir);
+      RowMatrixXd C_vir_eigen = math::array_to_eigen(C_vir);
 
       auto n_obs = C_vir_eigen.rows();
 
@@ -456,7 +456,7 @@ void closed_shell_cabs_mo_build_svd(
     // reblock C_ribs
     auto tr_ribs_mo = utility::compute_trange1(nbf_ribs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
-    auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+    auto ribs_to_mo = math::create_diagonal_array_from_eigen<Tile, Policy>(
         world, tr_ribs, tr_ribs_mo, 1.0);
     C_ri("i,j") = S_ribs_inv("i,k") * ribs_to_mo("k,j");
 
@@ -465,7 +465,7 @@ void closed_shell_cabs_mo_build_svd(
     mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
                                             "All Virtual MO");
 
-    C_allvir = array_ops::eigen_to_array<Tile, Policy>(
+    C_allvir = math::eigen_to_array<Tile, Policy>(
         world, C_allvirtual_eigen, tr_ribs, tr_allvir_mo);
 
     // insert to orbital space
@@ -511,8 +511,8 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   auto S = ao_factory.compute(L"<κ|λ>");
 
-  RowMatrixXd F_eig = array_ops::array_to_eigen(F);
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
+  RowMatrixXd F_eig = math::array_to_eigen(F);
+  RowMatrixXd S_eig = math::array_to_eigen(S);
 
   // solve mo coefficients
   Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
@@ -544,12 +544,12 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   std::size_t nbf_v;
   {
     // S_A^B -(1/2)
-    RowMatrixXd S_vbs_eigen = array_ops::array_to_eigen(S_vbs);
+    RowMatrixXd S_vbs_eigen = math::array_to_eigen(S_vbs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_vbs_eigen);
     RowMatrixXd X_vbs_eigen_inv = es2.operatorInverseSqrt();
 
     // orthogonalize
-    RowMatrixXd S_obs_vbs_eigen = array_ops::array_to_eigen(S_obs_vbs);
+    RowMatrixXd S_obs_vbs_eigen = math::array_to_eigen(S_obs_vbs);
     RowMatrixXd S_obs_vbs_ortho_eigen = S_obs_vbs_eigen * X_vbs_eigen_inv;
 
     RowMatrixXd X_i_mu = C_occ.transpose() * S_obs_vbs_ortho_eigen;
@@ -583,11 +583,11 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   // convert to TA
   auto C_occ_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
-  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+      math::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+  auto C_corr_occ_ta = math::eigen_to_array<Tile, Policy>(
       world, C_corr_occ, tr_obs, tr_corr_occ);
   auto C_vir_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
+      math::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // insert to registry
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -610,7 +610,7 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   } else {
     F_vbs = lcao_factory.compute(L"<a|F|b>[df]");
   }
-  RowMatrixXd F_vbs_mo_eigen = array_ops::array_to_eigen(F_vbs);
+  RowMatrixXd F_vbs_mo_eigen = math::array_to_eigen(F_vbs);
   //    std::cout << "F_vbs MO" << std::endl;
   //    std::cout << F_vbs_mo_eigen << std::endl;
 
@@ -627,7 +627,7 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   RowMatrixXd C_vir_rotate = es3.eigenvectors();
   C_vbs = C_vbs * C_vir_rotate;
   TArray C_vir_ta_new =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
+      math::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // remove old virtual orbitals
   lcao_factory.orbital_registry().remove(OrbitalIndex(L"a"));
@@ -692,16 +692,16 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   RowMatrixXd C_allvir_eigen;
   std::size_t nbf_ribs_minus_occ;
   {
-    RowMatrixXd S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
+    RowMatrixXd S_ribs_eigen = math::array_to_eigen(S_ribs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_ribs_eigen);
     RowMatrixXd X_ribs_eigen_inv = es.operatorInverseSqrt();
 
-    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+    RowMatrixXd S_obs_ribs_eigen = math::array_to_eigen(S_obs_ribs);
 
     // C_mu^i
     TA::DistArray<Tile, Policy> Ci =
         orbital_registry.retrieve(OrbitalIndex(L"m")).coefs();
-    RowMatrixXd Ci_eigen = array_ops::array_to_eigen(Ci);
+    RowMatrixXd Ci_eigen = math::array_to_eigen(Ci);
 
     RowMatrixXd X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
 
@@ -715,11 +715,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                            nbf_ribs_minus_occ);
     C_allvir_eigen = X_ribs_eigen_inv * Vnull1;
 
-    RowMatrixXd S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
+    RowMatrixXd S_vbs_ribs_eigen = math::array_to_eigen(S_vbs_ribs);
     // C_a
     TA::DistArray<Tile, Policy> Ca =
         orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
-    RowMatrixXd Ca_eigen = array_ops::array_to_eigen(Ca);
+    RowMatrixXd Ca_eigen = math::array_to_eigen(Ca);
     RowMatrixXd X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
     Eigen::JacobiSVD<RowMatrixXd> svd2(X2, Eigen::ComputeFullV);
@@ -744,7 +744,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       utility::compute_trange1(nbf_ribs_minus_occ, vir_blocksize);
 
   mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-  TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile, Policy>(
+  TA::DistArray<Tile, Policy> C_cabs = math::eigen_to_array<Tile, Policy>(
       world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
 
   // insert to orbital space
@@ -756,7 +756,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
                                           "All Virtual MO");
   TA::DistArray<Tile, Policy> C_allvir =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_allvir_eigen, tr_ribs,
+      math::eigen_to_array<Tile, Policy>(world, C_allvir_eigen, tr_ribs,
                                               tr_allvir_mo);
 
   // insert to orbital space
@@ -822,12 +822,12 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(
 
   // convert Eigen matrices to TA
   auto C_occ_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
-  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+      math::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+  auto C_corr_occ_ta = math::eigen_to_array<Tile, Policy>(
       world, C_corr_occ, tr_obs, tr_corr_occ);
   auto C_vir_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_vir, tr_obs, tr_vir);
-  auto C_all_ta = array_ops::eigen_to_array<Tile, Policy>(world, C_gamma_point,
+      math::eigen_to_array<Tile, Policy>(world, C_vir, tr_obs, tr_vir);
+  auto C_all_ta = math::eigen_to_array<Tile, Policy>(world, C_gamma_point,
                                                           tr_obs, tr_all);
 
   // insert to registry

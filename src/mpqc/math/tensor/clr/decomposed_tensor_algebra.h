@@ -33,12 +33,10 @@ extern "C" void dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda,
 #endif // MADNESS_LINALG_USE_LAPACKE
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 static constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
 static constexpr auto Tr = madness::cblas::CBLAS_TRANSPOSE::Trans;
-
-namespace algebra {
 
 // Compute the column pivoted qr decomposition into data, will modify input
 // pointers data and J
@@ -105,8 +103,7 @@ TA::Tensor<double> combine(DecomposedTensor<double> const &t);
 integer piv_cholesky(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &a);
 
-}  // namespace algebra
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_ALGEBRA_H_

@@ -125,9 +125,9 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
       auto f_aa = lcao_factory.compute(L"<a|F|a>[df]");
       auto f_ia = lcao_factory.compute(L"<m|F|a>[df]");
 
-      RowMatrixXd f_ii_eigen = array_ops::array_to_eigen(f_ii);
-      RowMatrixXd f_aa_eigen = array_ops::array_to_eigen(f_aa);
-      RowMatrixXd f_ia_eigen = array_ops::array_to_eigen(f_ia);
+      RowMatrixXd f_ii_eigen = math::array_to_eigen(f_ii);
+      RowMatrixXd f_aa_eigen = math::array_to_eigen(f_aa);
+      RowMatrixXd f_ia_eigen = math::array_to_eigen(f_ia);
 
       // form the new fock matrix
       fock = RowMatrixXd::Zero(n, n);
@@ -158,7 +158,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
       {
         auto old_occ =
             lcao_factory.orbital_space().retrieve(OrbitalIndex(L"m")).coefs();
-        RowMatrixXd old_occ_eigen = array_ops::array_to_eigen(old_occ);
+        RowMatrixXd old_occ_eigen = math::array_to_eigen(old_occ);
 
         // convert occ to vbs
         RowMatrixXd occ_eigen = RowMatrixXd::Zero(n, o);
@@ -170,7 +170,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
 
         auto old_vir =
             lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).coefs();
-        RowMatrixXd old_vir_eigen = array_ops::array_to_eigen(old_vir);
+        RowMatrixXd old_vir_eigen = math::array_to_eigen(old_vir);
 
         old_coeffs.block(0, 0, n, o) << occ_eigen;
         old_coeffs.block(0, o, n, v) << old_vir_eigen;
@@ -200,11 +200,11 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
 
       // convert to TA
       C_occ_ta =
-          array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_occ, tr_vbs, tr_occ);
-      C_corr_occ_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(
+          math::eigen_to_array<Tile,TA::SparsePolicy>(world, C_occ, tr_vbs, tr_occ);
+      C_corr_occ_ta = math::eigen_to_array<Tile,TA::SparsePolicy>(
           world, C_corr_occ, tr_vbs, tr_corr_occ);
       C_vir_ta =
-          array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_vir, tr_vbs, tr_vir);
+          math::eigen_to_array<Tile,TA::SparsePolicy>(world, C_vir, tr_vbs, tr_vir);
     }
 
     lcao_factory.orbital_space().clear();
@@ -285,7 +285,7 @@ TA::DistArray<Tile,TA::SparsePolicy> RIDBRMP2F12<Tile>::compute_X() {
   TA::DistArray<Tile,TA::SparsePolicy> X =
       f12::compute_X_ijij_ijji_db_df(this->lcao_factory(), this->ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  auto Fij_eigen = math::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);
   return X;
 }

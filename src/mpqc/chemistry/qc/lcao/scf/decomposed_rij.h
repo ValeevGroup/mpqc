@@ -35,7 +35,7 @@ array_type take_row_from_2D_array(TA::DistArray<Tile, Policy>& matrix,
     throw ProgrammingError("Requested row index is out of range", __FILE__,
                            __LINE__);
 
-  auto mat_eig = array_ops::array_to_eigen(matrix);
+  auto mat_eig = math::array_to_eigen(matrix);
   Vector<element_type> vec_eig = mat_eig.row(row_idx);
 
   auto& world = matrix.world();
@@ -89,7 +89,7 @@ TArray take_col_from_2D_array(TA::DistArray<Tile, Policy>& matrix,
     throw ProgrammingError("Requested col index is out of range", __FILE__,
                            __LINE__);
 
-  auto mat_eig = array_ops::array_to_eigen(matrix);
+  auto mat_eig = math::array_to_eigen(matrix);
   Vector<element_type> vec_eig = mat_eig.col(col_idx);
 
   auto& world = matrix.world();

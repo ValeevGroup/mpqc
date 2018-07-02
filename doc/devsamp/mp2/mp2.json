@@ -19,7 +19,8 @@
     "type": "RHF",
     "atoms" : "$:water",
     "wfn_world" : "$:wfn_world",
-    "localize" : true
+    "localize" : true,
+    "localize_core" : false
   },
   "water": {
     "atoms": [

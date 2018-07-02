@@ -6,14 +6,14 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 /*! \brief Returns the trace of a decompose tensor
  * Currently not recommended due to implementation details
  */
 template <typename T>
 T trace(DecomposedTensor<T> const &t) {
-  return mpqc::tensor::algebra::combine(t).trace();
+  return combine(t).trace();
 }
 
 /*! \brief Returns the sum of a decomposed tensor tile
@@ -21,7 +21,7 @@ T trace(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T sum(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).sum();
+  return combine(t).sum();
 }
 
 /*! \brief Returns the min of a decomposed tensor tile
@@ -29,7 +29,7 @@ T sum(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T min(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).min();
+  return combine(t).min();
 }
 
 /*! \brief Returns the max of a decomposed tensor tile
@@ -37,7 +37,7 @@ T min(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T max(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).max();
+  return combine(t).max();
 }
 
 /*! \brief Returns the abs_min of a decomposed tensor tile
@@ -45,7 +45,7 @@ T max(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T abs_min(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).abs_min();
+  return combine(t).abs_min();
 }
 
 /*! \brief Returns the abs_max of a decomposed tensor tile
@@ -53,7 +53,7 @@ T abs_min(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T abs_max(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).abs_max();
+  return combine(t).abs_max();
 }
 
 /*! \brief Returns the product of a decomposed tensor tile
@@ -61,7 +61,7 @@ T abs_max(DecomposedTensor<T> const &t) {
  */
 template <typename T>
 T product(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).product();
+  return combine(t).product();
 }
 
 template <typename T>
@@ -80,7 +80,7 @@ T norm(DecomposedTensor<T> const &t) {
 
 template <typename T>
 T squared_norm(DecomposedTensor<T> const &t) {
-  return algebra::combine(t).squared_norm();
+  return combine(t).squared_norm();
 }
 
 template <typename T>
@@ -173,7 +173,7 @@ bool empty(DecomposedTensor<T> const &t) {
   return t.empty();
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_UNARY_H_

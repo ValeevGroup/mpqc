@@ -9,7 +9,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 template <typename T>
 DecomposedTensor<T> subt(DecomposedTensor<T> const &l,
@@ -19,7 +19,7 @@ DecomposedTensor<T> subt(DecomposedTensor<T> const &l,
       return DecomposedTensor<T>(l.cut(), l.tensor(0).subt(r.tensor(0)));
     }
   }
-  return add(l, tensor::scale(r, -1.0));
+  return add(l, scale(r, -1.0));
 }
 
 template <typename T>
@@ -80,6 +80,6 @@ DecomposedTensor<T> &subt_to(DecomposedTensor<T> &l, const T factor) {
   assert(false);
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_SUBTRACTION_H_

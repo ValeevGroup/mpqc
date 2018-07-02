@@ -12,6 +12,7 @@
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// ReferenceFourCenterFockBuilder is a reference implementation
@@ -806,5 +807,7 @@ class FourCenterFockBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_FOUR_CENTER_FOCK_BUILDER_H_

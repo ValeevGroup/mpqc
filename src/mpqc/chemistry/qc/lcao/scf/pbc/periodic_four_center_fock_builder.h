@@ -10,6 +10,7 @@
 #include <mutex>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /// ReferencePeriodicFourCenterFockBuilder is a reference implemenation in zRHF
@@ -3919,7 +3920,7 @@ class PeriodicFourCenterFockBuilder
     const auto nfunc = bra_basis_->nfunctions();
     auto &world = this->get_world();
 
-    auto F_unsymm_eig = array_ops::array_to_eigen(F_unsymm);
+    auto F_unsymm_eig = math::array_to_eigen(F_unsymm);
     RowMatrixXd F_symm_eig(nfunc, nfunc * F_uc_size);
 
     for (auto Fp_uc_ord = F_ref_ord; Fp_uc_ord != F_uc_size; ++Fp_uc_ord) {
@@ -3937,7 +3938,7 @@ class PeriodicFourCenterFockBuilder
       }
     }
 
-    auto F_symm = array_ops::eigen_to_array<Tile, Policy>(
+    auto F_symm = math::eigen_to_array<Tile, Policy>(
         world, F_symm_eig, F_unsymm.trange().dim(0), F_unsymm.trange().dim(1));
     F_symm.truncate();
     return F_symm;
@@ -3974,6 +3975,7 @@ class PeriodicFourCenterFockBuilder
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_FOUR_CENTER_FOCK_BUILDER_H_

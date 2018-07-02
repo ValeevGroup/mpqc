@@ -29,7 +29,7 @@ TEST_CASE("Max N Elements of TA::DistArray", "[array-max-n]") {
 
   TA::TiledRange1 tr_n{0, 100, 200, 300, n};
 
-  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
+  auto A_ta = math::eigen_to_array<TA::TensorD, TA::DensePolicy>(
       TA::get_default_world(), A, tr_n, tr_n);
 
   /// check array_max_n
@@ -68,7 +68,7 @@ TEST_CASE("Abs Max N Elements of TA::DistArray", "[array-abs-max-n]") {
 
   TA::TiledRange1 tr_n{0, 100, 200, 300, n};
 
-  auto A_ta = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
+  auto A_ta = math::eigen_to_array<TA::TensorD, TA::DensePolicy>(
       TA::get_default_world(), A, tr_n, tr_n);
 
   std::vector<double> result = array_abs_max_n(A_ta, k);

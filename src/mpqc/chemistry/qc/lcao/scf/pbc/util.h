@@ -51,7 +51,7 @@ TA::DistArray<Tile, Policy> reduced_size_array(
   const auto tr1 = extend_trange1(tr0, result_range_size);
 
   const auto ext = tr0.extent();
-  const auto arg_eig = array_ops::array_to_eigen(arg_array);
+  const auto arg_eig = math::array_to_eigen(arg_array);
   RowMatrixXd result_eig(ext, ext * result_range_size);
   for (auto result_ord = 0; result_ord != result_range_size; ++result_ord) {
     const auto result_3D = direct_3D_idx(result_ord, result_range);
@@ -62,7 +62,7 @@ TA::DistArray<Tile, Policy> reduced_size_array(
         arg_eig.block(0, arg_ord * ext, ext, ext);
   }
 
-  return array_ops::eigen_to_array<Tile, Policy>(world, result_eig, tr0, tr1);
+  return math::eigen_to_array<Tile, Policy>(world, result_eig, tr0, tr1);
 }
 
 /*!
@@ -104,7 +104,7 @@ TA::DistArray<Tile, Policy> enlarged_size_array(
   const auto tr1 = extend_trange1(tr0, result_range_size);
 
   const auto ext = tr0.extent();
-  const auto arg_eig = array_ops::array_to_eigen(arg_array);
+  const auto arg_eig = math::array_to_eigen(arg_array);
   RowMatrixXd result_eig(ext, ext * result_range_size);
   result_eig.setZero();
   for (auto arg_ord = 0; arg_ord != arg_range_size; ++arg_ord) {
@@ -114,7 +114,7 @@ TA::DistArray<Tile, Policy> enlarged_size_array(
         arg_eig.block(0, arg_ord * ext, ext, ext);
   }
 
-  return array_ops::eigen_to_array<Tile, Policy>(world, result_eig, tr0, tr1);
+  return math::eigen_to_array<Tile, Policy>(world, result_eig, tr0, tr1);
 }
 
 /*!
@@ -236,7 +236,7 @@ void print_norms_by_unit_cell(TA::DistArray<Tile, Policy> const &M_array,
       1 + direct_ord_idx(max_lattice_range, max_lattice_range);
   assert(ext1 / ext0 == max_lattice_size);
 
-  const auto M_eigen = array_ops::array_to_eigen(M_array);
+  const auto M_eigen = math::array_to_eigen(M_array);
   ExEnv::out0() << "\nNorms of matrix " << name << ":\n";
   for (auto uc_ord = 0ul; uc_ord != max_lattice_size; ++uc_ord) {
     const auto uc_3D = direct_3D_idx(uc_ord, max_lattice_range);
@@ -369,7 +369,7 @@ TA::DistArray<Tile, Policy> symmetrize_matrix(
   const auto R_ref = (ncells - 1) / 2;
 
   // initialize an empty matrix
-  auto M_unsymm_eig = array_ops::array_to_eigen(M_unsymm);
+  auto M_unsymm_eig = math::array_to_eigen(M_unsymm);
   RowMatrixXd M_symm_eig(ext0, ext1);
 
   // fill matrix elements for each R
@@ -391,7 +391,7 @@ TA::DistArray<Tile, Policy> symmetrize_matrix(
   const auto &tr0 = M_unsymm.trange().dim(0);
   const auto &tr1 = M_unsymm.trange().dim(1);
   auto M_symm =
-      array_ops::eigen_to_array<Tile, Policy>(world, M_symm_eig, tr0, tr1);
+      math::eigen_to_array<Tile, Policy>(world, M_symm_eig, tr0, tr1);
   M_symm.truncate();
   world.gop.fence();
 

@@ -20,7 +20,7 @@
 #include "mpqc/math/linalg/diagonal_array.h"
 
 namespace mpqc {
-namespace array_ops {
+namespace math {
 
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2> eigen_estimator(
@@ -145,7 +145,7 @@ inline void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
 }
 
 inline void add_to_diag_tile(
-    double val, tensor::Tile<tensor::DecomposedTensor<double>> &tile) {
+    double val, Tile<DecomposedTensor<double>> &tile) {
   auto const extent = tile.range().extent();
   auto map = TiledArray::eigen_map(tile.tile().tensor(0), extent[0], extent[1]);
   for (auto i = 0ul; i < extent[0]; ++i) {
@@ -213,8 +213,8 @@ class pair_accumulator {
 
   void operator()(
       result_type &result,
-      tensor::Tile<tensor::DecomposedTensor<double>> const &arg) const {
-    TiledArray::Tensor<double> full = tensor::algebra::combine(arg.tile());
+      Tile<DecomposedTensor<double>> const &arg) const {
+    TiledArray::Tensor<double> full = combine(arg.tile());
     eigen_estimator(result, full);
   }
 
@@ -316,16 +316,16 @@ std::array<typename Array::value_type::numeric_type, 2> eval_guess(
 struct compress {
   double cut_;
   compress(double thresh) : cut_{thresh} {}
-  using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
+  using TileType = Tile<DecomposedTensor<double>>;
   using DummyType = TA::Tensor<double>;
   double operator()(TileType &result) {
     if (result.tile().ndecomp() == 1) {
-      auto test = tensor::algebra::two_way_decomposition(result.tile());
+      auto test = two_way_decomposition(result.tile());
       if (!test.empty()) {
         result.tile() = std::move(test);
       }
     } else {
-      tensor::algebra::recompress(result.tile());
+      recompress(result.tile());
     }
 
     return result.norm();
@@ -413,7 +413,7 @@ Array inverse_sqrt(Array const &S) {
   return Z;
 }
 
-}  // namespace array_ops
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_SQRT_INV_H_

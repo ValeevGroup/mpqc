@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/pbc/periodic_ma_ri_j_builder.h"
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 /*!
@@ -98,6 +99,7 @@ class PeriodicMARIJCADFKFockBuilder : public PeriodicFockBuilder<Tile, Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_MA_RI_J_CADF_K_BUILDER_H_

@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 template <typename Tile, typename Policy, typename Integral>
@@ -36,14 +37,14 @@ class DFFockBuilder : public FockBuilder<Tile,Policy> {
    * to change without requiring user code to change.
    */
   DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
-    auto M_eig = array_ops::array_to_eigen(M);
+    auto M_eig = math::array_to_eigen(M);
 
     RowMatrixXd L_inv_eig =
         RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 
-    L_inv_ = array_ops::eigen_to_array<Tile,Policy>(M.world(), L_inv_eig, tr_M,
+    L_inv_ = math::eigen_to_array<Tile,Policy>(M.world(), L_inv_eig, tr_M,
                                                     tr_M);
   }
 
@@ -116,6 +117,7 @@ class DFFockBuilder : public FockBuilder<Tile,Policy> {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_TRADITIONAL_DF_FOCK_BUILDER_H_

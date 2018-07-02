@@ -253,9 +253,9 @@ EOM_CCSD<Tile, Policy>::eom_ccsd_davidson_solver(
   std::shared_ptr<DavidsonDiagPred<GuessVector>> pred;
   {
     EigenVector<numeric_type> eps_o =
-        array_ops::array_to_eigen(imds.FIJ).diagonal();
+        math::array_to_eigen(imds.FIJ).diagonal();
 
-    RowMatrix<numeric_type> FAB_eigen = array_ops::array_to_eigen(imds.FAB);
+    RowMatrix<numeric_type> FAB_eigen = math::array_to_eigen(imds.FAB);
     EigenVector<numeric_type> eps_v = FAB_eigen.diagonal();
 
     pred = std::make_shared<cc::EEPred<TArray>>(eps_o, eps_v);

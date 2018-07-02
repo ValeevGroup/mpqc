@@ -3,16 +3,18 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_EIGEN_SOLVE_DENSITY_BUILDER_H_
 
 #include "mpqc/chemistry/qc/lcao/scf/density_builder.h"
+#include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 #include <array>
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
-template <typename Tile, typename Policy>
-class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
+template<typename Tile, typename Policy>
+class ESolveDensityBuilder : public DensityBuilder<Tile, Policy> {
  public:
-  using array_type = typename DensityBuilder<Tile,Policy>::array_type;
+  using array_type = typename DensityBuilder<Tile, Policy>::array_type;
  private:
   array_type S_;
   array_type M_inv_;
@@ -23,8 +25,8 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   Eigen::VectorXd eps_;  //!< canonical orbital energies
 
   double TcutC_;
-  bool localize_;
-  std::string localization_method_;
+  std::shared_ptr<OrbitalLocalizer < Tile, Policy>> localizer_;
+  bool localize_core_;
   int64_t n_coeff_clusters_;
   bool clustered_coeffs_;
   std::string metric_decomp_type_;
@@ -49,16 +51,16 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
   ESolveDensityBuilder &operator=(ESolveDensityBuilder &&) = default;
   ~ESolveDensityBuilder() noexcept = default;
 
-  /// @param[in] localization_method defined the localization method; valid choices are "boys-foster" (default),
-  ///            "boys-foster(valence)" (do not localize the core).
   ESolveDensityBuilder(
       array_type const &S, std::vector<array_type> r_xyz, int64_t nocc,
       int64_t ncore, int64_t nclusters, double TcutC = 0.0,
       std::string const &metric_decomp_type = "cholesky_inverse",
       double s_tolerance = 1.0e8,
-      bool localize = true,
-      std::string localization_method = "boys-foster",
-      bool clustered_coeffs = false);
+      std::shared_ptr<OrbitalLocalizer < Tile, Policy>>
+  localizer = nullptr,
+  bool localize_core = false,
+  bool clustered_coeffs = false
+  );
 
   std::pair<array_type, array_type> operator()(array_type const &F) override;
 
@@ -73,12 +75,13 @@ class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
 
   inline double TcutC() const { return TcutC_; }
 
-  bool localize() const { return localize_; }
-  const Eigen::VectorXd& orbital_energies() const { return eps_; }
+  bool localize() const { return localizer_ != nullptr; }
+  const Eigen::VectorXd &orbital_energies() const { return eps_; }
   array_type C() const { return C_; }
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #include "eigen_solve_density_builder_impl.h"

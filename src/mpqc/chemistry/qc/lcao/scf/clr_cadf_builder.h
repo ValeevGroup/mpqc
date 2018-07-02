@@ -25,6 +25,7 @@
 #include <vector>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 class ClrCADFFockBuilder : public FockBuilder {
@@ -32,8 +33,8 @@ class ClrCADFFockBuilder : public FockBuilder {
   using TileType = TA::TensorD;
   using ArrayType = FockBuilder::array_type;
   using DArrayType =
-      TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
-                    TA::SparsePolicy>;
+  TA::DistArray<Tile<DecomposedTensor<double>>,
+                TA::SparsePolicy>;
 
  private:
   ArrayType E_;  // <Κ |G| κ λ > three center two electron coulomb integrals
@@ -79,12 +80,12 @@ class ClrCADFFockBuilder : public FockBuilder {
     auto p_screen =
         std::make_shared<lcao::Screener>(lcao::Screener{});
 
-    auto my_class = tensor::TaToDecompTensor(clr_threshold_);
+    auto my_class = TaToDecompTensor(clr_threshold_);
     using clr_type = decltype(my_class(std::declval<TA::TensorD>()));
     auto func = std::function<clr_type(TA::TensorD &&)>(my_class);
 
     return lcao::sparse_integrals(world, eng_pool, basis_array, p_screen,
-                                       func);
+                                  func);
   }
 
  public:
@@ -110,9 +111,9 @@ class ClrCADFFockBuilder : public FockBuilder {
     E_clr_sizes_ = detail::array_storage(dE_);
     if (dE_.world().rank() == 0) {
       ExEnv::out0() << indent << "E with clr storage:\n"
-                << "\tDense  " << E_clr_sizes_[0] << "\n"
-                << "\tSparse " << E_clr_sizes_[1] << "\n"
-                << "\tCLR    " << E_clr_sizes_[2] << std::endl;
+                    << "\tDense  " << E_clr_sizes_[0] << "\n"
+                    << "\tSparse " << E_clr_sizes_[1] << "\n"
+                    << "\tCLR    " << E_clr_sizes_[2] << std::endl;
     }
   }
 
@@ -134,7 +135,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     bool compress_M = false;
     M_ = TA::to_new_tile_type(
-        M, tensor::TaToDecompTensor(clr_threshold_, compress_M));
+        M, TaToDecompTensor(clr_threshold_, compress_M));
     M_.world().gop.fence();
 
     auto m_store = detail::array_storage(M_);
@@ -146,12 +147,12 @@ class ClrCADFFockBuilder : public FockBuilder {
     }
 
     // Form L^{-1} for M
-    auto M_eig = array_ops::array_to_eigen(M);
+    auto M_eig = math::array_to_eigen(M);
     using MatType = decltype(M_eig);
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
+    Mchol_inv_ = math::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
                                                         trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
@@ -175,7 +176,7 @@ class ClrCADFFockBuilder : public FockBuilder {
         scf::reblock_from_atoms(C_df_temp, obs_atom_to_cluster_map,
                                 dfbs_atom_to_cluster_map, by_cluster_trange);
     C_df_ =
-        TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold_));
+        TA::to_new_tile_type(C_df, TaToDecompTensor(clr_threshold_));
     E_.world().gop.fence();
     auto c_df_store = detail::array_storage(C_df_);
     if (E_.world().rank() == 0) {
@@ -186,7 +187,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     }
   }
 
-  ~ClrCADFFockBuilder() { }
+  ~ClrCADFFockBuilder() {}
 
   void register_fock(const TA::TSpArrayD &fock,
                      FormulaRegistry<TA::TSpArrayD> &registry) override {
@@ -260,8 +261,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     ArrayType J;
     J("mu, nu") =
         E_("X, mu, nu") *
-        (Mchol_inv_("Z, X") *
-         (Mchol_inv_("Z, Y") * (E_("Y, rho, sigma") * D("rho, sigma"))));
+            (Mchol_inv_("Z, X") *
+                (Mchol_inv_("Z, Y") * (E_("Y, rho, sigma") * D("rho, sigma"))));
     auto j1 = mpqc::fenced_now(world);
     j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
@@ -298,7 +299,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     bool compress_C = false;
     dC = TA::to_new_tile_type(
-        C, tensor::TaToDecompTensor(clr_threshold_, compress_C));
+        C, TaToDecompTensor(clr_threshold_, compress_C));
 
     // Contract C_df with orbitals
     auto c_mo0 = mpqc::fenced_now(world);
@@ -398,7 +399,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     auto l0 = mpqc::fenced_now(world);
     dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
     dL.truncate();
-    auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
+    auto L = TA::to_new_tile_type(dL, DecompToTaTensor{});
     auto l1 = mpqc::fenced_now(world);
     l_times_.push_back(mpqc::duration_in_s(l0, l1));
 
@@ -414,6 +415,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 };
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLR_CADF_BUILDER_H_

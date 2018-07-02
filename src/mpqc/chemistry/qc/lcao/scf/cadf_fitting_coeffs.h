@@ -15,6 +15,7 @@
 #include <unordered_map>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 namespace cadf {
@@ -427,6 +428,7 @@ compute_atomic_fitting_coeffs(
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_FITTING_COEFFS_H_

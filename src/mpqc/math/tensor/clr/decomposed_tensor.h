@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 /// Class to hold decomposition of a tensor.  The class can hold an arbitrary
 /// number of decomposition, but the math functions in the helper headers
@@ -109,7 +109,7 @@ std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
   return os;
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_H_

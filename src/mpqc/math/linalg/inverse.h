@@ -3,8 +3,9 @@
 #include "mpqc/math/linalg/sqrt_inv.h"
 
 namespace mpqc {
+namespace math {
 
-template <typename Array>
+template<typename Array>
 Array invert(Array const &S) {
   auto evg0 = tcc_time::now();
   auto spectral_range = pure::eval_guess(S);
@@ -40,4 +41,5 @@ Array invert(Array const &S) {
   return X;
 }
 
+}  // namespace math
 }  // namespace mpqc

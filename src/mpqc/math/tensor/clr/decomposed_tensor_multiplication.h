@@ -5,7 +5,7 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 namespace mpqc {
-namespace tensor {
+namespace math {
 
 template <typename T>
 DecomposedTensor<T> mult(DecomposedTensor<T> const &l,
@@ -45,7 +45,7 @@ DecomposedTensor<T> &mult_to(DecomposedTensor<T> &l,
   assert(false);
 }
 
-}  // namespace tensor
+}  // namespace math
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_MULTIPLICATION_H_

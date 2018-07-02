@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 namespace mpqc {
+namespace lcao {
 namespace scf {
 
 inline TA::DistArray<TA::TensorD, TA::SparsePolicy> array_from_tile_map(
@@ -78,5 +79,7 @@ inline TA::DistArray<TA::TensorD, TA::SparsePolicy> reblock_from_atoms(
 }
 
 }  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_HELPER_FUNCTIONS_H_

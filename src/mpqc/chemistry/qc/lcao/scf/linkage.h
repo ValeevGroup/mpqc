@@ -31,11 +31,20 @@ template <typename Tile, typename Policy>
 class DFzRHF;
 
 namespace scf {
+
+template <typename Tile, typename Policy>
+class FosterBoysLocalizer;
+
+template <typename Tile, typename Policy>
+class RRQRLocalizer;
+
 #if TA_DEFAULT_POLICY == 0
 mpqc::detail::ForceLink<RHF<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::DensePolicy>> fl2;
 mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::DensePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::DensePolicy>> fl4;
+mpqc::detail::ForceLink<FosterBoysLocalizer<TA::TensorD, TA::DensePolicy>> fl7;
+mpqc::detail::ForceLink<RRQRLocalizer<TA::TensorD, TA::DensePolicy>> fl8;
 #elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RHF<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::SparsePolicy>> fl2;
@@ -43,6 +52,8 @@ mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
 mpqc::detail::ForceLink<zRHF<TA::TensorD, TA::SparsePolicy>> fl5;
 mpqc::detail::ForceLink<DFzRHF<TA::TensorD, TA::SparsePolicy>> fl6;
+mpqc::detail::ForceLink<FosterBoysLocalizer<TA::TensorD, TA::SparsePolicy>> fl7;
+mpqc::detail::ForceLink<RRQRLocalizer<TA::TensorD, TA::SparsePolicy>> fl8;
 #endif
 }
 

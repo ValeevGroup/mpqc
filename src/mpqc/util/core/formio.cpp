@@ -36,8 +36,8 @@
 
 using namespace mpqc;
 
-char *FormIO::default_basename_ = nullptr;
-char *FormIO::default_work_dir_ = nullptr;
+std::string FormIO::default_basename_;
+std::string FormIO::default_work_dir_;
 int  FormIO::ready_ = 0;
 int  FormIO::xalloc_inited_ = 0;
 long FormIO::nindent_ = 0;
@@ -50,27 +50,12 @@ int FormIO::debug_ = 0;
 int FormIO::parallel_ = 0;
 int FormIO::me_ = 0;
 
-char *
-FormIO::fileext_to_filename(const char *ext)
-{
-  const char *basename;
-
-  if (default_basename_) basename = default_basename_;
-  else basename = "mpqc";
-
-  char * res = new char[strlen(basename) + strlen(ext) + 1];
-  strcpy(res, basename);
-  strcat(res, ext);
-
-  return res;
-}
-
 std::string
-FormIO::fileext_to_filename_string(const char *ext)
+FormIO::fileext_to_filename(const std::string& ext)
 {
   std::string basename;
 
-  if (default_basename_) basename = default_basename_;
+  if (!default_basename_.empty()) basename = default_basename_;
   else basename = "mpqc";
 
   std::string res = basename + ext;
@@ -79,12 +64,12 @@ FormIO::fileext_to_filename_string(const char *ext)
 }
 
 std::string
-FormIO::fileext_to_fullpathname_string(const char *ext){
+FormIO::fileext_to_fullpathname(const std::string& ext){
 
   std::string fullpathname;
 
   fullpathname = default_work_dir_;
-  fullpathname += '/';
+  fullpathname += default_work_dir_.empty() ? "" : "/";
   fullpathname += default_basename_;
   fullpathname += ext;
 
@@ -93,34 +78,24 @@ FormIO::fileext_to_fullpathname_string(const char *ext){
 }
 
 void
-FormIO::set_default_basename(const char *basename)
+FormIO::set_default_basename(std::string basename)
 {
-  if (default_basename_) delete[] default_basename_;
-
-  if (basename)
-      default_basename_ = strcpy(new char[strlen(basename)+1], basename);
-  else
-      default_basename_ = 0;
+  default_basename_ = std::move(basename);
 }
 
 void
-FormIO::set_default_work_dir(const char* work_dir)
+FormIO::set_default_work_dir(std::string work_dir)
 {
-  if (default_work_dir_) delete[] default_work_dir_;
-
-  if (work_dir)
-    default_work_dir_ = strcpy(new char[strlen(work_dir)+1], work_dir);
-  else
-    default_work_dir_ = 0;
+  default_work_dir_ = std::move(work_dir);
 }
 
-const char *
+const std::string&
 FormIO::default_basename()
 {
   return default_basename_;
 }
 
-const char *
+const std::string&
 FormIO::default_work_dir()
 {
   return default_work_dir_;

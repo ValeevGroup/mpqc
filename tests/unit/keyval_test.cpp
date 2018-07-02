@@ -129,7 +129,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
   // can write pointers
   {
-    std::unique_ptr<double> x(new double);
+    auto x = std::make_unique<double>();
     kv.assign("double*", x.get());
     *x = 0.0;
     auto x_copy = kv.value<double*>("double*");

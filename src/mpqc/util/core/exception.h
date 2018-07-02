@@ -92,7 +92,7 @@ class Exception: public std::runtime_error {
  */
 class Exception: public detail::Exception {
     const char *exception_type_;
-    mutable char *elaboration_c_str_;
+    mutable std::unique_ptr<char[]> elaboration_c_str_;
     std::unique_ptr<std::ostringstream> elaboration_;
     detail::Backtrace backtrace_;
 
@@ -189,7 +189,7 @@ class FeatureNotImplemented: public ProgrammingError {
  */
 class InputError: public Exception {
     const char *keyword_;
-    char *value_;
+    std::unique_ptr<char[]> value_;
 
   public:
     /** Create a InputError exception.
@@ -217,7 +217,7 @@ class InputError: public Exception {
     const char *keyword() const MPQC__NOEXCEPT { return keyword_; }
     /// Return the erroneous value which caused this exception to be
     /// thrown.
-    const char *value() const MPQC__NOEXCEPT { return value_; }
+    const char *value() const MPQC__NOEXCEPT { return value_.get(); }
 };
 
 /** This is thrown when something cannot be computed, e.g., atomic mass of a non-existent isotope.

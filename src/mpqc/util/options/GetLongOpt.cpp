@@ -115,7 +115,9 @@ void GetLongOpt::parse(int argc, char *const *argv) {
 
 void GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
   finalized = true;
-  std::unique_ptr<char[]> str_ptr(strdup(cppstr.c_str()));
+  auto str_ptr = std::make_unique<char[]>(cppstr.size() + 1);
+  str_ptr[cppstr.size()] = '\0';
+  std::copy(cppstr.cbegin(), cppstr.cend(), str_ptr.get());
   char* str = str_ptr.get();
   char *token = strtok(str, " \t");
   const char *name = p.c_str();

@@ -157,9 +157,9 @@ namespace mpqc {
           const auto x = std::min(a,b);
 
           // allocate memory for SVD
-          std::unique_ptr<double[]> u_ax(new double[a * x]);
-          std::unique_ptr<double[]> v_xb(new double[b * x]);
-          std::unique_ptr<double[]> s(new double[x]);
+          auto u_ax = std::make_unique<double[]>(a * x);
+          auto v_xb = std::make_unique<double[]>(b * x);
+          auto s = std::make_unique<double[]>(x);
 
           // SVD of tile: (t_ab)^T
           tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');

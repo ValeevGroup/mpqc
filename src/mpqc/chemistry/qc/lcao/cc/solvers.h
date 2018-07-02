@@ -1124,7 +1124,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tosv_(kv.value<double>("tosv", 1.e-9)),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
+        micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
+        old_coeff_(kv.value<double>("old_coeff", 0.5)),
+        new_coeff_(kv.value<double>("new_coeff", 0.5)){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1273,6 +1275,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Construct PNOs and OSVs
     auto D = detail::construct_density(T_reblock);
+    old_D_ = D; // Save this original D in old_D_ for purposes of mixing
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
@@ -1427,10 +1430,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         old_pnos_ = pnos_;
       }
 
-      // Recompute the PNOs
+      // Construct new D
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       auto D = detail::construct_density(T_reblock);
-      detail::construct_pno(D, F_uocc_,
+
+      // Mix old_D and new D
+      T mixed_D;
+      mixed_D("a,b,i,j") = old_coeff_ * old_D_("a,b,i,j") + new_coeff_ * D("a,b,i,j");
+
+      // Set old_D_ equal to mixed_D for next macro iteration's mixing
+      old_D_ = mixed_D;
+
+      // Recompute the PNOs using mixed_D
+      detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
                             osvs_, nosvs_, F_osv_diag_, pno_canonical_);
@@ -1687,6 +1699,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   double micro_ratio_;          //!< For determining whether or not the energy has converged within a subspace
 
+  T old_D_;                     //!< Holds the previous value of D for mixing purposes
+  double old_coeff_;            //!< Coefficient for old_D in mixing
+  double new_coeff_;            //!< Coefficient for D in mixing
 
 };  // class: PNO solver
 

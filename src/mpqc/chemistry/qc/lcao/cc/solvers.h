@@ -816,6 +816,7 @@ void construct_pno(
     std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
     std::vector<int>& nosvs,
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
+    std::vector<EigenVector<typename Tile::numeric_type>>& pno_eigvals,
     bool pno_canonical = false) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
 
@@ -828,6 +829,9 @@ void construct_pno(
   pnos.resize(nocc_act * nocc_act);
   F_pno_diag.resize(nocc_act * nocc_act);
   std::fill(npnos.begin(), npnos.end(), 0);
+
+  // For storing the PNO eigenvalues
+  pno_eigvals.resize(nocc_act * nocc_act);
 
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
@@ -922,7 +926,7 @@ void construct_pno(
   // Lambda function to form PNOs; implement using a for_each
   auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos,
                    tpno, nuocc, nocc_act,
-                   pno_canonical](Tile& result_tile, const Tile& arg_tile) {
+                   pno_canonical, &pno_eigvals](Tile& result_tile, const Tile& arg_tile) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -943,6 +947,8 @@ void construct_pno(
       Matrix pno_ij = es.eigenvectors();
       auto occ_ij = es.eigenvalues();
 
+      pno_eigvals[ij] = occ_ij;
+
       // Determine number of PNOs to be dropped
       std::size_t pnodrop = 0;
 
@@ -955,9 +961,29 @@ void construct_pno(
         }
       }
 
-      // Calculate the number of PNOs kept and store in vector npnos
-      // for calculating average npno later
-      const auto npno = nuocc - pnodrop;
+      // Calculate the number of PNOs kept in this and the previous macro iteration
+//      const auto npno = nuocc - pnodrop;
+      auto npno = nuocc - pnodrop;
+      const auto old_npno = npnos[ij];
+
+      int new_pnodrop = pnodrop;
+
+      // Compare new npno_ij to old npno_ij
+      if (npno < old_npno) {
+        auto diff = old_npno - npno;
+        for (int i = 1; i <= diff; ++i) {
+          int idx = pnodrop - i;
+          if (occ_ij(idx) >= tpno / 2.0) {
+            --new_pnodrop;
+          } //if
+        } // for
+      } // if
+
+      // Recompute the current macro iteration's npnos
+      pnodrop = new_pnodrop;
+      npno = nuocc - pnodrop;
+
+      // Store the new number of PNOs kept for calculating the average later
       npnos[ij] = npno;
 
       // Truncate PNO matrix and store in pnos_
@@ -1125,8 +1151,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
-        old_coeff_(kv.value<double>("old_coeff", 0.5)),
-        new_coeff_(kv.value<double>("new_coeff", 0.5)){
+        old_coeff_(kv.value<double>("old_coeff", 0.0)),
+        new_coeff_(kv.value<double>("new_coeff", 1.0)){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1279,7 +1305,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
-                          osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+                          osvs_, nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
 
     // ready to process tasks now
     this->process_pending();
@@ -1296,6 +1322,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // Dump # of pnos/pair to file
     if (print_npnos_) {
       print_npnos_per_pair();
+    }
+
+    if (print_npnos_) {
+      print_eigvals();
+
     }
 
   }
@@ -1430,6 +1461,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         old_pnos_ = pnos_;
       }
 
+
       // Construct new D
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       auto D = detail::construct_density(T_reblock);
@@ -1445,7 +1477,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
-                            osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+                            osvs_, nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
 
       // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;
@@ -1456,6 +1488,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       // Dump # of pnos/pair to file
       if (print_npnos_) {
         print_npnos_per_pair();
+      }
+
+      if (print_npnos_) {
+        print_eigvals();
+
       }
 
       // Transform t_old_reblock
@@ -1532,7 +1569,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         if(!K_reblock_.is_zero({0,0,i,j}) && K_reblock_.is_local({0,0,i,j})) {
           auto ji_owner = pmap->owner(j * nocc_act_ + i);
           const auto ij = i * nocc_act_ + j;
-          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij]);
+          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij], pno_eigvals_[ij]);
         }
       }
     }
@@ -1549,13 +1586,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
    *        transformed to the i,j PNO space
    */
-  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij) {
+  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij, Vector pno_eigvals_ij) {
     int my_i = j;
     int my_j = i;
     int my_ij = my_i * nocc_act_ + my_j;
     pnos_[my_ij] = pno_ij;
     npnos_[my_ij] = npno_ij;
     F_pno_diag_[my_ij] = f_pno_diag_ij;
+    pno_eigvals_[my_ij] = pno_eigvals_ij;
   }
 
   /// Prints the average number of PNOs and OSVs per pair
@@ -1594,6 +1632,19 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       for (int j = 0; j != nocc_act_; ++j) {
         int val = npnos_[i * nocc_act_ + j];
         out_file << i << " " << j << " " << val << std::endl;
+      }
+    }
+  }
+
+  /// Prints all eigenvalues for each (unique) occupied pair
+  void print_eigvals() {
+
+    for (int i = 0; i != nocc_act_; ++i) {
+      for (int j = i; j != nocc_act_; ++j) {
+        std::ofstream out_file("/Users/mcclement/pno_eigvals_i-" + std::to_string(i) + "-j-" + std::to_string(j) + "-macro-" + std::to_string(iter_count_) + ".tsv");
+        auto ij = i * nocc_act_ + j;
+        auto eigvals_ij = pno_eigvals_[ij];
+        out_file << eigvals_ij << std::endl;
       }
     }
   }
@@ -1651,6 +1702,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   }
 
 
+
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
@@ -1678,6 +1730,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<Matrix> pnos_;
   std::vector<Vector> F_pno_diag_;
   std::vector<Matrix> old_pnos_;
+  std::vector<Vector> pno_eigvals_;
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis

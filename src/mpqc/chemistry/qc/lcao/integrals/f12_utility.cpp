@@ -81,6 +81,7 @@ void LinearSolveDamped(int n, Eigen::MatrixXd& A, const double* b,
   for (int m = 0; m < n; ++m) Acopy(m, m) *= (1 + lambda);
   Eigen::VectorXd e(n);
   for (int i = 0; i < n; i++) e(i) = b[i];
+  //            LINEQ_Gauss_Jordan( Acopy, e, 1);
   Eigen::VectorXd result = Acopy.colPivHouseholderQr().solve(e);
   for (int i = 0; i < n; i++) x[i] = result(i);
 }

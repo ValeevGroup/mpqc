@@ -845,7 +845,7 @@ void construct_pno(
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
                    &F_uocc, &nosvs, tosv, nuocc, nocc_act,
-                   pno_canonical](TA::World& world){
+                   pno_canonical, use_fuzzy](TA::World& world){
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -884,7 +884,35 @@ void construct_pno(
                 break;
             }
           }
-          const auto nosv = nuocc - osvdrop;
+
+          // Calculate the number of OSVs kept in this and the previous macro iteration
+//          const auto nosv = nuocc - osvdrop;
+          auto nosv = nuocc - osvdrop;
+
+          // If use_fuzzy_ == true, compare the would be dropped OSVs to the fuzzy cutoff
+          if (use_fuzzy) {
+            const auto old_nosv = nosvs[i];
+
+            int new_osvdrop = osvdrop;
+
+            // Compare new npno_ij to old npno_ij
+            if (nosv < old_nosv) {
+              auto diff = old_nosv - nosv;
+              for (int i = 1; i <= diff; ++i) {
+                int idx = osvdrop - i;
+                if (occ_ii(idx) >= tosv / 2.0) {
+                  --new_osvdrop;
+                } //if
+              } // for
+            } // if
+
+            // Recompute the current macro iteration's npnos
+            osvdrop = new_osvdrop;
+            nosv = nuocc - osvdrop;
+
+          }
+
+          // Store the number of OSVs kept for computing the average later
           nosvs[i] = nosv;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
@@ -1330,11 +1358,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // Dump # of pnos/pair to file
     if (print_npnos_) {
       print_npnos_per_pair();
-    }
-
-    if (print_npnos_) {
       print_eigvals();
-
     }
 
   }
@@ -1496,11 +1520,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       // Dump # of pnos/pair to file
       if (print_npnos_) {
         print_npnos_per_pair();
-      }
-
-      if (print_npnos_) {
         print_eigvals();
-
       }
 
       // Transform t_old_reblock
@@ -1745,6 +1765,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<int> nosvs_;
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
+  std::vector<Matrix> old_osvs_;
 
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   bool pnos_relaxed_;           //!< Whether or not PNOs have been updated at least once

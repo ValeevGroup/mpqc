@@ -9,6 +9,7 @@
 #include <libint2/basis.h>
 #include <madness/world/array_addons.h>
 #include <tiledarray.h>
+#include "mpqc/util/external/boost/small_vector.h"
 
 #include "mpqc/util/keyval/keyval.h"
 

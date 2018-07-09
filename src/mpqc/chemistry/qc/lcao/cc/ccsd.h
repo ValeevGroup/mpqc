@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_
 
 #include <tiledarray.h>
+#include <TiledArray/external/btas.h>  // include ahead of lcao/basis/basis.h to ensure small_vector serialization is defined once
 
 #include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"

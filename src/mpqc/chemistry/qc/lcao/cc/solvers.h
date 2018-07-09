@@ -817,6 +817,7 @@ void construct_pno(
     std::vector<int>& nosvs,
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
     std::vector<EigenVector<typename Tile::numeric_type>>& pno_eigvals,
+    bool use_fuzzy = false,
     bool pno_canonical = false) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
 
@@ -926,7 +927,7 @@ void construct_pno(
   // Lambda function to form PNOs; implement using a for_each
   auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos,
                    tpno, nuocc, nocc_act,
-                   pno_canonical, &pno_eigvals](Tile& result_tile, const Tile& arg_tile) {
+                   pno_canonical, &pno_eigvals, use_fuzzy](Tile& result_tile, const Tile& arg_tile) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -964,24 +965,30 @@ void construct_pno(
       // Calculate the number of PNOs kept in this and the previous macro iteration
 //      const auto npno = nuocc - pnodrop;
       auto npno = nuocc - pnodrop;
-      const auto old_npno = npnos[ij];
 
-      int new_pnodrop = pnodrop;
+      // If use_fuzzy_ == true, compare the would be dropped PNOs to the fuzzy cutoff
+      if (use_fuzzy) {
+        const auto old_npno = npnos[ij];
 
-      // Compare new npno_ij to old npno_ij
-      if (npno < old_npno) {
-        auto diff = old_npno - npno;
-        for (int i = 1; i <= diff; ++i) {
-          int idx = pnodrop - i;
-          if (occ_ij(idx) >= tpno / 2.0) {
-            --new_pnodrop;
-          } //if
-        } // for
-      } // if
+        int new_pnodrop = pnodrop;
 
-      // Recompute the current macro iteration's npnos
-      pnodrop = new_pnodrop;
-      npno = nuocc - pnodrop;
+        // Compare new npno_ij to old npno_ij
+        if (npno < old_npno) {
+          auto diff = old_npno - npno;
+          for (int i = 1; i <= diff; ++i) {
+            int idx = pnodrop - i;
+            if (occ_ij(idx) >= tpno / 2.0) {
+              --new_pnodrop;
+            } //if
+          } // for
+        } // if
+
+        // Recompute the current macro iteration's npnos
+        pnodrop = new_pnodrop;
+        npno = nuocc - pnodrop;
+
+      }
+
 
       // Store the new number of PNOs kept for calculating the average later
       npnos[ij] = npno;
@@ -1152,7 +1159,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
         old_coeff_(kv.value<double>("old_coeff", 0.0)),
-        new_coeff_(kv.value<double>("new_coeff", 1.0)){
+        new_coeff_(kv.value<double>("new_coeff", 1.0)),
+        use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1305,7 +1313,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
                           pnos_, npnos_, F_pno_diag_,
-                          osvs_, nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
+                          osvs_, nosvs_, F_osv_diag_, pno_eigvals_, use_fuzzy_, pno_canonical_);
 
     // ready to process tasks now
     this->process_pending();
@@ -1477,7 +1485,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
                             pnos_, npnos_, F_pno_diag_,
-                            osvs_, nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
+                            osvs_, nosvs_, F_osv_diag_, pno_eigvals_, use_fuzzy_, pno_canonical_);
 
       // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;
@@ -1755,6 +1763,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   T old_D_;                     //!< Holds the previous value of D for mixing purposes
   double old_coeff_;            //!< Coefficient for old_D in mixing
   double new_coeff_;            //!< Coefficient for D in mixing
+  bool use_fuzzy_;              //!< Whether or not to use the fuzzy cutoff
 
 };  // class: PNO solver
 

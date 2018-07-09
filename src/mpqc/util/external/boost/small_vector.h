@@ -2,12 +2,12 @@
 // Created by Eduard Valeyev on 7/9/18.
 //
 
-#ifndef MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_SMALL_VECTOR_H
-#define MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_SMALL_VECTOR_H
+#ifndef MPQC4_SRC_MPQC_UTIL_EXTERNAL_BOOST_SMALL_VECTOR_H
+#define MPQC4_SRC_MPQC_UTIL_EXTERNAL_BOOST_SMALL_VECTOR_H
 
 // this is already defined in TiledArray/math/btas.h if defined(BTAS_HAS_BOOST_CONTAINER)
 #if ! (defined(TILEDARRAY_MATH_BTAS_H__INCLUDED) && defined(BTAS_HAS_BOOST_CONTAINER))
-
+#if __has_include(<boost/container/small_vector.hpp>)
 #include <boost/container/small_vector.hpp>
 
 namespace madness {
@@ -36,6 +36,7 @@ struct ArchiveStoreImpl<Archive, boost::container::small_vector<T, N, A>> {
 }  // namespace archive
 }  // namespace madness
 
-#endif
+#endif  // __has_include(<boost/container/small_vector.hpp>)
+#endif  // ! (defined(TILEDARRAY_MATH_BTAS_H__INCLUDED) && defined(BTAS_HAS_BOOST_CONTAINER))
 
-#endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_SMALL_VECTOR_H
+#endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_BOOST_SMALL_VECTOR_H

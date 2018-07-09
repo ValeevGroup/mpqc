@@ -4,3 +4,4 @@ set(sources
 )
 
 add_mpqc_library(util_boost sources sources "MADworld" "mpqc/util/external/boost")
+target_link_libraries(MPQCutil_boost PUBLIC boost)

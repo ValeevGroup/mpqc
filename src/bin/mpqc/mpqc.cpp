@@ -257,7 +257,11 @@ int main(int argc, char *argv[]) {
   try {
     try_main(argc, argv, *world_ptr);
 
-  } catch (mpqc::Exception &e) {
+  } catch (mpqc::FeatureDisabled &e) {
+    std::cerr << "!! MPQC exception: " << e.what() << "\n";
+    rc = 2;
+  }
+  catch (mpqc::Exception &e) {
     std::cerr << "!! MPQC exception: " << e.what() << "\n";
     rc = 1;
   } catch (TiledArray::Exception &e) {

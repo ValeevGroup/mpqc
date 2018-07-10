@@ -5,8 +5,7 @@
 #define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include <TiledArray/madness.h>
-#include <madness/tensor/clapack.h>
+#include "mpqc/math/external/lapack/lapack.h"
 
 namespace mpqc {
 namespace math {
@@ -219,7 +218,7 @@ bool inline Decompose_Matrix(
 
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
   LWORK = work;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
   const double thresh = cut;
@@ -267,7 +266,7 @@ void inline ColPivotedQr(
 
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
   LWORK = work;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
   integer rank = qr_rank(input, cut);
@@ -309,7 +308,7 @@ void inline CompressLeft(
 
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
   LWORK = work;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
   const double thresh = cut;
@@ -355,7 +354,7 @@ void inline CompressRight(
 
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
   LWORK = work;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
   const double thresh = cut;

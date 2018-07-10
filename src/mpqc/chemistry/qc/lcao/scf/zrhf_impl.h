@@ -553,7 +553,7 @@ zRHF<Tile, Policy>::transform_real2recip(const array_type& matrix,
       1 + k_ord_idx(k_end_3D_idx, recip_lattice_range);
   const auto tiles_range = matrix.trange().tiles_range();
   MPQC_ASSERT(tiles_range.extent(1) % tiles_range.extent(0) == 0);
-  MPQC_ASSERT(real_lattice_size ==
+  MPQC_ASSERT(uint64_t(real_lattice_size) ==
               tiles_range.extent(1) / tiles_range.extent(0));
 
   array_type_z result;
@@ -619,13 +619,6 @@ MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(const MatrixZ& mat0) {
 
         double phi = std::atan(imag / real);
 
-        double R;
-        if (std::cos(phi) != 0.0) {
-          R = real / std::cos(phi);
-        } else {
-          R = imag / std::sin(phi);
-        }
-
         std::complex<double> comp1 = comp0 * std::exp(-1.0 * I * phi);
 
         result(row, col) = comp1;
@@ -638,7 +631,7 @@ MatrixZ zRHF<Tile, Policy>::reverse_phase_factor(const MatrixZ& mat0) {
 
 template <typename Tile, typename Policy>
 void zRHF<Tile, Policy>::print_band_gaps() {
-  MPQC_ASSERT(eps_.size() == k_size_);
+  MPQC_ASSERT(decltype(k_size_)(eps_.size()) == k_size_);
 
   VectorD hoco(k_size_), luco(k_size_), direct_gap(k_size_);
 

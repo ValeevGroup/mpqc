@@ -10,7 +10,7 @@ namespace mpqc {
 namespace utility {
 
 void parallel_read_file(madness::World &world,
-                        const std::string &filename, char *&buffer) {
+                        const std::string &filename, std::unique_ptr<char[]>& buffer) {
   int size;
   std::string contents;
   if (world.rank() == 0) {
@@ -30,22 +30,21 @@ void parallel_read_file(madness::World &world,
   }
 
   world.gop.broadcast(size, 0);
-  buffer = new char[size];
+  buffer = std::make_unique<char[]>(size);
 
   if (world.rank() == 0) {
-    strcpy(buffer, contents.c_str());
+    strcpy(buffer.get(), contents.c_str());
   }
 
-  world.gop.broadcast(buffer, size, 0);
+  world.gop.broadcast(buffer.get(), size, 0);
 }
 
 void parallel_read_file(madness::World &world,
-                               const std::string &filename,
-                               std::stringstream &output) {
-  char *buffer;
+                        const std::string &filename,
+                        std::stringstream &output) {
+  std::unique_ptr<char[]> buffer;
   parallel_read_file(world, filename, buffer);
-  output << buffer;
-  delete[] buffer;
+  output << buffer.get();
 }
 
 }  // namespace utility

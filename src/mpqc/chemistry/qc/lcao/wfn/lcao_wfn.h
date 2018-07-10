@@ -180,7 +180,7 @@ class LCAOWavefunction : public Wavefunction {
         libint2::molden::Export xport(libint2_atoms, libint2_shells, C_p_eig,
                                       op, energies, labels);
 
-        std::string filename = FormIO::fileext_to_fullpathname_string(".orbital.molden");
+        std::string filename = FormIO::fileext_to_fullpathname(".orbital.molden");
         xport.write(filename);
 
       }

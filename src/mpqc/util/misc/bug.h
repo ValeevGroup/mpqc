@@ -28,6 +28,7 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
 #define MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "mpqc/util/keyval/keyval.h"
@@ -54,7 +55,7 @@ class Debugger : virtual public DescribedClass {
   bool sleep_;
   bool wait_for_debugger_;
   bool handle_sigint_;
-  int *mysigs_;
+  std::unique_ptr<int[]> mysigs_;
 
   void init();
 

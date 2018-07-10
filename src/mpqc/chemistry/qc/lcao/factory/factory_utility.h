@@ -187,9 +187,9 @@ TA::DistArray<Tile, Policy> compute_shellblock_norm(
   const auto nshell0 = shells0.size();
   const auto nshell1 = shells1.size();
   RowMatrixXd norm_D(nshell0, nshell1);
-  for (auto sh0 = 0, sh0_first = 0; sh0 != nshell0; ++sh0) {
+  for (auto sh0 = 0ul, sh0_first = 0ul; sh0 != nshell0; ++sh0) {
     const auto sh0_size = shells0[sh0].size();
-    for (auto sh1 = 0, sh1_first = 0; sh1 != nshell1; ++sh1) {
+    for (auto sh1 = 0ul, sh1_first = 0ul; sh1 != nshell1; ++sh1) {
       const auto sh1_size = shells1[sh1].size();
 
       norm_D(sh0, sh1) = eig_D.block(sh0_first, sh1_first, sh0_size, sh1_size)

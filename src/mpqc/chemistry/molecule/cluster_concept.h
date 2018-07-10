@@ -23,7 +23,6 @@ class ClusterConcept {
  public:
   virtual ~ClusterConcept() { }
 
-  virtual ClusterConcept *clone_() const = 0;
   virtual Vector3d const &center_() const = 0;
   virtual std::ostream &print_(std::ostream &) const = 0;
 };
@@ -47,9 +46,6 @@ class ClusterModel : public ClusterConcept {
   ClusterModel(ClusterModel &&c) = default;
   ClusterModel &operator=(ClusterModel &&c) = default;
 
-  ClusterConcept *clone_() const override final {
-    return new ClusterModel(*this);
-  }
 
   Vector3d const &center_() const override final { return center(element_); }
   std::ostream &print_(std::ostream &os) const override final {

@@ -256,7 +256,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             if (size > 1) {
               SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
               SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
-              world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
+              world_ptr = std::make_shared<madness::World>(comm);
               tmp_ptr = world_ptr.get();
             } else {
               tmp_ptr = &global_world;
@@ -1232,7 +1232,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     if (size > 1) {
       SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
       SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
-      world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
+      world_ptr = std::make_shared<madness::World>(comm);
       tmp_ptr = world_ptr.get();
     } else {
       tmp_ptr = &global_world;

@@ -86,7 +86,6 @@ Debugger::~Debugger() {
   for (int i = 0; i < NSIG; i++) {
     if (mysigs_[i]) signals[i] = nullptr;
   }
-  delete[] mysigs_;
 }
 
 void Debugger::init() {
@@ -100,7 +99,7 @@ void Debugger::init() {
   debug_ = 1;
   wait_for_debugger_ = 1;
 
-  mysigs_ = new int[NSIG];
+  mysigs_ = std::make_unique<int[]>(NSIG);
   for (int i = 0; i < NSIG; i++) {
     mysigs_[i] = 0;
   }

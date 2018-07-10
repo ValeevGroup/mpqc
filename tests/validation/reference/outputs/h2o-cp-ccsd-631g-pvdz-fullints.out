@@ -1,0 +1,416 @@
+MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision ef5c9384b64b4524157d799273e720cd883f0408
+
+  Machine:          Linux-4.9.87-linuxkit-aufs-x86_64
+  User:             root@be3a6701a936
+  Start Time:       Tue 05 Jun 2018 07:23:10 PM GMT GMT
+  Default World:    1 MPI process
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "atoms":
+    {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs":
+    {
+        "name": "6-31G",
+        "atoms": "$:atoms"
+    },
+    "dfbs":
+    {
+        "name": "cc-pVDZ",
+        "atoms": "$:atoms"
+    },
+    "wfn_world":
+    {
+        "atoms": "$:atoms",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf":
+    {
+        "type": "RI-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn":
+    {
+        "type": "CCSD",
+        "wfn_world": "$:wfn_world",
+        "atoms": "$:atoms",
+        "ref": "$:scf",
+        "method": "df",
+        "reduced_abcd_memory": "false",
+        "cp_ccsd": "true",
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
+    },
+    "property":
+    {
+        "type": "Energy",
+        "precision": "1e-10",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+
+Constructing Basis Registry: 
+OBS Basis = 6-31G
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis = cc-pVDZ
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+
+Constructing AOFactory: 
+  Screen = schwarz
+  ScreenThreshold = 1e-12
+  Precision = 2.22044604925031e-16
+  Iterative inverse = false
+
+
+Constructing LCAOFactory: 
+  Keep partial transform = true
+  Accurate time = false
+  Verbose = false
+
+
+	 Using Symmetric Orthogonalization. 
+	 S Condition Number Threshold: 100000000
+	 Overlap condition number = 50.5531878082312
+
+Starting SCF:
+	Threshold: 1e-13
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.1720098211169
+	abs(Energy Change): 0.278588911860453
+	(Gradient Norm)/n^2: 0.00233094621893442
+	Scf Time: 0.003181
+		Density Time: 0.0014941
+		Fock Build Time: 0.0010932
+		DF Fock builder:
+			W time: 0.0002729
+			J time: 0.0003226
+			K time: 0.0002564
+			Total exchange time: 0.0005293
+iteration: 1
+	Energy: -76.2140757286777
+	abs(Energy Change): 0.0420659075607119
+	(Gradient Norm)/n^2: 0.00111729007317788
+	Scf Time: 0.0172174
+		Density Time: 0.0013875
+		Fock Build Time: 0.0150098
+		DF Fock builder:
+			W time: 0.0142278
+			J time: 0.0003264
+			K time: 0.0002422
+			Total exchange time: 0.01447
+iteration: 2
+	Energy: -76.2239081527738
+	abs(Energy Change): 0.00983242409610341
+	(Gradient Norm)/n^2: 0.000143551463877302
+	Scf Time: 0.003369
+		Density Time: 0.0014881
+		Fock Build Time: 0.0009768
+		DF Fock builder:
+			W time: 0.0002233
+			J time: 0.0002952
+			K time: 0.0002534
+			Total exchange time: 0.0004767
+iteration: 3
+	Energy: -76.2241794040669
+	abs(Energy Change): 0.00027125129318506
+	(Gradient Norm)/n^2: 2.08758073190475e-05
+	Scf Time: 0.003776
+		Density Time: 0.0016447
+		Fock Build Time: 0.0009609
+		DF Fock builder:
+			W time: 0.000232
+			J time: 0.0002894
+			K time: 0.0002301
+			Total exchange time: 0.0004621
+iteration: 4
+	Energy: -76.2241830588949
+	abs(Energy Change): 3.65482799224992e-06
+	(Gradient Norm)/n^2: 1.52468495841718e-06
+	Scf Time: 0.012212
+		Density Time: 0.0014733
+		Fock Build Time: 0.0009555
+		DF Fock builder:
+			W time: 0.0002402
+			J time: 0.0002788
+			K time: 0.0002276
+			Total exchange time: 0.0004678
+iteration: 5
+	Energy: -76.2241830968482
+	abs(Energy Change): 3.79532423266937e-08
+	(Gradient Norm)/n^2: 2.57160622434529e-07
+	Scf Time: 0.0035997
+		Density Time: 0.0014396
+		Fock Build Time: 0.0009745
+		DF Fock builder:
+			W time: 0.0002391
+			J time: 0.0002952
+			K time: 0.0002359
+			Total exchange time: 0.000475
+iteration: 6
+	Energy: -76.2241830985431
+	abs(Energy Change): 1.69494285273686e-09
+	(Gradient Norm)/n^2: 8.13417220400589e-08
+	Scf Time: 0.0169484
+		Density Time: 0.0014443
+		Fock Build Time: 0.014268
+		DF Fock builder:
+			W time: 0.0134695
+			J time: 0.0003315
+			K time: 0.0002504
+			Total exchange time: 0.0137199
+iteration: 7
+	Energy: -76.2241830987046
+	abs(Energy Change): 1.61506363838271e-10
+	(Gradient Norm)/n^2: 5.89483142334884e-09
+	Scf Time: 0.0172823
+		Density Time: 0.0150089
+		Fock Build Time: 0.0010294
+		DF Fock builder:
+			W time: 0.0002437
+			J time: 0.0003274
+			K time: 0.0002587
+			Total exchange time: 0.0005024
+iteration: 8
+	Energy: -76.2241830987056
+	abs(Energy Change): 9.80548975348938e-13
+	(Gradient Norm)/n^2: 1.52333186942538e-09
+	Scf Time: 0.0038568
+		Density Time: 0.0014997
+		Fock Build Time: 0.0010275
+		DF Fock builder:
+			W time: 0.0002586
+			J time: 0.0003108
+			K time: 0.0002453
+			Total exchange time: 0.0005039
+iteration: 9
+	Energy: -76.2241830987056
+	abs(Energy Change): 0
+	(Gradient Norm)/n^2: 3.29602013726271e-10
+	Scf Time: 0.0166607
+		Density Time: 0.0144639
+		Fock Build Time: 0.0010122
+		DF Fock builder:
+			W time: 0.00024
+			J time: 0.0003095
+			K time: 0.00025
+			Total exchange time: 0.00049
+iteration: 10
+	Energy: -76.2241830987058
+	abs(Energy Change): 1.70530256582424e-13
+	(Gradient Norm)/n^2: 9.18506640687831e-11
+	Scf Time: 0.0041203
+		Density Time: 0.0014359
+		Fock Build Time: 0.001155
+		DF Fock builder:
+			W time: 0.0002704
+			J time: 0.0003818
+			K time: 0.0002691
+			Total exchange time: 0.0005395
+iteration: 11
+	Energy: -76.2241830987058
+	abs(Energy Change): 0
+	(Gradient Norm)/n^2: 1.28132616044905e-11
+	Scf Time: 0.0359691
+		Density Time: 0.0017434
+		Fock Build Time: 0.0010663
+		DF Fock builder:
+			W time: 0.0002394
+			J time: 0.0003449
+			K time: 0.0002686
+			Total exchange time: 0.000508
+iteration: 12
+	Energy: -76.2241830987055
+	abs(Energy Change): 2.55795384873636e-13
+	(Gradient Norm)/n^2: 4.55482695340415e-12
+	Scf Time: 0.0190988
+		Density Time: 0.0015449
+		Fock Build Time: 0.0012041
+		DF Fock builder:
+			W time: 0.0002877
+			J time: 0.0003683
+			K time: 0.0002904
+			Total exchange time: 0.0005781
+iteration: 13
+	Energy: -76.2241830987056
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 1.63453074140324e-12
+	Scf Time: 0.003503
+		Density Time: 0.0013816
+		Fock Build Time: 0.000987
+		DF Fock builder:
+			W time: 0.0002458
+			J time: 0.0002902
+			K time: 0.0002349
+			Total exchange time: 0.0004807
+iteration: 14
+	Energy: -76.2241830987056
+	abs(Energy Change): 4.2632564145606e-14
+	(Gradient Norm)/n^2: 8.10737165955017e-13
+	Scf Time: 0.0459068
+		Density Time: 0.0438991
+		Fock Build Time: 0.0009441
+		DF Fock builder:
+			W time: 0.0002291
+			J time: 0.0002799
+			K time: 0.0002297
+			Total exchange time: 0.0004588
+iteration: 15
+	Energy: -76.2241830987056
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 3.50847406640423e-13
+	Scf Time: 0.028469
+		Density Time: 0.0257242
+		Fock Build Time: 0.0016851
+		DF Fock builder:
+			W time: 0.0005296
+			J time: 0.0005014
+			K time: 0.000458
+			Total exchange time: 0.0009876
+iteration: 16
+	Energy: -76.2241830987056
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 2.01316963864114e-13
+	Scf Time: 0.0035351
+		Density Time: 0.0014265
+		Fock Build Time: 0.0009979
+		DF Fock builder:
+			W time: 0.0002439
+			J time: 0.0002986
+			K time: 0.0002379
+			Total exchange time: 0.0004818
+iteration: 17
+	Energy: -76.2241830987056
+	abs(Energy Change): 1.4210854715202e-14
+	(Gradient Norm)/n^2: 9.78926236291702e-14
+	Scf Time: 0.0035169
+		Density Time: 0.0013938
+		Fock Build Time: 0.0010169
+		DF Fock builder:
+			W time: 0.0002466
+			J time: 0.0003313
+			K time: 0.0002333
+			Total exchange time: 0.0004799
+  Frozen Core: 2 electrons
+Occ Range
+( tiles = [ 0, 3 ), elements = [ 0, 5 ) )
+Min and Max block size: 1 2
+Average: 1
+
+ActiveOcc Range
+( tiles = [ 0, 2 ), elements = [ 0, 4 ) )
+Min and Max block size: 2 2
+Average: 2
+
+Unocc Range
+( tiles = [ 0, 4 ), elements = [ 0, 8 ) )
+Min and Max block size: 2 2
+Average: 2
+
+Obs Range
+( tiles = [ 0, 7 ), elements = [ 0, 13 ) )
+Min and Max block size: 1 2
+Average: 1
+
+Use DF CCSD Compute 
+Integral Prepare Time: 0.5676447
+Start Iteration
+Max Iteration: 30
+Target precision: 1e-11
+AccurateTime: 0
+Verbose: 0
+Reduced ABCD Memory Approach: No
+  iter 	     deltaE 	   residual 	          energy 	 total time/s 
+    1 	 1.18741e-01 	 7.06849e-05 	 -0.118740935432 	        0.2 
+    2 	 2.72417e-03 	 2.27421e-05 	 -0.121465108745 	        0.1 
+    3 	 2.79239e-04 	 3.57249e-06 	 -0.121744348110 	        0.2 
+    4 	 6.68242e-06 	 8.86934e-07 	 -0.121751030529 	        0.2 
+    5 	 5.50727e-07 	 2.22018e-07 	 -0.121751581256 	        0.1 
+    6 	 1.53259e-07 	 7.12245e-08 	 -0.121751427998 	        0.1 
+    7 	 7.14044e-08 	 1.48351e-08 	 -0.121751356593 	        0.2 
+    8 	 1.85118e-08 	 3.69180e-09 	 -0.121751338081 	        0.2 
+    9 	 1.07978e-09 	 6.40896e-10 	 -0.121751337002 	        0.2 
+   10 	 3.00032e-11 	 1.73173e-10 	 -0.121751336972 	        0.2 
+   11 	 2.32688e-10 	 1.88137e-11 	 -0.121751336739 	        0.2 
+   12 	 8.17846e-12 	 5.28791e-12 	 -0.121751336731 	        0.2 
+CCSD Energy  -0.121751336984883
+CCSD Time in CCSD: 3.064087826 S
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "atoms":
+    {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs":
+    {
+        "name": "6-31G",
+        "atoms": "$:atoms"
+    },
+    "dfbs":
+    {
+        "name": "cc-pVDZ",
+        "atoms": "$:atoms"
+    },
+    "wfn_world":
+    {
+        "atoms": "$:atoms",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs",
+        "screen": "schwarz"
+    },
+    "scf":
+    {
+        "type": "RI-RHF",
+        "wfn_world": "$:wfn_world"
+    },
+    "wfn":
+    {
+        "type": "CCSD",
+        "wfn_world": "$:wfn_world",
+        "atoms": "$:atoms",
+        "ref": "$:scf",
+        "method": "df",
+        "reduced_abcd_memory": "false",
+        "cp_ccsd": "true",
+        "occ_block_size": "5",
+        "unocc_block_size": "10"
+    },
+    "property":
+    {
+        "type": "Energy",
+        "precision": "1e-10",
+        "wfn": "$:wfn",
+        "value":
+        {
+            "value": "-76.34593443569049"
+        }
+    }
+}
+
+

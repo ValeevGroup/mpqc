@@ -576,8 +576,8 @@ class StateSpecificPNOEEPred
       auto D = detail::construct_density(T_reblock);
       detail::construct_pno(D, F_uocc,
                             tpno_, tosv_,
-                            pnos_[i], npnos_[i], F_pno_diag_[i],
-                            osvs_[i], nosvs_[i], F_osv_diag_[i], pno_eigvals_[i],
+                            pnos_[i], npnos_[i], old_npnos_[i], F_pno_diag_[i],
+                            osvs_[i], nosvs_[i], old_nosvs_[i], F_osv_diag_[i], pno_eigvals_[i],
                             pno_canonical_);
     }
 

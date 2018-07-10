@@ -242,8 +242,8 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
 
     detail::construct_pno(D, F_uocc,
                           tpno_, tosv_,
-                          pnos_, npnos_, F_pno_diag_,
-                          osvs_, nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
+                          pnos_, npnos_, old_npnos_, F_pno_diag_,
+                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_);
     transfer_pnos();
   }
 
@@ -346,6 +346,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
   std::vector<Matrix> pnos_;
   /// # of pnos for each pair
   std::vector<int> npnos_;
+  std::vector<int> old_npnos_;
   /// diagonal of F_ab in pno basis for excited states
   std::vector<Vector> F_pno_diag_;
   std::vector<Vector> pno_eigvals_;
@@ -353,6 +354,7 @@ class PNOEEPred : public DavidsonDiagPred<::mpqc::cc::TPack<Array>>,
   std::vector<Matrix> osvs_;
   /// # of osvs for each orbital
   std::vector<int> nosvs_;
+  std::vector<int> old_nosvs_;
   /// diagonal of F_ab in osv basis for excited states
   std::vector<Vector> F_osv_diag_;
 
@@ -443,8 +445,8 @@ class StateAveragePNOEEPred : public PNOEEPred<Array> {
 
     detail::construct_pno(D, F_uocc,
                           this->tpno_, this->tosv_,
-                          this->pnos_, this->npnos_, this->F_pno_diag_,
-                          this->osvs_, this->nosvs_, this->F_osv_diag_, this->pno_eigvals_,
+                          this->pnos_, this->npnos_, this->old_npnos_, this->F_pno_diag_,
+                          this->osvs_, this->nosvs_, this->old_nosvs_, this->F_osv_diag_, this->pno_eigvals_,
                           this->pno_canonical_);
 
     // now ready to process tasks
@@ -498,8 +500,8 @@ public:
 
     detail::construct_pno(D, F_uocc,
                           this->tpno_, this->tosv_,
-                          this->pnos_, this->npnos_, this->F_pno_diag_,
-                          this->osvs_, this->nosvs_, this->F_osv_diag_, this->pno_eigvals_,
+                          this->pnos_, this->npnos_, this->old_npnos_, this->F_pno_diag_,
+                          this->osvs_, this->nosvs_, this->old_nosvs_, this->F_osv_diag_, this->pno_eigvals_,
                           this->pno_canonical_);
 
     // now ready to process tasks
@@ -647,6 +649,7 @@ class StateSpecificPNOEEPred
   std::vector<std::vector<Matrix>> pnos_;
   /// # of pnos for each pair
   std::vector<std::vector<int>> npnos_;
+  std::vector<std::vector<int>> old_npnos_;
   /// diagonal of F_ab in pno basis for all roots
   std::vector<std::vector<Vector>> F_pno_diag_;
   std::vector<std::vector<Vector>> pno_eigvals_;
@@ -654,6 +657,7 @@ class StateSpecificPNOEEPred
   std::vector<std::vector<Matrix>> osvs_;
   /// # of osvs for each orbital
   std::vector<std::vector<int>> nosvs_;
+  std::vector<std::vector<int>> old_nosvs_;
   /// diagonal of F_ab in osv basis for all roots
   std::vector<std::vector<Vector>> F_osv_diag_;
 

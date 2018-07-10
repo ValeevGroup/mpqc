@@ -819,8 +819,8 @@ void construct_pno(
     std::vector<int>& old_nosvs,
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
     std::vector<EigenVector<typename Tile::numeric_type>>& pno_eigvals,
-    bool use_fuzzy = false,
-    bool pno_canonical = false) {
+    bool pno_canonical = false,
+    bool use_fuzzy = false) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
 
   auto& world = D.world();
@@ -1356,7 +1356,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
                           pnos_, npnos_, old_npnos_, F_pno_diag_,
-                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, use_fuzzy_, pno_canonical_);
+                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
 
     // ready to process tasks now
     this->process_pending();
@@ -1524,7 +1524,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
                             pnos_, npnos_, old_npnos_, F_pno_diag_,
-                            osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, use_fuzzy_, pno_canonical_);
+                            osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
 
       // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;

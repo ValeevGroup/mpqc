@@ -68,7 +68,7 @@ void MolecularFormula::compute(const mpqc::Molecule& mol) {
     auto c = it.second;
     formula_.emplace_back(std::make_pair(Z, c));
     assert(Z != 0);
-    sstr << libint2::chemistry::element_info[Z - 1].symbol;
+    sstr << libint2::chemistry::get_element_info().at(Z - 1).symbol;
     if (c > 1) sstr << c;
   }
   formula_str_ = sstr.str();

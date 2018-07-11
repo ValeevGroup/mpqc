@@ -14,7 +14,6 @@
 #include "mpqc/util/keyval/keyval.h"
 
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/util/misc/observer.h"
 
 namespace mpqc {

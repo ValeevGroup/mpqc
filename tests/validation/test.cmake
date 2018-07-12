@@ -47,6 +47,12 @@ if (1)
                   OUTPUT_FILE "${OUTPUT_FILE_NAME}"
                   RESULT_VARIABLE MPQC_RESULT)
 
+  set(DISABLED_FEATURE 0)
+  if(${MPQC_RESULT} EQUAL 2)
+      set(MPQC_RESULT 0)
+      set(DISABLED_FEATURE 1)
+  endif()
+
   if(MPQC_RESULT)
     if(printOutput)
       message(STATUS "\nOUTPUT of " ${testName})
@@ -58,12 +64,15 @@ if (1)
               )
     endif()
     message(FATAL_ERROR "Error running ${MPQC_CMD}")
-  endif()
-endif()
+  endif(MPQC_RESULT)
 
 execute_process(COMMAND
                 ${CHECK_CMD} ${CHECK_ARGS}
                 RESULT_VARIABLE CHECK_RESULT)
+
+if(${DISABLED_FEATURE} EQUAL 1)
+    set(CHECK_RESULT 0)
+endif()
 if(CHECK_RESULT)
     if(printOutput)
       message(STATUS "\nOUTPUT of " ${testName})
@@ -74,10 +83,10 @@ if(CHECK_RESULT)
               CAT_RESULT
               )
     endif()
-
     message(FATAL_ERROR "Error running ${CHECK_CMD}")
 endif(CHECK_RESULT)
 
+endif()
 endmacro(runtest)
 
 runtest()

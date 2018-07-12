@@ -6,12 +6,13 @@
 #include <iostream>
 
 #include <madness/world/world.h>
+#include <mpqc/chemistry/qc/lcao/factory/wfn_world.h>
 
-#include "mpqc/chemistry/molecule/linkage.h"
-#include "mpqc/util/external/madworld/parallel_file.h"
-#include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
-#include "mpqc/util/keyval/keyval.h"
+#include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/chemistry/molecule/linkage.h>
+#include <mpqc/util/external/madworld/parallel_file.h>
+#include <mpqc/chemistry/qc/lcao/basis/basis_registry.h>
+#include <mpqc/util/keyval/keyval.h>
 
 using namespace mpqc;
 using mpqc::lcao::gaussian::Basis;
@@ -145,10 +146,11 @@ int try_main(int argc, char* argv[], madness::World& world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol = kv.class_ptr<Molecule>("atoms");
+  auto wfn_world = lcao::WavefunctionWorld(kv.keyval("property:wfn:wfn_world"));
 
-  bool frozen_core = kv.value<bool>("frozen_core", true);
+  auto mol = wfn_world.atoms();
 
+  bool frozen_core = kv.value<bool>("property:wfn:frozen_core", true);
 
   std::size_t occ = mol->total_atomic_number() / 2;
   std::size_t nfr = frozen_core ? mol->core_electrons() / 2 : 0;
@@ -156,21 +158,21 @@ int try_main(int argc, char* argv[], madness::World& world) {
   std::cout << "Num Occ: " << occ << std::endl;
   std::cout << "Num Frozen: " << nfr << std::endl;
 
-  lcao::gaussian::OrbitalBasisRegistry basis_registry(kv);
+  auto basis_registry = wfn_world.basis_registry();
 
-  const auto& obs = basis_registry.retrieve(OrbitalIndex(L"λ"));
+  const auto& obs = basis_registry->retrieve(OrbitalIndex(L"λ"));
   ao_basis_analysis(*obs, occ, nfr);
 
   const auto dfbs_index = OrbitalIndex(L"Κ");
-  if(basis_registry.have(dfbs_index)){
-    const auto& dfbs = basis_registry.retrieve(dfbs_index);
+  if(basis_registry->have(dfbs_index)){
+    const auto& dfbs = basis_registry->retrieve(dfbs_index);
     df_basis_analysis(*obs, *dfbs, occ, nfr);
   }
 
   const auto& cabs_index = OrbitalIndex(L"α");
-  if(basis_registry.have(cabs_index)){
-    const auto& dfbs = basis_registry.retrieve(dfbs_index);
-    const auto& cabs = basis_registry.retrieve(cabs_index);
+  if(basis_registry->have(cabs_index)){
+    const auto& dfbs = basis_registry->retrieve(dfbs_index);
+    const auto& cabs = basis_registry->retrieve(cabs_index);
     cabs_basis_analysis(*obs, *dfbs, *cabs, occ, nfr);
   }
   return 0;

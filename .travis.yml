@@ -20,6 +20,8 @@ addons:
     - libboost1.55-all-dev
     - libblas-dev
     - liblapack-dev
+    - liblapacke-dev
+    - libopenblas-dev
     - libtbb-dev
     - cmake
     - cmake-data
@@ -68,7 +70,27 @@ matrix:
            - g++-6
            - gfortran-6
     - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-6
+           - gfortran-6
+    - compiler: gcc
       env: GCC_VERSION=7 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+           - *base_sources
+          packages:
+           - *base_packages
+           - g++-7
+           - gfortran-7
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
       addons:
         apt:
           sources:
@@ -102,28 +124,6 @@ matrix:
            - gfortran-8
            - clang-7
   allow_failures:
-    # internal compiler failures
-    - compiler: gcc
-      env: GCC_VERSION=6 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-6
-           - gfortran-6
-    # internal compiler failures
-    - compiler: gcc
-      env: GCC_VERSION=7 BUILD_TYPE=Debug
-      addons:
-        apt:
-          sources:
-           - *base_sources
-          packages:
-           - *base_packages
-           - g++-7
-           - gfortran-7
     # Elemental is broken
     - compiler: gcc
       env: GCC_VERSION=8 BUILD_TYPE=Debug
@@ -146,6 +146,10 @@ matrix:
            - *base_packages
            - g++-8
            - gfortran-8
+    # heap corruption
+    - compiler: clang
+      env: CLANG_VERSION=7 GCC_VERSION=8 BUILD_TYPE=Release
+
 
 before_install:
 - "env"

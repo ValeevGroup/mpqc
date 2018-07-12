@@ -62,8 +62,8 @@ class Solver {
         (size(r1) + size(r2));
   }
 
-  /// Checks to see if the solver has converged
-  /// @param target_precision The desired precision for the final energy
+  /// Tests if the solver has converged
+  /// @param target_precision The desired precision for the final CC energy
   /// @param error The value of the error computed from the one- and two-body residuals
   /// @param dE The energy change between two consecutive solver iterations
   /// @return Whether or not the solver has converged
@@ -133,13 +133,22 @@ class DIISSolver : public Solver<T> {
     t3 = t[2];
   }
 
-  /// Checks to see if the solver has converged
-  /// @param target_precision The desired precision for the final energy
+  /// Specifies the extra margin for converging energy.
+  /// DIIS solver is converged to precision @c eps if the energy between two successive iterations is converged to
+  /// @c eps times the margin. Currently it is fixed empirically at 0.1 , i.e. solver is converged if the difference
+  /// between two consecutive iterations is less than 1/10th of the target precision.
+  /// @return the extra margin for converging energy
+  static double precision_margin_energy() {
+    return 0.1;
+  }
+
+  /// Tests if the solver has converged
+  /// @param target_precision The desired precision for the final CC energy
   /// @param error The value of the error computed from the one- and two-body residuals
   /// @param dE The energy change between two consecutive solver iterations
   /// @return Whether or not the solver has converged
   bool is_converged(double target_precision, double error, double dE) const override {
-   return (dE <= target_precision && error <= target_precision);
+   return (dE <= target_precision * precision_margin_energy() && error <= target_precision);
   }
 
   /// Resets the DIIS solver; used when switching to a new solver subspace

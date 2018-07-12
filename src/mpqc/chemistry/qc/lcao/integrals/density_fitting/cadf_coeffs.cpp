@@ -37,7 +37,7 @@ void print_shape(TA::Tensor<float> const &t, std::string const &file_name) {
 
   if (rank == 3) {
     for (auto X = 0ul; X < ext[0]; ++X) {
-      auto ord = 0;
+      auto ord = 0ul;
       for (auto a = 0ul; a < ext[1]; ++a) {
         for (auto b = 0ul; b < ext[2]; ++b, ++ord) {
           out_file << t(X, a, b);
@@ -51,7 +51,7 @@ void print_shape(TA::Tensor<float> const &t, std::string const &file_name) {
   } else if (rank == 4) {
     for (auto a = 0ul; a < ext[0]; ++a) {
       for (auto b = 0ul; b < ext[1]; ++b) {
-        auto ord = 0;
+        auto ord = 0ul;
         for (auto c = 0ul; c < ext[2]; ++c) {
           for (auto d = 0ul; d < ext[3]; ++d, ++ord) {
             out_file << t(a, b, c, d);
@@ -196,8 +196,8 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
 
     using idx_type = std::array<int, 3>;
     auto val_max = std::numeric_limits<float>::max();
-    for (auto a = 0; a < ext[1]; ++a) {
-      for (auto b = 0; b < ext[2]; ++b) {
+    for (auto a = 0; a < int(ext[1]); ++a) {
+      for (auto b = 0; b < int(ext[2]); ++b) {
         auto in_val = std::max(in(a, a, b), in(b, a, b));
 
         if (in_val >= thresh) {
@@ -260,7 +260,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
 
     using idx_type = std::array<int, 3>;
     auto val_max = std::numeric_limits<float>::max();
-    for (auto a = 0; a < ext[1]; ++a) {
+    for (auto a = 0; a < int(ext[1]); ++a) {
       const auto uc0_ord = a / natoms_per_uc;
       const Vector3i uc0_3D =
           direct_3D_idx(uc0_ord, lattice_range0) + lattice_center0;
@@ -268,7 +268,7 @@ TA::DistArray<TA::Tensor<double>, TA::SparsePolicy> cadf_by_atom_coeffs(
           direct_ord_idx(uc0_3D - lattice_center_df, lattice_range_df);
       const auto a_in_df = uc0_ord_in_df * natoms_per_uc + a % natoms_per_uc;
 
-      for (auto b = 0; b < ext[2]; ++b) {
+      for (auto b = 0; b < int(ext[2]); ++b) {
         const auto uc1_ord = b / natoms_per_uc;
         const Vector3i uc1_3D =
             direct_3D_idx(uc1_ord, lattice_range1) + lattice_center1;

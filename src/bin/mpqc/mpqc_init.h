@@ -47,6 +47,9 @@ void finalize();
  * \note this object is meant to be manipulated by 1 (usually, main) thread.
  */
 class MPQCInit {
+ private:
+  struct singleton_ctor_tag {};
+
  public:
   /// the format of the input file, described in
   /// <a
@@ -81,6 +84,19 @@ class MPQCInit {
   void set_basename(const std::string &input_filename,
                     const std::string &output_filename = "");
 
+  /// Create the initializer. Only one object of this time can be created.
+  /// Needed options will be enrolled
+  /// in the opt object. The parse member of opt must be called
+  /// after this constructor completes, but before any of the
+  /// other members of MPQCInit are called.
+  ///
+  /// N.B. This is not explicitly implemented as a Singleton for syntactic
+  /// reasons.
+  ///
+  /// \param[in] world the top World object in which MPQC will execute
+  MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
+           const madness::World &world, singleton_ctor_tag);
+
  private:
   std::shared_ptr<GetLongOpt> opt_;
   char **argv_;
@@ -94,19 +110,6 @@ class MPQCInit {
                                  const madness::World &world,
                                  std::shared_ptr<GetLongOpt> opt);
   friend void ::mpqc::finalize();
-
-  /// Create the initializer. Only one object of this time can be created.
-  /// Needed options will be enrolled
-  /// in the opt object. The parse member of opt must be called
-  /// after this constructor completes, but before any of the
-  /// other members of MPQCInit are called.
-  ///
-  /// N.B. This is not explicitly implemented as a Singleton for syntactic
-  /// reasons.
-  ///
-  /// \param[in] world the top World object in which MPQC will execute
-  MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
-           const madness::World &world);
 
   /// Initialize the floating point control word.
   void init_fp();

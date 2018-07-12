@@ -108,8 +108,8 @@ eigen_to_array(
     TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
 
   // make sure dimensions of M match the dimensions of tiled ranges
-  assert(M.rows() == tr0.extent() && "eigen_to_array(): row dimensions do not match");
-  assert(M.cols() == tr1.extent() && "eigen_to_array(): col dimensions do not match");
+  assert(std::size_t(M.rows()) == tr0.extent() && "eigen_to_array(): row dimensions do not match");
+  assert(std::size_t(M.cols()) == tr1.extent() && "eigen_to_array(): col dimensions do not match");
 
   TA::TiledRange trange{tr0, tr1};
   TA::Tensor<float> norms(

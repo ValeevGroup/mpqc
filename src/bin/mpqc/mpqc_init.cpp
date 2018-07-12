@@ -59,14 +59,14 @@ void initialize(int &argc, char **argv, const madness::World &top_world,
                            __LINE__);
   } else {
     MPQCInit::instance_ =
-        std::unique_ptr<MPQCInit>(new MPQCInit(argc, argv, opt, top_world));
+        std::make_unique<MPQCInit>(argc, argv, opt, top_world, MPQCInit::singleton_ctor_tag{});
   }
 }
 
 void finalize() { MPQCInit::instance_.reset(); }
 
 MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
-                   const madness::World &top_world)
+                   const madness::World &top_world, singleton_ctor_tag)
     : opt_(opt), argv_(argv), argc_(argc), input_format_(InputFormat::invalid) {
   if (opt_)
     opt_->enroll("max_memory", GetLongOpt::MandatoryValue,
@@ -86,7 +86,7 @@ MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
 MPQCInit::~MPQCInit() {
   libint2::finalize();
   //  ConsumableResources::set_default_instance(0);
-  FormIO::set_default_basename(0);
+  FormIO::set_default_basename({});
 }
 
 MPQCInit &MPQCInit::instance() {
@@ -225,7 +225,7 @@ void MPQCInit::init_work_dir() {
   if (mpqc_work_dir == nullptr) {
     path curr_path = current_path();
     // set the work dir in FormIO
-    FormIO::set_default_work_dir(curr_path.c_str());
+    FormIO::set_default_work_dir(curr_path.string());
   } else {
     // check the correctness of path
     path work_path(mpqc_work_dir);
@@ -254,23 +254,21 @@ void MPQCInit::set_basename(const std::string &input_filename,
   // 1) if output filename is given, use it minus the suffix
   // 2) if output filename is not given, use input's basename minus the suffix
   const char *basename_source;
-  char *input_copy = ::strdup(input_filename.c_str());
+  auto input_filename_copy_cstr = std::make_unique<char[]>(input_filename.size() + 1);
+  input_filename_copy_cstr[input_filename.size()] = '\0';
+  std::copy(cbegin(input_filename), cend(input_filename), input_filename_copy_cstr.get());
   if (!output_filename.empty())
     basename_source = output_filename.c_str();
   else {
     // get the basename(input). basename() in libgen.h is in POSIX standard
-    basename_source = basename(input_copy);
+    basename_source = basename(input_filename_copy_cstr.get());
   }
   // if basename_source does not contain '.' this will return a null pointer
   const char *dot_position = ::strrchr(basename_source, '.');
   const int nfilebase = (dot_position) ? (int)(dot_position - basename_source)
                                        : strlen(basename_source);
-  char *basename = new char[nfilebase + 1];
-  strncpy(basename, basename_source, nfilebase);
-  basename[nfilebase] = '\0';
-  FormIO::set_default_basename(basename);
-  free(input_copy);
-  delete[] basename;
+  std::string basename(basename_source, basename_source+nfilebase);
+  FormIO::set_default_basename(std::move(basename));
 }
 
 std::shared_ptr<GetLongOpt> make_options() {

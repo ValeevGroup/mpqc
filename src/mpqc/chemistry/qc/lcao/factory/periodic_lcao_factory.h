@@ -457,7 +457,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
 
       auto selected_RD_list = restricted_lattice_range(R, RJ);
-      for (auto RD_idx = 0; RD_idx < selected_RD_list.size(); ++RD_idx) {
+      for (auto RD_idx = 0ul; RD_idx < selected_RD_list.size(); ++RD_idx) {
         auto RD = selected_RD_list[RD_idx];
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 

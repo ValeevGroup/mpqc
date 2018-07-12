@@ -74,8 +74,9 @@ void GetLongOpt::parse(int argc, char *const *argv) {
     enum { NoMatch, ExactMatch, PartialMatch } matchStatus = NoMatch;
     Cell *pc = 0;  // pointer to the partially-matched cell
     for (auto &t : table) {
+      // N.B. tmptoken >= token by definition
       if (strncmp(t.option.c_str(), token, (tmptoken - token)) == 0) {
-        if (t.option.size() == (tmptoken - token)) {
+        if (t.option.size() == std::size_t(tmptoken - token)) {
           /* an exact match found */
           int stat = setcell(t, tmptoken, *(argv + 1), pname);
           if (stat == 1) {
@@ -114,7 +115,9 @@ void GetLongOpt::parse(int argc, char *const *argv) {
 
 void GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
   finalized = true;
-  std::unique_ptr<char[]> str_ptr(strdup(cppstr.c_str()));
+  auto str_ptr = std::make_unique<char[]>(cppstr.size() + 1);
+  str_ptr[cppstr.size()] = '\0';
+  std::copy(cppstr.cbegin(), cppstr.cend(), str_ptr.get());
   char* str = str_ptr.get();
   char *token = strtok(str, " \t");
   const char *name = p.c_str();
@@ -134,8 +137,9 @@ void GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
     enum { NoMatch, ExactMatch, PartialMatch } matchStatus = NoMatch;
     Cell *pc = 0;  // pointer to the partially-matched cell
     for (auto &t : table) {
+      // N.B. tmptoken >= token by definition
       if (strncmp(t.option.c_str(), token, (tmptoken - token)) == 0) {
-        if (t.option.size() == (tmptoken - token)) {
+        if (t.option.size() == std::size_t(tmptoken - token)) {
           /* an exact match found */
           ladtoken = strtok(0, " \t");
           int stat = setcell(t, tmptoken, ladtoken, name);

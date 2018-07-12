@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_
 
 #include <tiledarray.h>
+#include <TiledArray/external/btas.h>  // include ahead of lcao/basis/basis.h to ensure small_vector serialization is defined once
 
 #include "mpqc/chemistry/qc/cc/tpack.h"
 #include "mpqc/chemistry/qc/cc/solvers.h"
@@ -17,6 +18,7 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/mpqc_config.h"
+#include "mpqc/math/tensor/clr/cp_als.h"
 
 namespace mpqc {
 namespace lcao {
@@ -74,6 +76,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver) |
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
+   * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |
+   * | @c cp_rank | double | @c 0.6 | CP rank set to number of auxillary basis functions * @c cp_rank |
+   * | @c cp_precision | double | @c 0.1 | ALS threshold for CP decomposition
    */
 
   // clang-format on
@@ -107,6 +112,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
     max_iter_ = kv.value<int>("max_iter", 30);
     verbose_ = kv.value<bool>("verbose", false);
+
+    cp_ccsd_ = ( (df_) ? kv.value<bool>("cp_ccsd", false) : false);
+#ifndef MADNESS_LINALG_USE_LAPACKE
+    if(cp_ccsd_)
+      throw FeatureDisabled("Feature does not exist without LAPACKE", __FILE__, __LINE__, "CP-ALS");
+#else
+    cp_precision_ = kv.value<double>("cp_precision", 0.1);
+    cp_rank_ = ( (cp_ccsd_) ? kv.value<double>("cp_rank", 0.6) : 0);
+#endif
   }
 
   virtual ~CCSD() {}
@@ -130,6 +144,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   double computed_precision_ = std::numeric_limits<double>::max();
   bool verbose_;
   double ccsd_corr_energy_;
+  bool cp_ccsd_;
+  double cp_precision_;
+  double cp_rank_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
   std::shared_ptr<const EigenVector<typename Tile::numeric_type>>
       f_pq_diagonal_;
@@ -280,7 +297,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     ints.Gijka = this->get_ijka();
 
     if (method_ == "standard" || (method_ == "df" && !reduced_abcd_memory_)) {
-      ints.Gabcd = this->get_abcd();
+      if(!cp_ccsd_) {
+        ints.Gabcd = this->get_abcd();
+      }
       ints.Giabc = this->get_iabc();
     } else if (method_ == "direct") {
       ints.Giabc = this->get_iabc();
@@ -291,6 +310,12 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
       ints.Xij = this->get_Xij();
       ints.Xab = this->get_Xab();
     }
+
+#ifdef MADNESS_LINALG_USE_LAPACKE
+    if(cp_ccsd_){
+      this->get_factors(ints.Xab_factors);
+    }
+#endif // MADNESS_LINALG_USE_LAPACKE
 
     if (method_ == "direct" || method_ == "direct_df") {
       ints.Ci = this->lcao_factory()
@@ -474,6 +499,20 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     return this->lcao_factory().compute(L"(Κ|G|a i)[inv_sqr]");
   }
 
+#ifdef MADNESS_LINALG_USE_LAPACKE
+  const void get_factors(std::vector<TArray> & factors){
+    auto Xab = this->get_Xab();
+    auto Aux_size = Xab.trange().dim(0).extent();
+    auto block_size = this->trange1_engine()->get_vir_block_size();
+#if _HAS_INTEL_MKL
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * cp_rank_, true);
+#else // _HAS_INTEL_MKL
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, false, 0, true);
+#endif // _HAS_INTEL_MKL
+    // TODO Find optimal Regularized parameters to compute this decomposition quickly
+    //math::cp_rals_compute_rank(Xab, factors, block_size, false, Aux_size * cp_rank_, true, false, 1, 1000, cp_precision_, true, Aux_size * rank_);
+  }
+#endif // MADNESS_LINALG_USE_LAPACKE
   // get two electron integrals
   // using physical notation <ab|ij>
 

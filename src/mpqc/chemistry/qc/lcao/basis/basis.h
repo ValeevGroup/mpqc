@@ -9,11 +9,11 @@
 #include <libint2/basis.h>
 #include <madness/world/array_addons.h>
 #include <tiledarray.h>
+#include "mpqc/util/external/boost/small_vector.h"
 
 #include "mpqc/util/keyval/keyval.h"
 
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
@@ -114,7 +114,7 @@ class Basis : virtual public DescribedClass {
     std::size_t nvecs = 0;
     ar &nvecs;
 
-    for (auto i = 0; i < nvecs; ++i) {
+    for (auto i = 0ul; i < nvecs; ++i) {
       ShellVec tmp;
       ar &tmp;
       shells_.emplace_back(std::move(tmp));

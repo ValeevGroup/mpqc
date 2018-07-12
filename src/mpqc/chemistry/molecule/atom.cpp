@@ -12,16 +12,14 @@ namespace mpqc {
 namespace detail {
 
 std::string Z_to_element(int64_t Z) {
-  using libint2::chemistry::element_info;
-  for (const auto &e : element_info) {
+  for (const auto &e : libint2::chemistry::get_element_info()) {
     if (e.Z == Z) return e.symbol;
   }
   abort();
 }
 
 int64_t element_to_Z(const std::string &symbol) {
-  using libint2::chemistry::element_info;
-  for (const auto &e : element_info) {
+  for (const auto &e : libint2::chemistry::get_element_info()) {
     if (e.symbol == symbol) return e.Z;
   }
   abort();

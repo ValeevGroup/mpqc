@@ -92,7 +92,7 @@ class Exception: public std::runtime_error {
  */
 class Exception: public detail::Exception {
     const char *exception_type_;
-    mutable char *elaboration_c_str_;
+    mutable std::unique_ptr<char[]> elaboration_c_str_;
     std::unique_ptr<std::ostringstream> elaboration_;
     detail::Backtrace backtrace_;
 
@@ -189,7 +189,7 @@ class FeatureNotImplemented: public ProgrammingError {
  */
 class InputError: public Exception {
     const char *keyword_;
-    char *value_;
+    std::unique_ptr<char[]> value_;
 
   public:
     /** Create a InputError exception.
@@ -217,7 +217,7 @@ class InputError: public Exception {
     const char *keyword() const MPQC__NOEXCEPT { return keyword_; }
     /// Return the erroneous value which caused this exception to be
     /// thrown.
-    const char *value() const MPQC__NOEXCEPT { return value_; }
+    const char *value() const MPQC__NOEXCEPT { return value_.get(); }
 };
 
 /** This is thrown when something cannot be computed, e.g., atomic mass of a non-existent isotope.
@@ -592,6 +592,31 @@ class AssertionFailed : public Exception {
 //                int line) MPQC__NOEXCEPT;
 
 //};
+/** This exception is thrown whenever a feature is disabled,
+ * typically based on configuration environment, i.e. if
+ * lapacke isn't included BTAS features are disabled
+*/
+class FeatureDisabled : public Exception {
+  public:
+    /** Create an FeatureDisabled.
+
+        @param description a description of the problem.
+        @param file the file name where the problem occured.
+        @param line the line number where the exception occured.
+        @param exception_type the classname of the Exception
+        specialization. The default is "AlgorithmException".
+
+        It is suggested that the special macros __FILE__ and __LINE__ be
+        given as the \p file and \p line arguments, respectively.
+    */
+    FeatureDisabled(const char *description = 0,
+                       const char *file = 0,
+                       int line = 0,
+                       const char *exception_type = "FeatureDisabled")
+    MPQC__NOEXCEPT;
+    FeatureDisabled(const FeatureDisabled&) MPQC__NOEXCEPT;
+    ~FeatureDisabled() MPQC__NOEXCEPT;
+  };
 
 }
 

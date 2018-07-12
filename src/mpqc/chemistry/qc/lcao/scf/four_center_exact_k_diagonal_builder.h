@@ -66,12 +66,12 @@ class ExactKDiagonalBuilder
   array_type operator()(array_type const& D, array_type const&,
                         double target_precision) override {
     // validate preconditions
-    auto ntiles_D = density_basis_->nclusters();
+    uint64_t ntiles_D = density_basis_->nclusters();
     {
       auto trange_D = D.trange();
       auto elements_range_D = trange_D.elements_range();
       auto tiles_range_D = trange_D.tiles_range();
-      auto nbf_D = density_basis_->nfunctions();
+      uint64_t nbf_D = density_basis_->nfunctions();
       assert(elements_range_D.extent(0) == nbf_D &&
              elements_range_D.extent(1) == nbf_D);
       assert(tiles_range_D.extent(0) == ntiles_D &&
@@ -94,11 +94,11 @@ class ExactKDiagonalBuilder
 
     // prepare input data
     auto& compute_world = this->get_world();
-    const auto me = compute_world.rank();
-    const auto nproc = compute_world.nproc();
+    const uint64_t me = compute_world.rank();
+    const uint64_t nproc = compute_world.nproc();
     target_precision_ = target_precision;
 
-    auto ntiles = bra_basis_->nclusters();
+    uint64_t ntiles = bra_basis_->nclusters();
     trange_D_ = D_repl.trange();
     pmap_D_ = D_repl.pmap();
 
@@ -205,7 +205,7 @@ class ExactKDiagonalBuilder
     engines_.reset();
 
     ExEnv::out0() << "\nIntegrals per node:" << std::endl;
-    for (auto i = 0; i < compute_world.nproc(); ++i) {
+    for (auto i = 0ul; i < nproc; ++i) {
       if (me == i) {
         ExEnv::outn() << indent << "Integrals on node(" << i
                       << "): " << num_ints_computed_ << std::endl;
@@ -456,7 +456,7 @@ class ExactKDiagonalBuilder
       // loop over unique shell sets
       // N.B. skip nonunique shell sets that did not get eliminated by unique
       // cluster set iteration
-      for (auto sh0 = 0; sh0 != nshells0; ++sh0) {
+      for (auto sh0 = 0ul; sh0 != nshells0; ++sh0) {
         const auto& shell0 = cluster0[sh0];
         const auto nf0 = shell0.size();
 
@@ -475,7 +475,7 @@ class ExactKDiagonalBuilder
           auto cf2_offset = 0;
           auto bf2_offset = rng2.first;
 
-          for (auto sh2 = 0; sh2 != nshells2; ++sh2) {
+          for (auto sh2 = 0ul; sh2 != nshells2; ++sh2) {
             // skip if shell set is nonunique
             if (bf0_offset < bf2_offset) break;
 
@@ -530,13 +530,13 @@ class ExactKDiagonalBuilder
               if (eri_0123 !=
                   nullptr) {  // if the shell set is not screened out
 
-                for (auto f0 = 0, f0123 = 0; f0 != nf0; ++f0) {
+                for (auto f0 = 0ul, f0123 = 0ul; f0 != nf0; ++f0) {
                   const auto cf0 = f0 + cf0_offset;  // basis function index in
                                                      // the tile (i.e. shell
                                                      // cluster)
-                  for (auto f1 = 0; f1 != nf1; ++f1) {
+                  for (auto f1 = 0ul; f1 != nf1; ++f1) {
                     const auto cf1 = f1 + cf1_offset;
-                    for (auto f2 = 0; f2 != nf2; ++f2) {
+                    for (auto f2 = 0ul; f2 != nf2; ++f2) {
                       const auto cf2 = f2 + cf2_offset;
                       const auto cf02 =
                           cf0 * rng2_size +
@@ -544,7 +544,7 @@ class ExactKDiagonalBuilder
                       const auto cf12 =
                           cf1 * rng2_size +
                           cf2;  // index of {cf1,cf2} in D12 or F12
-                      for (auto f3 = 0; f3 != nf3; ++f3, ++f0123) {
+                      for (auto f3 = 0ul; f3 != nf3; ++f3, ++f0123) {
                         const auto cf3 = f3 + cf3_offset;
                         const auto cf03 =
                             cf0 * rng3_size +
@@ -648,12 +648,12 @@ class ExactKDiagonalBuilder
     shellpair_list_t result;
 
     // compute non-negligible shell-pair list
-    for (auto s1 = 0l, s12 = 0l; s1 != nsh1; ++s1) {
+    for (auto s1 = 0ul, s12 = 0ul; s1 != nsh1; ++s1) {
       result.insert(std::make_pair(s1, std::vector<size_t>()));
       auto n1 = shv1[s1].size();
 
       auto s2_max = shv1_equiv_shv2 ? s1 : nsh2 - 1;
-      for (auto s2 = 0l; s2 <= s2_max; ++s2, ++s12) {
+      for (auto s2 = 0ul; s2 <= s2_max; ++s2, ++s12) {
         auto on_same_center = (shv1[s1].O == shv2[s2].O);
         bool significant = on_same_center;
         if (!on_same_center) {
@@ -669,7 +669,7 @@ class ExactKDiagonalBuilder
     }
 
     // resort shell list in increasing order
-    for (auto s1 = 0l; s1 != nsh1; ++s1) {
+    for (auto s1 = 0ul; s1 != nsh1; ++s1) {
       auto& list = result[s1];
       std::sort(list.begin(), list.end());
     }

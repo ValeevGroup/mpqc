@@ -169,7 +169,7 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
   for (auto i = 0; i < 5; ++i) {
     attach_to_closest(xyz, clusters);
 
-    for (auto j = 0; j < clusters.size(); ++j) {
+    for (auto j = 0ul; j < clusters.size(); ++j) {
       if (clusters[j].elems().empty()) {
         clusters[j] = VectorCluster<T>(xyz.row(j));
         attach_to_closest(xyz, clusters);
@@ -177,12 +177,12 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
     }
   }
 
-  for (auto i = 0; i < clusters.size(); ++i) {
+  for (auto i = 0ul; i < clusters.size(); ++i) {
     if (clusters[i].elems().empty()) {
       std::cout << "Cluster " << i << " was emepty with center "
                 << clusters[i].center().transpose() << std::endl;
       std::cout << "Other clusters had\n";
-      for (auto j = 0; j < clusters.size(); ++j) {
+      for (auto j = 0ul; j < clusters.size(); ++j) {
         if (i != j) {
           std::cout << "\t" << j << ": " << clusters[j].elems().size()
                     << std::endl;

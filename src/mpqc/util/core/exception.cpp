@@ -109,7 +109,6 @@ Exception::Exception(const char *description,
                          const char *exception_type) MPQC__NOEXCEPT:
   detail::Exception(description, file, line),
   exception_type_(exception_type),
-  elaboration_c_str_(0),
   backtrace_("=mpqcbacktrace=: ")
 {
   try {
@@ -140,7 +139,6 @@ Exception::Exception(const Exception& ref) MPQC__NOEXCEPT:
   detail::Exception(ref),
   backtrace_(ref.backtrace_)
 {
-  elaboration_c_str_ = 0;
   if (ref.elaboration_) {
       try {
           elaboration_ = std::make_unique<std::ostringstream>();
@@ -156,7 +154,6 @@ Exception::~Exception() MPQC__NOEXCEPT
 {
   try{ ExEnv::out0().flush(); ExEnv::err0().flush(); }
   catch(...) {}
-  delete[] elaboration_c_str_;
 }
 
 const char* 
@@ -165,12 +162,10 @@ Exception::what() const MPQC__NOEXCEPT
   try {
       if (elaboration_) {
           std::string elab(elaboration_->str());
-          delete[] elaboration_c_str_;
-          elaboration_c_str_ = 0;
-          elaboration_c_str_ = new char[1+elab.size()];
-          for (int i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
+          elaboration_c_str_ = std::make_unique<char[]>(1+elab.size());
+          for (std::string::size_type i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
           elaboration_c_str_[elab.size()] = '\0';
-          return elaboration_c_str_;
+          return elaboration_c_str_.get();
         }
     }
   catch (...) {
@@ -203,22 +198,20 @@ InputError::InputError(
 {
   try {
       if (value) {
-          value_ = new char[strlen(value)+1];
-          if (value_) strcpy(value_, value);
-        }
-      else {
-          value_ = 0;
+          const auto len = strlen(value);
+          value_ = std::make_unique<char[]>(len+1);
+          std::copy(value, value+len, value_.get());
         }
     }
   catch (...) {
-    value_ = 0;
+    value_ = nullptr;
     }
 
   try {
       if (keyword_)
           elaborate() << "keyword:     " << keyword_ << std::endl;
       if (value_)
-          elaborate() << "value:       " << value_ << std::endl;
+          elaborate() << "value:       " << value_.get() << std::endl;
     }
   catch (...) {
     }
@@ -232,7 +225,6 @@ InputError::InputError(const InputError& ref) MPQC__NOEXCEPT:
 
 InputError::~InputError() MPQC__NOEXCEPT
 {
-  delete[] value_;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -556,5 +548,26 @@ AssertionFailed::AssertionFailed(
         file, line, "AssertionFailed"
     ),
     assertion_text_(assertion_text)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// FeatureDisabled
+
+FeatureDisabled::FeatureDisabled(
+        const char *description,
+        const char *file,
+        int line,
+        const char *exception_type) MPQC__NOEXCEPT:
+        Exception(description, file, line, exception_type)
+{
+}
+
+FeatureDisabled::FeatureDisabled(const FeatureDisabled& ref) MPQC__NOEXCEPT:
+        Exception(ref)
+{
+}
+
+FeatureDisabled::~FeatureDisabled() MPQC__NOEXCEPT
 {
 }

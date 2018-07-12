@@ -30,6 +30,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 namespace mpqc {
 
@@ -37,8 +38,8 @@ namespace mpqc {
     provide attractive indentation of output. */
 class FormIO {
  private:
-  static char* default_basename_;
-  static char* default_work_dir_;
+  static std::string default_basename_;
+  static std::string default_work_dir_;
   static int ready_;
   static int xalloc_inited_;
   static long nindent_;
@@ -69,19 +70,19 @@ class FormIO {
   static void init_mp(int me);
   static int get_node() { return me_; }
   /// set the default base name for temporary files
-  static void set_default_basename(const char*);
+  static void set_default_basename(std::string);
   /// @return the default base name for temporary files
-  static const char* default_basename();
+  static const std::string& default_basename();
   /// set the default work directory for POSIX I/O of large files.
-  static void set_default_work_dir(const char*);
+  static void set_default_work_dir(std::string);
   /// @return the default work directory for POSIX I/O of large files
-  static const char* default_work_dir();
-  /// @return the new file name with extension
-  static char* fileext_to_filename(const char* extension);
-  /// @return the new file name with extension in std::string
-  static std::string fileext_to_filename_string(const char* extension);
-  /// @return the new whole path file name with extension in std::string
-  static std::string fileext_to_fullpathname_string(const char* extension);
+  static const std::string& default_work_dir();
+  /// @param[in] extension filename extension, e.g. ".txt"
+  /// @return the file name obtained by concatenating basename with \c extension
+  static std::string fileext_to_filename(const std::string& extension);
+  /// same as FormIO::fileext_to_filename but uses full path
+  /// @return the file name obtained by concatenating work_dir, basename, and \c extension
+  static std::string fileext_to_fullpathname(const std::string& extension);
 
   static void init_ostream(std::ostream&);
 

@@ -77,7 +77,8 @@ else (LIBINT2_INCLUDE_DIRS)
           #include <libint2.hpp>
           #include <libint2/engine.h>
           #include <libint2/util/any.h>
-          #if !((LIBINT_MAJOR_VERSION>2) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION>4) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==4 && LIBINT_MICRO_VERSION>=0))
+          #include <libint2/chemistry/elements.h>
+          #if !((LIBINT_MAJOR_VERSION>2) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION>5) || (LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==5 && LIBINT_MICRO_VERSION>=0))
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) {
@@ -88,12 +89,15 @@ else (LIBINT2_INCLUDE_DIRS)
             // check for standard-conforming libint2::any
             libint2::any x = 0;
             bool has_value_exists = x.has_value();
+
+            // check for get_element_info
+            const auto& element_info = libint2::chemistry::get_element_info();
             
             return 0;
           }
       "  LIBINT2_IS_UP_TO_DATE)    
     if (NOT LIBINT2_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint2 library is too old: 2.4.0 is required")
+      message(FATAL_ERROR "Libint2 library is too old: 2.5.0-beta.1 or older is required")
     endif()
 
     # make sure libint2 is properly configured

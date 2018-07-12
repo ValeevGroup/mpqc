@@ -16,7 +16,7 @@ integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols,
   dgeqp3_(&rows, &cols, data, &LDA, J, Tau, &work_dummy, &LWORK, &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqp3_(&rows, &cols, data, &LDA, J, Tau, W.get(), &LWORK, &INFO);
   return INFO;
 }
@@ -31,7 +31,7 @@ integer non_pivoted_qr(double *data, double *Tau, integer rows, integer cols) {
   dgeqrf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgeqrf_(&rows, &cols, data, &LDA, Tau, W.get(), &LWORK, &INFO);
   return INFO;
 }
@@ -46,7 +46,7 @@ integer non_pivoted_lq(double *data, double *Tau, integer rows, integer cols) {
   dgelqf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgelqf_(&rows, &cols, data, &LDA, Tau, W.get(), &LWORK, &INFO);
   return INFO;
 }
@@ -59,18 +59,22 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   integer LDA = rows;
   integer LDU = (rows < cols) ? rows : 1;
   integer LDVT = (rows >= cols) ? cols : 1;
-  const char O = 'O';
-  std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
+  auto iwork = std::make_unique<integer[]>(8 * std::min(rows, cols));
 
   // Call routine
+#ifndef MADNESS_LINALG_USE_LAPACKE
+  const char O = 'O';
+#else
+  char O = 'O';
+#endif
   dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
           &LWORK, iwork.get(), &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
+
   dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
           iwork.get(), &INFO);
-
   return INFO;
 }
 
@@ -102,17 +106,27 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
     std::cout << "Invalid input for JOBZ" << std::endl;
   }
 
-  std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
+  auto iwork = std::make_unique<integer[]>(8 * std::min(rows, cols));
 
   // Call routine
+#ifndef MADNESS_LINALG_USE_LAPACKE
   dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
           &LWORK, iwork.get(), &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> W{new double[LWORK]};
+  auto W = std::make_unique<double[]>(LWORK);
   dgesdd_(&JOBZ, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
           iwork.get(), &INFO);
-
+#else
+  char jobz = JOBZ;
+  dgesdd_(&jobz, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
+          &LWORK, iwork.get(), &INFO);
+  assert(INFO == 0);
+  LWORK = work_dummy;
+  auto W = std::make_unique<double[]>(LWORK);
+  dgesdd_(&jobz, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(), &LWORK,
+          iwork.get(), &INFO);
+#endif
   return INFO;
 }
 
@@ -123,7 +137,7 @@ integer form_q(double *data, double *Tau, integer rows, integer rank) {
   dorgqr_(&rows, &rank, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> work{new double[LWORK]};
+  auto work = std::make_unique<double[]>(LWORK);
 
   dorgqr_(&rows, &rank, &rank, data, &rows, Tau, work.get(), &LWORK, &INFO);
 
@@ -138,7 +152,7 @@ integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows,
   dorglq_(&rank, &cols, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
   assert(INFO == 0);
   LWORK = work_dummy;
-  std::unique_ptr<double[]> work{new double[LWORK]};
+  auto work = std::make_unique<double[]>(LWORK);
 
   dorglq_(&rank, &cols, &rank, data, &rows, Tau, work.get(), &LWORK, &INFO);
 
@@ -201,9 +215,9 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
   // Will hold the column pivot information and reflectors
   typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
   VectorXi J = VectorXi::Zero(cols);
-  std::unique_ptr<double[]> Tau{new double[full_rank]};
+  auto Tau = std::make_unique<double[]>(full_rank);
 
-  std::unique_ptr<double[]> in_data{new double[size]};
+  auto in_data = std::make_unique<double[]>(size);
   std::copy(in.data(), in.data() + size, in_data.get());
 
   // Do initial qr routine
@@ -278,7 +292,7 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
   // Will hold the column pivot information and reflectors
   typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
   VectorXi J = VectorXi::Zero(cols);
-  std::unique_ptr<double[]> Tau{new double[full_rank]};
+  auto Tau = std::make_unique<double[]>(full_rank);
 
   // Do initial qr routine
   auto qr_err = col_pivoted_qr(in.data(), Tau.get(), rows, cols, J.data());
@@ -351,11 +365,11 @@ void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
   auto full_rank = std::min(rows, cols);
 
   // Will hold the reflectors
-  std::unique_ptr<double[]> Tau{new double[full_rank]};
+  auto Tau = std::make_unique<double[]>(full_rank);
 
   // Lets start by not copying data
   /* const auto size = cols * rows; */
-  /* std::unique_ptr<double[]> in_data{new double[size]}; */
+  /* auto in_data = std::make_unique<double[]>(size); */
   /* std::copy(in.data(), in.data() + size, in_data.get()); */
 
   auto qr_err = non_pivoted_qr(in.data(), Tau.get(), rows, cols);
@@ -419,7 +433,7 @@ void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
   auto full_rank = std::min(rows, cols);
 
   // Will hold the reflectors
-  std::unique_ptr<double[]> Tau{new double[full_rank]};
+  auto Tau = std::make_unique<double[]>(full_rank);
   auto qr_err = non_pivoted_lq(in.data(), Tau.get(), rows, cols);
   if (0 != qr_err) {
     assert(qr_err < 0);
@@ -473,8 +487,8 @@ void ta_tensor_svd(TA::Tensor<double> &in, TA::Tensor<double> &L,
   }
 
   Eigen::VectorXd s(std::max(rows, cols));
-  std::unique_ptr<double[]> u{new double[(rows >= cols) ? 1 : rows * rows]};
-  std::unique_ptr<double[]> vt{new double[(rows >= cols) ? cols * cols : 1]};
+  auto u = std::make_unique<double[]>((rows >= cols) ? 1 : rows * rows);
+  auto vt = std::make_unique<double[]>((rows >= cols) ? cols * cols : 1);
 
   svd(in.data(), s.data(), u.get(), vt.get(), rows, cols);
 
@@ -608,13 +622,19 @@ integer piv_cholesky(
   integer rank = 0;
   integer info;
   double tol = -1;  // Use default tolerence if negative
-  const char uplo = 'U';
-  std::unique_ptr<double[]> work{new double[2 * dim]};
+  auto work = std::make_unique<double[]>(2 * dim);
 
   // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> D =
   // a;
+#ifndef MADNESS_LINALG_USE_LAPACKE
+  const char uplo = 'U';
   dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
           &info);
+#else
+  char uplo = 'U';
+  dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
+          &info);
+#endif
 
   // Fortran using 1 based indexing :(
   for (auto i = 0; i < piv.size(); ++i) {

@@ -25,10 +25,12 @@ apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
 apt-add-repository -y "ppa:boost-latest/ppa"
 apt-add-repository -y "ppa:kubuntu-ppa/backports"
 apt-get -yq update >> ~/apt-get-update.log
-apt-get -yq --no-install-suggests --no-install-recommends --force-yes install g++-5 gfortran-5 g++-6 gfortran-6 g++-7 gfortran-7 g++-8 gfortran-8 libeigen3-dev libboost1.55-all-dev libblas-dev liblapack-dev libtbb-dev clang-5.0 clang-6.0 clang-7 cmake cmake-data
+apt-get -yq --no-install-suggests --no-install-recommends --force-yes install g++-5 gfortran-5 g++-6 gfortran-6 g++-7 gfortran-7 g++-8 gfortran-8 libeigen3-dev libboost1.55-all-dev libblas-dev liblapack-dev liblapacke-dev libopenblas-dev libtbb-dev clang-5.0 clang-6.0 clang-7 cmake cmake-data
 mkdir -p ${TRAVIS_BUILD_TOPDIR}
 cd ${TRAVIS_BUILD_TOPDIR}
 git clone https://evaleev:f0aee3276b87c17a47d8b18e7c82af7a1cad8842@github.com/ValeevGroup/mpqc4.git ${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
+cd ${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
+git checkout cp_ccsd
 END
 chmod +x $setup
 
@@ -41,10 +43,7 @@ cd /home/travis/_build
 export BUILD_PREFIX=/home/travis/_build
 export INSTALL_PREFIX=/home/travis/_install
 export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4
-./build-mpich-linux.sh
-./build-libint-linux.sh
-./build-TA-linux.sh
-./build-linux.sh
+${TRAVIS_BUILD_TOPDIR}/ValeevGroup/mpqc4/bin/build-linux.sh
 END
 chmod +x $build
 
@@ -69,10 +68,6 @@ RUN /home/travis/_build/$setup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # copy travis scripts
-ADD build-mpich-linux.sh /home/travis/_build/build-mpich-linux.sh
-ADD build-libint-linux.sh /home/travis/_build/build-libint-linux.sh
-ADD build-TA-linux.sh /home/travis/_build/build-TA-linux.sh
-ADD build-linux.sh /home/travis/_build/build-linux.sh
 ADD $build /home/travis/_build/$build
 END
 

@@ -1391,31 +1391,31 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   const auto& npnos(int i, int j) const { return npnos_[i * nocc_act_ + j]; }
 
  private:
-
   /// Overrides DIISSolver::is_converged()
-  bool is_converged(double target_precision, double error, double dE) const override {
-    // dE = std::abs(E_22_ - E_21_): the difference in energy between the two most recent micro iterations
-    // DE = std::abs(E_22_ - E_12_): the difference in energy between the current micro iteration and the last micro
+  bool is_converged(double target_precision, double error,
+                    double dE) const override {
+    // dE = std::abs(E_22_ - E_21_): the difference in energy between the two
+    // most recent micro iterations DE = std::abs(E_22_ - E_12_): the difference
+    // in energy between the current micro iteration and the last micro
     // iteration of the previous macro iteration
 
     if (update_pno_ == true) {
       const auto DE = std::abs(E_22_ - E_12_);
-      return (pnos_relaxed_ && dE < target_precision / 10.0 && DE < target_precision / 10.0);
+      return (pnos_relaxed_ &&
+              dE < target_precision * this->precision_margin_energy() &&
+              DE < target_precision * this->precision_margin_energy());
+    } else {
+      return dE < target_precision * this->precision_margin_energy();
     }
-
-    else {
-      return dE < target_precision / 10.0;
-    }
-
   }
 
   bool is_converged_within_subspace(double dE) {
-
     if (update_pno_ == true) {
       const auto DE = std::abs(E_22_ - E_12_);
 
       // Check that dE satisfies the following requirement
-      bool energy_check = pnos_relaxed_ ? (dE < DE / micro_ratio_) : (dE < std::abs(E_22_) / 1.0e-04);
+      bool energy_check = pnos_relaxed_ ? (dE < DE / micro_ratio_)
+                                        : (dE < std::abs(E_22_) / 1.0e-04);
 
       // Check that micro_count_ is greater than or equal to min_micro_
       bool micro_check = micro_count_ >= min_micro_;

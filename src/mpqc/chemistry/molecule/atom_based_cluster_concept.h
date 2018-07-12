@@ -49,10 +49,6 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
   AtomBasedClusterModel &operator=(const AtomBasedClusterModel& c) = default;
   AtomBasedClusterModel &operator=(AtomBasedClusterModel&& c) = default;
 
-  AtomBasedClusterConcept *clone_() const override final {
-    return new AtomBasedClusterModel(*this);
-  }
-
   Vector3d const &center_() const override final { return center(element_); }
   Vector3d const &com_() const override final {
     return center_of_mass(element_);

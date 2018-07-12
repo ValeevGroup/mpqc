@@ -85,8 +85,8 @@ libint2::any to_libint2_operator_params(
       const auto ng = cgtg_params.size();
       typename std::decay<decltype(cgtg_params)>::type cgtg2_params;
       cgtg2_params.reserve(ng * (ng + 1) / 2);
-      for (auto b = 0; b < ng; ++b) {
-        for (auto k = 0; k <= b; ++k) {
+      for (auto b = 0ul; b < ng; ++b) {
+        for (decltype(b) k = 0; k <= b; ++k) {
           const auto gexp = cgtg_params[b].first + cgtg_params[k].first;
           const auto gcoeff = cgtg_params[b].second * cgtg_params[k].second *
                               (b == k ? 1 : 2);  // if a != b include ab and ba

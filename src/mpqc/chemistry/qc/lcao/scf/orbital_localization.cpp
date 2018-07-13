@@ -25,8 +25,9 @@ double compute_angle(double Aij, double Bij) {
   auto AB = std::sqrt(Aij * Aij + Bij * Bij);
   auto cos_4gamma = -Aij / AB;
   auto sin_4gamma = Bij / AB;
-  auto gamma = 0.25 * std::acos(cos_4gamma) * ((sin_4gamma < 0) ? -1 : 1);
-  return (std::abs(gamma) < 1e-7) ? 0.0 : gamma;
+  auto abs_gamma = std::acos(cos_4gamma) / 4;
+  auto gamma = (sin_4gamma < 0) ? -abs_gamma : abs_gamma;
+  return (abs_gamma < 1e-5) ? 0.0 : gamma;
 };
 
 bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
@@ -52,7 +53,7 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
         Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
 
-        double Aij = vij.squaredNorm() - 0.25 * (vii - vjj).squaredNorm();
+        double Aij = vij.squaredNorm() - ((vii - vjj).squaredNorm() / 4);
         double Bij = (vii - vjj).dot(vij);
 
         double gamma;

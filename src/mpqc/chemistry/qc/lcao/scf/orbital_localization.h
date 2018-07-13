@@ -29,13 +29,24 @@ class OrbitalLocalizer : public DescribedClass {
       TA::DistArray<Tile, Policy> const &C,
       size_t ncols_of_C_to_skip = 0) const = 0;
 
-  /// this must be called before compute()
+  /// this or its Eigen counterpart must be called before compute()
   OrbitalLocalizer &initialize(TA::DistArray<Tile, Policy> S_ao,
                                std::vector<TA::DistArray<Tile, Policy>> mu_ao) {
     ao_s_ = math::array_to_eigen(S_ao);
     ao_x_ = math::array_to_eigen(mu_ao[0]);
     ao_y_ = math::array_to_eigen(mu_ao[1]);
     ao_z_ = math::array_to_eigen(mu_ao[2]);
+    initialized_ = true;
+    return *this;
+  }
+
+  /// this or its TA counterpart must be called before compute()
+  OrbitalLocalizer &initialize(const math::Matrix<typename Tile::value_type>& S_ao,
+                               const std::vector<math::Matrix<typename Tile::value_type>>& mu_ao) {
+    ao_s_ = S_ao;
+    ao_x_ = mu_ao[0];
+    ao_y_ = mu_ao[1];
+    ao_z_ = mu_ao[2];
     initialized_ = true;
     return *this;
   }

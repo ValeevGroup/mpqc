@@ -62,8 +62,8 @@ std::pair<typename ESolveDensityBuilder<Tile, Policy>::array_type,
           typename ESolveDensityBuilder<Tile, Policy>::array_type>
 ESolveDensityBuilder<Tile, Policy>::operator()(
     typename ESolveDensityBuilder<Tile, Policy>::array_type const &F) {
-  typename ESolveDensityBuilder<Tile, Policy>::array_type Fp, C_occ, C_occ_ao,
-      D;
+  using scalar_type = typename Tile::scalar_type;
+  typename ESolveDensityBuilder<Tile, Policy>::array_type Fp, C_occ, C_occ_ao, D;
   auto &world = F.world();
 
   auto e0 = mpqc::fenced_now(world);
@@ -71,13 +71,30 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
 
   auto Fp_eig = math::array_to_eigen(Fp);
 
-  // TODO must solve on rank-0 only, propagate to the rest
-  Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
-  auto eps = es.eigenvalues();
-  decltype(Fp_eig) C_eig = es.eigenvectors();
-  decltype(Fp_eig) C_occ_eig = C_eig.leftCols(nocc_);
-  auto tr_ao = Fp.trange().data()[0];
+  // solve on rank-0 only, propagate to the rest
+  EigenVector<scalar_type> eps_eig;
+  decltype(Fp_eig) C_eig;
+  if (world.rank() == 0) {
+    Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
+    eps_eig = es.eigenvalues();
+    C_eig = es.eigenvectors();
 
+    // warn about "exact" degeneracies among valence occupied orbitals
+    bool exact_degeneracies = false;
+    for(auto i=ncore_+1; i<nocc_ && !exact_degeneracies; ++i) {
+      if (std::abs(eps_eig(i) - eps_eig(i - 1)) < std::numeric_limits<scalar_type>::epsilon() * 1e3) {
+        exact_degeneracies = true;
+        ExEnv::out0() << indent
+                      << "WARNING: nearly exactly degenerate occupied orbital energies, phases are NOT fixed, so take care in interpreting orbital coefficients"
+                      << std::endl;
+      }
+    }
+  }
+  world.gop.broadcast_serializable(eps_eig, 0);
+  world.gop.broadcast_serializable(C_eig, 0);
+  decltype(Fp_eig) C_occ_eig = C_eig.leftCols(nocc_);
+
+  auto tr_ao = Fp.trange().data()[0];
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, nocc_);
   C_occ = math::eigen_to_array<Tile, Policy>(Fp.world(), C_occ_eig, tr_ao,
                                                   tr_occ);
@@ -86,8 +103,8 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   C_occ_ao("i,j") = M_inv_("k,i") * C_occ("k,j");
   C_occ_ao.truncate();
   if (!localizer_) {
-    eps_ = eps;
-    auto nobs = eps.rows();
+    eps_ = eps_eig;
+    auto nobs = eps_eig.rows();
     auto tr_obs = scf::tr_occupied(n_coeff_clusters_, nobs);
     auto C = math::eigen_to_array<Tile, Policy>(Fp.world(), C_eig, tr_ao,
                                                      tr_obs);

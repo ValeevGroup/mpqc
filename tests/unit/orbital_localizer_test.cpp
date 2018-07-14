@@ -8,6 +8,10 @@
 using namespace mpqc;
 
 TEST_CASE("Foster-Boys Localizer", "[localizer]") {
+  // only do in serial since this only uses Eigen
+  if (TA::get_default_world().size() > 1)
+    return;
+
   // FCH3F anion from BH76 test set, 3-21G basis
   // 6
   //

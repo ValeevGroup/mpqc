@@ -163,7 +163,7 @@ class RRQRLocalizer : public OrbitalLocalizer<Tile,Policy> {
         trange.data()[1]);
   }
 
-  /// @param[in, out] C on input: LCAO coefficients, on output: localizeed LCAO
+  /// @param[in, out] C on input: LCAO coefficients, on output: localized LCAO
   /// coefficients
   /// @param[in] S Overlap matrix
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep

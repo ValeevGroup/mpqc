@@ -151,6 +151,14 @@ p()
 }
 
 void
+q()
+{
+  throw FeatureDisabled("q() disabled",
+                        __FILE__,
+                        __LINE__);
+}
+
+void
 ex_on_stack()
 {
   ProgrammingError ex("programming error in ex_on_stack()",
@@ -182,6 +190,7 @@ TEST_CASE("Exception", "[exception]") {
   REQUIRE_THROWS_AS(n(), mpqc::Exception);
   REQUIRE_THROWS_AS(o(), mpqc::Exception);
   REQUIRE_THROWS_AS(p(), mpqc::Exception);
+  REQUIRE_THROWS_AS(q(), mpqc::Exception);
 
   X x;
   REQUIRE_THROWS_AS(x.x(), mpqc::Exception);

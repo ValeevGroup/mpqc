@@ -7,6 +7,7 @@
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/scf/util.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/clusterd_coeffs.h"
@@ -95,7 +96,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   decltype(Fp_eig) C_occ_eig = C_eig.leftCols(nocc_);
 
   auto tr_ao = Fp.trange().data()[0];
-  auto tr_occ = scf::tr_occupied(n_coeff_clusters_, nocc_);
+  auto tr_occ = utility::compute_trange1(nocc_, n_coeff_clusters_);
   C_occ = math::eigen_to_array<Tile, Policy>(Fp.world(), C_occ_eig, tr_ao,
                                                   tr_occ);
 
@@ -105,7 +106,7 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
   if (!localizer_) {
     eps_ = eps_eig;
     auto nobs = eps_eig.rows();
-    auto tr_obs = scf::tr_occupied(n_coeff_clusters_, nobs);
+    auto tr_obs = utility::compute_trange1(nobs, n_coeff_clusters_);
     auto C = math::eigen_to_array<Tile, Policy>(Fp.world(), C_eig, tr_ao,
                                                      tr_obs);
     C_("i,j") = M_inv_("k,i") * C("k,j");

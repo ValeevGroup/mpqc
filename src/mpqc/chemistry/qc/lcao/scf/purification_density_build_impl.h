@@ -5,6 +5,7 @@
 #include "mpqc/math/linalg/cholesky_inverse.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/clusterd_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
@@ -89,7 +90,7 @@ PurificationDensityBuilder<Tile, Policy>::orbitals(
   math::piv_cholesky(D_eig);
 
   auto tr_ao = D.trange().data()[0];
-  auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
+  auto tr_occ = utility::compute_trange1(occ_, n_coeff_clusters_);
 
   auto Cao =
       math::eigen_to_array<Tile, Policy>(D.world(), D_eig, tr_ao, tr_occ);

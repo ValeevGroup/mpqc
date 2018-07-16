@@ -25,11 +25,7 @@ std::vector<ShellVec> Basis::Factory::get_cluster_shells(
     const auto libint_atoms =
         ::mpqc::to_libint_atom(collapse_to_atoms(cluster));
 
-    std::streambuf *cout_sbuf = std::cout.rdbuf();  // Silence libint printing.
-    std::ofstream fout("/dev/null");
-    std::cout.rdbuf(fout.rdbuf());
     libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
-    std::cout.rdbuf(cout_sbuf);
 
     // Shells that go with this cluster
     ShellVec cluster_shells;
@@ -50,11 +46,7 @@ ShellVec Basis::Factory::get_flat_shells(Molecule const &mol) const {
   for (auto const &cluster : mol) {
     const auto libint_atoms = to_libint_atom(collapse_to_atoms(cluster));
 
-    std::streambuf *cout_sbuf = std::cout.rdbuf();  // Silence libint printing.
-    std::ofstream fout("/dev/null");
-    std::cout.rdbuf(fout.rdbuf());
     libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
-    std::cout.rdbuf(cout_sbuf);
 
     for (auto &&shell : libint_basis) {
       cs.emplace_back(std::move(shell));

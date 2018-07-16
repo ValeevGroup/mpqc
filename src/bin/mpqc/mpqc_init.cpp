@@ -77,7 +77,8 @@ MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
   init_fp();
   init_limits();
   init_work_dir();
-  libint2::initialize();
+  auto verbose = true;
+  libint2::initialize(!verbose);  // turn off Libint diagnostics
 
   init_io(top_world);
   // init_resources(keyval);

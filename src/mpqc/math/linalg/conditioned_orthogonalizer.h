@@ -60,38 +60,42 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
   using Matrix = RowMatrix<typename Tile::numeric_type>;
   auto& world = S_array.world();
 
+  Matrix X;
   Matrix S = math::array_to_eigen(S_array);
 
-  size_t obs_rank;
-  double S_condition_number;
-  double XtX_condition_number;
-  Matrix X, Xinv;
+  if (world.rank() == 0) {
+    size_t obs_rank;
+    double S_condition_number;
+    double XtX_condition_number;
+    Matrix Xinv;
 
-  assert(S.rows() == S.cols());
+    assert(S.rows() == S.cols());
 
-  std::tie(X, Xinv, obs_rank, S_condition_number, XtX_condition_number) =
-      gensqrtinv(S, true, S_condition_number_threshold);
-  auto obs_nbf_omitted = (long)S.rows() - (long)obs_rank;
+    std::tie(X, Xinv, obs_rank, S_condition_number, XtX_condition_number) =
+        gensqrtinv(S, true, S_condition_number_threshold);
+    auto obs_nbf_omitted = (long) S.rows() - (long) obs_rank;
 
-  ExEnv::out0() << "\n\t Using Symmetric Orthogonalization. \n"
-                << "\t S Condition Number Threshold: "
-                << S_condition_number_threshold << '\n';
-  ExEnv::out0() << "\t Overlap condition number = "
-                << S_condition_number << "\n\n";
+    ExEnv::out0() << "\n\t Using Symmetric Orthogonalization. \n"
+                  << "\t S Condition Number Threshold: "
+                  << S_condition_number_threshold << '\n';
+    ExEnv::out0() << "\t Overlap condition number = "
+                  << S_condition_number << "\n\n";
 
-  if (obs_nbf_omitted > 0 && world.rank() == 0) {
-    std::cout << " (dropped " << obs_nbf_omitted << " "
-              << (obs_nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
-              << XtX_condition_number << ")";
-    std::cout << std::endl;
-  }
+    if (obs_nbf_omitted > 0) {
+      ExEnv::out0() << " (dropped " << obs_nbf_omitted << " "
+                    << (obs_nbf_omitted > 1 ? "fns" : "fn") << " to reduce to "
+                    << XtX_condition_number << ")";
+      ExEnv::out0() << std::endl;
+    }
 
-  if (obs_nbf_omitted > 0 && world.rank() == 0) {
-    Matrix should_be_I = X.transpose() * S * X;
-    Matrix I = Matrix::Identity(should_be_I.rows(), should_be_I.cols());
-    std::cout << "||X^t * S * X - I||_2 = " << (should_be_I - I).norm()
-              << " (should be 0)" << std::endl;
-  }
+    if (obs_nbf_omitted > 0) {
+      Matrix should_be_I = X.transpose() * S * X;
+      Matrix I = Matrix::Identity(should_be_I.rows(), should_be_I.cols());
+      ExEnv::out0() << "||X^t * S * X - I||_2 = " << (should_be_I - I).norm()
+                    << " (should be 0)" << std::endl;
+    }
+  }  // rank == 0
+  world.gop.broadcast_serializable(X, 0);
 
   //  return std::make_tuple(X, Xinv, XtX_condition_number);
   return math::eigen_to_array<Tile, Policy>(

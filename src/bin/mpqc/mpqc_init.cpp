@@ -178,7 +178,7 @@ std::shared_ptr<mpqc::KeyVal> MPQCInit::make_keyval(
       kv = __make_keyval(world, filename, InputFormat::info);
       input_format_ = InputFormat::info;
     } catch (...) {
-      std::cout << "failed read_info\n";
+      std::cerr << "failed read_info" << std::endl;
     }
   }
   if (input_format_ == InputFormat::invalid)
@@ -192,7 +192,8 @@ std::shared_ptr<mpqc::KeyVal> MPQCInit::make_keyval(
 
 void MPQCInit::init_io(const madness::World &top_world) {
   std::setlocale(LC_ALL, "en_US.UTF-8");
-  std::cout << std::setprecision(15);
+  std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
+  std::cerr << std::setprecision(std::numeric_limits<double>::max_digits10);
   FormIO::setindent(ExEnv::outn(), 2);
   FormIO::setindent(ExEnv::errn(), 2);
   FormIO::setindent(std::cout, 2);

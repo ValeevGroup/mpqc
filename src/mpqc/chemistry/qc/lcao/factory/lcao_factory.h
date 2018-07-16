@@ -463,7 +463,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       result("a, rho, mu, nu") =
           left1("sigma, a") * direct_ao("sigma, rho, mu, nu");
       ExEnv::out0() << indent;
-      ExEnv::out0() << "Waring! Transformation creates large intermediate:  ";
+      ExEnv::out0() << "Warning! Transformation creates large intermediate:  ";
       ExEnv::out0() << utility::to_string(half_transformed_formula.string());
       double size = mpqc::detail::array_size(result);
       ExEnv::out0() << " Size: " << size << " GB\n";

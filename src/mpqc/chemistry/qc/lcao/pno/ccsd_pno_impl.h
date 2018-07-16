@@ -12,7 +12,7 @@ namespace mpqc {
   namespace lcao {
 
     namespace detail {
-      /// compute MP2 T2 amplitudes
+      /// compute MP1 T2 amplitudes
       template <typename Tile, typename Policy>
       TA::DistArray<Tile, Policy> compute_mp2_t2(LCAOFactoryBase<Tile, Policy> &lcao_factory,
           const std::shared_ptr<const Eigen::VectorXd> &orbital_energy,
@@ -181,7 +181,7 @@ namespace mpqc {
           break;
         }
         default:
-          throw std::runtime_error("Invalid decomposition type for decomposing MP2 T2!");
+          throw std::runtime_error("Invalid decomposition type for decomposing MP1 T2!");
           break;
         } // end of switch
 
@@ -196,7 +196,7 @@ namespace mpqc {
         return in_tile.norm();
       };
 
-      ExEnv::out0() << std::endl << "Using MP2 T2 amplitudes for PNO decomposition" << std::endl;
+      ExEnv::out0() << std::endl << "Using MP1 T2 amplitudes for PNO decomposition" << std::endl;
       ExEnv::out0() << "Tcut is " << tcut_ << std::endl;
       TA::foreach_inplace(t2_mp2, decom);
     }
@@ -593,7 +593,7 @@ namespace mpqc {
       auto &world = this->wfn_world()->world();
       bool accurate_time = this->lcao_factory().accurate_time();
 
-      // obtain MP2 T2 amplitudes
+      // obtain MP1 T2 amplitudes
       ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
       TArray t2_mp2_orig = compute_mp2_t2();
 
@@ -602,7 +602,7 @@ namespace mpqc {
       TArray occ_convert, vir_convert;
       compute_M_reblock(occ_convert, vir_convert);
 
-      // obtain MP2 T2 with new blocking structure
+      // obtain MP1 T2 with new blocking structure
       TArray t2_mp2 = t2_mp2_orig.clone();
       t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
                         * vir_convert("c,a") * vir_convert("d,b")
@@ -611,22 +611,22 @@ namespace mpqc {
       ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
       decom_t2(t2_mp2);
 
-      // transform MP2 T2 amplitudes back into its original blocking structure
+      // transform MP1 T2 amplitudes back into its original blocking structure
       t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
                          * vir_convert("a,c") * vir_convert("b,d")
                          * occ_convert("i,k") * occ_convert("j,l");
 
-      // compute the difference between original and decomposed MP2 T2
+      // compute the difference between original and decomposed MP1 T2
       ExEnv::out0() << "Norm of (t2 - t2 (decomposed)): "
                     << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
                     << std::endl << std::endl;
 
-      // compute CCSD with decomposed MP2 T2 as initial guess
+      // compute CCSD with decomposed MP1 T2 as initial guess
       TA::DistArray<Tile, Policy> t1, t2;
       t2 = t2_mp2.clone();
 
       ExEnv::out0() << std::endl
-                    << "Computing CCSD with decomposed MP2 T2 as initial guess" << std::endl;
+                    << "Computing CCSD with decomposed MP1 T2 as initial guess" << std::endl;
       return compute_ccsdpno_df(t1,t2);
     }
 

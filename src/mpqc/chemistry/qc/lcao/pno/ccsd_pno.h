@@ -38,7 +38,7 @@ namespace lcao {
    double tcut_;
    std::vector<TA::DistArray<Tile, Policy>> vecij_dab_;
 
-   /// compute MP2 T2 amplitudes
+   /// compute MP1 T2 amplitudes
    TA::DistArray<Tile, Policy> compute_mp2_t2();
    /** compute occ and vir matrices for reblocking T2 amplitudes:
     * occ_convert has size of old_i * new_i

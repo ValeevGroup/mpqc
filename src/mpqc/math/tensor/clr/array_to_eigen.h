@@ -29,8 +29,9 @@ Matrix<T> tile_to_eigen(Tile<DecomposedTensor<T>> const &t) {
 }
 
 /*! \brief converts a TiledArray::Array to a row-major Eigen Matrix
+ *  \param[in] A an order-2 tensor
+ *  \warning this is a collective operation over the World object returned by \c A.world()
  */
-
 template <typename Tile, typename Policy>
 Matrix<typename Tile::value_type>
     array_to_eigen(TA::DistArray<Tile, Policy> const &A) {

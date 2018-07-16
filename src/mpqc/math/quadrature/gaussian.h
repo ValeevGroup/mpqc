@@ -15,11 +15,11 @@ namespace math {
  * http://gubner.ece.wisc.edu/gaussquad.pdf The code is outlined at
  * Example 15: Legendre polynomials
  *
- * \param N is the number of quadrature points
+ * \param N[in] is the number of quadrature points
  *
- * \param w will return the weights
+ * \param w[out] will return the weights
  *
- * \param x will return the roots
+ * \param x[out] will return the roots
  */
 void gauss_legendre(int N, Eigen::VectorXd &w, Eigen::VectorXd &x);
 

@@ -176,15 +176,18 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
         old_coeffs.block(0, o, n, v) << old_vir_eigen;
       }
 
-      // eigen solve
-      Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(fock);
-      ens_all = es.eigenvalues();
-      RowMatrixXd C_all = es.eigenvectors();
-      utility::print_par(world, "New Orbitals\n", ens_all, "\n");
+      // eigen solve on node 0 + broadcast
+      RowMatrixXd C_all;
+      if (world.rank() == 0) {
+        Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(fock);
+        ens_all = es.eigenvalues();
+        C_all = es.eigenvectors();
+        C_all = old_coeffs * C_all;
+      }
+      world.gop.broadcast_serializable(ens_all, 0);
+      world.gop.broadcast_serializable(C_all, 0);
 
       // update the coefficient
-
-      C_all = old_coeffs * C_all;
 
       RowMatrixXd C_occ = C_all.block(0, 0, n, o);
       RowMatrixXd C_corr_occ = C_all.block(0, f, n, o - f);

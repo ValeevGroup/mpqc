@@ -27,7 +27,14 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
       world,
       "\nBuilding ClosedShell Dual Basis MO Orbital (Steele Approach) \n");
 
-  // solving occupied orbitals
+  std::size_t n_frozen_core = 0;
+  if (frozen_core) {
+    n_frozen_core = mols.core_electrons();
+    utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons. \n");
+    n_frozen_core = n_frozen_core / 2;
+  }
+
+  // solving occupied orbitals on node 0, then broadcasting
   TArray F;
   if (ao_factory.registry().have(Formula(L"<μ|F|ν>"))) {
     F = ao_factory.registry().retrieve(Formula(L"<μ|F|ν>"));
@@ -41,17 +48,12 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
   RowMatrixXd S_eig = math::array_to_eigen(S);
 
   // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
-
-  std::size_t n_frozen_core = 0;
-  if (frozen_core) {
-    n_frozen_core = mols.core_electrons();
-    utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons. \n");
-    n_frozen_core = n_frozen_core / 2;
+  RowMatrixXd C_occ;
+  if (world.rank() == 0) {
+    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
+    C_occ = es.eigenvectors().leftCols(nocc);
   }
-
-  std::cout << es.eigenvalues() << std::endl;
-  RowMatrixXd C_occ = es.eigenvectors().leftCols(nocc);
+  world.gop.broadcast_serializable(C_occ, 0);
 
   // finished solving occupied orbitals
 
@@ -107,17 +109,22 @@ closed_shell_dual_basis_mo_build_steele(LCAOFactory<Tile, Policy> &lcao_factory,
   {
     RowMatrixXd F_vbs_eigen = math::array_to_eigen(F_vbs);
     RowMatrixXd S_vbs_eigen = math::array_to_eigen(S_vbs_vbs);
-    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen,
-                                                             S_vbs_eigen);
+    if (world.rank() == 0) {
+      Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen,
+                                                               S_vbs_eigen);
 
-    assert(es.info() == Eigen::ComputationInfo::Success);
-    std::cout << es.eigenvalues() << std::endl;
-    ens = es.eigenvalues();
-    auto env = es.eigenvectors();
+      assert(es.info() == Eigen::ComputationInfo::Success);
+      ens = es.eigenvalues();
+      auto env = es.eigenvectors();
 
-    C_occ = env.leftCols(nocc);
-    C_corr_occ = C_occ.rightCols(nocc - n_frozen_core);
-    C_vir = env.rightCols(n_vbs - nocc);
+      C_occ = env.leftCols(nocc);
+      C_corr_occ = C_occ.rightCols(nocc - n_frozen_core);
+      C_vir = env.rightCols(n_vbs - nocc);
+    }
+    world.gop.broadcast_serializable(ens, 0);
+    world.gop.broadcast_serializable(C_occ, 0);
+    world.gop.broadcast_serializable(C_corr_occ, 0);
+    world.gop.broadcast_serializable(C_vir, 0);
   }
 
   // get all the trange1s

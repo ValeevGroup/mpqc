@@ -419,6 +419,7 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
   std::vector<TA::DistArray<Tile, Policy>> guess_vector(n_roots);
 
   auto &factory = this->lcao_factory();
+  auto& world = factory.world();
 
   std::size_t n_m = factory.orbital_registry().retrieve("m").rank();
   const auto &orbital_i = factory.orbital_registry().retrieve("i");
@@ -446,9 +447,15 @@ CIS<Tile, Policy>::init_guess_vector(std::size_t n_roots) {
         df_ ? factory.compute(L"<p|F|q>[df]") : factory.compute(L"<p|F|q>");
 
     auto f_eig = math::array_to_eigen(f_pq);
-    Eigen::SelfAdjointEigenSolver<decltype(f_eig)> es(f_eig);
-    auto evals = es.eigenvalues();
-    auto C = es.eigenvectors();
+    Eigen::VectorXd evals;
+    RowMatrixXd C;
+    if (world.rank() == 0) {
+      Eigen::SelfAdjointEigenSolver<decltype(f_eig)> es(f_eig);
+      evals = es.eigenvalues();
+      C = es.eigenvectors();
+    }
+    world.gop.broadcast_serializable(evals, 0);
+    world.gop.broadcast_serializable(C, 0);
 
     energy_occ = evals.segment(n_frozen, n_i);
     energy_unocc = evals.segment(n_m, n_a);

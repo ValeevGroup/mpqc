@@ -8,7 +8,6 @@
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include "mpqc/chemistry/qc/lcao/scf/clusterd_coeffs.h"
-#include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 
 namespace mpqc {

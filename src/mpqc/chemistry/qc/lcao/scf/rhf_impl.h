@@ -13,7 +13,6 @@
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_builder.h"
-#include "mpqc/chemistry/qc/lcao/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/eigen_solve_density_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/purification_density_build.h"
 #include "mpqc/chemistry/qc/lcao/scf/rij_exact_k_fock_builder.h"

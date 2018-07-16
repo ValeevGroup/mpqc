@@ -7,7 +7,6 @@ cadf_helper_functions.h
 clr_cadf_builder.h
 clusterd_coeffs.h
 density_builder.h
-diagonalize_for_coeffs.h
 eigen_solve_density_builder.h
 eigen_solve_density_builder_impl.h
 four_center_exact_k_diagonal_builder.h

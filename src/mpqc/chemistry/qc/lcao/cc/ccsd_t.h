@@ -1203,24 +1203,22 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // 113.23 (2000): 10451-10458.
     double alpha = 3.0 * (e_orb(n_occ) - e_orb(n_occ - 1));
 
-    // definition of number of quadrature points
-    // should be included in input as a parameter
-    int n = n_laplace_quad_;
-
     // defining the weights and roots for quadrature
-    Eigen::VectorXd x(n);
-    Eigen::VectorXd w(n);
-    // function that evaluates Gaussian weights and roots for quadrature using
-    // orthogonal polynomials
-    mpqc::math::gauss_legendre(n, w, x);
+    Eigen::VectorXd x, w;
+    auto &global_world = this->wfn_world()->world();
+    if (global_world.rank() == 0) {
+      mpqc::math::gauss_legendre(n_laplace_quad_, w, x);
+    }
+    global_world.gop.broadcast_serializable(x, 0);
+    global_world.gop.broadcast_serializable(w, 0);
 
+    // this will be the final result
     double triple_energy = 0.0;
 
     // get trange1
     auto n_tr_occ = this->trange1_engine()->get_active_occ_blocks();
     auto n_tr_vir = this->trange1_engine()->get_vir_blocks();
 
-    auto &global_world = this->wfn_world()->world();
     // split global_world
     const auto rank = global_world.rank();
     const auto size = global_world.size();
@@ -1241,7 +1239,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     global_world.gop.fence();
 
     // loop over number of quadrature points
-    for (auto m = 0; m < n; m++) {
+    for (auto m = 0; m != n_laplace_quad_; m++) {
       // conversion of integrals  and amplitudes to Laplace-transform form.
       TArray g_dabi_lt = g_dabi_laplace_transform(
           g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));

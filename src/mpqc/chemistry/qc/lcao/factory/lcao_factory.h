@@ -102,7 +102,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
                   << (this->accurate_time_ ? "true" : "false") << "\n"
                   << indent
                   << "Verbose = " << (this->verbose_ ? "true" : "false")
-                  << "\n\n";
+                  << "\n" << std::endl;
   }
 
   void obsolete() override {
@@ -212,7 +212,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
                     << utility::to_string(formula_string.string());
       double size = mpqc::detail::array_size(result);
       ExEnv::out0() << " Size: " << size << " GB"
-                    << " Time: " << time << " s\n";
+                    << " Time: " << time << " s" << std::endl;
     }
     return result;
   }
@@ -246,7 +246,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
                   << utility::to_string(formula_string.string());
     double size = mpqc::detail::array_size(result);
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
   }
   return result;
 }
@@ -368,7 +368,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
                   << utility::to_string(formula_string.string());
     double size = mpqc::detail::array_size(result);
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
   }
 
   return result;
@@ -466,7 +466,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       ExEnv::out0() << "Warning! Transformation creates large intermediate:  ";
       ExEnv::out0() << utility::to_string(half_transformed_formula.string());
       double size = mpqc::detail::array_size(result);
-      ExEnv::out0() << " Size: " << size << " GB\n";
+      ExEnv::out0() << " Size: " << size << " GB" << std::endl;
     }
 
     auto left_index2 = formula_string.bra_indices()[1];
@@ -502,7 +502,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
                   << utility::to_string(formula_string.string());
     double size = mpqc::detail::array_size(result);
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
   }
 
   return result;
@@ -603,7 +603,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
       ExEnv::out0() << "Retrieved LCAO Integral: "
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      ExEnv::out0() << " Size: " << size << " GB\n";
+      ExEnv::out0() << " Size: " << size << " GB" << std::endl;
     }
   } else {
     // find a permutation
@@ -629,7 +629,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
                         << utility::to_string(permute.string());
           double size = mpqc::detail::array_size(result);
           ExEnv::out0() << " Size: " << size << " GB "
-                        << " Time: " << time << " s\n";
+                        << " Time: " << time << " s" << std::endl;
         }
 
         // store current array and delete old one
@@ -683,7 +683,7 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
       ExEnv::out0() << "Retrieved LCAO Direct Integral From Density-Fitting: "
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result.array());
-      ExEnv::out0() << " Size: " << size << " GB\n";
+      ExEnv::out0() << " Size: " << size << " GB" << std::endl;
     }
   } else {
     // get three center integral
@@ -706,7 +706,7 @@ LCAOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
     ExEnv::out0() << decindent;
   }
   return result;

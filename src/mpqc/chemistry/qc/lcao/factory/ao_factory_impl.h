@@ -82,7 +82,7 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
   ExEnv::out0() << indent << "Iterative inverse = "
-                << (iterative_inv_sqrt_ ? "true" : "false") << "\n\n";
+                << (iterative_inv_sqrt_ ? "true" : "false") << "\n" << std::endl;
 }
 
 template <typename Tile, typename Policy>
@@ -107,7 +107,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
       ExEnv::out0() << "Retrieved AO Integral: "
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      ExEnv::out0() << " Size: " << size << " GB\n";
+      ExEnv::out0() << " Size: " << size << " GB" << std::endl;
     }
   } else {
     // find a permutation, currently, it won't store permutation in registry
@@ -134,7 +134,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
                         << utility::to_string(permute.string());
           double size = mpqc::detail::array_size(result);
           ExEnv::out0() << " Size: " << size << " GB"
-                        << " Time: " << time << " s\n";
+                        << " Time: " << time << " s" << std::endl;
         }
 
         // store current array and delete old one
@@ -200,7 +200,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       time1 = mpqc::now(world, this->accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
       ExEnv::out0() << " Size: " << size << " GB"
-                    << " Time: " << time << " s\n";
+                    << " Time: " << time << " s" << std::endl;
     }
   }
   // continue with normal step
@@ -243,7 +243,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                       << utility::to_string(formula.string());
         double size = mpqc::detail::array_size(result);
         ExEnv::out0() << " Size: " << size << " GB"
-                      << " Time: " << time << " s\n";
+                      << " Time: " << time << " s" << std::endl;
       }
     }
     // use two body engine
@@ -264,7 +264,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                       << utility::to_string(formula.string());
         double size = mpqc::detail::array_size(result);
         ExEnv::out0() << " Size: " << size << " GB"
-                      << " Time: " << time << " s\n";
+                      << " Time: " << time << " s" << std::endl;
       }
     }
     // compute JK, requires orbital space registry
@@ -339,7 +339,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                       << utility::to_string(formula.string());
         double size = mpqc::detail::array_size(result);
         ExEnv::out0() << " Size: " << size << " GB"
-                      << " Time: " << time << " s\n";
+                      << " Time: " << time << " s" << std::endl;
       }
     }
     // hJ = H + J
@@ -366,7 +366,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                       << utility::to_string(formula.string());
         double size = mpqc::detail::array_size(result);
         ExEnv::out0() << " Size: " << size << " GB"
-                      << " Time: " << time << " s\n";
+                      << " Time: " << time << " s" << std::endl;
       }
     }
     // compute Fock, requires orbital space registry
@@ -399,7 +399,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                       << utility::to_string(formula.string());
         double size = mpqc::detail::array_size(result);
         ExEnv::out0() << " Size: " << size << " GB"
-                      << " Time: " << time << " s\n";
+                      << " Time: " << time << " s" << std::endl;
       }
     }
   }
@@ -426,7 +426,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     auto inv_time = mpqc::duration_in_s(time0, time1);
     if(this->verbose_){
       ExEnv::out0() << indent;
-      ExEnv::out0() << "Inverse Time: " << inv_time << " s\n";
+      ExEnv::out0() << "Inverse Time: " << inv_time << " s" << std::endl;
     }
   }
 
@@ -460,7 +460,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
     if(this->verbose_){
       ExEnv::out0() << indent;
-      ExEnv::out0() << "Inverse Square Root Time: " << inv_sqrt_time << " s\n";
+      ExEnv::out0() << "Inverse Square Root Time: " << inv_sqrt_time << " s" << std::endl;
     }
   }
 
@@ -494,7 +494,7 @@ AOFactory<Tile, Policy>::compute_cadf_coeffs(const Formula& formula) {
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(C);
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
   }
   return C;
 }
@@ -534,7 +534,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
     ExEnv::out0() << " Size: " << size << " GB"
-                  << " Time: " << time << " s\n";
+                  << " Time: " << time << " s" << std::endl;
   }
 
   return result;
@@ -580,7 +580,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
       ExEnv::out0() << " Size: " << size << " GB"
-                    << " Time: " << time << " s\n";
+                    << " Time: " << time << " s" << std::endl;
     }
 
   } else {
@@ -608,7 +608,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
       ExEnv::out0() << " Size: " << size << " GB"
-                    << " Time: " << time << " s\n";
+                    << " Time: " << time << " s" << std::endl;
     }
   }
   return result;
@@ -640,7 +640,7 @@ AOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
       ExEnv::out0() << indent << "Retrieved Direct AO Integral: "
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result.array());
-      ExEnv::out0() << " Size: " << size << " GB\n";
+      ExEnv::out0() << " Size: " << size << " GB" << std::endl;
     }
 
   } else {
@@ -687,7 +687,7 @@ AOFactory<Tile, Policy>::compute_direct2(const Formula& formula) {
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result.array());
       ExEnv::out0() << " Size: " << size << " GB"
-                    << " Time: " << time << " s\n";
+                    << " Time: " << time << " s" << std::endl;
     }
 
   } else if (formula.oper().is_twobody()) {
@@ -703,7 +703,7 @@ AOFactory<Tile, Policy>::compute_direct2(const Formula& formula) {
       ExEnv::out0() << indent << "Computed Direct Twobody Two Center Integral: "
                     << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result.array());
-      ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
+      ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s" << std::endl;
     }
   } else {
     throw ProgrammingError("Unsupported Operator in DirectAOFactory!!\n",
@@ -739,7 +739,7 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
     ExEnv::out0() << indent << "Computed Direct Twobody Three Center Integral: "
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
-    ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
+    ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s" << std::endl;
   }
   madness::print_meminfo(
       world.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
@@ -781,7 +781,7 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
     ExEnv::out0() << indent << "Computed Direct Twobody Four Center Integral: "
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
-    ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
+    ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s" << std::endl;
   }
   madness::print_meminfo(world.rank(),
                          utility::wconcat("AOFactory:", formula.string()));

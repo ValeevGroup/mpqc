@@ -401,7 +401,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
   auto time1 = mpqc::now(world, this->accurate_time_);
   auto duration = mpqc::duration_in_s(time0, time1);
 
-  ExEnv::out0() << "    Time: " << duration << " s\n";
+  ExEnv::out0() << "    Time: " << duration << " s" << std::endl;
 
   return result_ta;
 }

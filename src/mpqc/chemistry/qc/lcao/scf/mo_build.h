@@ -199,7 +199,7 @@ void make_closed_shell_sdref_subspaces(
     // more expensive
     TA::DistArray<Tile, Policy> C_a;
     TA::TiledRange1 tr_a;
-    std::size_t n_unocc = 0;
+    std::size_t n_unocc;
     {
       // need some integrals
       auto S_obs = ao_factory->compute(L"<κ|λ>");
@@ -213,12 +213,16 @@ void make_closed_shell_sdref_subspaces(
 
       // SVD to obtain the null-space basis of <m|kappa>, i.e. the unoccupied
       // orbitals
-      Eigen::JacobiSVD<RowMatrixXd> svd(S_m_obs_ortho_eig, Eigen::ComputeFullV);
-      RowMatrixXd V_eig = svd.matrixV();
-      size_t nbf = S_m_obs_ortho_eig.cols();
-      n_unocc = nbf - svd.nonzeroSingularValues();
-      RowMatrixXd Vnull(nbf, n_unocc);
-      Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
+      RowMatrixXd Vnull;
+      if (world.rank() == 0) {
+        Eigen::JacobiSVD<RowMatrixXd> svd(S_m_obs_ortho_eig, Eigen::ComputeFullV);
+        RowMatrixXd V_eig = svd.matrixV();
+        size_t nbf = S_m_obs_ortho_eig.cols();
+        n_unocc = nbf - svd.nonzeroSingularValues();
+        Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
+      }
+      world.gop.broadcast_serializable(Vnull, 0);
+      world.gop.broadcast_serializable(n_unocc, 0);
       tr_a = utility::compute_trange1(n_unocc, unocc_blksize);
       C_a = math::eigen_to_array<Tile, Policy>(world, Vnull, tr_ao, tr_a);
       C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
@@ -250,9 +254,13 @@ void make_closed_shell_sdref_subspaces(
 
       // diagnolize fock
       auto fock_eigen = math::array_to_eigen(fock);
-      Eigen::SelfAdjointEigenSolver<decltype(fock_eigen)> es;
-      es.compute(fock_eigen);
-      auto trans_eigen = es.eigenvectors();
+      RowMatrixXd trans_eigen;
+      if (world.rank() == 0) {
+        Eigen::SelfAdjointEigenSolver<decltype(fock_eigen)> es;
+        es.compute(fock_eigen);
+        trans_eigen = es.eigenvectors();
+      }
+      world.gop.broadcast_serializable(trans_eigen, 0);
       auto trans = math::eigen_to_array<Tile, Policy>(world, trans_eigen,
                                                            tr_a, tr_a);
 
@@ -356,10 +364,16 @@ make_closed_shell_canonical_orbitals(
   auto S = ao_factory->compute(L"<κ|λ>");
   RowMatrixXd S_eig = math::array_to_eigen(S);
 
-  // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
-  auto evals = es.eigenvalues();
-  auto C = es.eigenvectors();
+  // solve mo coefficients on node 0, broadcast to rest
+  Eigen::VectorXd evals;
+  RowMatrixXd C;
+  if (world.rank() == 0) {
+    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
+    evals = es.eigenvalues();
+    C = es.eigenvectors();
+  }
+  world.gop.broadcast_serializable(evals, 0);
+  world.gop.broadcast_serializable(C, 0);
 
   // convert coeffs to TA
   auto nobs = S_eig.rows();
@@ -386,7 +400,7 @@ void closed_shell_cabs_mo_build_svd(
   auto &world = ao_factory.world();
   // CABS fock build
   auto mo_time0 = mpqc::fenced_now(world);
-  utility::print_par(world, "\nBuilding ClosedShell CABS MO Orbital\n");
+  utility::print_par(world, "\nBuilding Closed-Shell CABS\n");
 
   // build the RI basis
 
@@ -418,15 +432,20 @@ void closed_shell_cabs_mo_build_svd(
     RowMatrixXd S_obs_ribs_ortho_eigen =
         math::array_to_eigen(S_obs_ribs_ortho);
 
-    // SVD solve
-    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
-                                      Eigen::ComputeFullV);
-    RowMatrixXd V_eigen = svd.matrixV();
-    size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
-    auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
-    RowMatrixXd Vnull(nbf_ribs, nbf_cabs);
-    Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-
+    // SVD solve on node 0, broadcast
+    RowMatrixXd Vnull;
+    size_t nbf_ribs, nbf_cabs;
+    if (world.rank() == 0) {
+      Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
+                                        Eigen::ComputeFullV);
+      RowMatrixXd V_eigen = svd.matrixV();
+      nbf_ribs = S_obs_ribs_ortho_eigen.cols();
+      nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
+      Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
+    }
+    world.gop.broadcast_serializable(Vnull, 0);
+    world.gop.broadcast_serializable(nbf_ribs, 0);
+    world.gop.broadcast_serializable(nbf_cabs, 0);
     auto tr_ribs = ri_basis.create_trange1();
     auto tr_cabs_mo = utility::compute_trange1(nbf_cabs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
@@ -483,7 +502,7 @@ void closed_shell_cabs_mo_build_svd(
 
     auto mo_time1 = mpqc::fenced_now(world);
     auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
-    utility::print_par(world, "ClosedShell CABS MO Build Time: ", mo_time,
+    utility::print_par(world, "Closed-Shell CABS Build Time: ", mo_time,
                        " S\n");
   }
 };
@@ -498,8 +517,16 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto &world = ao_factory.world();
   using TArray = TA::DistArray<Tile, Policy>;
 
-  utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
+  utility::print_par(world, "\nBuilding Closed-Shell Dual Basis MOs\n");
   auto mo_time0 = mpqc::fenced_now(world);
+
+  std::size_t n_frozen_core = 0;
+  if (frozen_core) {
+    n_frozen_core = mols.core_electrons();
+    utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons",
+                       "\n");
+    n_frozen_core = n_frozen_core / 2;
+  }
 
   // solving occupied orbitals
   TArray F;
@@ -514,23 +541,23 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   RowMatrixXd F_eig = math::array_to_eigen(F);
   RowMatrixXd S_eig = math::array_to_eigen(S);
 
-  // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
+  // solve mo coefficients on node 0, broadcast to rest
+  Eigen::VectorXd ens_occ;
+  RowMatrixXd C_all, C_occ, C_corr_occ;
+  if (world.rank() == 0) {
+    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
+    ens_occ = es.eigenvalues().segment(0, nocc);
+    //  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
+    C_all = es.eigenvectors();
+    C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
+    C_corr_occ =
+        C_all.block(0, n_frozen_core, S_eig.rows(), nocc - n_frozen_core);
 
-  std::size_t n_frozen_core = 0;
-  if (frozen_core) {
-    n_frozen_core = mols.core_electrons();
-    utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons",
-                       "\n");
-    n_frozen_core = n_frozen_core / 2;
   }
-
-  Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, nocc);
-  //  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
-  RowMatrixXd C_all = es.eigenvectors();
-  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
-  RowMatrixXd C_corr_occ =
-      C_all.block(0, n_frozen_core, S_eig.rows(), nocc - n_frozen_core);
+  world.gop.broadcast_serializable(ens_occ, 0);
+  world.gop.broadcast_serializable(C_all, 0);
+  world.gop.broadcast_serializable(C_occ, 0);
+  world.gop.broadcast_serializable(C_corr_occ, 0);
 
   // finished solving occupied orbitals
 
@@ -538,13 +565,13 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto S_vbs = ao_factory.compute(L"<Α|Β>");
   auto S_obs_vbs = ao_factory.compute(L"<μ|Α>");
 
-  // construct C_vbs
+  // construct C_vbs on node 0, broadcast to rest
   RowMatrixXd C_vbs;
   std::size_t nbf_vbs;
   std::size_t nbf_v;
-  {
+  RowMatrixXd S_vbs_eigen = math::array_to_eigen(S_vbs);
+  if (world.rank() == 0) {
     // S_A^B -(1/2)
-    RowMatrixXd S_vbs_eigen = math::array_to_eigen(S_vbs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_vbs_eigen);
     RowMatrixXd X_vbs_eigen_inv = es2.operatorInverseSqrt();
 
@@ -564,6 +591,9 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_vbs, nbf_v);
     C_vbs = X_vbs_eigen_inv.transpose() * Vnull;
   }
+  world.gop.broadcast_serializable(C_vbs, 0);
+  world.gop.broadcast_serializable(nbf_vbs, 0);
+  world.gop.broadcast_serializable(nbf_v, 0);
 
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
@@ -611,21 +641,20 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
     F_vbs = lcao_factory.compute(L"<a|F|b>[df]");
   }
   RowMatrixXd F_vbs_mo_eigen = math::array_to_eigen(F_vbs);
-  //    std::cout << "F_vbs MO" << std::endl;
-  //    std::cout << F_vbs_mo_eigen << std::endl;
-
-  Eigen::SelfAdjointEigenSolver<RowMatrixXd> es3(F_vbs_mo_eigen);
-  auto ens_vir = es3.eigenvalues();
+  Eigen::VectorXd ens_vir;
+  if (world.rank() == 0) {
+    Eigen::SelfAdjointEigenSolver<RowMatrixXd> es3(F_vbs_mo_eigen);
+    ens_vir = es3.eigenvalues();
+    RowMatrixXd C_vir_rotate = es3.eigenvectors();
+    C_vbs = C_vbs * C_vir_rotate;
+  }
+  world.gop.broadcast_serializable(ens_vir, 0);
+  world.gop.broadcast_serializable(C_vbs, 0);
 
   ens = Eigen::VectorXd(nbf_vbs);
   ens << ens_occ, ens_vir;
 
-  std::cout << "Energy of Orbitals " << std::endl;
-  std::cout << ens << std::endl;
-
   // resolve the virtual orbitals
-  RowMatrixXd C_vir_rotate = es3.eigenvectors();
-  C_vbs = C_vbs * C_vir_rotate;
   TArray C_vir_ta_new =
       math::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
@@ -640,7 +669,7 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   auto mo_time1 = mpqc::fenced_now(world);
   auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
-  utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ", mo_time,
+  utility::print_par(world, "Closed-Shell Dual Basis MO Build Time: ", mo_time,
                      " S\n");
 
   return tre;
@@ -657,7 +686,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   // CABS fock build
   auto mo_time0 = mpqc::fenced_now(world);
   utility::print_par(world,
-                     "\nBuilding ClosedShell Dual Basis CABS MO Orbital\n");
+                     "\nBuilding Closed-Shell Dual Basis CABS\n");
 
   // build RI Basis First
   const auto abs_basis =
@@ -687,21 +716,24 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto S_obs_ribs = ao_factory.compute(L"<μ|σ>");
   auto S_vbs_ribs = ao_factory.compute(L"<Α|σ>");
 
-  // construct cabs
+  // construct CABS on node 0, broadcast to rest
   RowMatrixXd C_cabs_eigen;
   RowMatrixXd C_allvir_eigen;
   std::size_t nbf_ribs_minus_occ;
-  {
+
+  TA::DistArray<Tile, Policy> Ca =
+      orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
+  RowMatrixXd Ca_eigen = math::array_to_eigen(Ca);
+  TA::DistArray<Tile, Policy> Ci =
+      orbital_registry.retrieve(OrbitalIndex(L"m")).coefs();
+  RowMatrixXd Ci_eigen = math::array_to_eigen(Ci);
+
+  if (world.rank() == 0) {
     RowMatrixXd S_ribs_eigen = math::array_to_eigen(S_ribs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_ribs_eigen);
     RowMatrixXd X_ribs_eigen_inv = es.operatorInverseSqrt();
 
     RowMatrixXd S_obs_ribs_eigen = math::array_to_eigen(S_obs_ribs);
-
-    // C_mu^i
-    TA::DistArray<Tile, Policy> Ci =
-        orbital_registry.retrieve(OrbitalIndex(L"m")).coefs();
-    RowMatrixXd Ci_eigen = math::array_to_eigen(Ci);
 
     RowMatrixXd X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
 
@@ -716,10 +748,6 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     C_allvir_eigen = X_ribs_eigen_inv * Vnull1;
 
     RowMatrixXd S_vbs_ribs_eigen = math::array_to_eigen(S_vbs_ribs);
-    // C_a
-    TA::DistArray<Tile, Policy> Ca =
-        orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
-    RowMatrixXd Ca_eigen = math::array_to_eigen(Ca);
     RowMatrixXd X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
     Eigen::JacobiSVD<RowMatrixXd> svd2(X2, Eigen::ComputeFullV);
@@ -730,6 +758,9 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                             nbf_cabs);
     C_cabs_eigen = C_allvir_eigen * Vnull2;
   }
+  world.gop.broadcast_serializable(C_cabs_eigen, 0);
+  world.gop.broadcast_serializable(C_allvir_eigen, 0);
+  world.gop.broadcast_serializable(nbf_ribs_minus_occ, 0);
 
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
   // get cabs trange
@@ -767,7 +798,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto mo_time1 = mpqc::fenced_now(world);
   auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   utility::print_par(
-      world, "ClosedShell Dual Basis CABS MO Build Time: ", mo_time, " S\n");
+      world, "Closed-Shell Dual Basis CABS Build Time: ", mo_time, " S\n");
 }
 
 /*!

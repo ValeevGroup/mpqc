@@ -128,7 +128,7 @@ namespace mpqc {
           if (orb_i == orb_j)
             Dab = Dab/2.0;
 
-          // compute eigenvalues ans eigenvectors of Dab
+          // compute eigenvalues and eigenvectors of Dab
           Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
           TA::EigenVectorXd S_es = es.eigenvalues();
           TA::EigenMatrixXd C_es = es.eigenvectors();

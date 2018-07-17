@@ -21,13 +21,14 @@ double fb_objective_function(std::array<Mat, 3> const &xyz) {
   return sum;
 }
 
-double compute_angle(double Aij, double Bij) {
+double compute_angle(double Aij, double Bij, double epsilon) {
   auto AB = std::sqrt(Aij * Aij + Bij * Bij);
+  if (AB < epsilon) return 0;  // skip rotation if gradient is too small
   auto cos_4gamma = -Aij / AB;
   auto sin_4gamma = Bij / AB;
   auto abs_gamma = std::acos(cos_4gamma) / 4;
   auto gamma = (sin_4gamma < 0) ? -abs_gamma : abs_gamma;
-  return (abs_gamma < 1e-5) ? 0.0 : gamma;
+  return gamma;
 };
 
 bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
@@ -57,7 +58,7 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         double Bij = (vii - vjj).dot(vij);
 
         double gamma;
-        gamma = compute_angle(Aij, Bij);
+        gamma = compute_angle(Aij, Bij, std::min(convergence_threshold, 1e-10));
         max_abs_angle = std::max(max_abs_angle, std::abs(gamma));
         auto cg = std::cos(gamma);
         auto sg = std::sin(gamma);

@@ -98,7 +98,9 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
-  /// @return transformation matrix U that converts C to localized LCAOs
+  /// @return transformation matrix @c U that converts @c C to localized LCAOs, i.e.
+  /// @code Cao("mu,k") * U("k,i") @endcode computes the AO coefficients of localized MOs
+  /// from the AO coefficients of input MOs";
   TA::DistArray<Tile, Policy> compute(
       TA::DistArray<Tile, Policy> const &C,
       size_t ncols_of_C_to_skip = 0) const override {
@@ -117,8 +119,8 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
-  /// @return transformation matrix U that converts C to localized LCAOs, i.e.
-  /// \c Cao("mu,k") * U("k,i") computes the AO coefficients of localized MOs
+  /// @return transformation matrix @c U that converts @c C to localized LCAOs, i.e.
+  /// @code Cao("mu,k") * U("k,i") @endcode computes the AO coefficients of localized MOs
   /// from the AO coefficients of input MOs";
   template <typename EigMat>
   EigMat operator()(EigMat &C, const EigMat &ao_x, const EigMat &ao_y,

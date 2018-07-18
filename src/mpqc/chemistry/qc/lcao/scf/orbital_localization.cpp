@@ -24,10 +24,7 @@ double fb_objective_function(std::array<Mat, 3> const &xyz) {
 double compute_angle(double Aij, double Bij, double epsilon) {
   auto AB = std::sqrt(Aij * Aij + Bij * Bij);
   if (AB < epsilon) return 0;  // skip rotation if gradient is too small
-  auto cos_4gamma = -Aij / AB;
-  auto sin_4gamma = Bij / AB;
-  auto abs_gamma = std::acos(cos_4gamma) / 4;
-  auto gamma = (sin_4gamma < 0) ? -abs_gamma : abs_gamma;
+  auto gamma = std::atan2(Bij, -Aij) / 4;
   return gamma;
 };
 

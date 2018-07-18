@@ -149,6 +149,12 @@ matrix:
     # heap corruption
     - compiler: clang
       env: CLANG_VERSION=7 GCC_VERSION=8 BUILD_TYPE=Release
+    # internal compiler error
+    - compiler: gcc
+      env: GCC_VERSION=6 BUILD_TYPE=Debug
+    # internal compiler error
+    - compiler: gcc
+      env: GCC_VERSION=7 BUILD_TYPE=Debug
 
 
 before_install:

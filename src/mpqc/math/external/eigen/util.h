@@ -15,6 +15,54 @@ namespace detail {
  */
 void sort_eigen(VectorZ &eigVal, MatrixZ &eigVec);
 
+/**
+ *
+ * @tparam _Scalar
+ * @tparam _Rows
+ * @tparam _Cols
+ * @tparam _Options
+ * @tparam _MaxRows
+ * @tparam _MaxCols
+ * @param[in,out] matrix an Eigen::Matrix object
+ * @param[in] comparison_tolerance the comparison tolerance; values \f$ a,b \f$ are equal if \f$ ||a|-|b||/(|a|+|b|) \leq \epsilon \f$ where \f$ \epsilon \f$ is @c comparison_tolerance
+ * @note A matrix has canonical column phase if the first element with largest absolute magnitude in each column is positive
+ */
+template <typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
+auto canonical_column_phase(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& matrix,
+                            _Scalar comparison_tolerance) {
+  assert(comparison_tolerance >= 0);
+  // returns true if |a| < |b| (equality is determined by comparison_tolerance)
+  auto abs_less = [comparison_tolerance](auto a, auto b) {
+    auto abs_a = std::abs(a);
+    auto abs_b = std::abs(b);
+    if (abs_a + abs_b != 0.0) {
+      auto ref_diff = std::abs(abs_a - abs_b) / (abs_a + abs_b);
+      return ref_diff < comparison_tolerance ? false : (abs_a < abs_b);
+    } else
+      return false;  // 0 < 0 is false
+  };
+
+  const int ncols = matrix.cols();
+  const int nrows = matrix.rows();
+  if (nrows > 0) {
+    for (int c = 0; c != ncols; ++c) {
+      auto col = matrix.col(c);
+      auto max_elem = col(0);
+      for (int r = 1; r < nrows; ++r) {
+        auto elem = col(r);
+        if (abs_less(max_elem, elem)) {
+          max_elem = elem;
+        }
+      }
+      if (max_elem < 0) {
+        col *= -1;
+      }
+    }
+  }
+
+}
+
+
 /** Creates an Eigen::IOFormat object for printing Eigen matrices in format understood by comma initialization operator.
  *
  * @param[in] matrix an Eigen::Matrix object

@@ -39,10 +39,11 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
   auto &my = mo_xyz[1];
   auto &mz = mo_xyz[2];
 
-  //auto D = fb_objective_function(mo_xyz);
   decltype(max_iter) iter = 1;
   double max_abs_angle_prev_iter = std::numeric_limits<double>::max();
   double error = max_abs_angle_prev_iter;
+  //auto D = fb_objective_function(mo_xyz);
+  //std::cout << "Foster-Boys start: L=" << D << std::endl;
   while (error > convergence_threshold && iter <= max_iter) {
     double max_abs_angle = 0.0;
     for (auto i = 0; i < Cm.cols(); ++i) {
@@ -51,8 +52,8 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
         Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
 
-        double Aij = vij.squaredNorm() - ((vii - vjj).squaredNorm() / 4);
-        double Bij = (vii - vjj).dot(vij);
+        const double Aij = vij.squaredNorm() - ((vii - vjj).squaredNorm() / 4);
+        const double Bij = (vii - vjj).dot(vij);
 
         double gamma;
         gamma = compute_angle(Aij, Bij, convergence_threshold);
@@ -84,6 +85,7 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
     }
 
     //D = fb_objective_function(mo_xyz);
+    //std::cout << "Foster-Boys iter=" << iter << " L=" << D << std::endl;
     error = iter > 1 ? std::abs(max_abs_angle - max_abs_angle_prev_iter)
                      : max_abs_angle;
     ++iter;

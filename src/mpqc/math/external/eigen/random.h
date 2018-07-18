@@ -17,10 +17,10 @@ namespace mpqc {
 namespace math {
 
 template <typename T>
-RowMatrix<T> random_unitary(int size) {
+RowMatrix<T> random_unitary(int size, int seed = 42) {
   static_assert(std::is_floating_point<T>::value, "random_unitary is only implemented for real types so far");
 
-  auto engine = std::mt19937(42);
+  auto engine = std::mt19937{}; engine.seed(seed);
   auto dist = std::uniform_real_distribution<T>(0, 1);
 
   RowMatrix<T> rmat(size, size); // random real

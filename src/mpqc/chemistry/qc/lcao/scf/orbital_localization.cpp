@@ -55,7 +55,7 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         double Bij = (vii - vjj).dot(vij);
 
         double gamma;
-        gamma = compute_angle(Aij, Bij, std::min(convergence_threshold, 1e-10));
+        gamma = compute_angle(Aij, Bij, convergence_threshold);
         max_abs_angle = std::max(max_abs_angle, std::abs(gamma));
         auto cg = std::cos(gamma);
         auto sg = std::sin(gamma);

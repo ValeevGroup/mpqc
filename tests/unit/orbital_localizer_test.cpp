@@ -1047,7 +1047,7 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
     // symmetry breaking seems to occur with target_precision=1e-7 or lower, above that get a qualitatively different solution
     // after that seem to guarantee ~ 4 fewer digits than targeted
     const auto expected_precision = target_precision >= 5e-7 ? 1 : (target_precision * 5e3) ;
-    REQUIRE((U - Uref).lpNorm<Eigen::Infinity>() < expected_precision);
+    REQUIRE((U - Uref).lpNorm<Eigen::Infinity>() <= expected_precision);
   }
 
 }

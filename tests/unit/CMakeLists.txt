@@ -7,6 +7,7 @@ set(utests_src
     bug_test.cpp
     clustering_test.cpp
     davidson_diag_test.cpp
+    eigen_test.cpp
     exception_test.cpp
     f12_utility_test.cpp
     formio_test.cpp

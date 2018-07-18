@@ -1,5 +1,6 @@
 set(sources
   eigen.h
+  random.h
   util.h
   util.cpp
 )

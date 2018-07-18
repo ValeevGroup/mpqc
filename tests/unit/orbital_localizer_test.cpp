@@ -5,6 +5,7 @@
 #include "catch.hpp"
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 #include "mpqc/math/external/eigen/util.h"
+#include "mpqc/math/external/eigen/random.h"
 
 using namespace mpqc;
 
@@ -24,6 +25,8 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
   // F                    0                   0    2.20974825068278
   // this is a pathological example of FB localizer extramely sensitive to the
   // noise and taking a long time converging ... due to the need to break symmetry
+
+  const auto ncore = 3;
 
   RowMatrixXd ao_s(33, 33);
   ao_s << 1, 0.191447444407957, 0, 0, 5.06584838699294e-17, 0.18031400189078, 0,
@@ -822,7 +825,7 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
   using Tile = TA::Tensor<double>;
   using Policy = TA::SparsePolicy;
 
-  RowMatrixXd C(33, 14);
+  RowMatrixXd C(33, 14), Cref;
   RowMatrixXd Uref(14, 14);
   {
     C << 0.000776767742576427, -3.6605282451509e-05, -0.987024180439495,
@@ -1023,6 +1026,8 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
         0.0151694808573869, 0.0151694808573816, -0.0519791173956132,
         -0.0495931324080039, 0.0495931324080149, -0.282549501865399,
         0.282549501865589, 0.865867618372907;
+    Cref = C * Uref;
+    detail::canonical_column_phase(Cref, 1e-10);
   }
 
   auto C_ta = math::eigen_to_array<Tile, Policy>(
@@ -1038,7 +1043,7 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
         KeyVal{}.assign("max_iter", 10000).assign("convergence", target_precision));
     localizer.initialize(ao_s, {ao_x, ao_y, ao_z});
 
-    auto U_ta = localizer.compute(C_ta, 3);
+    auto U_ta = localizer.compute(C_ta, ncore);
     auto U = math::array_to_eigen(U_ta);
 
     //detail::write_commainit(std::cout, U);
@@ -1050,4 +1055,48 @@ TEST_CASE("Foster-Boys Localizer", "[localizer]") {
     REQUIRE((U - Uref).lpNorm<Eigen::Infinity>() <= expected_precision);
   }
 
+  // apply random rotations
+  const auto nrandom = 10;
+  for(int t=0; t!=nrandom; ++t) {
+    // std::cout << "Random test " << t << std::endl;
+    auto target_precision = 1e-8;
+    auto expected_precision = target_precision * 5e3;
+
+    decltype(C) C_random = C;
+    const auto nrows = C.rows();
+    const auto ncols = C.cols() - ncore;
+    C_random.block(0, ncore, nrows, ncols) = C.block(0, ncore, nrows, ncols) * mpqc::math::random_unitary<double>(ncols, std::rand());
+
+    auto C_random_ta = math::eigen_to_array<Tile, Policy>(
+        TA::get_default_world(), C_random, TA::TiledRange1{0, size_t(C_random.rows())},
+        TA::TiledRange1{0, size_t(C_random.cols())});
+
+    mpqc::lcao::scf::FosterBoysLocalizer<Tile, Policy> localizer(
+        KeyVal{}.assign("max_iter", 10000).assign("convergence", target_precision));
+    localizer.initialize(ao_s, {ao_x, ao_y, ao_z});
+
+    auto U_ta = localizer.compute(C_random_ta, ncore);
+    auto U = math::array_to_eigen(U_ta);
+    decltype(C) Cloc = C_random * U;
+    detail::canonical_column_phase(Cloc, 1e-10);
+
+    // Cloc is defined up to permutation .. test for permuted identity
+    decltype(C) Ip = Cref.transpose() * ao_s * Cloc;
+    std::vector<bool> column_has_identity(Ip.cols(), false);  // for tracking that each column has 1 identity
+    for(int r=0; r!=Ip.rows(); ++r) {
+      bool row_has_identity = false;  // for tracking that each row has 1 identity
+      for(int c=0; c!=Ip.cols(); ++c) {
+        bool is_identity = (std::abs(Ip(r,c) - 1) <= expected_precision);
+        if (is_identity) {
+          REQUIRE(row_has_identity == false);
+          REQUIRE(column_has_identity[c] == false);
+          row_has_identity = true;
+          column_has_identity[c] = true;
+        }
+        else
+          REQUIRE(std::abs(Ip(r,c)) <= expected_precision);
+      }
+      REQUIRE(row_has_identity == true);
+    }
+  }
 }

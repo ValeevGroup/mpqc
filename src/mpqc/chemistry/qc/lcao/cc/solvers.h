@@ -812,22 +812,44 @@ void construct_pno(
     double tosv,
     std::vector<RowMatrix<typename Tile::numeric_type>>& pnos,
     std::vector<int>& npnos,
+    std::vector<int>& old_npnos,
     std::vector<EigenVector<typename Tile::numeric_type>>& F_pno_diag,
     std::vector<RowMatrix<typename Tile::numeric_type>>& osvs,
     std::vector<int>& nosvs,
+    std::vector<int>& old_nosvs,
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
-    bool pno_canonical = false) {
+    std::vector<EigenVector<typename Tile::numeric_type>>& pno_eigvals,
+    bool pno_canonical = false,
+    bool use_fuzzy = false) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
 
   auto& world = D.world();
   std::size_t nocc_act = D.trange().dim(2).extent();
   std::size_t nuocc = D.trange().dim(0).extent();
 
+  // If npnos already initialized, set old_npnos = npnos
+  // and old_nosvs = nosvs
+  if(npnos.size() != 0) {
+    old_npnos = npnos;
+    old_nosvs = nosvs;
+  }
+  else {
+    // Initialize old_npnos_ to have all zeroes
+    old_npnos.resize(nocc_act * nocc_act);
+    std::fill(old_npnos.begin(), old_npnos.end(), 0);
+    // Initialize old_nosvs to have all zeroes
+    old_nosvs.resize(nocc_act);
+    std::fill(old_nosvs.begin(), old_nosvs.end(), 0);
+  }
+
   // For storing PNOs and and the Fock matrix in the PNO basis
   npnos.resize(nocc_act * nocc_act);
   pnos.resize(nocc_act * nocc_act);
   F_pno_diag.resize(nocc_act * nocc_act);
   std::fill(npnos.begin(), npnos.end(), 0);
+
+  // For storing the PNO eigenvalues
+  pno_eigvals.resize(nocc_act * nocc_act);
 
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
@@ -839,8 +861,8 @@ void construct_pno(
 
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
-                   &F_uocc, &nosvs, tosv, nuocc, nocc_act,
-                   pno_canonical](TA::World& world){
+                   &F_uocc, &nosvs, &old_nosvs, tosv, nuocc, nocc_act,
+                   pno_canonical, use_fuzzy](TA::World& world){
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -879,7 +901,34 @@ void construct_pno(
                 break;
             }
           }
-          const auto nosv = nuocc - osvdrop;
+
+          // Calculate the number of OSVs kept in this macro iteration
+          auto nosv = nuocc - osvdrop;
+
+          // If use_fuzzy_ == true, compare the would-be dropped OSVs to the fuzzy cutoff
+          if (use_fuzzy) {
+            const auto old_nosv = old_nosvs[i];
+
+            int new_osvdrop = osvdrop;
+
+            // Compare new npno_ij to old npno_ij
+            if (nosv < old_nosv) {
+              auto diff = old_nosv - nosv;
+              for (int i = 1; i <= diff; ++i) {
+                int idx = osvdrop - i;
+                if (occ_ii(idx) >= tosv / 2.0) {
+                  --new_osvdrop;
+                } //if
+              } // for
+            } // if
+
+            // Recompute the current macro iteration's npnos
+            osvdrop = new_osvdrop;
+            nosv = nuocc - osvdrop;
+
+          }
+
+          // Store the number of OSVs kept for computing the average later
           nosvs[i] = nosv;
 
           if (nosv == 0) {  // all OSV truncated indicates total nonsense
@@ -920,9 +969,9 @@ void construct_pno(
   // world.gop.fence();
 
   // Lambda function to form PNOs; implement using a for_each
-  auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos,
+  auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos, &old_npnos,
                    tpno, nuocc, nocc_act,
-                   pno_canonical](Tile& result_tile, const Tile& arg_tile) {
+                   pno_canonical, &pno_eigvals, use_fuzzy](Tile& result_tile, const Tile& arg_tile) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -943,6 +992,8 @@ void construct_pno(
       Matrix pno_ij = es.eigenvectors();
       auto occ_ij = es.eigenvalues();
 
+      pno_eigvals[ij] = occ_ij;
+
       // Determine number of PNOs to be dropped
       std::size_t pnodrop = 0;
 
@@ -955,9 +1006,34 @@ void construct_pno(
         }
       }
 
-      // Calculate the number of PNOs kept and store in vector npnos
-      // for calculating average npno later
-      const auto npno = nuocc - pnodrop;
+      // Calculate the number of PNOs kept in this macro iteration
+      auto npno = nuocc - pnodrop;
+
+      // If use_fuzzy_ == true, compare the would-be dropped PNOs to the fuzzy cutoff
+      if (use_fuzzy) {
+        const auto old_npno = old_npnos[ij];
+
+        int new_pnodrop = pnodrop;
+
+        // Compare new npno_ij to old npno_ij
+        if (npno < old_npno) {
+          auto diff = old_npno - npno;
+          for (int i = 1; i <= diff; ++i) {
+            int idx = pnodrop - i;
+            if (occ_ij(idx) >= tpno / 2.0) {
+              --new_pnodrop;
+            } //if
+          } // for
+        } // if
+
+        // Recompute the current macro iteration's npnos
+        pnodrop = new_pnodrop;
+        npno = nuocc - pnodrop;
+
+      }
+
+
+      // Store the new number of PNOs kept for calculating the average later
       npnos[ij] = npno;
 
       // Truncate PNO matrix and store in pnos_
@@ -1124,7 +1200,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tosv_(kv.value<double>("tosv", 1.e-9)),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
-        micro_ratio_(kv.value<double>("micro_ratio", 3.0)){
+        micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
+        old_coeff_(kv.value<double>("old_coeff", 0.0)),
+        new_coeff_(kv.value<double>("new_coeff", 1.0)),
+        use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1273,10 +1352,11 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     // Construct PNOs and OSVs
     auto D = detail::construct_density(T_reblock);
+    old_D_ = D; // Save this original D in old_D_ for purposes of mixing
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
-                          pnos_, npnos_, F_pno_diag_,
-                          osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+                          pnos_, npnos_, old_npnos_, F_pno_diag_,
+                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
 
     // ready to process tasks now
     this->process_pending();
@@ -1293,6 +1373,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // Dump # of pnos/pair to file
     if (print_npnos_) {
       print_npnos_per_pair();
+      print_eigvals();
     }
 
   }
@@ -1427,13 +1508,23 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         old_pnos_ = pnos_;
       }
 
-      // Recompute the PNOs
+
+      // Construct new D
       T T_reblock = detail::reblock_t2(t2, reblock_i_, reblock_a_);
       auto D = detail::construct_density(T_reblock);
-      detail::construct_pno(D, F_uocc_,
+
+      // Mix old_D and new D
+      T mixed_D;
+      mixed_D("a,b,i,j") = old_coeff_ * old_D_("a,b,i,j") + new_coeff_ * D("a,b,i,j");
+
+      // Set old_D_ equal to mixed_D for next macro iteration's mixing
+      old_D_ = mixed_D;
+
+      // Recompute the PNOs using mixed_D
+      detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
-                            pnos_, npnos_, F_pno_diag_,
-                            osvs_, nosvs_, F_osv_diag_, pno_canonical_);
+                            pnos_, npnos_, old_npnos_, F_pno_diag_,
+                            osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
 
       // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;
@@ -1444,6 +1535,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       // Dump # of pnos/pair to file
       if (print_npnos_) {
         print_npnos_per_pair();
+        print_eigvals();
       }
 
       // Transform t_old_reblock
@@ -1520,7 +1612,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         if(!K_reblock_.is_zero({0,0,i,j}) && K_reblock_.is_local({0,0,i,j})) {
           auto ji_owner = pmap->owner(j * nocc_act_ + i);
           const auto ij = i * nocc_act_ + j;
-          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij]);
+          WorldObject_::task(ji_owner, &PNOSolver::copy_pnoij, i, j, pnos_[ij], npnos_[ij], F_pno_diag_[ij], pno_eigvals_[ij]);
         }
       }
     }
@@ -1537,13 +1629,14 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * @param f_pno_diag_ij A Vector containing the diagonal elements of the Fock matrix
    *        transformed to the i,j PNO space
    */
-  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij) {
+  void copy_pnoij(int i, int j, Matrix pno_ij, int npno_ij, Vector f_pno_diag_ij, Vector pno_eigvals_ij) {
     int my_i = j;
     int my_j = i;
     int my_ij = my_i * nocc_act_ + my_j;
     pnos_[my_ij] = pno_ij;
     npnos_[my_ij] = npno_ij;
     F_pno_diag_[my_ij] = f_pno_diag_ij;
+    pno_eigvals_[my_ij] = pno_eigvals_ij;
   }
 
   /// Prints the average number of PNOs and OSVs per pair
@@ -1574,7 +1667,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   /// Prints the number of PNOs for each occupied pair
   void print_npnos_per_pair() {
-    std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
+    std::string filename = FormIO::fileext_to_fullpathname("-npnos_iter-" + std::to_string(iter_count_) + ".tsv");
+    std::ofstream out_file(filename);
 
     out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
 
@@ -1582,6 +1676,20 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       for (int j = 0; j != nocc_act_; ++j) {
         int val = npnos_[i * nocc_act_ + j];
         out_file << i << " " << j << " " << val << std::endl;
+      }
+    }
+  }
+
+  /// Prints all eigenvalues for each (unique) occupied pair
+  void print_eigvals() {
+
+    for (int i = 0; i != nocc_act_; ++i) {
+      for (int j = i; j != nocc_act_; ++j) {
+        std::string filename = FormIO::fileext_to_fullpathname("-pno_eigvals_i-" + std::to_string(i) + "-j-" + std::to_string(j) + "-iter-" + std::to_string(iter_count_) + ".tsv");
+        std::ofstream out_file(filename);
+        auto ij = i * nocc_act_ + j;
+        auto eigvals_ij = pno_eigvals_[ij];
+        out_file << eigvals_ij << std::endl;
       }
     }
   }
@@ -1639,6 +1747,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   }
 
 
+
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
@@ -1665,13 +1774,17 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   std::vector<int> npnos_;
   std::vector<Matrix> pnos_;
   std::vector<Vector> F_pno_diag_;
+  std::vector<int> old_npnos_;
   std::vector<Matrix> old_pnos_;
+  std::vector<Vector> pno_eigvals_;
 
   // For storing OSVs (PNOs when i = j) and the Fock matrix in
   // the OSV basis
   std::vector<int> nosvs_;
   std::vector<Matrix> osvs_;
   std::vector<Vector> F_osv_diag_;
+  std::vector<int> old_nosvs_;
+  std::vector<Matrix> old_osvs_;
 
   bool start_macro_;            //!< Indicates when a CCSD iteration is the first in a macro iteration
   bool pnos_relaxed_;           //!< Whether or not PNOs have been updated at least once
@@ -1679,6 +1792,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   int micro_count_;             //!< Keeps track of the number of micro iterations in the current macro iteration
   int min_micro_;               //!< The minimum number of micro iterations per macro iteration
   bool print_npnos_;            //!< Whether or not nPNOs for each pair should be printed
+                                //!< and whether or not the pno eigenvalues should be printed
 
   double E_11_;                 //!< The energy of the second to last micro iteration of the previous macro iteration
   double E_12_;                 //!< The energy of the last micro iteration of the previous macro iteration
@@ -1687,6 +1801,10 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   double micro_ratio_;          //!< For determining whether or not the energy has converged within a subspace
 
+  T old_D_;                     //!< Holds the previous value of D for mixing purposes
+  double old_coeff_;            //!< Coefficient for old_D in mixing
+  double new_coeff_;            //!< Coefficient for the new D in mixing
+  bool use_fuzzy_;              //!< Whether or not to use the fuzzy cutoff
 
 };  // class: PNO solver
 

@@ -21,12 +21,11 @@ double fb_objective_function(std::array<Mat, 3> const &xyz) {
   return sum;
 }
 
-double compute_angle(double Aij, double Bij) {
+double compute_angle(double Aij, double Bij, double epsilon) {
   auto AB = std::sqrt(Aij * Aij + Bij * Bij);
-  auto cos_4gamma = -Aij / AB;
-  auto sin_4gamma = Bij / AB;
-  auto gamma = 0.25 * std::acos(cos_4gamma) * ((sin_4gamma < 0) ? -1 : 1);
-  return (std::abs(gamma) < 1e-7) ? 0.0 : gamma;
+  if (AB < epsilon) return 0;  // skip rotation if gradient is too small
+  auto gamma = std::atan2(Bij, -Aij) / 4;
+  return gamma;
 };
 
 bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
@@ -40,10 +39,11 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
   auto &my = mo_xyz[1];
   auto &mz = mo_xyz[2];
 
-  //auto D = fb_objective_function(mo_xyz);
   decltype(max_iter) iter = 1;
   double max_abs_angle_prev_iter = std::numeric_limits<double>::max();
   double error = max_abs_angle_prev_iter;
+  //auto D = fb_objective_function(mo_xyz);
+  //std::cout << "Foster-Boys start: L=" << D << std::endl;
   while (error > convergence_threshold && iter <= max_iter) {
     double max_abs_angle = 0.0;
     for (auto i = 0; i < Cm.cols(); ++i) {
@@ -52,11 +52,11 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
         Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
         Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
 
-        double Aij = vij.squaredNorm() - 0.25 * (vii - vjj).squaredNorm();
-        double Bij = (vii - vjj).dot(vij);
+        const double Aij = vij.squaredNorm() - ((vii - vjj).squaredNorm() / 4);
+        const double Bij = (vii - vjj).dot(vij);
 
         double gamma;
-        gamma = compute_angle(Aij, Bij);
+        gamma = compute_angle(Aij, Bij, convergence_threshold);
         max_abs_angle = std::max(max_abs_angle, std::abs(gamma));
         auto cg = std::cos(gamma);
         auto sg = std::sin(gamma);
@@ -85,6 +85,7 @@ bool fb_jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz,
     }
 
     //D = fb_objective_function(mo_xyz);
+    //std::cout << "Foster-Boys iter=" << iter << " L=" << D << std::endl;
     error = iter > 1 ? std::abs(max_abs_angle - max_abs_angle_prev_iter)
                      : max_abs_angle;
     ++iter;

@@ -29,13 +29,24 @@ class OrbitalLocalizer : public DescribedClass {
       TA::DistArray<Tile, Policy> const &C,
       size_t ncols_of_C_to_skip = 0) const = 0;
 
-  /// this must be called before compute()
+  /// this or its Eigen counterpart must be called before compute()
   OrbitalLocalizer &initialize(TA::DistArray<Tile, Policy> S_ao,
                                std::vector<TA::DistArray<Tile, Policy>> mu_ao) {
     ao_s_ = math::array_to_eigen(S_ao);
     ao_x_ = math::array_to_eigen(mu_ao[0]);
     ao_y_ = math::array_to_eigen(mu_ao[1]);
     ao_z_ = math::array_to_eigen(mu_ao[2]);
+    initialized_ = true;
+    return *this;
+  }
+
+  /// this or its TA counterpart must be called before compute()
+  OrbitalLocalizer &initialize(const math::Matrix<typename Tile::value_type>& S_ao,
+                               const std::vector<math::Matrix<typename Tile::value_type>>& mu_ao) {
+    ao_s_ = S_ao;
+    ao_x_ = mu_ao[0];
+    ao_y_ = mu_ao[1];
+    ao_z_ = mu_ao[2];
     initialized_ = true;
     return *this;
   }
@@ -87,7 +98,9 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
-  /// @return transformation matrix U that converts C to localized LCAOs
+  /// @return transformation matrix @c U that converts @c C to localized LCAOs, i.e.
+  /// @code Cao("mu,k") * U("k,i") @endcode computes the AO coefficients of localized MOs
+  /// from the AO coefficients of input MOs";
   TA::DistArray<Tile, Policy> compute(
       TA::DistArray<Tile, Policy> const &C,
       size_t ncols_of_C_to_skip = 0) const override {
@@ -106,8 +119,8 @@ class FosterBoysLocalizer : public OrbitalLocalizer<Tile, Policy> {
   /// @param {x,y,z} electric dipole operator matrices, in AO basis
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep
   ///            non-localized, presumably because they are already localized
-  /// @return transformation matrix U that converts C to localized LCAOs, i.e.
-  /// \c Cao("mu,k") * U("k,i") computes the AO coefficients of localized MOs
+  /// @return transformation matrix @c U that converts @c C to localized LCAOs, i.e.
+  /// @code Cao("mu,k") * U("k,i") @endcode computes the AO coefficients of localized MOs
   /// from the AO coefficients of input MOs";
   template <typename EigMat>
   EigMat operator()(EigMat &C, const EigMat &ao_x, const EigMat &ao_y,
@@ -152,7 +165,7 @@ class RRQRLocalizer : public OrbitalLocalizer<Tile,Policy> {
         trange.data()[1]);
   }
 
-  /// @param[in, out] C on input: LCAO coefficients, on output: localizeed LCAO
+  /// @param[in, out] C on input: LCAO coefficients, on output: localized LCAO
   /// coefficients
   /// @param[in] S Overlap matrix
   /// @param[in] ncols_of_C_to_skip the number of columns of C to keep

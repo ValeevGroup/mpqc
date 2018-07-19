@@ -1203,7 +1203,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
         old_coeff_(kv.value<double>("old_coeff", 0.0)),
         new_coeff_(kv.value<double>("new_coeff", 1.0)),
-        use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
+        use_fuzzy_(kv.value<bool>("use_fuzzy", false)),
+        npno_dir_(kv.value<std::string>("npno_dir", "")),
+        pno_eigval_dir_(kv.value<std::string>("pno_eigval_dir", "")){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1667,7 +1669,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   /// Prints the number of PNOs for each occupied pair
   void print_npnos_per_pair() {
-    std::ofstream out_file("/Users/mcclement/npnos_" + std::to_string(iter_count_) + ".tsv");
+    std::ofstream out_file(npno_dir_ + "npnos_iter-" + std::to_string(iter_count_) + ".tsv");
 
     out_file << "i" << " " << "j" << " " << "nPNOs" << std::endl;
 
@@ -1684,7 +1686,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
     for (int i = 0; i != nocc_act_; ++i) {
       for (int j = i; j != nocc_act_; ++j) {
-        std::ofstream out_file("/Users/mcclement/pno_eigvals_i-" + std::to_string(i) + "-j-" + std::to_string(j) + "-macro-" + std::to_string(iter_count_) + ".tsv");
+        std::ofstream out_file(pno_eigval_dir_ + "pno_eigvals_i-" + std::to_string(i) + "-j-" + std::to_string(j) + "-iter-" + std::to_string(iter_count_) + ".tsv");
         auto ij = i * nocc_act_ + j;
         auto eigvals_ij = pno_eigvals_[ij];
         out_file << eigvals_ij << std::endl;
@@ -1790,6 +1792,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   int micro_count_;             //!< Keeps track of the number of micro iterations in the current macro iteration
   int min_micro_;               //!< The minimum number of micro iterations per macro iteration
   bool print_npnos_;            //!< Whether or not nPNOs for each pair should be printed
+                                //!< and whether or not the pno eigenvalues should be printed
+  std::string npno_dir_;        //!< Where the npno files should go
+  std::string pno_eigval_dir_;  //!< Where the pno eigenvalue files should go
 
   double E_11_;                 //!< The energy of the second to last micro iteration of the previous macro iteration
   double E_12_;                 //!< The energy of the last micro iteration of the previous macro iteration
@@ -1800,7 +1805,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   T old_D_;                     //!< Holds the previous value of D for mixing purposes
   double old_coeff_;            //!< Coefficient for old_D in mixing
-  double new_coeff_;            //!< Coefficient for D in mixing
+  double new_coeff_;            //!< Coefficient for the new D in mixing
   bool use_fuzzy_;              //!< Whether or not to use the fuzzy cutoff
 
 };  // class: PNO solver

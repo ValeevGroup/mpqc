@@ -1200,12 +1200,12 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         tosv_(kv.value<double>("tosv", 1.e-9)),
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
+        npno_dir_(kv.value<std::string>("npno_dir", "")),
+        pno_eigval_dir_(kv.value<std::string>("pno_eigval_dir", "")),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
         old_coeff_(kv.value<double>("old_coeff", 0.0)),
         new_coeff_(kv.value<double>("new_coeff", 1.0)),
-        use_fuzzy_(kv.value<bool>("use_fuzzy", false)),
-        npno_dir_(kv.value<std::string>("npno_dir", "")),
-        pno_eigval_dir_(kv.value<std::string>("pno_eigval_dir", "")){
+        use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_

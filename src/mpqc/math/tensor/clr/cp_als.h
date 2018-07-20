@@ -13,6 +13,9 @@
 #include <TiledArray/conversions/btas.h>
 #include <TiledArray/external/btas.h>
 #include <TiledArray/tiled_range.h>
+#ifdef HAVE_INTEL_MKL
+#define _HAS_INTEL_MKL
+#endif
 #include <btas/generic/cp_als.h>
 #include <btas/generic/cp_rals.h>
 namespace mpqc {

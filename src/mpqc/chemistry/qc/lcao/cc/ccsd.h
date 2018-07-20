@@ -504,8 +504,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     auto Xab = this->get_Xab();
     auto Aux_size = Xab.trange().dim(0).extent();
     auto block_size = this->trange1_engine()->get_vir_block_size();
-#if _HAS_INTEL_MKL
-    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, true, Aux_size * cp_rank_, true);
+#ifdef _HAS_INTEL_MKL
+    math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, true, 1, 1, 10000, 500, cp_precision_, true, Aux_size * cp_rank_, true);
 #else // _HAS_INTEL_MKL
     math::cp_als(Xab, factors, block_size, false, false, false, 0, Aux_size * cp_rank_, true, false, 1, 1, 10000, 500, cp_precision_, false, 0, true);
 #endif // _HAS_INTEL_MKL

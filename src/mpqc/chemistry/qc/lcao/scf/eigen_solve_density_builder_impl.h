@@ -13,6 +13,8 @@
 #include "mpqc/chemistry/qc/lcao/scf/clusterd_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/orbital_localization.h"
 
+#include "mpqc/math/external/eigen/util.h"
+
 namespace mpqc {
 namespace lcao {
 namespace scf {
@@ -78,6 +80,8 @@ ESolveDensityBuilder<Tile, Policy>::operator()(
     Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
     eps_eig = es.eigenvalues();
     C_eig = es.eigenvectors();
+    mpqc::detail::canonical_column_phase(C_eig, 1e-10);
+
 
     // warn about "exact" degeneracies among valence occupied orbitals
     bool exact_degeneracies = false;

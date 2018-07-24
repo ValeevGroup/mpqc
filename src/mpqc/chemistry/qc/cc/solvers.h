@@ -92,7 +92,7 @@ class DIISSolver : public Solver<T> {
   // clang-format on
   DIISSolver(const KeyVal& kv)
       : diis_(kv.value<int>("diis_start", 1), kv.value<int>("n_diis", 8), kv.value<double>("diis_damp", 0.0),
-              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)), diis_pristine_(diis_) {}
+              kv.value<int>("diis_ngroup", 1), kv.value<int>("diis_group_nstart", 1)) {}
   virtual ~DIISSolver() = default;
 
 
@@ -153,7 +153,7 @@ class DIISSolver : public Solver<T> {
 
   /// Resets the DIIS solver; used when switching to a new solver subspace
   void reset() {
-    diis_ = diis_pristine_;
+    diis_ = decltype(diis_){};
   }
 
  protected:
@@ -176,9 +176,6 @@ class DIISSolver : public Solver<T> {
 
   private:
   TA::DIIS<TPack<T>> diis_;
-  TA::DIIS<TPack<T>> diis_pristine_;
-
-
  };
 
 }  // namespace cc

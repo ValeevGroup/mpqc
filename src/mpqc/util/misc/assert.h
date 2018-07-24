@@ -50,7 +50,7 @@
 // throw
 #if MPQC_ASSERT_MODE == 2
 #  include "mpqc/util/core/exception.h"
-#  define MPQC_ASSERT( a ) ((not (a)) ? throw mpqc::Exception("assertion failed", __FILE__, __LINE__) : 1)
+#  define MPQC_ASSERT( a )  ((void) ((a) ? ((void)0) : throw mpqc::AssertionFailed( #a , __FILE__, __LINE__)))
 #endif
 
 #endif // end of header guard

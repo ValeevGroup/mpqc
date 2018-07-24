@@ -64,16 +64,15 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
 
   /**
    * KeyVal constructor
-   * @param kv
-   *
-   * keywords : all keywords for LCAOWavefunction
+   * @param kv the KeyVal object; it will be queried for all keywords of LCAOWavefunction<Tile,Policy>  and the Solver class determined by
+   * keyword @c solver (see below), as well as the following additional keywords:
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | @c ref | Wavefunction | @c none | a reference Wavefunction; currently it needs to provide Energy and satisfy requirements for LCAOWavefunction::init_sdref (i.e. provide either CanonicalOrbitalSpace or PopulatedOrbitalSpace) |
    * | @c method | string | @c df if @c df_basis is provided, @c direct otherwise | method to compute the CCSD residual; valid choices are: <ul> <li/> @c standard (uses 4-index MO integrals throughout) <li/> @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals) <li/> @c df (approximates 4-index MO integrals using density fitting) <li/> @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
    * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
-   * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver) |
+   * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver); @c kv will also be used to construct the Solver object, hence it will be queried for the corresponding keywords. |
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |

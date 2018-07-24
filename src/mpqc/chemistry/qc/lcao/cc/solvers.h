@@ -1399,13 +1399,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     // in energy between the current micro iteration and the last micro
     // iteration of the previous macro iteration
 
+    const auto pessimistic_target_precision = target_precision * this->precision_margin_energy();
+
     if (update_pno_ == true) {
       const auto DE = std::abs(E_22_ - E_12_);
       return (pnos_relaxed_ &&
-              dE < target_precision * this->precision_margin_energy() &&
-              DE < target_precision * this->precision_margin_energy());
+              dE < pessimistic_target_precision &&
+              DE < pessimistic_target_precision);
     } else {
-      return dE < target_precision * this->precision_margin_energy();
+      return dE < pessimistic_target_precision;
     }
   }
 

@@ -535,11 +535,7 @@ public:
  *    MPQC_ASSERT macro.  Don't use it without this macro.
  */
 class AssertionFailed : public Exception {
-
-    const char* assertion_text_;
-
   public:
-
 
     /** Create an AssertionFailed exception.
 
@@ -553,8 +549,6 @@ class AssertionFailed : public Exception {
     AssertionFailed(const char *assertion_text,
                 const char *file,
                 int line) MPQC__NOEXCEPT;
-
-    const char* assertion_text() const MPQC__NOEXCEPT { return assertion_text_; }
 
 };
 

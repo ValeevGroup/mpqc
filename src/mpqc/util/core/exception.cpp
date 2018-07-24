@@ -543,12 +543,16 @@ AssertionFailed::AssertionFailed(
     const char *assertion_text,
     const char *file, int line
 ) MPQC__NOEXCEPT:
-    Exception(
-        (std::string("Assertion failed: ") + std::string(assertion_text)).c_str(), 
+    Exception("assertion failed",
         file, line, "AssertionFailed"
-    ),
-    assertion_text_(assertion_text)
+    )
 {
+  try {
+    elaborate() << "condition: " << assertion_text
+                << std::endl;
+  }
+  catch(...) {
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

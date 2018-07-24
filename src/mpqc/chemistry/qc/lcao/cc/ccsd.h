@@ -70,7 +70,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | @c ref | Wavefunction | @c none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | @c ref | Wavefunction | @c none | a reference Wavefunction; currently it needs to provide Energy and satisfy requirements for LCAOWavefunction::init_sdref (i.e. provide either CanonicalOrbitalSpace or PopulatedOrbitalSpace) |
    * | @c method | string | @c df if @c df_basis is provided, @c direct otherwise | method to compute the CCSD residual; valid choices are: <ul> <li/> @c standard (uses 4-index MO integrals throughout) <li/> @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals) <li/> @c df (approximates 4-index MO integrals using density fitting) <li/> @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
    * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
    * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver) |

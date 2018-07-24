@@ -71,7 +71,7 @@ class CC3 : public LCAOWavefunction<Tile, Policy>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
+   * | ref | Wavefunction | none | a reference Wavefunction; currently it needs to provide Energy and satisfy requirements for LCAOWavefunction::init_sdref (i.e. provide either CanonicalOrbitalSpace or PopulatedOrbitalSpace) |
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df, direct_df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 30 | maxmium iteration in CCSD |
    * | verbose | bool | default use factory.verbose() | if print more information in CCSD iteration |

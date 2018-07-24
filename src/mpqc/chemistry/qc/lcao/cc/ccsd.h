@@ -66,7 +66,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * KeyVal constructor
    * @param kv
    *
-   * keywords : all keywords for LCAOWavefunciton
+   * keywords : all keywords for LCAOWavefunction
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -77,7 +77,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |
-   * | @c cp_rank | double | @c 0.6 | CP rank set to number of auxillary basis functions * @c cp_rank |
+   * | @c cp_rank | double | @c 0.6 | CP rank set to number of auxiliary basis functions * @c cp_rank |
    * | @c cp_precision | double | @c 0.1 | ALS threshold for CP decomposition
    */
 

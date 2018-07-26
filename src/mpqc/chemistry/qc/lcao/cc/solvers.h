@@ -1201,9 +1201,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
-        old_coeff_(kv.value<double>("old_coeff", 0.0)),
-        new_coeff_(kv.value<double>("new_coeff", 1.0)),
         use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
+        update_pno_mixing_(kv.value<double>("update_pno_mixing", 0.0, "old_coeff", [](auto coeff){ return coeff >= 0.0 && coeff <= 1.0; })),
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1517,7 +1516,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
       // Mix old_D and new D
       T mixed_D;
-      mixed_D("a,b,i,j") = old_coeff_ * old_D_("a,b,i,j") + new_coeff_ * D("a,b,i,j");
+      mixed_D("a,b,i,j") = update_pno_mixing_ * old_D_("a,b,i,j") + (1 - update_pno_mixing_) * D("a,b,i,j");
 
       // Set old_D_ equal to mixed_D for next macro iteration's mixing
       old_D_ = mixed_D;
@@ -1804,9 +1803,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   double micro_ratio_;          //!< For determining whether or not the energy has converged within a subspace
 
   T old_D_;                     //!< Holds the previous value of D for mixing purposes
-  double old_coeff_;            //!< Coefficient for old_D in mixing
-  double new_coeff_;            //!< Coefficient for the new D in mixing
   bool use_fuzzy_;              //!< Whether or not to use the fuzzy cutoff
+  double update_pno_mixing_;    //!< Coefficient for old_D in mixing
 
 };  // class: PNO solver
 

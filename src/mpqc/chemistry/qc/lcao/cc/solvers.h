@@ -14,6 +14,10 @@ namespace mpqc {
 namespace lcao {
 namespace cc {
 
+enum class PNORankUpdateMethod {
+  standard, fuzzy, fixed
+};
+
 namespace detail {
 inline void print_local(TiledArray::World& world,
                         const std::shared_ptr<TiledArray::Pmap>& pmap) {
@@ -820,7 +824,7 @@ void construct_pno(
     std::vector<EigenVector<typename Tile::numeric_type>>& F_osv_diag,
     std::vector<EigenVector<typename Tile::numeric_type>>& pno_eigvals,
     bool pno_canonical = false,
-    bool use_fuzzy = false) {
+    PNORankUpdateMethod update_pno_rank = PNORankUpdateMethod::standard) {
   using Matrix = RowMatrix<typename Tile::numeric_type>;
 
   auto& world = D.world();
@@ -829,7 +833,8 @@ void construct_pno(
 
   // If npnos already initialized, set old_npnos = npnos
   // and old_nosvs = nosvs
-  if(npnos.size() != 0) {
+  const bool have_old_pnos = (npnos.size() != 0);
+  if(have_old_pnos) {
     old_npnos = npnos;
     old_nosvs = nosvs;
   }
@@ -862,7 +867,7 @@ void construct_pno(
   // Lambda function to form osvs
   auto form_OSV = [&D, &F_osv_diag,
                    &F_uocc, &nosvs, &old_nosvs, tosv, nuocc, nocc_act,
-                   pno_canonical, use_fuzzy](TA::World& world){
+                   pno_canonical, update_pno_rank, have_old_pnos](TA::World& world){
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -905,8 +910,8 @@ void construct_pno(
           // Calculate the number of OSVs kept in this macro iteration
           auto nosv = nuocc - osvdrop;
 
-          // If use_fuzzy_ == true, compare the would-be dropped OSVs to the fuzzy cutoff
-          if (use_fuzzy) {
+          // If update_pno_rank == fuzzy, compare the would-be dropped OSVs to the fuzzy cutoff
+          if (update_pno_rank == PNORankUpdateMethod::fuzzy) {
             const auto old_nosv = old_nosvs[i];
 
             int new_osvdrop = osvdrop;
@@ -926,7 +931,12 @@ void construct_pno(
             osvdrop = new_osvdrop;
             nosv = nuocc - osvdrop;
 
-          }
+          }  // fuzzy update
+          else if (update_pno_rank == PNORankUpdateMethod::fixed && have_old_pnos) {   // no update
+            const auto old_nosv = old_nosvs[i];
+            nosv = old_nosv;
+            osvdrop = nuocc - nosv;
+          }   // no update
 
           // Store the number of OSVs kept for computing the average later
           nosvs[i] = nosv;
@@ -971,7 +981,8 @@ void construct_pno(
   // Lambda function to form PNOs; implement using a for_each
   auto form_PNO = [&pnos, &F_pno_diag, &F_uocc, &npnos, &old_npnos,
                    tpno, nuocc, nocc_act,
-                   pno_canonical, &pno_eigvals, use_fuzzy](Tile& result_tile, const Tile& arg_tile) {
+                   pno_canonical, &pno_eigvals, update_pno_rank, have_old_pnos]
+      (Tile& result_tile, const Tile& arg_tile) {
 
     Eigen::SelfAdjointEigenSolver<Matrix> es;
 
@@ -1009,8 +1020,8 @@ void construct_pno(
       // Calculate the number of PNOs kept in this macro iteration
       auto npno = nuocc - pnodrop;
 
-      // If use_fuzzy_ == true, compare the would-be dropped PNOs to the fuzzy cutoff
-      if (use_fuzzy) {
+      // If update_pno_rank == fuzzy, compare the would-be dropped PNOs to the fuzzy cutoff
+      if (update_pno_rank == PNORankUpdateMethod::fuzzy) {
         const auto old_npno = old_npnos[ij];
 
         int new_pnodrop = pnodrop;
@@ -1030,7 +1041,12 @@ void construct_pno(
         pnodrop = new_pnodrop;
         npno = nuocc - pnodrop;
 
-      }
+      }   // fuzzy update
+      else if (update_pno_rank == PNORankUpdateMethod::fixed && have_old_pnos) {  // no update
+        const auto old_npno = old_npnos[ij];
+        npno = old_npno;
+        pnodrop = nuocc - npno;
+      }  // nu update
 
 
       // Store the new number of PNOs kept for calculating the average later
@@ -1168,8 +1184,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
   using WorldObject_ = madness::WorldObject<PNOSolver<T, DT>>;
 
-
-
   // clang-format off
   /**
    * @brief The KeyVal constructor.
@@ -1201,8 +1215,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         min_micro_(kv.value<int>("min_micro", 3)),
         print_npnos_(kv.value<bool>("print_npnos", false)),
         micro_ratio_(kv.value<double>("micro_ratio", 3.0)),
-        use_fuzzy_(kv.value<bool>("use_fuzzy", false)){
         update_pno_mixing_(kv.value<double>("update_pno_mixing", 0.0, "old_coeff", [](auto coeff){ return coeff >= 0.0 && coeff <= 1.0; })),
+        update_pno_rank_(kv.exists("update_pno_rank") ? (kv.value<bool>("update_pno_rank", false, "use_fuzzy") ? PNORankUpdateMethod::fuzzy : PNORankUpdateMethod::fixed) : PNORankUpdateMethod::standard) {
 
     // compute and store PNOs truncated with threshold tpno_
     // store PNOs for diagonal pair as OSVs truncated with threshold tosv_
@@ -1355,7 +1369,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     detail::construct_pno(D, F_uocc_,
                           tpno_, tosv_,
                           pnos_, npnos_, old_npnos_, F_pno_diag_,
-                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
+                          osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, update_pno_rank_);
 
     // ready to process tasks now
     this->process_pending();
@@ -1525,7 +1539,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       detail::construct_pno(mixed_D, F_uocc_,
                             tpno_, tosv_,
                             pnos_, npnos_, old_npnos_, F_pno_diag_,
-                            osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, use_fuzzy_);
+                            osvs_, nosvs_, old_nosvs_, F_osv_diag_, pno_eigvals_, pno_canonical_, update_pno_rank_);
 
       // Once PNOs have been recomputed at least once, pnos_relaxed_ becomes true
       pnos_relaxed_ = true;
@@ -1803,8 +1817,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   double micro_ratio_;          //!< For determining whether or not the energy has converged within a subspace
 
   T old_D_;                     //!< Holds the previous value of D for mixing purposes
-  bool use_fuzzy_;              //!< Whether or not to use the fuzzy cutoff
   double update_pno_mixing_;    //!< Coefficient for old_D in mixing
+  PNORankUpdateMethod update_pno_rank_;        //!< PNO rank update strategy:
 
 };  // class: PNO solver
 

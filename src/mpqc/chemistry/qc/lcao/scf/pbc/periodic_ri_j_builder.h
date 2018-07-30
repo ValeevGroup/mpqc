@@ -72,7 +72,7 @@ class PeriodicRIJBuilder {
     // charge vector of auxiliary basis within one unit cell
     auto charge_vec =
         ::mpqc::lcao::gaussian::detail::take_row_from_2D_array(charge_mat, 0);
-    double charge_2 = charge_vec("X") * charge_vec("X");
+    double charge_2 = charge_vec("X").dot(charge_vec("X"));
     q_ = std::sqrt(charge_2);
     // normalized charge vector of auxiliary basis within one unit cell
     n_("X") = (1.0 / q_) * charge_vec("X");
@@ -187,7 +187,7 @@ class PeriodicRIJBuilder {
       array_type interm;
       interm("X, Y") = IP_("X, Z") * V_("Z, Y") - identity_("X, Y");
 
-      double prefactor = interm("X, Z") * n_("Z") * VCD("X");
+      double prefactor = (interm("X, Z") * n_("Z")).dot(VCD("X"));
       J_part2("mu, nu") = (prefactor / q_) * M_("mu, nu");
       t1 = mpqc::fenced_now(world);
       t_j2 = mpqc::duration_in_s(t0, t1);

@@ -142,15 +142,15 @@ double dot_product(TA::DistArray<Tile, Policy> const &L,
 
   double result;
   if (L_range == R_range) {
-    result = L("m, n") * R("m, n");
+    result = L("m, n").dot(R("m, n"));
   } else if (L_range(0) <= R_range(0) && L_range(1) <= R_range(1) &&
              L_range(2) <= R_range(2)) {
     auto reduced_R = reduced_size_array(R, R_range, L_range);
-    result = L("m, n") * reduced_R("m, n");
+    result = L("m, n").dot(reduced_R("m, n"));
   } else if (L_range(0) >= R_range(0) && L_range(1) >= R_range(1) &&
              L_range(2) >= R_range(2)) {
     auto reduced_L = reduced_size_array(L, L_range, R_range);
-    result = reduced_L("m, n") * R("m, n");
+    result = reduced_L("m, n").dot(R("m, n"));
   } else {
     auto x = std::min(L_range(0), R_range(0));
     auto y = std::min(L_range(1), R_range(1));
@@ -158,7 +158,7 @@ double dot_product(TA::DistArray<Tile, Policy> const &L,
     Vector3i min_range(x, y, z);
     auto reduced_L = reduced_size_array(L, L_range, min_range);
     auto reduced_R = reduced_size_array(R, R_range, min_range);
-    result = reduced_L("m, n") * reduced_R("m, n");
+    result = reduced_L("m, n").dot(reduced_R("m, n"));
   }
   return result;
 }

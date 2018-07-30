@@ -27,11 +27,12 @@ macro (validate_tiledarray)
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TILEDARRAY_OLDEST_REVISION c76972a187e0d21cd94070a6a6397946ecb7bd94)
+  set (TILEDARRAY_OLDEST_REVISION 6d8d538769de0c33f6b2bf076b459d54fdf76200)
   # first make sure TiledArray_Eigen and TiledArray_BTAS targets are defined
   if (NOT TARGET TiledArray_Eigen OR NOT TARGET TiledArray_BTAS)
     message (FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TILEDARRAY_OLDEST_REVISION} or later")
   endif()
+  # basic version check
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>
@@ -57,8 +58,32 @@ macro (validate_tiledarray)
     return 0;
   }
   "  TILEDARRAY_IS_FRESH)
+  # some version checks will result in failed compilation ... to avoid confusing users
+  set(CMAKE_REQUIRED_QUIET_ ${CMAKE_REQUIRED_QUIET})
+  set(CMAKE_REQUIRED_QUIET TRUE)
+  CHECK_CXX_SOURCE_COMPILES(
+          "
+  #include <tiledarray.h>
+  int main(int argc, char** argv) {
+    TA::World& world = TA::initialize(argc, argv);
 
-  if (NOT TILEDARRAY_IS_FRESH)
+    // test 1: multiply expression cannot be implicitly converted to a scalar
+    {
+      TA::TArrayD arr;
+      double x = arr(\"i,j\") * arr(\"i,j\");
+    }
+
+    // add more tests here
+
+    TA::finalize();
+    return 0;
+  }
+  "  SHOULD_FAIL_IF_TILEDARRAY_IS_FRESH)
+  set(CMAKE_REQUIRED_QUIET ${CMAKE_REQUIRED_QUIET_})
+  if (SHOULD_FAIL_IF_TILEDARRAY_IS_FRESH)
+    message(STATUS "additional checks for TiledArray version failed!")
+  endif()
+  if (NOT TILEDARRAY_IS_FRESH OR SHOULD_FAIL_IF_TILEDARRAY_IS_FRESH)
     message(FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TILEDARRAY_OLDEST_REVISION} or later")
   endif()
 

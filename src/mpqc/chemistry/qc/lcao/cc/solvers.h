@@ -1177,6 +1177,10 @@ class JacobiDIISSolver : public ::mpqc::cc::DIISSolver<T> {
 template <typename T, typename DT>
 class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
                   public madness::WorldObject<PNOSolver<T, DT>> {
+  std::wstring formula(const wchar_t* f) const {
+    return std::wstring(f) + (use_df_ ? L"[df]" : L"");
+  }
+
  public:
   using Tile = typename T::value_type;
   using Matrix = RowMatrix<typename Tile::numeric_type>;
@@ -1198,7 +1202,6 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | @c pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | @c pno_guess | string | scmp1 | How to construct the (initial) PNOs; valid values are "scmp1" (semicanonical MP1 amplitudes; exact if using canonical orbitals) and "mp1" (exact MP1 amplitudes) |
    * | @c update_pno | bool | false | Whether or not to recompute the PNOs |
-   * | @c solver_str | string | "pno" | The CCSD solver to use |
    * | @c min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
    * | @c print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    * | @c micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
@@ -1208,7 +1211,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       : ::mpqc::cc::DIISSolver<T>(kv),
         madness::WorldObject<PNOSolver<T, DT>>(factory.world()),
         factory_(factory),
-        solver_str_(kv.value<std::string>("solver", "pno")),
+        use_df_(kv.value<bool>("use_df", true)),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
         pno_guess_(kv.value<std::string>("pno_guess", "scmp1", [](auto& arg) { return arg == "scmp1" || arg == "mp1"; }) ),
         update_pno_(kv.value<bool>("update_pno", false)),
@@ -1252,7 +1255,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     E_22_ = 0.0;
 
     // Form Fock array
-    auto F = fac.compute(L"<p|F|q>[df]");
+    auto F = fac.compute(formula(L"<p|F|q>"));
 
     // Transform entire Fock array to Eigen Matrix
     Matrix F_all = math::array_to_eigen(F);
@@ -1271,7 +1274,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
     // Compute all K_aibj
-    K = fac.compute(L"<a b|G|i j>[df]");
+    K = fac.compute(formula(L"<a b|G|i j>"));
     const auto ktrange = K.trange();
 
     // Create TiledRange1 objects for uocc transformation arrays
@@ -1724,7 +1727,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto nvir = ofac.retrieve("a").rank();
     auto nfzc = nocc - nocc_act;
 
-    auto F = fac.compute(L"(p|F|q)[df]");
+    auto F = fac.compute(formula(L"(p|F|q)"));
     Eigen::VectorXd eps_p = math::array_to_eigen(F).diagonal();
     // replicated diagonal elements of Fo
     auto eps_o = eps_p.segment(nfzc, nocc_act);
@@ -1732,9 +1735,9 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     auto eps_v = eps_p.tail(nvir);
 
     // Fij
-    auto Fo = fac.compute(L"(i|F|j)[df]");
+    auto Fo = fac.compute(formula(L"(i|F|j)"));
     // Fab
-    auto Fv = fac.compute(L"(a|F|b)[df]");
+    auto Fv = fac.compute(formula(L"(a|F|b)"));
 
     // zero out amplitudes
     auto T2 = T(world, K.trange(), K.shape());
@@ -1848,7 +1851,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
 
 
   Factory<T, DT>& factory_;
-  std::string solver_str_;     //!< the solver class
+  bool use_df_;                //!< whether to use DF-based Fock matrix and 4-index integrals
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
   std::string pno_guess_;      //!< how to construct the (initial) PNO/OSV
   bool update_pno_;            //!< whether or not to update PNOs

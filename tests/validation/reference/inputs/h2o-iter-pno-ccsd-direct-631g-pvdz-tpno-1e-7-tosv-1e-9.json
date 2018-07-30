@@ -35,6 +35,7 @@
     "type": "CCSD",
     "wfn_world": "$:wfn_world",
     "molecule" : "$:molecule",
+    "max_iter" : 50,
     "ref": "$:scf",
     "method" : "direct",
     "solver" : "pno",
@@ -47,7 +48,7 @@
   },
   "property" : {
     "type" : "Energy",
-    "precision" : "1e-11",
+    "precision" : "1e-8",
     "wfn" : "$:wfn"
   }
 }

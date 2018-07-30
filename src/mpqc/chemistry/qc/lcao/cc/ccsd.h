@@ -83,8 +83,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   // clang-format on
 
   CCSD(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
-    if (kv.exists("ref")) {
-      ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
+    if (kv_.exists("ref")) {
+      ref_wfn_ = kv_.class_ptr<Wavefunction>("ref");
     } else {
       throw InputError("Default Ref in CCSD is not support! \n", __FILE__,
                        __LINE__, "ref");
@@ -93,27 +93,24 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     df_ = false;
     auto default_method =
         this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "direct";
-    method_ = kv.value<std::string>("method", default_method, [](const auto& value) { return value == "standard" || value == "df" || value == "direct_df" || value == "direct"; });
+    method_ = kv_.value<std::string>("method", default_method, [](const auto& value) { return value == "standard" || value == "df" || value == "direct_df" || value == "direct"; });
     if (method_ == "df" || method_ == "direct_df") {
       df_ = true;
     }
 
-    solver_str_ = kv.value<std::string>("solver", "jacobi_diis", [](const auto& value) { return value == "jacobi_diis" || value == "pno"; });
-    if (solver_str_ == "pno" && !df_)
-      throw InputError("solver=pno is only valid with DF-based ", __FILE__, __LINE__, "solver");
+    solver_str_ = kv_.value<std::string>("solver", "jacobi_diis", [](const auto& value) { return value == "jacobi_diis" || value == "pno"; });
+    reduced_abcd_memory_ = kv_.value<bool>("reduced_abcd_memory", true);
 
-    reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", true);
+    max_iter_ = kv_.value<int>("max_iter", 30);
+    verbose_ = kv_.value<bool>("verbose", false);
 
-    max_iter_ = kv.value<int>("max_iter", 30);
-    verbose_ = kv.value<bool>("verbose", false);
-
-    cp_ccsd_ = ( (df_) ? kv.value<bool>("cp_ccsd", false) : false);
+    cp_ccsd_ = ( (df_) ? kv_.value<bool>("cp_ccsd", false) : false);
 #ifndef MADNESS_LINALG_USE_LAPACKE
     if(cp_ccsd_)
       throw FeatureDisabled("Feature disabled due to missing LAPACKE", __FILE__, __LINE__, "CP-ALS");
 #else
-    cp_precision_ = kv.value<double>("cp_precision", 0.1);
-    cp_rank_ = ( (cp_ccsd_) ? kv.value<double>("cp_rank", 0.6) : 0);
+    cp_precision_ = kv_.value<double>("cp_precision", 0.1);
+    cp_rank_ = ( (cp_ccsd_) ? kv_.value<double>("cp_rank", 0.6) : 0);
 #endif
   }
 
@@ -124,8 +121,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
   TArray T1_;
   TArray T2_;
 
-  const KeyVal
-      kv_;  // the input keyval is kept to avoid heavy initialization in ctor
+  KeyVal kv_;  // the input keyval is kept to avoid heavy initialization in ctor
   std::string solver_str_;
   std::shared_ptr<::mpqc::cc::Solver<TArray>> solver_;
   std::shared_ptr<Wavefunction> ref_wfn_;
@@ -231,10 +227,13 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
         solver_ = std::make_shared<cc::JacobiDIISSolver<TArray>>(
             kv_, f_pq_diagonal_->segment(n_frozen, n_act_occ),
             f_pq_diagonal_->segment(n_occ, n_uocc));
-      } else if (solver_str_ == "pno")
+      } else if (solver_str_ == "pno") {
+        kv_.assign("use_df", df_);
         solver_ = std::make_shared<cc::PNOSolver<
             TArray, typename LCAOFactory<Tile, Policy>::DirectTArray>>(
             kv_, this->lcao_factory());
+        kv_.erase("use_df");
+      }
       else
         throw ProgrammingError("unknown solver string", __FILE__, __LINE__);
 

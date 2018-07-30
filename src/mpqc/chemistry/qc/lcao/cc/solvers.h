@@ -1201,6 +1201,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    * | min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
    * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
    * | micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
+   * | @c pno_guess | string | scmp1 | How to construct the (initial) PNOs; valid values are "scmp1" (semicanonical MP1 amplitudes; exact if using canonical orbitals) and "mp1" (exact MP1 amplitudes) |
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)
@@ -1209,6 +1210,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         factory_(factory),
         solver_str_(kv.value<std::string>("solver", "pno")),
         pno_canonical_(kv.value<bool>("pno_canonical", false)),
+        pno_guess_(kv.value<std::string>("pno_guess", "scmp1", [](auto& arg) { return arg == "scmp1" || arg == "mp1"; }) ),
         update_pno_(kv.value<bool>("update_pno", false)),
         tpno_(kv.value<double>("tpno", 1.e-7)),
         tosv_(kv.value<double>("tosv", 1.e-9)),
@@ -1289,6 +1291,13 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         TA::TiledRange1(occ_blocks.begin(), occ_blocks.end());
     const TA::TiledRange1 occ_row = ktrange.dim(3);
 
+    // compute T2 amplitudes
+    auto T2 = (pno_guess_ == "scmp1") ? compute_canon_mp1_t2(K, eps_o, eps_v) : compute_mp1_t2(K, fac, ofac);
+
+    // Form exact MP2 correlation energy for use in computing PNO incompleteness correction
+    exact_e_mp2_ = detail::compute_mp2(K, T2);
+    ExEnv::out0() << "Exact MP2 correlation energy: " << exact_e_mp2_ << std::endl;
+
     // Create transition arrays for reblocking
     reblock_a_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<T>>(world, uocc_row, uocc_col, 1.0);
@@ -1296,71 +1305,8 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
     reblock_i_ = mpqc::math::create_diagonal_array_from_eigen<
         Tile, TA::detail::policy_t<T>>(world, occ_row, occ_col, 1.0);
 
-
-    // Reblock all K_abij
+    // Reblock K and T
     K_reblock_ = detail::reblock_t2(K, reblock_i_, reblock_a_);
-
-
-    /// Step (1): Convert K to T
-
-    // lambda function to convert K to T; implement using a for_each
-
-    auto form_T = [&eps_o, &eps_v](Tile& result_tile, const Tile& arg_tile) {
-
-      result_tile = Tile(arg_tile.range());
-
-      // determine range of i and j indices
-      const int i0 = arg_tile.range().lobound()[2];
-      const int in = arg_tile.range().upbound()[2];
-      const int j0 = arg_tile.range().lobound()[3];
-      const int jn = arg_tile.range().upbound()[3];
-
-      // determine range of a and b indices
-      const int a0 = arg_tile.range().lobound()[0];
-      const int an = arg_tile.range().upbound()[0];
-      const int b0 = arg_tile.range().lobound()[1];
-      const int bn = arg_tile.range().upbound()[1];
-
-      auto norm = 0.0;
-
-      // Loop over all four indices to form T
-      for (int a = a0, tile_idx = 0; a != an; ++a) {
-        const auto e_a = eps_v[a];
-
-        for (int b = b0; b != bn; ++b) {
-          const auto e_b = eps_v[b];
-          const auto e_ab = e_a + e_b;
-
-          for (int i = i0; i != in; ++i) {
-            const auto e_i = eps_o[i];
-
-            for (int j = j0; j != jn; ++j, ++tile_idx) {
-              const auto e_j = eps_o[j];
-              const auto e_ij = -e_i - e_j;
-
-              const auto e_abij = e_ab + e_ij;
-              // const auto e_abij = e_a + e_b - e_i - e_j;
-              const auto K_abij = arg_tile[tile_idx];
-              const auto T_abij = -K_abij / e_abij;
-              const auto abs_result = std::abs(T_abij);
-              norm += abs_result * abs_result;
-              result_tile[tile_idx] = T_abij;
-            }  // j
-          }    // i
-        }      // b
-      }        // a
-      return std::sqrt(norm);
-    };  // form_T
-
-    auto T2 = TA::foreach(K, form_T);
-    world.gop.fence();
-
-    // Form exact MP2 correlation energy for use in computing PNO incompleteness correction
-    exact_e_mp2_ = detail::compute_mp2(K, T2);
-    ExEnv::out0() << "Exact MP2 correlation energy: " << exact_e_mp2_ << std::endl;
-
-
-    // Reblock T2
     T T_reblock = detail::reblock_t2(T2, reblock_i_, reblock_a_);
 
     // Construct PNOs and OSVs
@@ -1677,7 +1623,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
       auto ave_npno = tot_pno / (nocc_act_ * nocc_act_);
 
       ExEnv::out0() << "ave. nPNOs/pair: " << ave_npno << ", ave nOSVs/pair: " << ave_nosv << std::endl;
-    }  // end if K_reblock.world().rank() == 0
+    }
   }
 
   /// Prints the number of PNOs for each occupied pair
@@ -1707,6 +1653,144 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
         out_file << eigvals_ij << std::endl;
       }
     }
+  }
+
+  /// computes the MP1 T2 amplitudes by assuming canonical orbitals
+  /// @return the semicanonical MP1 T2 amplitudes
+  template <typename V1, typename V2> auto compute_canon_mp1_t2(const T& K, V1&& eps_o, V2&& eps_v) {
+    // lambda function to convert K to T; implement using a for_each
+
+    auto form_T = [&eps_o, &eps_v](Tile& result_tile, const Tile& arg_tile) {
+
+      result_tile = Tile(arg_tile.range());
+
+      // determine range of i and j indices
+      const int i0 = arg_tile.range().lobound()[2];
+      const int in = arg_tile.range().upbound()[2];
+      const int j0 = arg_tile.range().lobound()[3];
+      const int jn = arg_tile.range().upbound()[3];
+
+      // determine range of a and b indices
+      const int a0 = arg_tile.range().lobound()[0];
+      const int an = arg_tile.range().upbound()[0];
+      const int b0 = arg_tile.range().lobound()[1];
+      const int bn = arg_tile.range().upbound()[1];
+
+      auto norm = 0.0;
+
+      // Loop over all four indices to form T
+      for (int a = a0, tile_idx = 0; a != an; ++a) {
+        const auto e_a = eps_v[a];
+
+        for (int b = b0; b != bn; ++b) {
+          const auto e_b = eps_v[b];
+          const auto e_ab = e_a + e_b;
+
+          for (int i = i0; i != in; ++i) {
+            const auto e_i = eps_o[i];
+
+            for (int j = j0; j != jn; ++j, ++tile_idx) {
+              const auto e_j = eps_o[j];
+              const auto e_ij = -e_i - e_j;
+
+              const auto e_abij = e_ab + e_ij;
+              // const auto e_abij = e_a + e_b - e_i - e_j;
+              const auto K_abij = arg_tile[tile_idx];
+              const auto T_abij = -K_abij / e_abij;
+              const auto abs_result = std::abs(T_abij);
+              norm += abs_result * abs_result;
+              result_tile[tile_idx] = T_abij;
+            }  // j
+          }    // i
+        }      // b
+      }        // a
+      return std::sqrt(norm);
+    };  // form_T
+
+    auto T2 = TA::foreach(K, form_T);
+    this->get_world().gop.fence();
+
+    return T2;
+  }
+
+  /// computes the MP1 T2 amplitudes by iteratively solving MP1 equations
+  /// @return the MP1 T2 amplitudes
+  template <typename Factory, typename OFactory> auto compute_mp1_t2(const T& K, Factory&& fac, OFactory&& ofac) {
+
+    auto& world = fac.world();
+
+    auto nocc = ofac.retrieve("m").rank();
+    auto nocc_act = ofac.retrieve("i").rank();
+    auto nvir = ofac.retrieve("a").rank();
+    auto nfzc = nocc - nocc_act;
+
+    auto F = fac.compute(L"(p|F|q)[df]");
+    Eigen::VectorXd eps_p = math::array_to_eigen(F).diagonal();
+    // replicated diagonal elements of Fo
+    auto eps_o = eps_p.segment(nfzc, nocc_act);
+    // replicated diagonal elements of Fv
+    auto eps_v = eps_p.tail(nvir);
+
+    // Fij
+    auto Fo = fac.compute(L"(i|F|j)[df]");
+    // Fab
+    auto Fv = fac.compute(L"(a|F|b)[df]");
+
+    // zero out amplitudes
+    auto T2 = T(world, K.trange(), K.shape());
+    T2.fill(0.0);
+
+    // lambda function will be used to do a Jacobi update of the residual
+    auto jacobi_update = [eps_o, eps_v](TA::TensorD& result_tile) {
+
+      const auto& range = result_tile.range();
+      double norm = 0.0;
+      for (const auto& i : range) {
+        const auto result_abij = result_tile[i] / (eps_o[i[2]] + eps_o[i[3]]
+            - eps_v[i[0]] - eps_v[i[1]]);
+        result_tile[i] = result_abij;
+        norm += result_abij * result_abij;
+      }
+      return std::sqrt(norm);
+    };
+
+    // solve the MP1 equations
+    auto converged = false;
+    auto iter = 0;
+    auto energy = +1.0;
+    const auto target_precision = 1e-6;
+    ExEnv::out0() << "MP1 T2 Solver\n";
+    while (not converged) {
+      T R;
+      R("a,b,i,j") = K("a,b,i,j") + Fv("a,c") * T2("c,b,i,j") +
+          Fv("b,c") * T2("a,c,i,j") - Fo("i,k") * T2("a,b,k,j") -
+          Fo("j,k") * T2("a,b,i,k");
+
+      // estimate the MP2 energy ... the Hylleraas formula is quadratic in error
+      double updated_energy =
+          (K("a,b,i,j") + R("a,b,i,j")).dot(2 * T2("a,b,i,j") - T2("b,a,i,j"));
+      ExEnv::out0() << indent << "Iteration: " << iter
+                    << " Energy: " << updated_energy << std::endl;
+
+      const auto computed_precision = std::abs(updated_energy - energy);
+      energy = updated_energy;
+
+      // update the amplitudes, if needed
+      converged = computed_precision <= target_precision;
+      if (not converged) {
+        // R^{ij}_{ab} -> R^{ij}_{ab} / (F^i_i + F^j_j - F^a_a - F^b_b)
+        TA::foreach_inplace(R, jacobi_update);
+        // need a fence here since foreach_inplace mutates the contents of R
+        // as a side effect.
+        // N.B. most TiledArray ops will not need a fence (except to control
+        //      the resource use)
+        world.gop.fence();
+        T2("a,b,i,j") += R("a,b,i,j");
+        ++iter;
+      }
+    }
+
+    return T2;
   }
 
   /// Computes the PNO-MP2 correction
@@ -1766,6 +1850,7 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
   Factory<T, DT>& factory_;
   std::string solver_str_;     //!< the solver class
   bool pno_canonical_;         //!< whether or not to canonicalize PNO/OSV
+  std::string pno_guess_;      //!< how to construct the (initial) PNO/OSV
   bool update_pno_;            //!< whether or not to update PNOs
   double tpno_;                //!< the PNO truncation threshold
   double tosv_;                //!< the OSV (diagonal PNO) truncation threshold

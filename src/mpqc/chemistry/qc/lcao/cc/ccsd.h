@@ -72,7 +72,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
    * | @c ref | Wavefunction | @c none | a reference Wavefunction; currently it needs to provide Energy and satisfy requirements for LCAOWavefunction::init_sdref (i.e. provide either CanonicalOrbitalSpace or PopulatedOrbitalSpace) |
    * | @c method | string | @c df if @c df_basis is provided, @c direct otherwise | method to compute the CCSD residual; valid choices are: <ul> <li/> @c standard (uses 4-index MO integrals throughout) <li/> @c direct (uses 4-index MO integrals with up to 3 unoccupied indices, and 4-center AO integrals) <li/> @c df (approximates 4-index MO integrals using density fitting) <li/> @c direct_df (hybrid between @c df and @c direct that avoids storing MO integrals with 3 unoccupied indices by using DF, see DOI 10.1021/acs.jpca.6b10150 for details) |
    * | @c max_iter | int | @c 30 | maxmium iteration in CCSD |
-   * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver); @c kv will also be used to construct the Solver object, hence it will be queried for the corresponding keywords. |
+   * | @c solver   | string | @c jacobi_diis | specifies the CCSD solver; valid choices are @c jacobi_diis (combination of Jacobi update and DIIS) and @c pno (simulated PNO solver; only valid if @c method is set to @c df or @c direct_df ); @c kv will also be used to construct the Solver object, hence it will be queried for the corresponding keywords. |
    * | @c verbose | bool | false | if print more information in CCSD iteration |
    * | @c reduced_abcd_memory | bool | @c true | if @c method=standard , avoid storing an extra abcd intermediate at the cost of increased FLOPs; if @c method=df , avoid storage of (ab|cd) integral in favor of lazy evaluation in batches |
    * | @c cp_ccsd | bool | @c false | if @c method == df compute Xab integrals using CP decomposition |
@@ -93,19 +93,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>,
     df_ = false;
     auto default_method =
         this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "direct";
-    method_ = kv.value<std::string>("method", default_method);
-    if (method_ != "df" && method_ != "direct" && method_ != "standard" &&
-        method_ != "direct_df") {
-      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
-    }
+    method_ = kv.value<std::string>("method", default_method, [](const auto& value) { return value == "standard" || value == "df" || value == "direct_df" || value == "direct"; });
     if (method_ == "df" || method_ == "direct_df") {
       df_ = true;
     }
 
-    solver_str_ = kv.value<std::string>("solver", "jacobi_diis");
-    if (solver_str_ != "jacobi_diis" && solver_str_ != "pno")
-      throw InputError("invalid value for solver keyword", __FILE__, __LINE__,
-                       "solver");
+    solver_str_ = kv.value<std::string>("solver", "jacobi_diis", [](const auto& value) { return value == "jacobi_diis" || value == "pno"; });
+    if (solver_str_ == "pno" && !df_)
+      throw InputError("solver=pno is only valid with DF-based ", __FILE__, __LINE__, "solver");
 
     reduced_abcd_memory_ = kv.value<bool>("reduced_abcd_memory", true);
 

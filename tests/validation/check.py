@@ -79,7 +79,8 @@ ref_file_name = sys.argv[2]
 ref_json = parse_json(ref_file_name)
 ref_value = total_energy(ref_json)
 
-precision = get_precision(ref_json)
+# how precise should we expect the results to agree? Depends on precision of both results
+precision = max( get_precision(output_json), get_precision(ref_json) )
 
 
 eok = validate("value", value, ref_value, precision)

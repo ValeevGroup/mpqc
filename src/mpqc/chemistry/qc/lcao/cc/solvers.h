@@ -1193,15 +1193,15 @@ class PNOSolver : public ::mpqc::cc::DIISSolver<T>,
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | tpno | double | 1e-7 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
-   * | tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
-   * | pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
-   * | update_pno | bool | false | Whether or not to recompute the PNOs |
-   * | solver_str | string | "pno" | The CCSD solver to use |
-   * | min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
-   * | print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
-   * | micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
+   * | @c tpno | double | 1e-7 | The PNO construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density. Setting this to zero will cause the full (untruncated) set of PNOs to be used. |
+   * | @c tosv | double | 1e-9 | The OSV construction threshold. This non-negative integer specifies the screening threshold for the eigenvalues of the pair density of the diagonal pairs. Setting this to zero will cause the full (untruncated) set of OSVs to be used. |
+   * | @c pno_canonical | bool | false | Whether or not to canonicalize the PNOs and OSVs |
    * | @c pno_guess | string | scmp1 | How to construct the (initial) PNOs; valid values are "scmp1" (semicanonical MP1 amplitudes; exact if using canonical orbitals) and "mp1" (exact MP1 amplitudes) |
+   * | @c update_pno | bool | false | Whether or not to recompute the PNOs |
+   * | @c solver_str | string | "pno" | The CCSD solver to use |
+   * | @c min_micro | int | 3 | The minimum number of micro iterations to perform per macro iteration |
+   * | @c print_npnos | bool | false | Whether or not to print out nPNOs/pair every time PNOs are updated |
+   * | @c micro_ratio | double | 3.0 | How much more tightly to converge w/in a macro iteration
    */
   // clang-format on
   PNOSolver(const KeyVal& kv, Factory<T, DT>& factory)

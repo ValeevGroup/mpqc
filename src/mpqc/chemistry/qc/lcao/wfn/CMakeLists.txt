@@ -3,6 +3,8 @@ ao_wfn.cpp
 ao_wfn.h
 lcao_wfn.cpp
 lcao_wfn.h
+periodic_ao_wfn.cpp
+periodic_ao_wfn.h
 spin.cpp
 spin.h
 wfn_forward.h

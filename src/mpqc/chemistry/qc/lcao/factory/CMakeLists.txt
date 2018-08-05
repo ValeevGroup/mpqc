@@ -10,7 +10,9 @@ set(sources
         periodic_ao_factory.h
         periodic_lcao_factory.h
         set_oper.h
+        wfn_world.cpp
+        wfn_world.h
 )
 
-add_mpqc_library(lcao_factory sources sources "MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")
+add_mpqc_library(lcao_factory sources sources "MPQCwfn;MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")
 

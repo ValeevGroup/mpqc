@@ -17,8 +17,6 @@ Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
   }
 }
 
-Wavefunction::~Wavefunction() { }
-
 }  // namespace lcao
 }  // namespace mpqc
 

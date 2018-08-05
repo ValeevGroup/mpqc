@@ -12,35 +12,11 @@
 #include <memory>
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
+#include "mpqc/chemistry/qc/lcao/factory/wfn_world.h"
 #include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
 namespace lcao {
-
-/// specialization of ::mpqc::WavefunctionWorld to the LCAO case
-class WavefunctionWorld : public ::mpqc::WavefunctionWorld {
- public:
-  /**
-   * \brief The KeyVal constructor
-   *
-   * \param kv The KeyVal object; it will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
-   *
-   * | Keyword | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | \c atoms | Molecule or UnitCell | none | |
-   * | \c molecule | Molecule | none | This will be queried only if \c atoms is not given. This keyword is deprecated and may be removed in the future |
-   **/
-  explicit WavefunctionWorld(KeyVal const &kv);
-  ~WavefunctionWorld() override = default;
-
-  /// Return a reference to the basis registry
-  const std::shared_ptr<gaussian::OrbitalBasisRegistry>& basis_registry() { return basis_registry_; }
-
- private:
-  std::shared_ptr<gaussian::OrbitalBasisRegistry> basis_registry_;
-};
-
 
 /// Wavefunction computes a wave function (or a wave function-like quantity,
 /// like Green's function or reduced density matrix) in a Gaussian basis.
@@ -56,7 +32,7 @@ class Wavefunction : public ::mpqc::Wavefunction {
    */
   // clang-format on
   Wavefunction(const KeyVal& kv);
-  virtual ~Wavefunction();
+  virtual ~Wavefunction() = default;
 
   /// @return shared_ptr to the WavefunctionWorld object that this Wavefunction belongs to
   std::shared_ptr<WavefunctionWorld> wfn_world() const {

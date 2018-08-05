@@ -28,7 +28,6 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:df_bs"
@@ -547,7 +546,6 @@ EOM-CCSD Total Time: 4.567346829 S
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:df_bs"

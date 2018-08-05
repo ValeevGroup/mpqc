@@ -31,7 +31,6 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",
@@ -324,7 +323,6 @@ CCSD Time in CCSD: 2.5897973310000002 S
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",

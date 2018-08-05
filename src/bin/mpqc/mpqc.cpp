@@ -1,5 +1,4 @@
 // Massively Parallel Quantum Chemistry program
-// computes properties of a Wavefunction
 
 #include <chrono>
 #include <sstream>
@@ -7,14 +6,13 @@
 #include <tiledarray.h>
 #include <libint2.hpp>
 
-#include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/mpqc_init.h"
 #include "mpqc/mpqc_task.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
-#include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
+#include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/core/exception.h"
 #include "mpqc/util/core/exenv.h"
@@ -120,6 +118,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
   // make keyval
   std::shared_ptr<KeyVal> kv =
       MPQCInit::instance().make_keyval(world, input_filename);
+  // set default class keys assuming that we are doing LCAO
+  kv->set_default_class_key<::mpqc::WavefunctionWorld>("LCAOWfnWorld");
 
   // now set up the debugger
   auto debugger = kv->class_ptr<Debugger>("debugger");

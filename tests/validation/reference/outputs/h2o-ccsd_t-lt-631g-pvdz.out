@@ -35,7 +35,6 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "Screen": "schwarz",
@@ -406,7 +405,6 @@ number of quadrature points = 3
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "Screen": "schwarz",

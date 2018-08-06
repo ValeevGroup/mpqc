@@ -1,17 +1,17 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
+#include <memory>
+
+#include <tiledarray.h>
+
+#include "mpqc/chemistry/qc/lcao/wfn/periodic_ao_wfn.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 
-#include <memory>
-
-#include <tiledarray.h>
-
-#include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
-#include "mpqc/chemistry/qc/properties/energy.h"
 
 // constant: imaginary unit i
 const std::complex<double> I(0.0, 1.0);

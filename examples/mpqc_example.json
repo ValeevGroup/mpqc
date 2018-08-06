@@ -23,8 +23,7 @@
     "atoms" : "$:water",
     "basis" : "$:basis1",
     "df_basis" :"$:basis2",
-    "aux_basis": "$:basis3",
-    "screen": "qqr"
+    "aux_basis": "$:basis3"
   },
   "scf":{
     "type": "RI-RHF",

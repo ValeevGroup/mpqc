@@ -30,7 +30,6 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",
@@ -239,7 +238,6 @@ iteration: 9
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",

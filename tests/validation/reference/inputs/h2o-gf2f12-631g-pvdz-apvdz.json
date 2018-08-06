@@ -24,7 +24,6 @@
     "molecule": "$:molecule"
   },
   "wfn_world": {
-    "type": "WfnWorld",
     "molecule": "$:molecule",
     "basis": "$:basis",
     "df_basis": "$:df_basis",

@@ -89,12 +89,13 @@ DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
 
 KeyVal::KeyVal()
     : top_tree_(std::make_shared<ptree>()),
-      dc_registry_(std::make_shared<dc_registry_type>()),
-      path_("") {}
+      dc_registry_(std::make_shared<dc_registry_type>()), path_(""),
+      default_class_key_(std::make_shared<dck_registry_type>())
+      {}
 
 KeyVal KeyVal::clone() const {
   return KeyVal(std::make_shared<ptree>(*this->top_tree()),
-                std::make_shared<dc_registry_type>(), std::string());
+                std::make_shared<dc_registry_type>(), std::make_shared<dck_registry_type>(), std::string());
 }
 
 std::shared_ptr<KeyVal::ptree> KeyVal::tree() const {

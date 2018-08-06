@@ -23,29 +23,20 @@ namespace lcao {
 
 /// \todo elaborate Wavefunction documentation
 class Wavefunction : public ::mpqc::Wavefunction {
- private:
-  /** Pointer to the WfnWorld */
-  std::shared_ptr<WavefunctionWorld> wfn_world_;
-
  public:
   // clang-format off
   /**
    *  \brief The KeyVal constructor
    *
-   * The KeyVal object will be queried for the following keywords:
-   * | Keyword | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" | WavefunctionWorld | none | This specifies the WavefunctionWorld object in which this object will live initially. If not found, the contents of this KeyVal object will be used to construct a new WavefunctionWorld object |
-   *
+   * @param[in] kv the KeyVal object will be queried for all keywords of ::mpqc::Wavefunction
    */
   // clang-format on
   Wavefunction(const KeyVal& kv);
-  virtual ~Wavefunction();
+  virtual ~Wavefunction() = default;
 
-  virtual void obsolete() { ::mpqc::Wavefunction::obsolete(); };
-
-  const std::shared_ptr<WavefunctionWorld>& wfn_world() const {
-    return wfn_world_;
+  /// @return shared_ptr to the WavefunctionWorld object that this Wavefunction belongs to
+  std::shared_ptr<WavefunctionWorld> wfn_world() const {
+    return std::static_pointer_cast<WavefunctionWorld>(::mpqc::Wavefunction::wfn_world());
   }
 };
 

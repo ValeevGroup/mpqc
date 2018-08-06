@@ -1,34 +1,23 @@
 
+#include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 
 namespace mpqc{
 namespace lcao{
 
-Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
-
-  // first check if wfn_world is provided
-  if(kv.exists("wfn_world")){
-    wfn_world_ = kv.class_ptr<WavefunctionWorld>("wfn_world");
-  }
-  // check if wfn_world exist one level above
-  else if(kv.exists("..:wfn_world")){
-    wfn_world_ = kv.class_ptr<WavefunctionWorld>("..:wfn_world");
-  }
-  // use global (i.e. top-level) wfn_world
-  else if(kv.exists("$:wfn_world")){
-    wfn_world_ = kv.class_ptr<WavefunctionWorld>("$:wfn_world");
-  }
-  else{
-    wfn_world_ = std::make_shared<WavefunctionWorld>(kv);
-    // TODO decide whether to push the newly-constructed world to kv, and where
-  }
-
-  utility::Observer::register_message(wfn_world_->atoms().get(), [this](){
-    this->obsolete();
-  });
+WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)
+    : ::mpqc::WavefunctionWorld(kv) {
+  basis_registry_ = std::make_shared<gaussian::OrbitalBasisRegistry>(kv);
 }
 
-Wavefunction::~Wavefunction() { }
+Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
+  // demand (and construct if needed) an LCAO WavefunctionWorld
+  if (std::dynamic_pointer_cast<WavefunctionWorld>(this->::mpqc::Wavefunction::wfn_world()) == nullptr) {
+    reset_wfn_world(std::make_shared<WavefunctionWorld>(kv));
+  }
+}
 
 }  // namespace lcao
 }  // namespace mpqc
+
+MPQC_CLASS_EXPORT2("LCAOWfnWorld", mpqc::lcao::WavefunctionWorld);

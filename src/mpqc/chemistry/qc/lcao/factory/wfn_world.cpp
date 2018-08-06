@@ -1,16 +1,19 @@
+//
+// Created by Eduard Valeyev on 8/5/18.
+//
+
+#include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/chemistry/qc/lcao/factory/wfn_world.h"
 
-using namespace mpqc;
-lcao::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)
-    : world_(*kv.value<madness::World *>("$:world")) {
-  atoms_ = kv.class_ptr<Molecule>("atoms");
+namespace mpqc{
+namespace lcao{
 
-  if (!atoms_)
-    atoms_ = kv.class_ptr<Molecule>("molecule");
-  if (!atoms_)
-    throw InputError(
-        "WavefunctionWorld did not find keyword \"atoms\"",
-        __FILE__, __LINE__);
-
+WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)
+    : ::mpqc::WavefunctionWorld(kv) {
   basis_registry_ = std::make_shared<gaussian::OrbitalBasisRegistry>(kv);
 }
+
+}  // namespace lcao
+}  // namespace mpqc
+
+MPQC_CLASS_EXPORT2("LCAOWfnWorld", mpqc::lcao::WavefunctionWorld);

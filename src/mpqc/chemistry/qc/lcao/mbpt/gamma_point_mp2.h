@@ -3,19 +3,24 @@
 
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/mp2.h"
-#include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
+#include "mpqc/chemistry/qc/lcao/wfn/periodic_ao_wfn.h"
 
 namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-class GammaPointMP2 : public RMP2<Tile, Policy> {
+class GammaPointMP2 : public lcao::LCAOWavefunction<Tile, Policy>,
+                      public Provides<Energy> {
  public:
   using LCAOFactoryType = PeriodicLCAOFactory<Tile, Policy>;
 
   GammaPointMP2() = default;
 
-  GammaPointMP2(const KeyVal &kv) : RMP2<Tile, Policy>(kv) {
+  GammaPointMP2(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv) {
+    if (!kv.exists("ref")) {
+      throw InputError("Default RefWavefunction in GammaPointMP2 is not support! \n",
+                       __FILE__, __LINE__, "ref");
+    }
     phf_wfn_ = kv.keyval("ref")
                    .class_ptr<PeriodicAOWavefunction<TA::TensorD, Policy>>();
     lcao_factory_ = construct_periodic_lcao_factory<Tile, Policy>(kv);

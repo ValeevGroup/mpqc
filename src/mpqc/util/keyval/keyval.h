@@ -492,7 +492,7 @@ class KeyVal {
   ///         if \c path does not exist, return an empty KeyVal
   virtual KeyVal keyval(const key_type& path) const {
     auto abs_path = resolve_path(path);
-    return KeyVal(top_tree_, dc_registry_, abs_path);
+    return KeyVal(top_tree_, dc_registry_, default_class_key_, abs_path);
   }
 
   /// \brief returns a shared_ptr to the (top) tree
@@ -500,6 +500,29 @@ class KeyVal {
   /// \brief returns a shared_ptr to this (sub)tree
   /// @note the result is aliased against the top tree
   std::shared_ptr<ptree> tree() const;
+
+  /// \brief obtains default class key for class \c T
+  /// @tparam T a class derived from DescribedClass
+  /// @return the default class key to assume in KeyVal::class_ptr<T>() ; if the default class key has not been specified previously, returns an empty string
+  /// \sa set_default_class_key
+  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
+  KeyVal& set_default_class_key(const std::string& key) {
+    (*default_class_key_)[typeid(T).hash_code()] = key;
+    return *this;
+  }
+
+  /// \brief obtains default class key for class \c T
+  /// @tparam T a class
+  /// @return the default class key to assume in KeyVal::class_ptr<T>() ; if the default class key has not been specified previously, returns an empty string
+  /// \sa set_default_class_key
+  template <typename T>
+  std::string default_class_key() const {
+    auto it = default_class_key_->find(typeid(T).hash_code());
+    if (it != default_class_key_->end())
+      return it->second;
+    else
+      return std::string{};
+  }
 
   /// checks whether the given path exists
   /// @param path the path
@@ -872,8 +895,12 @@ class KeyVal {
     std::string result_type_name;
     auto type_path = concat_path(abs_path, "type");
     if (not exists_(type_path)) {
+      // check if default type value had been given for this T
+      std::string default_type_str = this->default_class_key<T>();
+      if (!default_type_str.empty())
+        result_type_name = default_type_str;
       // no user override for type = try to construct T
-      if (std::is_abstract<T>::value) {
+      else if (std::is_abstract<T>::value) {
         if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
@@ -882,7 +909,7 @@ class KeyVal {
                 path),
             abs_path);
       }
-      if (!DescribedClass::is_registered<T>()) {
+      else if (!DescribedClass::is_registered<T>()) {
         if (disable_bad_input) return std::shared_ptr<T>();
         throw KeyVal::bad_input(
             std::string(
@@ -891,7 +918,8 @@ class KeyVal {
                 path),
             abs_path);
       }
-      result_type_name = DescribedClass::class_key<T>();
+      else
+        result_type_name = DescribedClass::class_key<T>();
     } else {  // user provided \"type\" keyword, use it to override the type
       result_type_name =
           top_tree_->get<std::string>(ptree::path_type{type_path, separator});
@@ -951,19 +979,20 @@ class KeyVal {
   using dc_registry_type = std::map<std::string, std::weak_ptr<DescribedClass>>;
   std::shared_ptr<dc_registry_type> dc_registry_;
   const key_type path_;  //!< path from the top of \c top_tree_ to this subtree
+  using dck_registry_type = std::map<std::size_t, std::string>;
+  std::shared_ptr<dck_registry_type> default_class_key_;  // maps typeid(T).hash_code() to the corresponding class key to use by default
 
   /// creates a KeyVal
   KeyVal(const std::shared_ptr<ptree>& top_tree,
          const std::shared_ptr<dc_registry_type>& dc_registry,
+         const std::shared_ptr<dck_registry_type>& dck_registry,
          const key_type& path)
-      : top_tree_(top_tree), dc_registry_(dc_registry), path_(path) {}
+      : top_tree_(top_tree), dc_registry_(dc_registry), path_(path), default_class_key_(dck_registry) {}
 
   /// creates a KeyVal using am existing \c ptree
   /// @param pt a ptree
   KeyVal(ptree pt)
-      : top_tree_(std::make_shared<ptree>(std::move(pt))),
-        dc_registry_(),
-        path_("") {}
+      : KeyVal(std::make_shared<ptree>(std::move(pt)), std::make_shared<dc_registry_type>(), std::make_shared<dck_registry_type>(), "") {}
 
   /// given a path that contains \c ".." elements, returns the equivalent path
   /// without such elements. For example: \c realpath("tmp:..:x") returns \c "x"

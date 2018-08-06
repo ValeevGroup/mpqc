@@ -6,7 +6,6 @@ set(sources
         factory.cpp
         factory.h
         lcao_factory.h
-        linkage.cpp
         linkage.h
         periodic_ao_factory.h
         periodic_lcao_factory.h
@@ -15,5 +14,5 @@ set(sources
         wfn_world.h
 )
 
-add_mpqc_library(lcao_factory sources sources "MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")
+add_mpqc_library(lcao_factory sources sources "MPQCwfn;MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")
 

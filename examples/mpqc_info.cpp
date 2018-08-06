@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include <madness/world/world.h>
-#include <mpqc/chemistry/qc/lcao/factory/wfn_world.h>
+#include <mpqc/chemistry/qc/lcao/wfn/wfn.h>
 
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/linkage.h>

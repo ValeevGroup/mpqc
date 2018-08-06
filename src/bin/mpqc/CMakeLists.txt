@@ -1,6 +1,7 @@
 ##################### MPQCmpqc library ###########################
 set(mpqc_sources
   mpqc_init.cpp
+  mpqc_task.cpp
 )
 set(mpqc_headers
   mpqc_init.h

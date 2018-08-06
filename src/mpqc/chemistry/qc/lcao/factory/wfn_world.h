@@ -1,40 +1,23 @@
-/*
- * wfn_world.h
- *
- *  Created on: Aug 18, 2016
- *      Author: Drew Lewis
- */
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_
+//
+// Created by Eduard Valeyev on 8/5/18.
+//
 
-#include <memory>
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_WFN_WORLD_H
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_WFN_WORLD_H
 
-#include <tiledarray.h>
-
-#include "mpqc/util/keyval/keyval.h"
-#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
 
 namespace mpqc {
 namespace lcao {
 
-/// WavefunctionWorld is an environment for one or more collaborating Wavefunction objects.
-
-/// It provides an execution context (madness::World), a molecule, and
-/// basis and operator registries.
-class WavefunctionWorld : virtual public DescribedClass {
- public:
-
- private:
-  madness::World &world_;
-  std::shared_ptr<Molecule> atoms_;
-  std::shared_ptr<gaussian::OrbitalBasisRegistry> basis_registry_;
-
+/// specialization of ::mpqc::WavefunctionWorld to the LCAO case
+class WavefunctionWorld : public ::mpqc::WavefunctionWorld {
  public:
   /**
    * \brief The KeyVal constructor
    *
-   * \param kv The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
+   * \param kv The KeyVal object; it will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
    *
    * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -44,19 +27,14 @@ class WavefunctionWorld : virtual public DescribedClass {
   explicit WavefunctionWorld(KeyVal const &kv);
   ~WavefunctionWorld() override = default;
 
-  /// Return a reference to the madness world
-  madness::World &world() { return world_; }
+  /// Return a reference to the basis registry
+  const std::shared_ptr<gaussian::OrbitalBasisRegistry> &basis_registry() { return basis_registry_; }
 
-  /// Return a reference to the molecule in the world
-  const std::shared_ptr<Molecule>& atoms() const { return atoms_; }
-
-  /// Return a reference to Basis Registry
-  const std::shared_ptr<gaussian::OrbitalBasisRegistry>& basis_registry() { return basis_registry_; }
-
+ private:
+  std::shared_ptr<gaussian::OrbitalBasisRegistry> basis_registry_;
 };
-
 
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_WFN_WORLD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_WFN_WORLD_H

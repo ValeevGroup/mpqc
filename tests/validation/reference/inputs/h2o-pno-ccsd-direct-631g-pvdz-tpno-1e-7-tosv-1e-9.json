@@ -19,7 +19,6 @@
     "molecule": "$:molecule"
   },
   "wfn_world":{
-    "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",

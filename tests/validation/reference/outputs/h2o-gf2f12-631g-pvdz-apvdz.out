@@ -36,7 +36,6 @@ MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:basis",
         "df_basis": "$:df_basis",
@@ -418,7 +417,6 @@ Total GF2F12 Time:  0.056551638 S
         "molecule": "$:molecule"
     },
     "wfn_world": {
-        "type": "WfnWorld",
         "molecule": "$:molecule",
         "basis": "$:basis",
         "df_basis": "$:df_basis",

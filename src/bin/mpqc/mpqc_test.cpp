@@ -3,6 +3,7 @@
 #include <clocale>
 #include <madness/world/world.h>
 #include <madness/world/worldgop.h>
+#include <tiledarray.h>
 #include "../../../tests/unit/catch.hpp"
 
 #include "mpqc/util/keyval/keyval.h"

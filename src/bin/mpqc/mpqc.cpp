@@ -50,18 +50,19 @@ void announce(madness::World &world) {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
   const char title2[] = "Version " MPQC_VERSION;
   const char title3[] = "Revision " MPQC_REVISION;
-  const auto target_width = 80;
+  const auto target_width = 80ul;
+  assert(target_width >= sizeof(title1) && target_width >= sizeof(title2) && target_width >= sizeof(title3));
   ExEnv::out0() << std::endl;
   ExEnv::out0() << indent;
-  for (auto i = 0; i < (target_width - sizeof(title1)) / 2; i++)
+  for (auto i = 0ul; i < (target_width - sizeof(title1)) / 2; i++)
     ExEnv::out0() << ' ';
   ExEnv::out0() << title1 << std::endl;
   ExEnv::out0() << indent;
-  for (auto i = 0; i < (target_width - sizeof(title2)) / 2; i++)
+  for (auto i = 0ul; i < (target_width - sizeof(title2)) / 2; i++)
     ExEnv::out0() << ' ';
   ExEnv::out0() << title2 << std::endl;
   ExEnv::out0() << indent;
-  for (auto i = 0; i < (target_width - sizeof(title3)) / 2; i++)
+  for (auto i = 0ul; i < (target_width - sizeof(title3)) / 2; i++)
     ExEnv::out0() << ' ';
   ExEnv::out0() << title3 << std::endl << std::endl;
 

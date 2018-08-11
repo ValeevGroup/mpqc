@@ -4,6 +4,7 @@
 
 #include "catch.hpp"
 #include "mpqc/math/external/eigen/random.h"
+#include <tiledarray.h>
 
 using namespace mpqc;
 

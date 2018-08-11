@@ -5,7 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_SET_OPER_H
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_SET_OPER_H
 
-#include <tiledarray.h>
+#include <tiledarray_fwd.h>
 
 namespace mpqc {
 namespace lcao {

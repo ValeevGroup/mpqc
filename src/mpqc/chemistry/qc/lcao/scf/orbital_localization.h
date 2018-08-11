@@ -6,7 +6,7 @@
 #include <array>
 #include <iomanip>
 
-#include <tiledarray.h>
+#include <tiledarray_fwd.h>
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"

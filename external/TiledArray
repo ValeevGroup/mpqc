@@ -4,7 +4,7 @@
 # Find TiledArray
 ###################
 
-find_package(TiledArray CONFIG COMPONENTS tiledarray)
+find_package(TiledArray CONFIG 0.7.0 COMPONENTS tiledarray)
 
 if (TILEDARRAY_FOUND)
 

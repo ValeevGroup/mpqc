@@ -22,7 +22,7 @@ set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 #####################
 # boolean
 option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
-option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
+option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++14)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
 option(GAMESS "MPQC-GAMESS interface: checks for GAMESS-compatible libint2, adjusts normalization, etc." OFF)
 # non-boolean
@@ -117,21 +117,9 @@ endif()
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
   
-  # "some" C++11 features are required, check if we need a flag to turn on the support in the compiler
-  # N.B. even though clang++ assumes c++11, it still needs the flag for some features (e.g. static_assert)
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
-  if(CXX_FLAG_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-    message(STATUS "C++11 flag: -std=c++11")
-  endif()
-  if (NOT CXX_FLAG_CXX11)
-    CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
-  endif()
-  if (CXX_FLAG_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-    message(STATUS "C++11 flag: -std=c++0x")
-  endif()
-  
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
 # C++11 features

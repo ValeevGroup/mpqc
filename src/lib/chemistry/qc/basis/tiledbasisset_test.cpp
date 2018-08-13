@@ -43,6 +43,8 @@ using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
 
+using ::mpqc::TA::TiledBasisSet;
+
 struct MADConfig {
     MADConfig() {
       sc::ExEnv::init(boost::unit_test::framework::master_test_suite().argc,
@@ -94,7 +96,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
 
         // Construct via gbs
         for(size_t z = 1; z <= 6; ++z){
-            Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,z);
+            Ref<TiledBasisSet> tbs_from_gbs = new TiledBasisSet(bs,z);
             BOOST_REQUIRE(!tbs_from_gbs.null());
         }
 
@@ -118,15 +120,15 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
     akv->assign("molecule", mol.pointer());
     Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
-    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(bs, 2);
+    Ref<TiledBasisSet> tbs = new TiledBasisSet(bs, 2);
 
     BOOST_CHECK(!tbs->equiv(bs));
 
     // Check that we have a memory issue if the GBS isn't around anymore
-    Ref<TA::TiledBasisSet> tbs_scope_check;
+    Ref<TiledBasisSet> tbs_scope_check;
     {
       Ref<GaussianBasisSet> bs_lower_scope = new GaussianBasisSet(akv);
-      tbs_scope_check = new TA::TiledBasisSet(bs_lower_scope, 2);
+      tbs_scope_check = new TiledBasisSet(bs_lower_scope, 2);
     }
     BOOST_CHECK(!tbs_scope_check->equiv(bs));
 
@@ -170,7 +172,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
         // Construct via kval
         for(size_t i = 1; i <= 6; ++i){
             akv->assign("ntiles", int(i));
-            Ref<TA::TiledBasisSet> tbs_from_kval = new TA::TiledBasisSet(
+            Ref<TiledBasisSet> tbs_from_kval = new TiledBasisSet(
                                                     Ref<KeyVal>(akv));
             BOOST_REQUIRE(!tbs_from_kval.null());
         }
@@ -192,7 +194,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
     akv->assign("molecule", mol.pointer());
     Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
-    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(Ref<KeyVal>(akv));
+    Ref<TiledBasisSet> tbs = new TiledBasisSet(Ref<KeyVal>(akv));
 
     BOOST_CHECK(tbs->equiv(bs));
 }
@@ -235,7 +237,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange_test ){
 
         // Construct via gbs
         for(size_t i = 1; i <= 6; ++i){
-            Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,i);
+            Ref<TiledBasisSet> tbs_from_gbs = new TiledBasisSet(bs,i);
             BOOST_REQUIRE(!tbs_from_gbs.null());
             ::TiledArray::TiledRange1 trange1 = tbs_from_gbs->trange1();
         }
@@ -270,14 +272,14 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
      // Test Single tile case
-    Ref<TA::TiledBasisSet> tbs1 = new TA::TiledBasisSet(bs,1);
+    Ref<TiledBasisSet> tbs1 = new TiledBasisSet(bs,1);
     double first = tbs1->trange1().tile(0).first;
     double second = tbs1->trange1().tile(0).second;
     BOOST_CHECK(first == 0);
     BOOST_CHECK(second == 43);
 
      // Test 2 tile case
-    Ref<TA::TiledBasisSet> tbs2 = new TA::TiledBasisSet(bs,2);
+    Ref<TiledBasisSet> tbs2 = new TiledBasisSet(bs,2);
     double t_21_f = tbs2->trange1().tile(0).first;
     double t_21_s = tbs2->trange1().tile(0).second;
     double t_22_f = tbs2->trange1().tile(1).first;
@@ -288,7 +290,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     BOOST_CHECK(t_22_s == 43);
 
      // Test 3 tile case
-    Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
+    Ref<TiledBasisSet> tbs3 = new TiledBasisSet(bs,3);
     double t1_first = tbs3->trange1().tile(0).first;
     double t1_second = tbs3->trange1().tile(0).second;
     double t2_first = tbs3->trange1().tile(1).first;
@@ -303,7 +305,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     BOOST_CHECK(t3_second == 43);
 
      // Test 4 tile case
-    Ref<TA::TiledBasisSet> tbs4 = new TA::TiledBasisSet(bs,4);
+    Ref<TiledBasisSet> tbs4 = new TiledBasisSet(bs,4);
     double t_41_f = tbs4->trange1().tile(0).first;
     double t_41_s = tbs4->trange1().tile(0).second;
     double t_42_f = tbs4->trange1().tile(1).first;
@@ -322,7 +324,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     BOOST_CHECK(t_44_s == 43);
 
      // Test 5 tile case
-    Ref<TA::TiledBasisSet> tbs5 = new TA::TiledBasisSet(bs,5);
+    Ref<TiledBasisSet> tbs5 = new TiledBasisSet(bs,5);
     double t_51_f = tbs5->trange1().tile(0).first;
     double t_51_s = tbs5->trange1().tile(0).second;
     double t_52_f = tbs5->trange1().tile(1).first;
@@ -345,7 +347,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     BOOST_CHECK(t_55_s == 43);
 
      // Test 6 tile case
-    Ref<TA::TiledBasisSet> tbs6 = new TA::TiledBasisSet(bs,6);
+    Ref<TiledBasisSet> tbs6 = new TiledBasisSet(bs,6);
     double t_61_f = tbs6->trange1().tile(0).first;
     double t_61_s = tbs6->trange1().tile(0).second;
     double t_62_f = tbs6->trange1().tile(1).first;
@@ -412,7 +414,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
         Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
         // Test 3 tile case and make sure tiling is the same.
-        Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
+        Ref<TiledBasisSet> tbs3 = new TiledBasisSet(bs,3);
         double t1_first = tbs3->trange1().tile(0).first;
         double t1_second = tbs3->trange1().tile(0).second;
         double t2_first = tbs3->trange1().tile(1).first;
@@ -453,6 +455,6 @@ BOOST_AUTO_TEST_CASE(test_tiledbasisset_print){
     akv->assign("molecule", mol.pointer());
     Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
-    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(bs, 3);
+    Ref<TiledBasisSet> tbs = new TiledBasisSet(bs, 3);
     tbs->print();
 }

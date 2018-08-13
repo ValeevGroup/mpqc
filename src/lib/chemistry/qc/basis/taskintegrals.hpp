@@ -170,7 +170,7 @@ namespace mpqc {
      * Spawns tasks to fill tiles with integrals.
      */
     template<typename ShrPtrPool, typename It, class A>
-    void make_integral_task(It first, It last, const A &array, ShrPtrPool pool){
+    void make_integral_task(It first, It last, A &array, ShrPtrPool pool){
       array.world().taskq.add(&integral_task<ShrPtrPool, It, A>, first, last,
                                   array, pool);
     }

@@ -48,7 +48,7 @@ if test -z $PREFIX; then
   export PREFIX=`pwd`/install
 fi
 
-# by default: build TA and MPQC4 in debug mode (Libint always in Release)
+# by default: build TA and MPQC in debug mode (Libint always in Release)
 if test -z $BUILD_TYPE; then
   export BUILD_TYPE=Debug
 fi
@@ -75,13 +75,13 @@ if test ! -d build/tiledarray-clang; then
   cd ../..
 fi
 
-# 3. build and install MPQC4
-if test ! -d mpqc4; then
-  git clone https://evaleev:f0aee3276b87c17a47d8b18e7c82af7a1cad8842@github.com/ValeevGroup/mpqc4.git
+# 3. build and install MPQC
+if test ! -d mpqc; then
+  git clone https://github.com/ValeevGroup/mpqc.git
 fi
-if test ! -d build/mpqc4-clang; then
-  mkdir -p build/mpqc4-clang && cd build/mpqc4-clang
-  cmake ../../mpqc4 -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
+if test ! -d build/mpqc-clang; then
+  mkdir -p build/mpqc-clang && cd build/mpqc-clang
+  cmake ../../mpqc -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
   make -j${NPROC} mpqc && make install
   cd ../..
 fi

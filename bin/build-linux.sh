@@ -54,6 +54,7 @@ cmake ${TRAVIS_BUILD_DIR} \
 make -j1 mpqc VERBOSE=1
 ### test within build tree
 setarch `uname -m` -R make -j1 check
+setarch `uname -m` -R src/bin/mpqc/mpqc ${TRAVIS_BUILD_DIR}/examples/mpqc_example.json
 ### install and test dev samples
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples
@@ -63,6 +64,13 @@ cd mp2
     -DCMAKE_CXX_FLAGS=$CODECOVCXXFLAGS
   make mp2
   setarch `uname -m` -R ./mp2 ./mp2.json
+cd ..
+cd aoints
+  cmake . \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DCMAKE_CXX_FLAGS=$CODECOVCXXFLAGS
+  make aoints
+  setarch `uname -m` -R ./aoints ./aoints.json
 cd ..
 
 #    -Dlapack_complex_float="std::complex<float>" \

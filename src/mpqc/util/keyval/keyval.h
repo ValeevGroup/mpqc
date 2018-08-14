@@ -349,6 +349,12 @@ namespace mpqc {
  */
 class KeyVal {
  public:
+  /// the format of the input file, described in
+  /// <a
+  /// href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html">Boost.PropertyTree
+  /// docs</a>.
+  enum class InputFormat { invalid, json, xml, info };
+
   /// data type for representing a property tree
   using ptree = boost::property_tree::iptree;
   using key_type = ptree::key_type;     // = std::string

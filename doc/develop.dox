@@ -14,7 +14,7 @@ These methods are demonstrated and discussed below.
 - \ref extend-mpqc
   - \ref devsampmp2
 - \ref develop-outside-mpqc
-  - \ref mpqcinit
+  - \ref devsampaoints
 
 
 \section develop-within-mpqc Developing code within MPQC
@@ -34,7 +34,7 @@ The recommended approach is to fork the MPQC source repo on Github (you can
 make a private fork, if you want) and develop the new code within that fork.
 An exception to this is if you are a member of the MPQC team: then
 you will want to develop your code on a branch within the main
-repo, as this allows you to take advantage of the Continuous Integration system.
+repo, as this allows you to take advantage of the Continuous Integration system even without making a pull request.
 Since, unlike forks, branches cannot be private; therefore use the fork mechanism
 is you must keep the code private.
 
@@ -94,14 +94,14 @@ in a few lines of CMake code. This file, located at
 `doc/devsamp/mp2/CMakeLists.txt` in the MPQC build directory, was generated from the
 `doc/devsamp/mp2/CMakeLists.txt.in` template located in the MPQC source directory.
 
-The CMakeLists.txt file how to compile the \c mp2.cpp source and use it to create
+The CMakeLists.txt file illustrates how to compile the \c mp2.cpp source and use it to create
 the \c mp2 executable by linking against MPQC libraries. Note that
 the MPQC library names do not appear explicitly: instead we use their CMake target
 \c MPQCmain .
 
 \include mp2/CMakeLists.txt
 
-\subsection devsampmp2inp MP2 Implementation Example: Input
+\subsubsection devsampmp2inp MP2 Implementation Example: Input
 
 This input JSON file can be used with the program illustrated in
 the \ref devsampmp2src section.
@@ -130,8 +130,52 @@ You should not call \c %madness::initialize() again after calling \c %madness::f
 because the MPI Standard does not specify whether
 the MPI libraries must support more than one initialize/finalize cycle.
 
-\subsection mpqcinit Initializing MPQC
+\subsection devsampaoints AOInts Implementation Example
 
-notes to be added, for now see src/bin/mpqc/mpqc.cpp
+To illustrate how to use the plug-out approach let's consider
+a simple example in which we use MPQC functionality to compute
+2-body Coulomb integrals with brakets constisting of 2, 3, and 4 atomic orbitals (in the quantum
+chemistry context these are referred to as 2-, 3-, and 4-center electron repulsion integrals).
+The 2- and 3-index integrals are used to approximate the 4-center integrals by density fitting,
+which involves some simple tensor algebra.
+
+\subsubsection devsampaointssrc AOInts Implementation Example: Source
+
+This example code illustrates how to construct TiledArray tensors of AO integrals
+using the MPQC Toolkit. The source file can be found at
+`doc/devsamp/aoints/aoints.cpp` in the MPQC source directory.
+Note that the source file does contain the `main()` function which explicitly includes all steps needed to initialize
+MPQC.
+
+To compile the new class and link into the MPQC executable
+see the \ref devsampaointsmak section.
+
+\include aoints/aoints.cpp
+
+\subsubsection devsampaointsmak AOInts Implementation Example: CMakeLists.txt
+
+Just like with the MP2 example, it is recommended to use CMake to build this example.
+See file `doc/devsamp/mp2/CMakeLists.txt` located in the MPQC build directory that
+was generated from the `doc/devsamp/mp2/CMakeLists.txt.in` template located in the MPQC source directory.
+
+The CMakeLists.txt file illustrates how to compile the \c aoints.cpp source and use it to create
+the \c aoints executable by linking against MPQC libraries. Note that
+the MPQC library names do not appear explicitly: instead we use their CMake target
+\c libmpqc (unlike the CMake target \c MPQCmain that we used previously,
+\c libmpqc does not include MPQC's `main()` function ).
+
+\include aoints/CMakeLists.txt
+
+\subsubsection devsampaointsinp AOInts Implementation Example: Input
+
+This input JSON file can be used with the program illustrated in
+the \ref devsampaointssrc section.
+
+\include aoints/aoints.json
+
+The contents of this file are used to construct a KeyVal object
+used to construct MPQC infrastructure classes; since it is possible to construct KeyVal objects
+programmatically, it is not necessary to use input files, but here we use it for simplicity. It is, for example,
+possible to change the basis sets in this file without needing to recompile the `aoints` program.
 
 */

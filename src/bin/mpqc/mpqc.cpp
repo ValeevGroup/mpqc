@@ -47,7 +47,7 @@
 namespace mpqc {
 
 void announce(madness::World &world) {
-  const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
+  const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   const char title2[] = "Version " MPQC_VERSION;
   const char title3[] = "Revision " MPQC_REVISION;
   const auto target_width = 80ul;

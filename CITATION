@@ -4,19 +4,21 @@ If you publish results using MPQC, please cite it using:
 
 An unmodified standard release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0 Prerelease,
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-beta.1,
 Chong Peng, Cannada Lewis, Xiao Wang, Marjory Clement, Fabijan Pavosevic,
-Jinmei Zhang, Varun Rishi, Nakul Teke, Justus Calvin, Curtis Janssen, Joseph Kenny, Edward Seidl,
+Jinmei Zhang, Varun Rishi, Nakul Teke, Karl Pierce, Justus Calvin,
+Joseph Kenny, Edward Seidl, Curtis Janssen,
 Edward Valeev,
-http://github.com/ValeevGroup/mpqc4.
+http://github.com/ValeevGroup/mpqc.
 
 A modified release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0 Prerelease,
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-beta.1,
 Chong Peng, Cannada Lewis, Xiao Wang, Marjory Clement, Fabijan Pavosevic,
-Jinmei Zhang, Varun Rishi, Nakul Teke, Justus Calvin, Curtis Janssen, Joseph Kenny, Edward Seidl,
+Jinmei Zhang, Varun Rishi, Nakul Teke, Karl Pierce, Justus Calvin,
+Joseph Kenny, Edward Seidl, Curtis Janssen,
 Edward Valeev,
-http://github.com/ValeevGroup/mpqc4. Modified by <Author1>, <Author2>, and <Author3>,
+http://github.com/ValeevGroup/mpqc. Modified by <Author1>, <Author2>, and <Author3>,
 <Institution>, <Location>, <Year>.
 
 Also, please include the scientific citations for the methods and basis sets you use.

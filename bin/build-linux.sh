@@ -54,6 +54,7 @@ cmake ${TRAVIS_BUILD_DIR} \
 make -j1 mpqc VERBOSE=1
 ### test within build tree
 setarch `uname -m` -R make -j1 check
+setarch `uname -m` -R src/bin/mpqc/mpqc ${TRAVIS_BUILD_DIR}/examples/mpqc_example.json
 ### install and test dev samples
 make install
 cd ${INSTALL_DIR}/share/doc/mpqc*/examples

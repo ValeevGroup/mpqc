@@ -276,16 +276,15 @@ MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 # Declare MPQC program
 ###############################################################################
 
-# none yet
-add_subdirectory(examples)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/bin)
 
 ###############################################################################
-# Declare MPQC tests and doc
+# Declare MPQC tests, examples, and docs
 ###############################################################################
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/examples)
 
 ##########################
 # pkg-config variables

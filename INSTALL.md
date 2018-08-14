@@ -105,4 +105,4 @@ set environment variable `MPQC_PRE_CMD` to the full path to this script before e
 
 #### Example: MPQC build script
 
-[A simple shell script](https://github.com/ValeevGroup/mpqc4/blob/master/bin/osx-brew-build.sh) that uses HomeBrew to install basic prerequisites.
+[A simple shell script](https://github.com/ValeevGroup/mpqc/blob/master/bin/osx-brew-build.sh) that uses HomeBrew to install basic prerequisites.

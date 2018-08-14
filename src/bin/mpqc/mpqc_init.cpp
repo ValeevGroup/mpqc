@@ -136,7 +136,7 @@ void MPQCInit::init_limits() {
 namespace {
 std::shared_ptr<mpqc::KeyVal> __make_keyval(madness::World &world,
                                             const std::string &filename,
-                                            MPQCInit::InputFormat format) {
+                                            KeyVal::InputFormat format) {
   std::shared_ptr<mpqc::KeyVal> kv;
   std::stringstream ss;
   utility::parallel_read_file(world, filename, ss);
@@ -158,35 +158,44 @@ std::shared_ptr<mpqc::KeyVal> __make_keyval(madness::World &world,
 }
 }  // namespace
 
-std::shared_ptr<mpqc::KeyVal> MPQCInit::make_keyval(
-    madness::World &world, const std::string &filename) {
+std::tuple<std::shared_ptr<mpqc::KeyVal>,KeyVal::InputFormat>
+    make_keyval(madness::World &world, const std::string &filename) {
   std::shared_ptr<mpqc::KeyVal> kv;
+  using InputFormat = KeyVal::InputFormat;
+  InputFormat input_format;
   try {
     kv = __make_keyval(world, filename, InputFormat::json);
-    input_format_ = InputFormat::json;
+    input_format = InputFormat::json;
   } catch (...) {
   }
-  if (input_format_ == InputFormat::invalid) {
+  if (input_format == InputFormat::invalid) {
     try {
       kv = __make_keyval(world, filename, InputFormat::xml);
-      input_format_ = InputFormat::xml;
+      input_format = InputFormat::xml;
     } catch (std::exception &e) {
     }
   }
-  if (input_format_ == InputFormat::invalid) {
+  if (input_format == InputFormat::invalid) {
     try {
       kv = __make_keyval(world, filename, InputFormat::info);
-      input_format_ = InputFormat::info;
+      input_format = InputFormat::info;
     } catch (...) {
       std::cerr << "failed read_info" << std::endl;
     }
   }
-  if (input_format_ == InputFormat::invalid)
+  if (input_format == InputFormat::invalid)
     throw InputError(
         "did not recognize input file format (recognized formats: JSON, XML, "
         "INFO)",
         __FILE__, __LINE__);
 
+  return std::make_tuple(kv, input_format);
+}
+
+std::shared_ptr<mpqc::KeyVal>
+MPQCInit::make_keyval(madness::World &world, const std::string &filename) {
+  std::shared_ptr<mpqc::KeyVal> kv;
+  std::tie(kv, input_format_) = ::mpqc::make_keyval(world, filename);
   return kv;
 }
 

@@ -38,6 +38,16 @@ void initialize(int &argc, char **argv,
 /// Finalize MPQC.
 void finalize();
 
+/// @brief Constructs a KeyVal object on every rank of @c world by reading file @c filename on rank 0.
+
+/// Will try every known file format from which KeyVal can be constructed (see KeyVal::InputFormat ).
+/// @note This is a collective operation.
+/// @param[in] world the World object
+/// @param[in] filename the file name
+/// @return a tuple consisting of a pointer to the KeyVal object and the input format identifier
+std::tuple<std::shared_ptr<mpqc::KeyVal>, KeyVal::InputFormat>
+make_keyval(madness::World &world, const std::string &filename);
+
 /** \brief This helper singleton class simplifies initialization of MPQC.
  *
  * An object of this type is created on every process of the default MADWordl World
@@ -51,11 +61,7 @@ class MPQCInit {
   struct singleton_ctor_tag {};
 
  public:
-  /// the format of the input file, described in
-  /// <a
-  /// href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html">Boost.PropertyTree
-  /// docs</a>.
-  enum class InputFormat { invalid, json, xml, info };
+  using InputFormat = KeyVal::InputFormat;
 
   ~MPQCInit();
 

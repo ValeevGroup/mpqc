@@ -4,7 +4,7 @@ If you publish results using MPQC, please cite it using:
 
 An unmodified standard release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-alpha,
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-beta.1,
 Chong Peng, Cannada Lewis, Xiao Wang, Marjory Clement, Fabijan Pavosevic,
 Jinmei Zhang, Varun Rishi, Nakul Teke, Karl Pierce, Justus Calvin,
 Joseph Kenny, Edward Seidl, Curtis Janssen,
@@ -13,7 +13,7 @@ http://github.com/ValeevGroup/mpqc.
 
 A modified release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-alpha,
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0-beta.1,
 Chong Peng, Cannada Lewis, Xiao Wang, Marjory Clement, Fabijan Pavosevic,
 Jinmei Zhang, Varun Rishi, Nakul Teke, Karl Pierce, Justus Calvin,
 Joseph Kenny, Edward Seidl, Curtis Janssen,

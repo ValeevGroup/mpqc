@@ -3,7 +3,5 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
-- <date>: <release>
-  - namespace tree restructured
-  - libmpqc can be used from install location
-  - Units package ported and updated; can select the CODATA revision
+- 08/14/2018: 4.0.0-beta.1
+  - Initial public release of the 4th major revision of MPQC.

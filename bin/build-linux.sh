@@ -65,6 +65,13 @@ cd mp2
   make mp2
   setarch `uname -m` -R ./mp2 ./mp2.json
 cd ..
+cd aoints
+  cmake . \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DCMAKE_CXX_FLAGS=$CODECOVCXXFLAGS
+  make aoints
+  setarch `uname -m` -R ./aoints ./aoints.json
+cd ..
 
 #    -Dlapack_complex_float="std::complex<float>" \
 #    -Dlapack_complex_double="std::complex<double>" \

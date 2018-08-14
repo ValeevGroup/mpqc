@@ -39,3 +39,7 @@ INSTALL(FILES ${PROJECT_SOURCE_DIR}/doc/devsamp/mp2/mp2.cpp
               ${PROJECT_SOURCE_DIR}/doc/devsamp/mp2/mp2.json
               ${PROJECT_BINARY_DIR}/doc/devsamp/mp2/CMakeLists.txt
         DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples/mp2 COMPONENT mpqc-docs)
+INSTALL(FILES ${PROJECT_SOURCE_DIR}/doc/devsamp/aoints/aoints.cpp
+        ${PROJECT_SOURCE_DIR}/doc/devsamp/aoints/aoints.json
+        ${PROJECT_BINARY_DIR}/doc/devsamp/aoints/CMakeLists.txt
+        DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples/aoints COMPONENT mpqc-docs)

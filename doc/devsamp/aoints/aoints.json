@@ -1,0 +1,21 @@
+{
+  "wfn_world": {
+    "atoms" : "$:water",
+    "basis": {
+      "name": "cc-pVDZ",
+      "atoms": "$:water"
+    },
+    "df_basis": {
+      "name": "cc-pVDZ-RI",
+      "atoms": "$:water"
+    }
+  },
+  "water": {
+    "atoms": [
+      { "element": "O", "xyz":[ 0.00000, -0.07579,  0.00000] },
+      { "element": "H", "xyz":[ 0.86681,  0.60144,  0.00000] },
+      { "element": "H", "xyz":[-0.86681,  0.60144,  0.00000] }
+    ]
+  }
+}
+

@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/ValeevGroup/mpqc4/branch/master/graph/badge.svg?token=ErSgG98B8l)](https://codecov.io/gh/ValeevGroup/mpqc4)
 # Synopsis
 
-![MPQC Logo](https://github.com/ValeevGroup/mpqc4/wiki/images/mpqc_logo_med.png)
+![MPQC Logo](https://github.com/ValeevGroup/mpqc/wiki/images/mpqc_logo_med.png)
 
 The Massively Parallel Quantum Chemistry (MPQC) platform is a research package for *ab initio* simulation of the electronic structure of molecules and periodic solids.
 The current (4th) version of the package, sometimes referred to as __MPQC4__, is a modern reenvisioning of the conceptual design of the original MPQC platform using the massively-parallel tensor framework [TiledArray](https://github.com/ValeevGroup/tiledarray), distributed task-based programming model and runtime [MADWorld](https://github.com/m-a-d-n-e-s-s/madness), and the Gaussian integrals library [Libint](https://github.com/evaleev/libint).

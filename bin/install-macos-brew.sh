@@ -82,7 +82,7 @@ fi
 if test ! -d build/mpqc4-clang; then
   mkdir -p build/mpqc4-clang && cd build/mpqc4-clang
   cmake ../../mpqc4 -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
-  make -j${NPROC} mpqc && make install
+  make -j${NPROC} mpqc && make check && make install
   cd ../..
 fi
 

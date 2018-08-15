@@ -2,11 +2,11 @@
   "wfn_world": {
     "atoms" : "$:water",
     "basis": {
-      "name": "cc-pVDZ",
+      "name": "6-31G",
       "atoms": "$:water"
     },
     "df_basis": {
-      "name": "cc-pVDZ-RI",
+      "name": "aug-cc-pVDZ",
       "atoms": "$:water"
     }
   },

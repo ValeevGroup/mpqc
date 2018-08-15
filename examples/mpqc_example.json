@@ -8,11 +8,11 @@
     "n_cluster": 1
   },
   "basis1": {
-    "name": "aug-cc-pVDZ",
+    "name": "6-31G",
     "atoms": "$:water"
   },
   "basis2": {
-    "name": "aug-cc-pVTZ-RI",
+    "name": "cc-pVDZ",
     "atoms": "$:water"
   },
   "wfn_world":{

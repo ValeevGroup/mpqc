@@ -54,7 +54,7 @@ if test -z $BUILD_TYPE; then
 fi
 
 #    - libint
-export LIBINT_RELID=2.5.0-beta.1
+export LIBINT_RELID=2.5.0-beta.2
 if test ! -d build/libint-${LIBINT_RELID}; then
   mkdir -p build
   cd build
@@ -82,7 +82,7 @@ fi
 if test ! -d build/mpqc-clang; then
   mkdir -p build/mpqc-clang && cd build/mpqc-clang
   cmake ../../mpqc -DCMAKE_INSTALL_PREFIX=$PREFIX -DTiledArray_DIR="$PREFIX/lib/cmake/tiledarray" -DLIBINT2_INSTALL_DIR=$PREFIX -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_TOOLCHAIN_FILE=../../tiledarray/cmake/toolchains/osx-clang-mpi-accelerate.cmake
-  make -j${NPROC} mpqc && make install
+make -j${NPROC} mpqc && make check && make install
   cd ../..
 fi
 

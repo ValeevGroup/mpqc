@@ -28,11 +28,14 @@ set (CMAKE_DOCINSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/doc/mpqc-${MPQC_VERSION
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file(Doxyfile.in Doxyfile @ONLY IMMEDIATE)
-  add_custom_target (doc
+  add_custom_target (html
     COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/doc/Doxyfile
     SOURCES ${PROJECT_BINARY_DIR}/doc/Doxyfile)
-#  INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${CMAKE_DOCINSTALL_PATH}
-#          COMPONENT mpqc-docs)
+  INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html EXCLUDE_FROM_ALL DESTINATION ${CMAKE_DOCINSTALL_PATH}
+          COMPONENT mpqc-docs)
+  add_custom_target(install-html DEPENDS html
+          COMMAND ${CMAKE_COMMAND} -DCOMPONENT=mpqc-docs -P ${CMAKE_BINARY_DIR}/cmake_install.cmake
+          COMMENT "Installing MPQC HTML documentation")
 endif()
 
 INSTALL(FILES ${PROJECT_SOURCE_DIR}/doc/devsamp/mp2/mp2.cpp

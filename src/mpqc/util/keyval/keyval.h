@@ -477,6 +477,8 @@ class KeyVal {
   /// @note to clone top-level tree use KeyVal::clone()
   KeyVal(const KeyVal& other) = default;
 
+  virtual ~KeyVal() = default;
+
   /// \brief copy assignment
 
   /// Since this class has reference semantics, the underlying data structures
@@ -1221,7 +1223,7 @@ namespace detail {
 /// currently only useful for parsing JSON arrays (with their braindead empty
 /// element keys),
 /// specifically is mandatory for arrays of objects
-class SubTreeKeyVal : public KeyVal {
+class SubTreeKeyVal final : public KeyVal {
  public:
   SubTreeKeyVal(const ptree& tree, const KeyVal& kv)
       : KeyVal(kv), subtree_(tree) {}

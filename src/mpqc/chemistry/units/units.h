@@ -14,6 +14,8 @@ namespace detail {
 /// @tparam the real type used to report the values
 template <typename real_t>
 struct FundamentalConstants {
+  virtual ~FundamentalConstants() = default;
+
   /// @return a string describing the particular fundamental constants system
   virtual const char* description() const = 0;
 
@@ -153,7 +155,7 @@ struct mpqc2 {
 /// The set of fundamental constants described by \c System
 /// @tparam System a data type describing the system of fundamental constants (see namespace ::mpqc::constants )
 template <typename System>
-struct FundamentalConstants
+struct FundamentalConstants final
     : detail::FundamentalConstants<typename System::real_t> {
   const char* description() const override { return System::description; }
   using real_t = typename System::real_t;

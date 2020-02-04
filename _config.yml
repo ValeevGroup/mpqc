@@ -1,7 +1,6 @@
 title: MPQC
-description: The Massively Parallel Quantum Chemistry program, MPQC, computes properties of atoms and molecules from first principles using the time independent Schrödinger equation.
+description: The Massively Parallel Quantum Chemistry (MPQC) platform is a research package for ab initio simulation of the electronic structure of molecules and periodic solids, with primary focus on many-body electronic structure methods, such as coupled-cluster.
 google_analytics: 
-show_downloads: true
 theme: jekyll-theme-minimal
 
 gems:

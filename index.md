@@ -27,4 +27,4 @@ COMPILING AND RUNNING
 =====================
 
 * [Instructions for compiling MPQC](https://github.com/ValeevGroup/mpqc/blob/master/INSTALL.md).
-* [MPQC Documentation](https://valeevgroup.github.io/mpqc-docs/) for current and past MPQC releases.
+* [MPQC Documentation](https://valeevgroup.github.io/mpqc-docs/).

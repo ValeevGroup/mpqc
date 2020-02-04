@@ -1,44 +1,27 @@
 
-             The Massively Parallel Quantum Chemistry Program
-                                 MPQC 2.4
+             The Massively Parallel Quantum Chemistry Program (MPQC)
+                                 Version 4
 
 DESCRIPTION
 ===========
 
-  MPQC computes the properties of molecules, ab initio, on a wide variety of
-computer architectures.
+  The Massively Parallel Quantum Chemistry (MPQC) platform is a research package
+  for *ab initio* simulation of the electronic structure of molecules and periodic
+  solids, with primary focus on many-body electronic structure methods, such as coupled-cluster.
 
-  MPQC can compute closed shell and general restricted open shell
-Hartree-Fock energies and gradients, density functional theory energies and
-gradients, second order open shell perturbation theory (OPT2[2]) and
-Z-averaged perturbation theory (ZAPT2) energies, and second order closed
-shell Moeller-Plesset perturbation theory (MP2) energies and gradients.
-Closed shell energies using (ABS) MP2-R12 are also supported.  It also
-includes an internal coordinate geometry optimizer.
+  The current (4th) version of the package, sometimes referred to as <b>MPQC4</b>, is a modern
+  reenvisioning of the conceptual design of the original MPQC platform using the massively-parallel tensor
+  framework <a href="https://github.com/ValeevGroup/tiledarray">TiledArray</a>, distributed task-based programming model
+  and runtime <a href="https://github.com/m-a-d-n-e-s-s/madness">MADWorld</a>, and the Gaussian integrals library
+  <a href="https://github.com/evaleev/libint">Libint</a>.
 
-  MPQC runs on Unix compatible workstations, symmetric multi-processors,
-and parallel computers.
+  MPQC runs on Unix shared-memory and distributed-memory parallel computers.
 
 LICENSE
 =======
 
-  This software is distributed under the GNU General Public License or the
-GNU Library General Public License, as documented in each file.  The the US
-Government retains a limited license in some of the code, as prescribed in
-AL 91-7.  See the files LICENSE and LICENSE.LIB for details and additional
-information.
-
-DISCLAIMER
-==========
-
-  There is no warranty for the program, to the extent permitted by
-applicable law.  Except when otherwise stated in writing the copyright
-holders and/or other parties provide the program "as is" without warranty
-of any kind, either expressed or implied, including, but not limited to,
-the implied warranties of merchantability and fitness for a particular
-purpose.  The entire risk as to the quality and performance of the program
-is with you.  Should the program prove defective, you assume the cost of
-all necessary servicing, repair or correction.
+  MPQC is freely available under the terms of the GPL v3+ licence. See <a href="https://github.com/ValeevGroup/mpqc/blob/master/CITATION">CITATION</a> for details.
+  If you are interested in using MPQC under different licensing terms, please contact us.
 
 COMPILING AND RUNNING
 =====================

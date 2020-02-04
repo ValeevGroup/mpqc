@@ -43,5 +43,5 @@ all necessary servicing, repair or correction.
 COMPILING AND RUNNING
 =====================
 
- There are instructions for downloading, compiling, and running MPQC at
-http://www.mpqc.org
+* [Instructions for compiling MPQC](https://github.com/ValeevGroup/mpqc/blob/master/INSTALL.md).
+* [MPQC Documentation](https://valeevgroup.github.io/mpqc-docs/) for current and past MPQC releases.

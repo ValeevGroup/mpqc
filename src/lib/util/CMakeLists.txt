@@ -29,6 +29,7 @@ endif()
 add_mpqc_library(util ${utilobjects})
 install(TARGETS util DESTINATION lib)
 
+target_link_libraries(util mpqc_madness)
 target_link_libraries(util ${MADNESS_LIBRARIES})
 target_link_libraries(util ${ELEMENTAL_LIBRARIES})
 target_link_libraries(util ${MPI_LIBRARIES})

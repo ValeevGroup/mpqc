@@ -31,7 +31,7 @@
 #if defined(MPQC_NEW_FEATURES)
 
 #include <chemistry/qc/mbptr12/singles_casscf.h>
-#include <TiledArray/algebra/conjgrad.h>
+#include <TiledArray/math/linalg/conjgrad.h>
 
 using namespace sc;
 using namespace std;

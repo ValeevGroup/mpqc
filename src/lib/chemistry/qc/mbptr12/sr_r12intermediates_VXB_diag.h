@@ -34,7 +34,7 @@
 namespace sc {
   inline double get_element(const TA::TArrayD& array, const std::vector<std::size_t>& ele_idx)
   {
-    const std::vector<std::size_t> tile_idx = array.trange().element_to_tile(ele_idx);
+    const auto tile_idx = array.trange().element_to_tile(ele_idx);
     return (array.find(tile_idx).get()[ele_idx]);
   }
 

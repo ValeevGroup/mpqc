@@ -3,7 +3,7 @@ include(AddLibrary)
 # madness library
 
 IF(MPQC_HAS_MADNESS)
-    add_mpqc_object_library(madness
+    add_mpqc_object_library(mpqc_madness
       init.cc
       world.cc
     )

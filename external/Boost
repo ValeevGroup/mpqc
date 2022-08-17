@@ -53,6 +53,11 @@ elseif (MPQC_EXPERT)
 
 else()
 
+  # do NOT build Boost if using TA since it already provides some of it (via BTAS) so insist on finding it properly
+  if (MPQC_NEW_FEATURES)
+    message(FATAL_ERROR "MUST configure with BOOST=ON when MPQC_NEW_FEATURES=ON")
+  endif()
+
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 

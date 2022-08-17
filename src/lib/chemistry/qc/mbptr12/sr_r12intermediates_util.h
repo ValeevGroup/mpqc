@@ -33,8 +33,11 @@
 #include <algorithm>
 #include <numeric>
 #include <TiledArray/bitset.h>
+#include <TiledArray/range1.h>
 
 namespace sc {
+
+  using integer = TA::Range1::index1_type;
 
   template <typename T>
   std::shared_ptr<typename SingleReference_R12Intermediates<T>::TArray22>
@@ -720,7 +723,7 @@ namespace sc {
 
         numeric_type dot_product;
         if (not Transpose) // straight dot
-          dot_product = TA::math::dot(arg1.data()->size(), arg1.data()->data(), arg2.data()->data());
+          dot_product = TA::dot(arg1.data()->size(), arg1.data()->data(), arg2.data()->data());
         else { // transposed dot done as series of row*column products
           const integer nrow1 = arg1.data()->range().size()[0];
           const integer ncol1 = arg1.data()->range().size()[1];
@@ -731,7 +734,7 @@ namespace sc {
           const numeric_type* ptr1 = arg1.data()->data();
           const numeric_type* ptr2 = arg2.data()->data();
           for(integer row1=0; row1<nrow1; ++row1, ptr1+=ncol1, ++ptr2) {
-            dot_product += TA::math::dot(ncol1, ptr1, unit_stride, ptr2, nrow1);
+            dot_product += TA::dot(ncol1, ptr1, unit_stride, ptr2, nrow1);
           }
         }
         //std::cout << dot_product << std::endl;

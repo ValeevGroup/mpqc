@@ -223,11 +223,11 @@ namespace sc {
     }
 
     // Grab T matrices
-    const char* kwd = (dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb")).c_str();
+    auto kwd_str = dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb");
     // When computing one-electron density, we use non frozen core for CCSD,
     // but only need the frozen core portion of the amplitude
-    T2_da4_[spin2] = ((!compute_1rdm_ || nfzc_ == 0)? T2_distarray4(spin2, kwd)
-                                    : T2_distarray4_fzc(spin2, kwd));
+    T2_da4_[spin2] = ((!compute_1rdm_ || nfzc_ == 0)? T2_distarray4(spin2, kwd_str.c_str())
+                                    : T2_distarray4_fzc(spin2, kwd_str.c_str()));
 //    T2_da4_[spin2] = T2_distarray4(spin2, kwd);
 
     return T2_da4_[spin2];
@@ -257,7 +257,7 @@ namespace sc {
       dpd_stop();
     }
 
-    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB (IJ,AB)" : "tauijab (ij,ab)") : "tauIjAb";
+    const auto* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB (IJ,AB)" : "tauijab (ij,ab)") : "tauIjAb";
     Tau2_[spin2] = T2(spin2, kwd);
     if (debug() >= DefaultPrintThresholds::mostO2N2)
       Tau2_[spin2].print(prepend_spincase(spin2,"Tau2 amplitudes").c_str());
@@ -956,8 +956,8 @@ namespace sc {
     }
 
     // Grab Lambda2 matrices
-    const char* kwd = (dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb")).c_str();
-    Lambda2_da4_[spin2] = T2_distarray4(spin2, kwd);
+    auto kwd_str = (dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb"));
+    Lambda2_da4_[spin2] = T2_distarray4(spin2, kwd_str.c_str());
 
     return Lambda2_da4_[spin2];
   }

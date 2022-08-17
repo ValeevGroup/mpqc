@@ -61,7 +61,15 @@
 #include <util/misc/xml.h>
 
 #ifndef NO_USE_BOOST_ENDIAN
-#  include <boost/detail/endian.hpp>
+#  ifdef __has_include
+#    if __has_include(<boost/detail/endian.hpp>)
+#     include <boost/detail/endian.hpp>
+#    else
+#       include <boost/endian.hpp>
+#    endif
+#  else
+#     include <boost/endian.hpp>
+#  endif
 #  if defined(BOOST_LITTLE_ENDIAN)
 #    define IS_BIG_ENDIAN false
 #  elif defined(BOOST_BIG_ENDIAN)

@@ -52,6 +52,8 @@ IF(MPQC_R12)
 
     add_mpqc_object_library(mbptr12 ${ccfiles})
 
+    target_link_libraries(mbptr12 PRIVATE ${TILEDARRAY_LIBRARIES})
+
 ENDIF(MPQC_R12)
 # tests
 

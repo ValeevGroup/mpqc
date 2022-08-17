@@ -54,6 +54,10 @@ ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(basis ${ccfiles})
 
+IF(MPQC_NEW_FEATURES)
+  target_link_libraries(basis PRIVATE ${TILEDARRAY_LIBRARIES})
+endif()
+
 # tests
 IF(MPQC_UNITTEST)
   set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS

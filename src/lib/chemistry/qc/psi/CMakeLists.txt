@@ -16,6 +16,8 @@ IF(HAVE_PSI3)
     )
     add_mpqc_object_library(psi ${ccfiles})
 
+    target_link_libraries(psi PRIVATE ${TILEDARRAY_LIBRARIES})
+
     # tests
     if (MPQC_UNITTEST)
       set_property(SOURCE psitest.cc PROPERTY COMPILE_DEFINITIONS

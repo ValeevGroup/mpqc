@@ -51,11 +51,11 @@ void custom_alltoallv(void *sendbuf,
 {
 #if 1
   int me, nproc;
-  MPI_Aint sendextent, recvextent;
+  MPI_Aint sendextent, recvextent, sendlb, recvlb;
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-  MPI_Type_extent(sendtype,&sendextent);
-  MPI_Type_extent(recvtype,&recvextent);
+  MPI_Type_get_extent(sendtype,&sendlb,&sendextent);
+  MPI_Type_get_extent(recvtype,&recvlb,&recvextent);
   int source = (me + nproc - 1)%nproc; //  me - 1 mod nproc
   for (int next_node = (me+1)%nproc;
        next_node != me;

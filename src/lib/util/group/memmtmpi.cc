@@ -268,8 +268,8 @@ MTMPIMemoryGrp::init_mtmpimg(MPI_Comm comm, int nthread)
   MPI_Comm_dup(comm, &comp_comm_);
   MPI_Comm_dup(comm, &comm_comm_);
 
-  MPI_Errhandler_set(comp_comm_, MPI_ERRORS_ARE_FATAL);
-  MPI_Errhandler_set(comm_comm_, MPI_ERRORS_ARE_FATAL);
+  MPI_Comm_set_errhandler(comp_comm_, MPI_ERRORS_ARE_FATAL);
+  MPI_Comm_set_errhandler(comm_comm_, MPI_ERRORS_ARE_FATAL);
 
   serial_ = 0;
   req_tag_ = 15001;

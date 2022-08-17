@@ -131,7 +131,7 @@ MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
   if (keyval->booleanvalue("errors_return")) {
       if (me()==0)
           ExEnv::outn() << indent << "MPIMessageGrp: errors_return is true" << endl;
-      MPI_Errhandler_set(commgrp, MPI_ERRORS_RETURN);
+      MPI_Comm_set_errhandler(commgrp, MPI_ERRORS_RETURN);
     }
 
   if (debug_) {
@@ -203,7 +203,7 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
   MPI_Comm_dup(comm, &commgrp);
   global_commgrp = commgrp;
 
-  MPI_Errhandler_set(commgrp, MPI_ERRORS_ARE_FATAL);
+  MPI_Comm_set_errhandler(commgrp, MPI_ERRORS_ARE_FATAL);
 
   if (!nmpi_grps) {
     threadgrp = ThreadGrp::get_default_threadgrp();

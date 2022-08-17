@@ -98,9 +98,9 @@ if ("${PSI3}" AND NOT HAVE_PSI3)
         CONFIGURE_COMMAND /bin/bash ./configure
         --prefix=${EXTERNAL_BUILD_DIR}/psi3
         --with-cc=${CMAKE_C_COMPILER}
-        "CFLAGS=${CMAKE_C_FLAGS}"
+        "CFLAGS=${CMAKE_C_FLAGS} -std=c89 -Wno-error -Wno-implicit-function-declaration"
         "--with-cxx=${CMAKE_CXX_COMPILER}"
-        "CXXFLAGS=${CMAKE_CXX_FLAGS}"
+        "CXXFLAGS=${CMAKE_CXX_FLAGS} -Dregister= -Wno-comment"
         "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}"
         "--with-fc=${CMAKE_Fortran_COMPILER}"
         "--with-blas=${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES_LIST} ${BLAS_LIBRARIES_LIST}"

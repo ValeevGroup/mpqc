@@ -677,7 +677,7 @@ CADFCLHF::compute_coefficients()
           for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
             for(auto&& jsh : shell_range(gbs_)) {
               for(auto&& mu : function_range(ish)) {
-                C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
+                C_trans_frob[Xsh].coeffRef(ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
                     Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                     Xsh.nbf, jsh.nbf
                 ).squaredNorm();
@@ -697,7 +697,7 @@ CADFCLHF::compute_coefficients()
         for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
           for(auto&& jsh : shell_range(gbs_)) {
             for(auto&& mu : function_range(ish)) {
-              C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
+              C_trans_frob[Xsh].coeffRef(ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
                   Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                   Xsh.nbf, jsh.nbf
               ).squaredNorm();
@@ -817,7 +817,7 @@ CADFCLHF::compute_coefficients()
             max_val = C_trans_frob[Xsh].col(lsh).maxCoeff();
           }
 
-          C_bar_(lsh, Xsh) = max_val;
+          C_bar_.coeffRef(lsh, Xsh) = max_val;
 
         } // end loop over lsh
       } // end loop over Xsh

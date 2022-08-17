@@ -174,7 +174,7 @@ double CADFCLHF::get_distance_factor(
 
     double sq_ratio;
     if(dist_factor_use_overlap_) {
-      sq_ratio = S_frob_(ish, jsh) / (pi_over_2_to_1_4 * pow(p, 0.25) * schwarz_frob_(ish, jsh));
+      sq_ratio = S_frob_.coeffRef(ish, jsh) / (pi_over_2_to_1_4 * pow(p, 0.25) * schwarz_frob_.coeff(ish, jsh));
     }
     // Contribution from the pair exponents
     if(dist_factor_use_overlap_
@@ -186,9 +186,9 @@ double CADFCLHF::get_distance_factor(
         and sq_ratio > dist_factor_overlap_schwarz_ratio_cutoff_
         and sq_ratio < 1.0
       ) {
-      dist_factor /= schwarz_frob_(ish, jsh);
+      dist_factor /= schwarz_frob_.coeff(ish, jsh);
       dist_factor *= pow(2.0 / M_PI, 0.25);
-      dist_factor *= fabs((double)S_frob_(ish, jsh));
+      dist_factor *= fabs((double)S_frob_.coeff(ish, jsh));
     }
     else {
       dist_factor *= pow(p, -1.0/4.0);
@@ -391,8 +391,8 @@ CADFCLHF::compute_K()
         ShellData lsh(lsh_index, obs, dfbs_);
         for(auto&& jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).squaredNorm();
-          D_frob_sq(lsh, jsh) = dnorm;
-          D_underbar(lsh, jsh.center) += dnorm;
+          D_frob_sq.coeffRef(lsh, jsh) = dnorm;
+          D_underbar.coeffRef(lsh, jsh.center) += dnorm;
         }
       }
     });
@@ -831,7 +831,7 @@ CADFCLHF::compute_K()
           if(screen_B_) {
             double frob_g = sqrt(L3_star_ish_Xsh.get_aux_value());
             auto& L_d_over_ish_Xsh = L_d_over[{ish, Xsh}];
-            const double prefactor = D_underbar(ish, Xsh.center) * frob_g;
+            const double prefactor = D_underbar.coeff(ish, Xsh.center) * frob_g;
 
             // Build L_d_over
             for(auto&& ksh : L_C_under[Xsh]) {
@@ -904,8 +904,8 @@ CADFCLHF::compute_K()
       //std::random_device rd;
       //std::mt19937 g(rd());
       //g.seed(0);
-      std::random_shuffle(L_3_keys.begin(), L_3_keys.end());
-      std::random_shuffle(L_3_star_keys.begin(), L_3_star_keys.end());
+      std::shuffle(L_3_keys.begin(), L_3_keys.end(), std::default_random_engine(0));
+      std::shuffle(L_3_star_keys.begin(), L_3_star_keys.end(), std::default_random_engine(0));
     }
     else {
       std::sort(L_3_keys.begin(), L_3_keys.end(), key_size_sort);
@@ -1601,14 +1601,14 @@ CADFCLHF::compute_K()
                 if(Xblk.center == ish.center) {
                   for(auto&& mu : function_range(ish)) {
                     for(auto&& nu : iter_functions_on_center(obs, jsblk.center)) {
-                      Kt_part(mu, nu) -= (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                      Kt_part.coeffRef(mu, nu) -= (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
                           nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
                         ).array() * (
                              2.0 * g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf)
                               - 0.5 * W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose()
                       ).array()).sum();
                       if(ish.center != jsblk.center) {
-                        Kt_part(mu, nu) += (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                        Kt_part.coeffRef(mu, nu) += (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
                             nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
                           ).array()
                           * 0.5 * W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose().array()
@@ -2038,20 +2038,20 @@ CADFCLHF::compute_K()
                   if(rho > mu) continue;
                   // TODO more vectorization
                   for(auto&& nu : function_range(ksh)) {
-                    Kt_part(mu, nu) +=
+                    Kt_part.coeffRef(mu, nu) +=
                       g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
                         * D.col(rho).segment(lsh.bfoff, lsh.nbf);
                     if(mu != rho) {
-                      Kt_part(rho, nu) +=
+                      Kt_part.coeffRef(rho, nu) +=
                         g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
                           * D.col(mu).segment(lsh.bfoff, lsh.nbf);
                       if(ish.center != jsh.center) {
                         Kt_part.row(mu).segment(lsh.bfoff, lsh.nbf) +=
                             g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
-                            * D(rho, nu);
+                            * D.coeff(rho, nu);
                         Kt_part.row(rho).segment(lsh.bfoff, lsh.nbf) +=
                             g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
-                            * D(mu, nu);
+                            * D.coeff(mu, nu);
                       }
                     }
                   }

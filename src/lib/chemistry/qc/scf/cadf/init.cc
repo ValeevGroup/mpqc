@@ -193,7 +193,7 @@ CADFCLHF::init_threads()
   for(auto&& Xsh : shell_range(dfbs_)) {
     //schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
     // Absolute value for sqrt squared (incorporates both schwarz sqrt and frob norm square)
-    schwarz_df_(Xsh) = sqrt(g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).cwiseAbs().sum());
+    schwarz_df_[Xsh] = sqrt(g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).cwiseAbs().sum());
   }
 
   // Release the integral evaluators
@@ -357,7 +357,7 @@ CADFCLHF::init_threads()
   int inode = 0;
   // TODO More efficient distribution based on load balancing and minimizing thread collisions
   if(shuffle_J_assignments_) {
-    std::random_shuffle(sig_pairs_.begin(), sig_pairs_.end());
+    std::shuffle(sig_pairs_.begin(), sig_pairs_.end(), std::default_random_engine(0));
   }
   for(auto&& sig_pair : sig_pairs_) {
     const int assignment = inode % n_node;
@@ -481,8 +481,8 @@ CADFCLHF::init_significant_pairs()
       // Absolute value for sqrt squared (incorporates both schwarz sqrt and frob norm square)
       const double norm_val = sqrt(buff_map.cwiseAbs().sum());
       //const double norm_val = buff_map.cwiseSqrt().norm();
-      schwarz_frob_(ish, jsh) = norm_val;
-      if(ish != jsh) schwarz_frob_(jsh, ish) = norm_val;
+      schwarz_frob_.coeffRef(ish, jsh) = norm_val;
+      if(ish != jsh) schwarz_frob_.coeffRef(jsh, ish) = norm_val;
       my_pair_vals.push_back({norm_val, IntPair(ish, jsh)});
     } // end while get shell pair
     //----------------------------------------//
@@ -614,10 +614,10 @@ CADFCLHF::init_significant_pairs()
   for(auto&& pair : sig_pairs_) {
     ShellData ish(pair.first, gbs_), jsh(pair.second, gbs_);
     sig_partners_[ish].insert(jsh);
-    L_schwarz[ish].insert(jsh, schwarz_frob_(ish, jsh));
+    L_schwarz[ish].insert(jsh, schwarz_frob_.coeff(ish, jsh));
     if(ish != jsh) {
       sig_partners_[jsh].insert(ish);
-      L_schwarz[jsh].insert(ish, schwarz_frob_(ish, jsh));
+      L_schwarz[jsh].insert(ish, schwarz_frob_.coeff(ish, jsh));
     }
   }
 
@@ -659,7 +659,7 @@ CADFCLHF::init_significant_pairs()
       for(auto&& jsh : shell_range(gbs_)) {
         sint->compute_shell((int)ish, (int)jsh);
         const Eigen::Map<const Eigen::VectorXd> buffmap(sint->buffer(), ish.nbf*jsh.nbf);
-        S_frob_(ish, jsh) = buffmap.norm();
+        S_frob_.coeffRef(ish, jsh) = buffmap.norm();
       }
     }
   }

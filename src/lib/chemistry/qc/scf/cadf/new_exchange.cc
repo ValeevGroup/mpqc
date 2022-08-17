@@ -131,7 +131,7 @@ CADFCLHF::new_compute_K()
       for(SH lsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
         for(SH jsh : shell_range(gbs_)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).squaredNorm();
-          D_frob_sq(lsh, jsh) = dnorm;
+          D_frob_sq.coeffRef(lsh, jsh) = dnorm;
         }
       }
     });

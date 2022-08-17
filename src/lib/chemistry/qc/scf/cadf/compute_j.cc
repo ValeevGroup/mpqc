@@ -160,17 +160,17 @@ CADFCLHF::compute_J_cadf()
               auto& cpair = coefs_[{mu, nu}];
               auto& Ca = *(cpair.first);
               auto& Cb = *(cpair.second);
-              Ct.segment(ish.atom_dfbfoff, ish.atom_dfnbf) += pf * D(mu, nu) * Ca;
+              Ct.segment(ish.atom_dfbfoff, ish.atom_dfnbf) += pf * D.coeff(mu, nu) * Ca;
               if(ish.center != jsh.center) {
-                Ct.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += pf * D(mu, nu) * Cb;
+                Ct.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += pf * D.coeff(mu, nu) * Cb;
               }
 
               // The exact diagonal part
               if(exact_diagonal_J_ and nu <= mu) {
                 const double epf = mu == nu ? 1.0 : 2.0;
-                Ct_ex_thr.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) += epf * D(mu, nu) * Ca;
+                Ct_ex_thr.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) += epf * D.coeff(mu, nu) * Ca;
                 if(ish.center != jsh.center) {
-                  Ct_ex_thr.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += epf * D(mu, nu) * Cb;
+                  Ct_ex_thr.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += epf * D.coeff(mu, nu) * Cb;
                 }
               }
 
@@ -380,7 +380,7 @@ CADFCLHF::compute_J_cadf()
                   for(auto&& nu : function_range(jsh)) {
                     // TODO remove one loop
                     dt_ex_thr.row(jsh.center).segment(ish.atom_dfbfoff + Xblk.bfoff_in_atom, Xblk.nbf) += 0.5 * perm_fact *
-                        D(mu, nu) * g3.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell);
+                        D.coeff(mu, nu) * g3.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell);
                   }
                 }
 
@@ -392,11 +392,11 @@ CADFCLHF::compute_J_cadf()
                       * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
 
                   for(auto&& nu : function_range(jsh)) {
-                    J(mu, nu) += delta_factor
+                    J.coeffRef(mu, nu) += delta_factor
                         * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                     if(ish.center != jsh.center) {
-                      J(mu, nu) += delta_factor
+                      J.coeffRef(mu, nu) += delta_factor
                           * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                           * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                     }
@@ -411,7 +411,7 @@ CADFCLHF::compute_J_cadf()
                   for(auto&& nu : function_range(jsh)) {
                     // TODO remove one loop
                     dt_ex_thr.row(ish.center).segment(jsh.atom_dfbfoff + Xblk.bfoff_in_atom, Xblk.nbf) += 2.0 *
-                        D(mu, nu) * g3.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell);
+                        D.coeff(mu, nu) * g3.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell);
                   }
                 }
 
@@ -421,9 +421,9 @@ CADFCLHF::compute_J_cadf()
                       g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                       * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                   for(auto&& nu : function_range(jsh)) {
-                    J(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
+                    J.coeffRef(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    J(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
+                    J.coeffRef(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                   }
                 }
@@ -508,21 +508,21 @@ CADFCLHF::compute_J_cadf()
               auto& Cb = *(cpair.second);
               //----------------------------------------//
               // First term contribution
-              J(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
+              J.coeffRef(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
               if(ish.center != jsh.center){
-                J(mu, nu) += d_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
+                J.coeffRef(mu, nu) += d_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
               }
               //----------------------------------------//
               // Third term contribution
-              J(mu, nu) -= g_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
+              J.coeffRef(mu, nu) -= g_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
               if(ish.center != jsh.center){
-                J(mu, nu) -= g_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
+                J.coeffRef(mu, nu) -= g_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
               }
               //----------------------------------------//
               if(exact_diagonal_J_) {
-                J(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
+                J.coeffRef(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
                 if(ish.center != jsh.center) {
-                  J(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
+                  J.coeffRef(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
                 }
               }
             } // end loop over nu
@@ -573,7 +573,7 @@ CADFCLHF::compute_J_cadf()
   // Fill in the upper triangle of J
   for(int mu = 0; mu < nbf; ++mu) {
     for(int nu = 0; nu < mu; ++nu) {
-      J(nu, mu) = J(mu, nu);
+      J.coeffRef(nu, mu) = J.coeff(mu, nu);
     }
   }
   if(debug_coulomb_energy_) {

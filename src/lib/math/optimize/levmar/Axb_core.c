@@ -103,9 +103,9 @@ __STATIC__ int buf_sz=0;
 
 LM_REAL *a, *qtb, *tau, *r, *work;
 int a_sz, qtb_sz, tau_sz, r_sz, tot_sz;
-register int i, j;
+int i, j;
 blasint info, worksz, nrhs=1;
-register LM_REAL sum;
+LM_REAL sum;
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
@@ -256,9 +256,9 @@ __STATIC__ int buf_sz=0;
 
 LM_REAL *a, *atb, *tau, *r, *work;
 int a_sz, atb_sz, tau_sz, r_sz, tot_sz;
-register int i, j;
+int i, j;
 blasint info, worksz, nrhs=1;
-register LM_REAL sum;
+LM_REAL sum;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
@@ -422,7 +422,7 @@ __STATIC__ int buf_sz=0;
 
 LM_REAL *a, *b;
 int a_sz, b_sz, tot_sz;
-register int i, j;
+int i, j;
 blasint info, nrhs=1;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -560,7 +560,7 @@ __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 
 int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
-register int i, j;
+int i, j;
 blasint info, *ipiv, nrhs=1;
 LM_REAL *a, *b, *work;
    
@@ -683,11 +683,11 @@ __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 static LM_REAL eps=CNST(-1.0);
 
-register int i, j;
+int i, j;
 LM_REAL *a, *u, *s, *vt, *work;
 int a_sz, u_sz, s_sz, vt_sz, tot_sz;
 LM_REAL thresh, one_over_denom;
-register LM_REAL sum;
+LM_REAL sum;
 blasint info, rank, worksz, *iwork, iworksz;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY

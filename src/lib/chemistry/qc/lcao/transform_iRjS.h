@@ -70,7 +70,7 @@ namespace sc {
       void compute();
       /// Check symmetry of transformed integrals
       void check_int_symm(double threshold =
-          TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
+          TwoBodyMOIntsTransform::zero_integral);
 
     private:
       Ref<GaussianBasisSet> basis2_;

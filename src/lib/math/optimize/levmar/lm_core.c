@@ -82,7 +82,7 @@ int LEVMAR_DER(
                       * Set to NULL if not needed
                       */
 {
-register int i, j, k, l;
+int i, j, k, l;
 int worksz, freework=0, issolved;
 /* temp work arrays */
 LM_REAL *e,          /* nx1 */
@@ -94,7 +94,7 @@ LM_REAL *e,          /* nx1 */
    *diag_jacTjac,   /* diagonal of J^T J, mx1 */
        *pDp;        /* p + Dp, mx1 */
 
-register LM_REAL mu,  /* damping constant */
+LM_REAL mu,  /* damping constant */
                 tmp; /* mainly used in matrix & vector multiplications */
 LM_REAL p_eL2, jacTe_inf, pDp_eL2; /* ||e(p)||_2, ||J^T e||_inf, ||e(p+Dp)||_2 */
 LM_REAL p_L2, Dp_L2=LM_REAL_MAX, dF, dL;
@@ -219,7 +219,7 @@ const int nm=n*m;
         jacTe[i]=0.0;
 
       for(i=0; i<n; ++i){
-        register LM_REAL *jacrow;
+        LM_REAL *jacrow;
 
         for(l=0, jacrow=jac+i*m, tmp=e[i]; l<m; ++l)
           jacTe[l]+=jacrow[l]*tmp;
@@ -406,7 +406,7 @@ int LEVMAR_DIF(
                       * Set to NULL if not needed
                       */
 {
-register int i, j, k, l;
+int i, j, k, l;
 int worksz, freework=0, issolved;
 /* temp work arrays */
 LM_REAL *e,          /* nx1 */
@@ -422,7 +422,7 @@ LM_REAL *e,          /* nx1 */
 int using_ffdif=1;
 LM_REAL *wrk2=NULL; /* nx1, used for differentiating with central differences only */
 
-register LM_REAL mu,  /* damping constant */
+LM_REAL mu,  /* damping constant */
                 tmp; /* mainly used in matrix & vector multiplications */
 LM_REAL p_eL2, jacTe_inf, pDp_eL2; /* ||e(p)||_2, ||J^T e||_inf, ||e(p+Dp)||_2 */
 LM_REAL p_L2, Dp_L2=LM_REAL_MAX, dF, dL;
@@ -567,7 +567,7 @@ const int nm=n*m;
           jacTe[i]=0.0;
 
         for(i=0; i<n; ++i){
-          register LM_REAL *jacrow;
+          LM_REAL *jacrow;
 
           for(l=0, jacrow=jac+i*m, tmp=e[i]; l<m; ++l)
             jacTe[l]+=jacrow[l]*tmp;

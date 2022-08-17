@@ -74,7 +74,7 @@ public:
   /// Computes transformed integrals
   void compute();
   /// Check symmetry of transformed integrals
-  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
+  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral);
 
   /// the runtime used to compute this object
   const Ref<DensityFittingRuntime>& runtime() const { return runtime_; }

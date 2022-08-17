@@ -33,6 +33,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <random>
 #include <mpqc_config.h>
 #include <util/misc/scint.h>
 #include <util/misc/regtime.h>
@@ -150,7 +151,7 @@ class PairMapping: public sc::RefCount {
       std::vector<int> nodemap(indexset.size());
       for (int i=0; i<nodemap.size(); i++) nodemap[i] = i%nproc_;
       if (randomize) {
-          std::random_shuffle(nodemap.begin(), nodemap.end());
+          std::shuffle(nodemap.begin(), nodemap.end(), std::default_random_engine(0));
         }
       int node=0;
       for (std::set<std::pair<int,int> >::const_iterator i = indexset.begin();

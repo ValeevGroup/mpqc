@@ -88,10 +88,10 @@ static LM_REAL eps=CNST(-1.0);
 
 LM_REAL *buf=NULL;
 LM_REAL *a, *tau, *work, *r, aux;
-register LM_REAL tmp;
+LM_REAL tmp;
 blasint a_sz, jpvt_sz, tau_sz, r_sz, Y_sz, worksz;
 blasint info, rank, *jpvt, tot_sz, mintmn, tm, tn;
-register int i, j, k;
+int i, j, k;
 
   if(m>n){
     fprintf(stderr, RCAT("matrix of constraints cannot have more rows than columns in", LMLEC_ELIM) "()!\n");
@@ -265,8 +265,8 @@ static void LMLEC_FUNC(LM_REAL *pp, LM_REAL *hx, int mm, int n, void *adata)
 {
 struct LMLEC_DATA *data=(struct LMLEC_DATA *)adata;
 int m;
-register int i, j;
-register LM_REAL sum;
+int i, j;
+LM_REAL sum;
 LM_REAL *c, *Z, *p, *Zimm;
 
   m=mm+data->ncnstr;
@@ -292,8 +292,8 @@ static void LMLEC_JACF(LM_REAL *pp, LM_REAL *jacjac, int mm, int n, void *adata)
 {
 struct LMLEC_DATA *data=(struct LMLEC_DATA *)adata;
 int m;
-register int i, j, l;
-register LM_REAL sum, *aux1, *aux2;
+int i, j, l;
+LM_REAL sum, *aux1, *aux2;
 LM_REAL *c, *Z, *p, *jac; 
 
   m=mm+data->ncnstr;
@@ -337,7 +337,7 @@ LM_REAL *c, *Z, *p, *jac;
     /* Cache efficient computation of jac*Z based on blocking
      */
 #define __MIN__(x, y) (((x)<=(y))? (x) : (y))
-    register int jj, ll;
+    int jj, ll;
 
     for(jj=0; jj<mm; jj+=__BLOCKSZ__){
       for(i=0; i<n; ++i){
@@ -408,8 +408,8 @@ int LEVMAR_LEC_DER(
   struct LMLEC_DATA data;
   LM_REAL *ptr, *Z, *pp, *p0, *Zimm; /* Z is mxmm */
   int mm, ret;
-  register int i, j;
-  register LM_REAL tmp;
+  int i, j;
+  LM_REAL tmp;
   LM_REAL locinfo[LM_INFO_SZ];
 
   if(!jacf){
@@ -529,8 +529,8 @@ int LEVMAR_LEC_DIF(
   struct LMLEC_DATA data;
   LM_REAL *ptr, *Z, *pp, *p0, *Zimm; /* Z is mxmm */
   int mm, ret;
-  register int i, j;
-  register LM_REAL tmp;
+  int i, j;
+  LM_REAL tmp;
   LM_REAL locinfo[LM_INFO_SZ];
 
   mm=m-k;

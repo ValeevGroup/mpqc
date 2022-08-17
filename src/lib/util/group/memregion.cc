@@ -378,7 +378,7 @@ MemoryGrpRegion::HostToRegionsMap::insert(const MemoryGrp* host, const LocalRegi
     typedef LocalRegions::iterator iter;
     typedef LocalRegions::reverse_iterator riter;
     // find region V which should follow region I
-    iter v = std::find_if(regions.begin(),regions.end(),std::bind2nd(std::greater<LocalRegion>(),region));
+    iter v = std::find_if(regions.begin(),regions.end(),std::bind(std::greater<LocalRegion>(),std::placeholders::_1,region));
     if (v != regions.end()) {
       // if found -- check if the two regions overlap ...
       if (region.start() + region.size() > v->start()) {

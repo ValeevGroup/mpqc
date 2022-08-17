@@ -43,7 +43,7 @@
 /* Rosenbrock function, global minimum at (1, 1) */
 void ros(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   for(i=0; i<n; ++i)
     x[i]=((1.0-p[0])*(1.0-p[0]) + ROSD*(p[1]-p[0]*p[0])*(p[1]-p[0]*p[0]));
@@ -51,7 +51,7 @@ register int i;
 
 void jacros(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 
   for(i=j=0; i<n; ++i){
     jac[j++]=(-2 + 2*p[0]-4*ROSD*(p[1]-p[0]*p[0])*p[0]);
@@ -64,7 +64,7 @@ register int i, j;
 /* Modified Rosenbrock problem, global minimum at (1, 1) */
 void modros(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   for(i=0; i<n; i+=3){
     x[i]=10*(p[1]-p[0]*p[0]);
@@ -75,7 +75,7 @@ register int i;
 
 void jacmodros(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 
   for(i=j=0; i<n; i+=3){
     jac[j++]=-20.0*p[0];
@@ -93,7 +93,7 @@ register int i, j;
 /* Powell's function, minimum at (0, 0) */
 void powell(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   for(i=0; i<n; i+=2){
     x[i]=p[0];
@@ -103,7 +103,7 @@ register int i;
 
 void jacpowell(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 
   for(i=j=0; i<n; i+=2){
     jac[j++]=1.0;
@@ -117,7 +117,7 @@ register int i, j;
 /* Wood's function, minimum at (1, 1, 1, 1) */
 void wood(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   for(i=0; i<n; i+=6){
     x[i]=10.0*(p[1] - p[0]*p[0]);
@@ -132,7 +132,7 @@ register int i;
 /* Meyer's (reformulated) problem, minimum at (2.48, 6.18, 3.45) */
 void meyer(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 double ui;
 
 	for(i=0; i<n; ++i){
@@ -143,7 +143,7 @@ double ui;
 
 void jacmeyer(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 double ui, tmp;
 
   for(i=j=0; i<n; ++i){
@@ -179,7 +179,7 @@ double theta;
 
 void jachelval(double *p, double *jac, int m, int n, void *data)
 {
-register int i=0;
+int i=0;
 double tmp;
 
   tmp=p[0]*p[0] + p[1]*p[1];
@@ -204,7 +204,7 @@ double tmp;
  */
 void bt3(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 double t1, t2, t3, t4;
 
   t1=p[0]-p[1];
@@ -218,7 +218,7 @@ double t1, t2, t3, t4;
 
 void jacbt3(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 double t1, t2, t3, t4;
 
   t1=p[0]-p[1];
@@ -240,7 +240,7 @@ double t1, t2, t3, t4;
  */
 void hs28(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 double t1, t2;
 
   t1=p[0]+p[1];
@@ -252,7 +252,7 @@ double t1, t2;
 
 void jachs28(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 double t1, t2;
 
   t1=p[0]+p[1];
@@ -271,7 +271,7 @@ double t1, t2;
  */
 void hs48(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 double t1, t2, t3;
 
   t1=p[0]-1.0;
@@ -284,7 +284,7 @@ double t1, t2, t3;
 
 void jachs48(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 double t1, t2, t3;
 
   t1=p[0]-1.0;
@@ -307,7 +307,7 @@ double t1, t2, t3;
  */
 void hs51(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 double t1, t2, t3, t4;
 
   t1=p[0]-p[1];
@@ -321,7 +321,7 @@ double t1, t2, t3, t4;
 
 void jachs51(double *p, double *jac, int m, int n, void *data)
 {
-register int i, j;
+int i, j;
 double t1, t2, t3, t4;
 
   t1=p[0]-p[1];
@@ -352,7 +352,7 @@ double t;
 
 void jachs01(double *p, double *jac, int m, int n, void *data)
 {
-register int j=0;
+int j=0;
 
   jac[j++]=-20.0*p[0];
   jac[j++]=10.0;
@@ -376,7 +376,7 @@ void hs21(double *p, double *x, int m, int n, void *data)
 
 void jachs21(double *p, double *jac, int m, int n, void *data)
 {
-register int j=0;
+int j=0;
 
   jac[j++]=0.1;
   jac[j++]=0.0;
@@ -391,7 +391,7 @@ register int j=0;
  */
 void hatfldb(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   x[0]=p[0]-1.0;
 
@@ -401,7 +401,7 @@ register int i;
 
 void jachatfldb(double *p, double *jac, int m, int n, void *data)
 {
-register int j=0;
+int j=0;
 
   jac[j++]=1.0;
   jac[j++]=0.0;
@@ -430,7 +430,7 @@ register int j=0;
  */
 void hatfldc(double *p, double *x, int m, int n, void *data)
 {
-register int i;
+int i;
 
   x[0]=p[0]-1.0;
 
@@ -442,7 +442,7 @@ register int i;
 
 void jachatfldc(double *p, double *jac, int m, int n, void *data)
 {
-register int j=0;
+int j=0;
 
   jac[j++]=1.0;
   jac[j++]=0.0;
@@ -491,7 +491,7 @@ void combust(double *p, double *x, int m, int n, void *data)
 
 void jaccombust(double *p, double *jac, int m, int n, void *data)
 {
-register int j=0;
+int j=0;
   double R, R5, R6, R7, R8, R9, R10;
 
   R=10;
@@ -537,7 +537,7 @@ register int j=0;
 
 int main()
 {
-register int i, j;
+int i, j;
 int problem, ret;
 double p[5], // 6 is max(2, 3, 5)
 	   x[16]; // 16 is max(2, 3, 5, 6, 16)

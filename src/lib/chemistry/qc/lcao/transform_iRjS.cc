@@ -188,7 +188,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
 }
 
 void
-TwoBodyMOIntsTransform_iRjS::check_int_symm(double threshold) throw (ProgrammingError)
+TwoBodyMOIntsTransform_iRjS::check_int_symm(double threshold)
 {
   // this is a partial transform, hence the integrals have not been symmetrized yet
   // assume all is well

@@ -227,7 +227,7 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
 }
 
 void
-TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) throw (ProgrammingError)
+TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold)
 {
   Ref<DistArray4> iacc = ints_distarray4();
   iacc->activate();

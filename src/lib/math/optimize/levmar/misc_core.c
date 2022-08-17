@@ -85,9 +85,9 @@ void FDIF_FORW_JAC_APPROX(
     int n,
     void *adata)
 {
-register int i, j;
+int i, j;
 LM_REAL tmp;
-register LM_REAL d;
+LM_REAL d;
 
   for(j=0; j<m; ++j){
     /* determine d=max(1E-04*|p[j]|, delta), see HZ */
@@ -123,9 +123,9 @@ void FDIF_CENT_JAC_APPROX(
     int n,
     void *adata)
 {
-register int i, j;
+int i, j;
 LM_REAL tmp;
-register LM_REAL d;
+LM_REAL d;
 
   for(j=0; j<m; ++j){
     /* determine d=max(1E-04*|p[j]|, delta), see HZ */
@@ -196,7 +196,7 @@ LM_REAL one=CNST(1.0);
 LM_REAL zero=CNST(0.0);
 LM_REAL *fvec, *fjac, *pp, *fvecp, *buf;
 
-register int i, j;
+int i, j;
 LM_REAL eps, epsf, temp, epsmch;
 LM_REAL epslog;
 int fvec_sz=n, fjac_sz=n*m, pp_sz=m, fvecp_sz=n;
@@ -275,7 +275,7 @@ LM_REAL *buf=NULL;
 int buf_sz=0;
 static LM_REAL eps=CNST(-1.0);
 
-register int i, j;
+int i, j;
 LM_REAL *a, *u, *s, *vt, *work;
 int a_sz, u_sz, s_sz, vt_sz, tot_sz;
 LM_REAL thresh, one_over_denom;
@@ -369,7 +369,7 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 void *buf=NULL;
 int buf_sz=0;
 
-register int i, j, k, l;
+int i, j, k, l;
 int *idx, maxi=-1, idx_sz, a_sz, x_sz, work_sz, tot_sz;
 LM_REAL *a, *x, *work, max, sum, tmp;
 
@@ -503,7 +503,7 @@ LM_REAL *a, *x, *work, max, sum, tmp;
  */
 int LEVMAR_COVAR(LM_REAL *JtJ, LM_REAL *C, LM_REAL sumsq, int m, int n)
 {
-register int i;
+int i;
 int rnk;
 LM_REAL fact;
 

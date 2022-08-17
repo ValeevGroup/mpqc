@@ -653,7 +653,7 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
                                       static_cast<void*>(&coreints_scratch_));
     std::transform(Gm, Gm+quartet_info_.am+1,
                    Data->LIBINT_T_SS_EREP_SS(0),
-                   std::bind2nd(std::multiplies<double>(), pfac));
+                   std::bind(std::multiplies<double>(), std::placeholders::_1, pfac));
 
     /* PA */
 #if LIBINT2_DEFINED(eri,PA_x)

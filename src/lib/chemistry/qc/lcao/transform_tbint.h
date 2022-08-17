@@ -209,7 +209,7 @@ public:
   /// Computes transformed integrals
   virtual void compute() = 0;
   /// Check symmetry of transformed integrals
-  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
+  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
 

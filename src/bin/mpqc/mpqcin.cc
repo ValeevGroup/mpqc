@@ -1142,11 +1142,11 @@ MPQCIn::Basis::write(ostream &ostrs,
   else {
     std::ostringstream oss;
     oss << "m" << keyword;
-    const char* mkeyword = oss.str().c_str();
+    const auto mkeyword = oss.str();
     Basis mother(*this);
     mother.set_uc(false);
     mother.set_split(false);
-    mother.write(ostrs, mkeyword);
+    mother.write(ostrs, mkeyword.c_str());
     if (uc.val())
       ostrs << indent << keyword << "<UncontractedBasisSet>: (" << endl;
     if (split.val())

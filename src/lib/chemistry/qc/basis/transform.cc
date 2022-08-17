@@ -200,7 +200,6 @@ SphericalTransform::SphericalTransform()
   n_ = 0;
   l_ = 0;
   subl_ = 0;
-  components_ = 0;
 }
 
 SphericalTransform::SphericalTransform(int l, int subl) : l_(l)
@@ -208,7 +207,6 @@ SphericalTransform::SphericalTransform(int l, int subl) : l_(l)
   n_ = 0;
   if (subl == -1) subl_ = l;
   else subl_ = subl;
-  components_ = 0;
 }
 
 static void
@@ -376,9 +374,8 @@ SphericalTransform::init()
 
 SphericalTransform::~SphericalTransform()
 {
-  if (components_) {
-    delete[] components_;
-    components_ = 0;
+  for (auto* c: components_) {
+    delete c;
   }
 }
 
@@ -387,16 +384,10 @@ SphericalTransform::add(int a, int b, int c, double coef, int pureindex)
 {
   int i;
 
-  SphericalTransformComponent *ncomp = new_components();
-
-  for (i=0; i<n_; i++)
-    ncomp[i] = components_[i];
-
-  ncomp[i].init(a, b, c, coef, pureindex);
-
-  delete[] components_;
-  components_ = ncomp;
   n_++;
+  components_.resize(n_);
+  components_.back() = new_component();
+  components_.back()->init(a, b, c, coef, pureindex);
 }
 
 ///////////////////////////////////////////////////////////////////////////

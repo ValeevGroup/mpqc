@@ -57,8 +57,8 @@ class SphericalTransformLibint2 : public SphericalTransform {
       init();
     }
 
-    SphericalTransformComponent * new_components() {
-      return new SphericalTransformComponentLibint2[n_+1];
+    SphericalTransformComponent * new_component() {
+      return new SphericalTransformComponentLibint2;
     }
 };
 
@@ -68,8 +68,8 @@ class ISphericalTransformLibint2 : public ISphericalTransform {
       init();
     }
 
-    SphericalTransformComponent * new_components() {
-      return new SphericalTransformComponentLibint2[n_+1];
+    SphericalTransformComponent * new_component() {
+      return new SphericalTransformComponentLibint2;
     }
 };
 

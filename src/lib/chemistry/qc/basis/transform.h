@@ -28,6 +28,8 @@
 #ifndef _chemistry_qc_basis_transform_h
 #define _chemistry_qc_basis_transform_h
 
+#include <vector>
+
 namespace sc {
 
 // ///////////////////////////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ class SphericalTransform {
     int n_;
     int l_;
     int subl_;
-    SphericalTransformComponent *components_;
+    std::vector<SphericalTransformComponent*> components_;
 
     SphericalTransform();
 
@@ -101,25 +103,25 @@ class SphericalTransform {
     void add(int a, int b, int c, double coef, int pureindex);
 
     /// Returns the Cartesian basis function index of component i.
-    int cartindex(int i) const { return components_[i].cartindex(); }
+    int cartindex(int i) const { return components_[i]->cartindex(); }
     /// Returns the solid harmonic basis function index of component i.
-    int pureindex(int i) const { return components_[i].pureindex(); }
+    int pureindex(int i) const { return components_[i]->pureindex(); }
     /// Returns the transform coefficient of component i.
-    double coef(int i) const { return components_[i].coef(); }
+    double coef(int i) const { return components_[i]->coef(); }
     /// Returns the Cartesian basis function's x exponent of component i.
-    int a(int i) const { return components_[i].a(); }
+    int a(int i) const { return components_[i]->a(); }
     /// Returns the Cartesian basis function's y exponent of component i.
-    int b(int i) const { return components_[i].b(); }
+    int b(int i) const { return components_[i]->b(); }
     /// Returns the Cartesian basis function's z exponent of component i.
-    int c(int i) const { return components_[i].c(); }
+    int c(int i) const { return components_[i]->c(); }
     /// Returns the angular momentum.
     int l() const { return l_; }
     /// Returns the number of components in the transformation.
     int n() const { return n_; }
 
-    /** This must create SphericalTransformComponent's of the
+    /** This must create a SphericalTransformComponent of the
         appropriate specialization. */
-    virtual SphericalTransformComponent * new_components() = 0;
+    virtual SphericalTransformComponent * new_component() = 0;
 };
 
 /// This describes a solid harmonic to Cartesian transform.

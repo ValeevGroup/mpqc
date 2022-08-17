@@ -56,8 +56,8 @@ class SphericalTransformV3 : public SphericalTransform {
       init();
     }
 
-    SphericalTransformComponent * new_components() {
-      return new SphericalTransformComponentV3[n_+1];
+    SphericalTransformComponent * new_component() {
+      return new SphericalTransformComponentV3;
     }
 };
 
@@ -67,8 +67,8 @@ class ISphericalTransformV3 : public ISphericalTransform {
       init();
     }
 
-    SphericalTransformComponent * new_components() {
-      return new SphericalTransformComponentV3[n_+1];
+    SphericalTransformComponent * new_component() {
+      return new SphericalTransformComponentV3;
     }
 };
 

@@ -40,7 +40,7 @@
 
 
 #if defined(MPQC_NEW_FEATURES)
-#  include <TiledArray/math/linalg/conjgrad.h>
+#  include <TiledArray/math/solvers/conjgrad.h>
 #endif
 
 using namespace std;

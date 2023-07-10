@@ -29,6 +29,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesVXBdiag_h
 
 #include <tiledarray.h>
+#include <TiledArray/math/solvers/conjgrad.h>
 #include <cmath>
 
 namespace sc {
@@ -4364,7 +4365,7 @@ namespace sc {
     preconditioner("a,m") = Delta_am("a,m");
 
     detail::Orbital_relaxation_Abjai<double> Orbital_relaxation_Abnam(A_bnam);
-    TA::ConjugateGradientSolver<TiledArray::Array<T,2>,
+    TA::math::ConjugateGradientSolver<TiledArray::Array<T,2>,
                                 detail::Orbital_relaxation_Abjai<double> > cg_solver2;
 
     // compute CABS singles contribution

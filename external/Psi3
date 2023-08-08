@@ -94,6 +94,9 @@ if ("${PSI3}" AND NOT HAVE_PSI3)
         PREFIX ${EXTERNAL_BUILD_DIR}/psi3
         URL ${PSI3_URL}
         URL_HASH ${PSI3_URL_HASH}
+        # -----Patch to disable building extrema --------
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy "${EXTERNAL_SOURCE_DIR}/patch/psi3_disable_extrema" "${EXTERNAL_BUILD_DIR}/psi3/src/psi3/src/bin/Makefile.in"
+        # -----------------------------------------------
         BUILD_IN_SOURCE 1
         CONFIGURE_COMMAND /bin/bash ./configure
         --prefix=${EXTERNAL_BUILD_DIR}/psi3
